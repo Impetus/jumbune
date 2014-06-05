@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<title>Basics</title>
+</head>
+<body>
+
+<div class="page-content boxed" id="wikiArticle">
+<p>Collects basic information about Hadoop Master (aliased for Namenode) and Slaves (the machines where Datanode and Tasktracker resides).</p>
+<h2 name="Parameters" id="Parameters">Parameters</h2>
+
+<ul>
+	<li>Jumbune Job Name
+		<ul>
+			<li>Identify the name of Jumbune job. A folder would create with this specified
+	name in the Jumbune_Home/jobjars folder and all information (logs/jar/counter files) would be stored
+	in this folder.</li>
+		</ul>
+	</li>	
+</ul>
+
+
+<b>Master Information</b>
+
+<ul>
+	<li>User
+		<ul>
+			<li>Username for the master machine.</li>
+		</ul>
+	</li>
+	<li>Host
+		<ul>
+			<li>Host for the master machine.</li>
+		</ul>
+	</li>
+	<li>RSA/DSA file
+		<ul>
+			<li>Path of the rsa/dsa file.</li>
+		</ul>
+	</li>
+	<li>Agent Port
+		<ul>
+			<li>Port on which Jumbune agent has been started on hadoop master.</li>
+		</ul>
+	</li>
+	<li>Jmx port on Master/Namenode
+		<ul>
+			<li>Identify the jmx port no of name node on Master machine.</li>
+		</ul>
+	</li>
+	<li>Jmx Port on JobTracker
+		<ul>
+			<li>Identify the jmx port no of JobTracker on master machine.</li>
+		</ul>
+	</li>
+</ul>
+
+<b>Slave Information</b>
+
+<ul>
+	<li>Working Directory on Slaves
+		<ul>
+			<li>Directory on slave machine where temporary files related to
+Jumbune would be stored.</li>
+		</ul>
+	</li>
+	<li>Jmx Port on DataNode
+		<ul>
+			<li>Identify the jmx port no of data nodes on slave machine.</li>
+		</ul>
+	</li>
+	<li>Jmx Port on TaskTracker
+		<ul>
+			<li>Identify the jmx port no of TaskTracker on slave machine.</li>
+		</ul>
+	</li>
+	<li>No of Unique Users
+		<ul>
+			<li>Number of different names of nodes in the cluster.</li>
+		</ul>
+	</li>	
+	<li>User
+		<ul>
+			<li>Username for the slave machine.</li>
+		</ul>
+	</li>	
+	<li>Host
+		<ul>
+			<li>Host for the slave machine.</li>
+		</ul>
+	</li>	
+	<li>Specify Range
+		<ul>
+			<li>If enabled, specify range of slave machines.Range must be containing full specified machine IP.</li>
+		</ul>
+	</li>	
+</ul>
+
+</div>
+
+</body>
+</html>

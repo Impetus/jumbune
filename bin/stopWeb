@@ -1,0 +1,23 @@
+ #!/bin/bash
+
+#exec java -classpath  $CLASS 
+
+
+bin=`dirname "$0"`
+bin=`cd "$bin"; pwd`
+#echo $bin
+. "$bin"/htfconf
+
+JAVA=${JAVA_HOME}/bin/java
+
+# add instrumentation jar to classpath
+for f in $JUMBUNE_HOME/lib/*.jar; do
+  CLASSPATH=${CLASSPATH}:$f;
+done
+
+# class name to be executed 
+CLASS='org.jumbune.common.utils.JettyUtil'
+
+echo 'Stopping jetty...'
+
+exec "$JAVA" -cp "$CLASSPATH" "$CLASS" --command stop --stop-port 9009 --stop-key stop

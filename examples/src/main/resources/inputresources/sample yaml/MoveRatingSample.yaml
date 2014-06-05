@@ -1,0 +1,46 @@
+!!org.jumbune.common.config.YamlConfig
+classpath:
+  jumbuneSupplied: null
+  userSupplied: {excludes: null, files: null, folders: null, source: -1}
+dataValidation: null
+debugAnalysis: 'FALSE'
+debuggerConf:
+  fieldSeparator: null
+  hDFSSourcePath: null
+  logLevel: {instrumentRegex: 'FALSE', instrumentUserDefValidate: 'FALSE'}
+  maxIfBlockNestingLevel: 0
+  recordSeparator: null
+  sampleToggle: null
+  useEntireWorkingSet: null
+distributedHDFSPath: null
+doNotInstrument: null
+enableDataValidation: 'FALSE'
+enableStaticJobProfiling: 'TRUE'
+hadoopJobProfile: 'TRUE'
+hdfsInputPath: null
+includeClassJar: 'TRUE'
+inputFile: user.home.directory/Desktop/Jumbune_Home/examples/example-distribution/examples-movierating-1.0.1-SNAPSHOT.jar
+jobs:
+- {jobClass: null, name: MovieRating, parameters: '/Jumbune/examples/regex /Jumbune/examples/output
+    ^[^\d].*'}
+jumbuneJobName: MovieRatingSample
+mapperSuperClasses: null
+master: {agentPort: '5567', dsaFile: null, host: name.node.ip, jobTrackerJmxPort: '5680',
+  location: null, nameNodeJmxPort: '5677', receiveDirectory: null, rsaFile: user.home.directory/.ssh/id_rsa,
+  user: user.name}
+partitionerSampleInterval: 0
+profilingParams: {dataNodeJmxPort: null, jobTrackerJmxPort: null, mapers: 0-1, masterJmxPort: null,
+  reducers: 0-1, statsInterval: 5000, taskTrackerJmxPort: null}
+reducerSuperClasses: null
+regexValidations: []
+sJumbuneHome: user.home.directory/tmp/jHome
+slaveParam: {dataNodeJmxPort: '5679', taskTrackerJmxPort: '5678'}
+slaves:
+- enableHostRange: null
+  hostRangeFromValue: null
+  hostRangeToValue: null
+  hosts: [data.node.ip]
+  location: null
+  unavailableHosts: null
+  user: user.name
+userValidations: []

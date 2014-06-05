@@ -1,0 +1,218 @@
+=========================================================================
+==                          NOTICE file                                ==
+=========================================================================
+
+Jumbune ("Product") is Copyright of Impetus Technologies, a California 
+corporation, with a principal place of business at 720 University Avenue, Suite 130 
+Los Gatos, CA 95032, USA (�Impetus�).
+
+This version ["RC 1.0" (Release Candidate)] of the Product is released 
+under LGPL v3 license as described at the link below.
+
+http://opensource.org/licenses/LGPL-3.0
+
+Technologies that are available with RC 1.0 'free of cost' and 'open source' are
+
+1) Apache Hadoop (multiple versions that we support)
+
+DISCLAIMER:
+
+THIS SOFTWARE AND DOCUMENTATION IS PROVIDED "AS IS," AND COPYRIGHT HOLDERS 
+MAKE NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT 
+NOT LIMITED TO, WARRANTIES OF MERCHANTABILITY OR FITNESS FOR ANY PARTICULAR
+PURPOSE OR THAT THE USE OF THE SOFTWARE OR DOCUMENTATION WILL NOT INFRINGE
+ANY THIRD PARTY PATENTS, COPYRIGHTS, TRADEMARKS OR OTHER RIGHTS.
+
+COPYRIGHT HOLDERS WILL NOT BE LIABLE FOR ANY DIRECT, INDIRECT, SPECIAL OR
+CONSEQUENTIAL DAMAGES ARISING OUT OF ANY USE OF THE SOFTWARE OR 
+DOCUMENTATION.
+
+
+Product includes Other 3rd party software as indicated below
+
+=========================================================================
+==                          3rd Party Software                         ==
+=========================================================================
+
+1.   Name                  : jQuery
+     Source                : http://code.jquery.com/jquery-1.8.0.min.js
+     License               : MIT
+     License Source        : https://github.com/jquery/jquery/blob/master/MIT-LICENSE.txt
+     Linking               : Static
+     Modified By Impetus   : No
+
+2.   Name                  : Apache Commons Lang
+     Source                : http://commons.apache.org/proper/commons-lang/index.html
+     License               : Apache License Version 2.0
+     License Source  	   : http://www.apache.org/licenses/LICENSE-2.0.txt
+     Linking               : Dynamic
+     Modified By Impetus   : No
+
+3.   Name                  : Apache Commons Logging
+     Source                : http://commons.apache.org/proper/commons-logging/index.html
+     License               : Apache License Version 2.0
+     License Source        :http://www.apache.org/licenses/LICENSE-2.0.txt
+     Linking               : Dynamic
+     Modified By Impetus   : No
+
+4.  Name                   : Apache Commons IO
+    Source                 : http://commons.apache.org/proper/commons-io/index.html
+    License                : Apache License Version 2.0
+    License Source         : http://www.apache.org/licenses/LICENSE-2.0.txt
+    Linking                : Dynamic
+    Modified By Impetus    : No
+
+5.  Name                   : Apache Commons Math
+    Source                 : http://commons.apache.org/proper/commons-math/index.html
+    License                : Apache License Version 2.0
+    License Source         : http://www.apache.org/licenses/LICENSE-2.0.txt
+    Linking                : Dynamic
+    Modified By Impetus    : No
+
+6.  Name                   : Apache Commons FileUpload
+    Source                 : http://commons.apache.org/proper/commons-fileupload/index.html
+    License                : Apache License Version 2.0
+    License Source         : http://www.apache.org/licenses/LICENSE-2.0.txt
+    Linking                : Dynamic
+    Modified By Impetus    : No
+
+7.  Name                   : Apache Commons Collections
+    Source                 : http://commons.apache.org/proper/commons-collections/index.html
+    License                : Apache License Version 2.0
+    License Source         : http://www.apache.org/licenses/LICENSE-2.0.txt
+    Linking                : Dynamic
+    Modified By Impetus    : No
+
+8.  Name                   : Apache Commons Configuration
+    Source                 : http://commons.apache.org/proper/commons-configuration/index.html
+    License                : Apache License Version 2.0
+    License Source         : http://www.apache.org/licenses/LICENSE-2.0.txt
+    Linking                : Dynamic
+    Modified By Impetus    : No
+
+9.  Name                   : Apache Commons beanutils
+    Source                 : http://commons.apache.org/proper/commons-beanutils/index.html
+    License                : Apache License Version 2.0
+    License Source         : http://www.apache.org/licenses/LICENSE-2.0.txt
+    Linking                : Dynamic
+    Modified By Impetus    : No
+
+10. Name                   : Apache Commons Digester
+    Source                 : http://commons.apache.org/proper/commons-digester/index.html
+    License                : Apache License Version 2.0
+    License Source         : http://www.apache.org/licenses/LICENSE-2.0.txt
+    Linking                : Dynamic
+    Modified By Impetus    : No
+
+11. Name                   : Apache Commons Cli
+    Source                 : http://commons.apache.org/proper/commons-cli/index.html
+    License                : Apache License Version 2.0
+    License Source         : http://www.apache.org/licenses/LICENSE-2.0.txt
+    Linking                : Dynamic
+    Modified By Impetus    : No
+
+12. Name                   : Jackson
+    Source                 : http://jackson.codehaus.org/
+    License                : Apache License Version 2.0
+    License Source         : http://www.apache.org/licenses/LICENSE-2.0.txt
+    Linking                : Dynamic
+    Modified By Impetus    : No
+
+13. Name                   : Snakeyaml
+    Source                 : http://code.google.com/p/snakeyaml/
+    License                : Apache License Version 2.0
+    License Source         : http://www.apache.org/licenses/LICENSE-2.0.txt
+    Linking		   : Dynamic
+    Modified By Impetus    : No
+
+14. Name                  : Apache Hadoop Core
+    Source                : http://hadoop.apache.org/index.html
+    License               : Apache License Version 2.0
+    License Source        : http://www.apache.org/licenses/LICENSE-2.0.txt
+    Linking		  : Dynamic
+    Modified By Impetus   : No
+
+15. Name                  : Jetty
+    Source                : http://www.eclipse.org/jetty/
+    License               : Apache License Version 2.0, Eclipse Public License - v 1.0
+    License Source        : http://www.apache.org/licenses/LICENSE-2.0.txt,http://www.eclipse.org/legal/epl-v10.html
+    Linking               : Dynamic
+    Modified By Impetus   : No
+
+16. Name                  : Log4j2
+    Source                : http://logging.apache.org/log4j/2.x/
+    License               : Apache License Version 2.0
+    License Source        : http://logging.apache.org/log4j/2.x/license.html
+    Linking               : Dynamic
+    Modified By Impetus   : No
+
+17. Name                  : Jsch
+    Source                : http://www.jcraft.com/jsch/
+    License               : BSD-style license
+    License Source        : http://www.jcraft.com/jsch/LICENSE.txt
+    Linking		  : Dynamic
+    Modified By Impetus   : No
+
+
+ 18. Name                 : Netty
+    Source                : http://netty.io/index.html
+    License               : Apache License Version 2.0
+    License Source        : http://www.apache.org/licenses/LICENSE-2.0.txt
+    Linking               : Dynamic
+    Modified By Impetus   : No
+
+18. Name                  : Poi
+    Source                : http://poi.apache.org
+    License               : Apache License Version 2.0
+    License Source        : http://www.apache.org/licenses/LICENSE-2.0.txt
+    Linking               : Dynamic
+    Modified By Impetus   : No
+
+19. Name                  : Gson
+    Source                : http://code.google.com/p/google-gson/    
+    License               : Apache License Version 2.0
+    License Source        : http://www.apache.org/licenses/LICENSE-2.0
+    Linking               : Dynamic
+    Modified By Impetus   : No
+
+20. Name                  : Apache Rumen
+    Source                : http://hadoop.apache.org/docs/r1.2.1/rumen.html   
+    License               : Apache License Version 2.0
+    License Source        : http://www.apache.org/licenses/LICENSE-2.0
+    Linking               : Static
+    Modified By Impetus   : Yes
+
+21. Name                  : Junit
+    Source                : http://junit.org/
+    License               : Eclipse Public License - v 1.0
+    License Source        : https://github.com/junit-team/junit/blob/master/LICENSE.txt
+    Linking               : Dynamic
+    Modified By Impetus   : No
+
+22. Name                  : ASM
+    Source                : http://asm.ow2.org/ 
+    License               : BSD
+    License Source        : http://opensource.org/licenses/BSD-3-Clause
+    Linking		  : Dynamic
+    Modified By Impetus   : No
+
+23. Name                  : Jqplot
+    Source                : http://www.jqplot.com/
+    License               : MIT
+    License Source        : http://opensource.org/licenses/MIT
+    Linking		  : Static
+    Modified By Impetus   : No
+
+24. Name                  : D3 Charts
+    Source                : http://misoproject.com/d3-chart/
+    License               : BSD
+    License Source        : http://opensource.org/licenses/BSD-3-Clause
+    Linking		  : Static
+    Modified By Impetus   : No
+
+25. Name                  : Dalvik
+    Source                : http://code.google.com/p/dalvik/
+    License               : Apache License Version 2.0
+    License Source        : http://www.apache.org/licenses/LICENSE-2.0
+    Linking		  : Static
+    Modified By Impetus   : Yes

@@ -1,0 +1,22 @@
+var keywords = {
+	BASIC_TOOLTIP : "This is an Help Framework tooltip example for basic",
+	DURATION_TOOLTIP : "This is an Help Framework tooltip example for duration",
+	DEFAULT_THEME_TOOLTIP : "This is an Help Framework tooltip example for default theme",
+	GREEN_THEME_TOOLTIP : "This is an Help Framework tooltip example for green theme",
+	BLUE_THEME_TOOLTIP : "This is an Help Framework tooltip example for blue theme",
+	RED_THEME_TOOLTIP : "This is an Help Framework tooltip example for red theme",
+	YELLOW_THEME_TOOLTIP : "This is an Help Framework tooltip example for yellow theme",
+	PURPLE_THEME_TOOLTIP : "This is an Help Framework tooltip example for purple theme",
+	BONUS_TOOLTIP : "This is an Help Framework tooltip example for basic",
+	HOVER_TOOLTIP : "This is an Help Framework tooltip example for mouse over",
+	CLICK_TOOLTIP : "This is an Help Framework tooltip example for click",
+	FOCUS_TOOLTIP : "This is an Help Framework tooltip example for focus",
+	BOTTOM_LEFT : "This is an example of bottom-left direction",
+	BOTTOM : "This is an example of bottom direction",
+	BOTTOM_RIGHT : "This is an example of bottom-right direction",
+	LEFT : "This is an example of left direction",
+	RIGHT : "This is an example of right direction",
+	TOP_LEFT : "This is an example of top-left direction",
+	TOP : "This is an example of top direction",
+	TOP_RIGHT : "This is an example of top-right direction"
+}

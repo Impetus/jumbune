@@ -1,0 +1,38 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<artifactId>jumbune</artifactId>
+		<groupId>org.jumbune</groupId>
+		<version>${build.number}</version>
+	</parent>
+
+	<groupId>org.jumbune</groupId>
+	<artifactId>jumbune-profiling</artifactId>
+	<version>${project.parent.version}</version>
+
+	<name>profiler</name>
+	<url>http://maven.apache.org</url>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.easymock</groupId>
+			<artifactId>easymock</artifactId>
+			<version>3.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jumbune</groupId>
+			<artifactId>jumbune-common</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jumbune</groupId>
+			<artifactId>jumbune-utils</artifactId>
+		</dependency>
+	</dependencies>
+</project>

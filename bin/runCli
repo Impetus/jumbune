@@ -1,0 +1,55 @@
+ #!/bin/bash
+
+#exec java -classpath  $CLASS 
+
+
+bin=`dirname "$0"`
+bin=`cd "$bin"; pwd`
+#echo $bin
+. "$bin"/htfconf
+
+JAVA=${JAVA_HOME}/bin/java
+
+
+
+# CLASSPATH initially contains java tools jar
+
+CLASSPATH=$JAVA_HOME/lib/tools.jar
+
+# add resources to CLASSPATH
+resources="${JUMBUNE_HOME}/resources"
+CLASSPATH=${CLASSPATH}:$resources;
+
+#add dataValidation module to classpath
+for f in $JUMBUNE_HOME/modules/jumbune-datavalidation*.jar; do
+  CLASSPATH=${CLASSPATH}:$f;
+done
+
+# add debugger module  to classpath
+for f in $JUMBUNE_HOME/modules/jumbune-debug*.jar; do
+  CLASSPATH=${CLASSPATH}:$f;
+done
+
+# add execution jar to classpath
+for f in $JUMBUNE_HOME/modules/jumbune-exec*.jar; do
+  CLASSPATH=${CLASSPATH}:$f;
+done
+
+# add jumbune libs to CLASSPATH
+for f in $JUMBUNE_HOME/lib/*.jar; do
+  CLASSPATH=${CLASSPATH}:$f;
+done
+
+#addming hadoop lib to classpath
+for f in $HADOOP_HOME/hadoop*core*.jar; do
+  CLASSPATH=${CLASSPATH}:$f;
+done
+
+CLASS='org.jumbune.execution.service.ShellExecutorService'
+
+echo $CLASSPATH
+
+#DEBUG_OPTION=-Xdebug -Xrunjdwp:transport=dt_socket,address=5566,server=y,suspend=n 
+
+#run the program
+exec "$JAVA" -cp "$CLASSPATH" "$CLASS"

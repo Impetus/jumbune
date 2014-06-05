@@ -1,0 +1,146 @@
+{
+    "config": {
+        "title": "Jumbune Help",
+        "footer": "&copy; All rights reserved by Impetus",
+        "theme": "default"
+    },
+    "topics": [
+        {
+            "title": "Jumbune",
+            "data": "skins/js/plugins/help-framework/htmls/introduction.html",
+            "isExternal": true,
+            "topics": [{
+            "title": "Working with Jumbune",
+            "data": "skins/js/plugins/help-framework/htmls/working-jumbune.html",
+            "isExternal": true,
+            "topics": [
+                {
+                    "title": "Submitting a Job",
+                    "data": "skins/js/plugins/help-framework/htmls/submit-intro.html",
+                    "isExternal": true,
+                    "topics": [
+                        {
+                            "title": "Browse YAML file",
+                            "data": "skins/js/plugins/help-framework/htmls/browse-yaml.html",
+                            "isExternal": true,
+                            "topics": []
+                        },
+                        {
+                            "title": "Upload YAML file",
+                            "data": "skins/js/plugins/help-framework/htmls/upload-yaml.html",
+                            "isExternal": true,
+                            "topics": []
+                        },
+                        {
+                            "title": "Validate YAML file",
+                            "data": "skins/js/plugins/help-framework/htmls/validate-yaml.html",
+                            "isExternal": true,
+                            "topics": []
+                        },
+                        {
+                            "title": "Run YAML file",
+                            "data": "skins/js/plugins/help-framework/htmls/run-yaml.html",
+                            "isExternal": true,
+                            "topics": []
+                        }
+                    ]
+                },
+                {
+                    "title": "Jumbune Yaml Wizard",
+                    "data": "skins/js/plugins/help-framework/htmls/jumbune-yaml-wizard.html",
+                    "isExternal": true,
+                    "topics": [
+                        {
+                            "title": "Create YAML File",
+                            "data": "skins/js/plugins/help-framework/htmls/create-yaml.html",
+                            "isExternal": true,
+                            "topics": []
+                        },
+                        {
+                            "title": "Basic",
+                            "data": "skins/js/plugins/help-framework/htmls/jumbune-basic.html",
+                            "isExternal": true,
+                            "topics": []
+                        },
+                        {
+                            "title": "M/R Jobs",
+                            "data": "skins/js/plugins/help-framework/htmls/jumbune-jobs.html",
+                            "isExternal": true,
+                            "topics": []
+                        },
+                        {
+                            "title": "Flow Debugging",
+                            "data": "skins/js/plugins/help-framework/htmls/flow-debugging.html",
+                            "isExternal": true,
+                            "topics": []
+                        },
+                        {
+                            "title": "Profiling",
+                            "data": "skins/js/plugins/help-framework/htmls/profiling.html",
+                            "isExternal": true,
+                            "topics": []
+                        },
+                        {
+                            "title": "HDFS Validation",
+                            "data": "skins/js/plugins/help-framework/htmls/hdfs-validation.html",
+                            "isExternal": true,
+                            "topics": []
+                        }
+                    ]
+                },
+                {
+                    "title": "Report Analysis",
+                    "data": "skins/js/plugins/help-framework/htmls/report-analysis.html",
+                    "isExternal": true,
+                    "topics": [
+                        {
+                            "title": "Profiling Analysis",
+                            "data": "skins/js/plugins/help-framework/htmls/profiling-analysis.html",
+                            "isExternal": true,
+                            "topics": [
+                                {
+                                    "title": "Cluster Profiler",
+                                    "data": "skins/js/plugins/help-framework/htmls/cluster-analysis.html",
+                                    "isExternal": true,
+                                    "topics": []
+                                },
+                                {
+                                    "title": "M/R JVM Profiler",
+                                    "data": "skins/js/plugins/help-framework/htmls/jvm-profiling-analysis.html",
+                                    "isExternal": true,
+                                    "topics": []
+                                }
+                            ]
+                        },
+                        {
+                            "title": "Debugger analysis",
+                            "data": "skins/js/plugins/help-framework/htmls/debugger-analysis.html",
+                            "isExternal": true,
+                            "topics": [
+                                {
+                                    "title": "Job View analysis",
+                                    "data": "skins/js/plugins/help-framework/htmls/job-view-analysis.html",
+                                    "isExternal": true,
+                                    "topics": []
+                                },
+                                {
+                                    "title": "Mapper/Reducer View analysis",
+                                    "data": "skins/js/plugins/help-framework/htmls/mapper-reducer-analysis.html",
+                                    "isExternal": true,
+                                    "topics": []
+                                },
+                                {
+                                    "title": "Instances analysis",
+                                    "data": "skins/js/plugins/help-framework/htmls/instance-view.html",
+                                    "isExternal": true,
+                                    "topics": []
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }]
+        }
+    ]
+}

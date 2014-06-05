@@ -1,0 +1,34 @@
+#!/bin/bash
+
+
+export JAVA_HOME=<JAVA.HOME>
+export JUMBUNE_HOME=<JUMBUNE.HOME>
+export HADOOP_HOME=$HADOOP_HOME
+
+
+hadoophome=$HADOOP_HOME
+
+length=$(echo $hadoophome | wc -c)
+offset="$(( $length - 2 ))"
+lastChar="${hadoophome:$offset}"
+
+if [ "$lastChar" != "/" ]; then
+	export HADOOP_HOME=${hadoophome}"/"
+fi
+
+jumbunehome=$JUMBUNE_HOME
+
+length=$(echo $jumbunehome | wc -c)
+offset="$(( $length - 2 ))"
+lastChar="${jumbunehome:$offset}"
+
+if [ "$lastChar" != "/" ]; then
+	export JUMBUNE_HOME=${jumbunehome}"/"
+fi
+
+
+echo 'JUMBUNE : INFO : JAVA HOME path : '$JAVA_HOME
+echo 'JUMBUNE : INFO : HADOOP HOME path : '$HADOOP_HOME
+echo 'JUMBUNE : INFO : JUMBUNE HOME path : '$JUMBUNE_HOME
+
+

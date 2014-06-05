@@ -1,0 +1,213 @@
+#########################################################################################
+# basic hadoop properties 
+#########################################################################################
+hadoopHome: <user.home>/navinhadoop-0.20.2/
+sJumbuneHome: <user.home>/tmp/jHome/
+master: 
+  user: <user.name>
+  host: 192.168.49.71
+  rsaFile: <user.home>/.ssh/id_rsa
+  dsaFile: <user.home>/.ssh/id_dsa
+slaves:
+  - user: <user.name> 
+    hosts: [192.168.49.71]
+
+#########################################################################################
+# Jumbune Modules
+#  
+#########################################################################################
+enableDataValidation: FALSE
+debugAnalysis: TRUE
+hadoopJobProfile: FALSE
+
+#########################################################################################
+# Profiling Parameters
+# List all the packages whose heap usage is to be analyzed.Only packages specified here 
+# would be displayed in Profiling Heap information. Leaving this field blank means no 
+# filteration is required and user wants to see data of all packages. 
+# To add more packages comma separate package names
+# sample vaues : [org.jumbune.htf.trial]
+#
+#
+#########################################################################################
+
+profilingParams:
+  cpu: samples 
+  heap: sites 
+  mapers: 0-5
+  reducers: 0-5
+  masterJmxPort: 5677
+  dataNodeJmxPort: 5679
+  taskTrackerJmxPort: 5678
+  statsInterval: 5000
+    
+#########################################################################################
+# haddop job properties. Multiple jobs can be configured
+#   name: job name
+#   jobClass: class which will be invoked for the job
+#   parameters: parameters for the job. This will be an array of String values in 
+#                the order in which parameters (that are space separated)will be passed
+#   note: pass parameter string in double quotes if the argument itself contains pass it
+#         in single quotes
+#########################################################################################
+jobs:
+  - name: job1
+    jobClass: org.jumbune.neustar.portps.PortPSCascadedJobExecutor
+    #jobClass: org.jumbune.neustar.portps.PortPSChainedJobExecutor
+    parameters: '2010-05-01 2010-05-31 6214'
+
+#########################################################################################
+# input file path for profiling and instrumentation of pure jar
+#########################################################################################
+#inputFile: <user.home>/Desktop/PortPSChain-11Apr2012.jar
+inputFile: <user.home>/Desktop/PortPSChain-22Apr2012.jar
+#inputFile: <user.home>/Desktop/PortPS-07Feb2012.jar
+  
+#########################################################################################
+# Mention the list of packages/classes which should not be instrumented. 
+# More than one packages can be mentioned, each package in a separate line, similarly for
+# classes. If none but few classes of a particular package should be instrumented mention
+# the list of classes in include. These classes will be included even if their entire 
+# package is excluded. E.g if we want to exclude java.lang package but would like to 
+# instrument only String class. This string class fully qualified name should be mentioned
+# in includeAnways
+# [org.jumbune.htf.trial.WordCountMapper, WordCountReducer, WordCountHTFTester] 
+#########################################################################################
+doNotInstrument: 
+ packages:    
+ classes: 
+ includeAnyways: 
+
+#########################################################################################
+# debuggerConf
+#   logLevel: Define the way logs statements should be logged. 
+#               Possible values:  TRUE or FALSE
+#   maxIfBlockNestingLevel: Maximun nesting level for if blocks.
+#               Possible values: 1, 2, 3, 4
+#
+# Do NOT define a level at all if instrumentation is not required, keep the entry blank
+#########################################################################################
+debuggerConf: 
+  maxIfBlockNestingLevel: 4
+  logLevel:
+    ifblock: TRUE
+    switchcase: TRUE
+    instrumentRegex: TRUE
+    instrumentUserDefValidate: FALSE
+    partitioner: FALSE
+    
+#########################################################################################
+# This field tells after what intervals should the partitioning sample be collected. 
+# If the value is to small more time will be needed in calculating time taken by partitioner
+# but this will give more accurate idea of how much time partitioner is taking
+#########################################################################################    
+partitionerSampleInterval: 50
+
+#########################################################################################
+# user defined super classes for mapper
+# An array, multiple values can be used
+#########################################################################################
+mapperSuperClasses:
+#  - org/apache/hadoop/hbase/mapreduce/TableMapper
+ 
+#########################################################################################
+# user defined super classes for reducer
+# An array, multiple values can be used
+#########################################################################################
+reducerSuperClasses: 
+#  - org/apache/hadoop/hbase/mapreduce/TableReducer
+
+#########################################################################################
+# regex comparion for map/reduce key/value
+# The comparison will be performed arter context.write in the map/reduce methods 
+#########################################################################################
+regexValidations:
+  - classname: org.jumbune.neustar.portps.mappers.old.PortOutReportMapper
+    key: 1*
+    value: 1*
+
+#########################################################################################
+# User defined classes which will validate map and reduces key, values
+#########################################################################################
+userValidations:
+  - classname: 
+    key: 
+    value: 
+
+#########################################################################################
+# These libraries are to be made available in the hadoop classpath for job execution
+#
+# userSupplied: Libraries provided by user
+# jumbuneSupplied: Libraries provided by Jumbune
+#
+#
+# source: -1 for 'INPUT NOT REQUIRED'
+#          1 for accumulated in jar
+#          2 for hadoop lib
+#          3 for external folder on master
+#          4 for external folder on slave
+# folders: Array of folders from where the files will be distributed
+# files: Array of files which will be distributed
+# excludes: Array of files which will be excluded
+#########################################################################################
+classpath:
+  userSupplied:
+    source: 3
+    folders: 
+    files:
+    excludes:
+  jumbuneSupplied:
+    source: -1
+    folders: 
+      - /home/impadmin/Desktop/Jumbune/123/lib/
+    files:
+    excludes: 
+      - /home/impadmin/Desktop/Jumbune/123/lib/jsch-0.1.45.jar
+      - /home/impadmin/Desktop/Jumbune/123/lib/gson-2.0.jar
+      - /home/impadmin/Desktop/Jumbune/123/lib/commons-logging-1.1.1.jar
+      - /home/impadmin/Desktop/Jumbune/123/lib/log4j-1.2.16.jar  
+      - /home/impadmin/Desktop/Jumbune/123/lib/snakeyaml-1.9.jar
+      - /home/impadmin/Desktop/Jumbune/123/lib/jetty-runner-8.1.3.v20120416.jar
+#########################################################################################
+# Data Validation section
+# field number and null check field are mandatory in fieldValidation List
+# fieldNumber can take values 0 for 1st field, 1 for 2nd field and so on..  
+# nullCheck can take values notNull and mustBeNull
+# dataType can take values int_type, float_type, long_type, double_type
+#########################################################################################
+
+hdfsInputPath: /Ayush/u.data      
+dataValidation:    
+  recordSeparator: \n
+  fieldSeparator: \t
+  numOfFields: 4   
+  fieldValidationList:    
+    - { 
+        dataType: int_type, 
+        fieldNumber: 0, 
+        nullCheck: notNull, 
+        regex: '12*'
+      } 
+    - { 
+        dataType: int_type, 
+        fieldNumber: 1, 
+        nullCheck: notNull,
+        regex: '12*'
+      }
+    - { 
+        dataType: int_type, 
+        fieldNumber: 2, 
+        nullCheck: mustBeNull,
+        regex: ' '
+      }
+    - { 
+        dataType: float_type, 
+        fieldNumber: 3, 
+        nullCheck: notNull,
+        regex: '12*'
+      }
+   
+# 
+# Note: All the values should be space separated
+#########################################################################################
+

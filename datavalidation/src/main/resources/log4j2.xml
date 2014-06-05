@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<log4j:configuration debug="true"
+	monitoringInterval="5">
+	<appenders>
+		<Console name="Console" target="SYSTEM_OUT">
+			<PatternLayout>
+				<pattern>%d{ISO8601} %-5level [%thread][%logger{0}] %m%n</pattern>
+			</PatternLayout>
+		</Console>
+
+	</appenders>
+	<loggers>
+		<root level="info">
+			<appender-ref ref="Console" />
+		</root>
+	</loggers>
+
+</log4j:configuration>

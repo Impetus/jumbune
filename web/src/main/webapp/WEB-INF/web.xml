@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app id="WebApp_ID" version="2.4"
+	xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
+	<display-name>HTF</display-name>
+
+	<servlet>
+		<servlet-name>ResultServlet</servlet-name>
+		<servlet-class>org.jumbune.web.servlet.ResultServlet</servlet-class>
+	</servlet>
+	<servlet>
+		<servlet-name>SelectExistingYaml</servlet-name>
+		<servlet-class>org.jumbune.web.servlet.SelectExistingYaml</servlet-class>
+	</servlet>
+
+	<servlet>
+		<servlet-name>UploadServlet</servlet-name>
+		<servlet-class>org.jumbune.web.servlet.UploadServlet</servlet-class>
+	</servlet>
+	
+	<servlet>
+		<servlet-name>UploadJobJarServlet</servlet-name>
+		<servlet-class>org.jumbune.web.servlet.UploadJobJarServlet</servlet-class>
+	</servlet>
+
+	<servlet>
+		<servlet-name>ClearLogsServlet</servlet-name>
+		<servlet-class>org.jumbune.web.servlet.ClearLogsServlet</servlet-class>
+	</servlet>
+
+	<servlet>
+		<servlet-name>ExecutionServlet</servlet-name>
+		<servlet-class>org.jumbune.web.servlet.ExecutionServlet</servlet-class>
+	</servlet>
+
+	<servlet>
+		<servlet-name>ValidateYamlServlet</servlet-name>
+		<servlet-class>org.jumbune.web.servlet.ValidateYamlServlet</servlet-class>
+	</servlet>
+
+
+	<servlet>
+		<servlet-name>SaveYamlServlet</servlet-name>
+		<servlet-class>org.jumbune.web.servlet.SaveYamlServlet</servlet-class>
+	</servlet>
+
+	<servlet>
+		<servlet-name>HomeServlet</servlet-name>
+		<servlet-class>org.jumbune.web.servlet.HomeServlet</servlet-class>
+	</servlet>
+
+	<servlet>
+		<servlet-name>DVReportServlet</servlet-name>
+		<servlet-class>org.jumbune.web.servlet.DVReportServlet</servlet-class>
+	</servlet>
+	<servlet>
+		<servlet-name>ProfilerServlet</servlet-name>
+		<servlet-class>org.jumbune.web.servlet.ProfilerServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>SelectExistingYaml</servlet-name>
+		<url-pattern>/SelectExistingYaml</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>UploadServlet</servlet-name>
+		<url-pattern>/UploadServlet</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>UploadJobJarServlet</servlet-name>
+		<url-pattern>/UploadJobJarServlet</url-pattern>
+	</servlet-mapping>
+	
+	<servlet-mapping>
+		<servlet-name>ResultServlet</servlet-name>
+		<url-pattern>/ResultServlet</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>ClearLogsServlet</servlet-name>
+		<url-pattern>/ClearLogs</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>ExecutionServlet</servlet-name>
+		<url-pattern>/ExecutionServlet</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>ValidateYamlServlet</servlet-name>
+		<url-pattern>/ValidateYamlServlet</url-pattern>
+	</servlet-mapping>
+
+
+	<servlet-mapping>
+		<servlet-name>SaveYamlServlet</servlet-name>
+		<url-pattern>/SaveYamlServlet</url-pattern>
+	</servlet-mapping>
+
+	
+	<servlet-mapping>
+		<servlet-name>HomeServlet</servlet-name>
+		<url-pattern>/Home</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>DVReportServlet</servlet-name>
+		<url-pattern>/DVReportServlet</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>ProfilerServlet</servlet-name>
+		<url-pattern>/ProfilerServlet</url-pattern>
+	</servlet-mapping>
+
+	<welcome-file-list>
+		<welcome-file>jsp/Home.jsp</welcome-file>
+	</welcome-file-list>
+	<error-page>
+		<exception-type>javax.servlet.ServletException</exception-type>
+		<location>/jsp/htf_error.jsp</location>
+	</error-page>
+
+	<error-page>
+		<error-code>500</error-code>
+		<location>/jsp/htf_error.jsp</location>
+	</error-page>
+	<error-page>
+		<exception-type>java.lang.Exception</exception-type>
+		<location>/jsp/htf_error.jsp</location>
+	</error-page>
+	<listener>
+		<listener-class>org.jumbune.web.listener.JumbuneWebContextListener</listener-class>
+	</listener>
+</web-app>

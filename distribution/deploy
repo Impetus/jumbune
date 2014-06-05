@@ -1,0 +1,58 @@
+ #!/bin/bash
+
+bin=`dirname "$0"`
+bin=`cd "$bin"; pwd`
+echo 'JUMBUNE : INFO : JAVA_HOME path : '$JAVA_HOME
+
+if [ -z $JAVA_HOME ]; then
+	echo 'JUMBUNE : ERROR : JAVA_HOME not set in environment. Stopping Deployment!!!'
+	exit
+else
+	if [ -d $JAVA_HOME ]; then
+		if [ ! -f $JAVA_HOME/bin/java ]; then
+			echo 'JUMBUNE : ERROR : File '$JAVA_HOME/bin/java' not found.' 
+			echo 'JUMBUNE : ERROR : Stopping Deployment!!! Please set JAVA_HOME to a valid JDK.'
+			exit
+		
+		else
+			echo 'JUMBUNE : INFO : JAVA_HOME path verified...'
+
+			JAVA=${JAVA_HOME}/bin/java
+			JAVA_BIN=${JAVA_HOME}/bin
+			CLASSPATH=$JAVA_HOME/lib/tools.jar
+
+			echo 'JUMBUNE : INFO : starting deployment...'
+
+			jumbune="jumbune*.jar" 
+
+			"$JAVA" -cp "$CLASSPATH" -jar $jumbune
+			
+			# Fetching the hadoop core jar from the hadoop installation 			
+			for i in `ls ${HADOOP_HOME}/hadoop-*-core.jar`
+			do
+			      hadoop_jar=${i}
+			done
+			
+			echo 'HADOOP JAR : INFO : HADOOP JAR path verified...'$hadoop_jar
+			# Creating the directory structure as per war			
+			mkdir -p WEB-INF/lib
+			
+			# Copying the jar temp WEB-INF/lib folder for war updation. 			
+			cp $hadoop_jar ./WEB-INF/lib
+			
+			# Updating the war file with hadoop core jar available from the hadoop installation directory			
+			${JAVA_BIN}/jar -uvf modules/HTFWebPortal-*.war WEB-INF/lib/hadoop-*-core.jar
+			
+			# Housekeeping- cleaning the temp folder	
+			rm -rf WEB-INF
+
+		fi
+	else
+		echo 'JUMBUNE : ERROR : Directory '$JAVA_HOME' not found'
+		echo 'JUMBUNE : ERROR : Stopping Deployment!!! Please set JAVA_HOME to a valid JDK.'
+		exit	
+	fi
+fi
+
+
+

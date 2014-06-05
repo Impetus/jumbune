@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<artifactId>jumbune</artifactId>
+		<groupId>org.jumbune</groupId>
+		<version>${build.number}</version>
+	</parent>
+
+	<groupId>org.jumbune</groupId>
+	<artifactId>jumbune-examples</artifactId>
+	<version>${project.parent.version}</version>
+	<name>examples</name>
+	<packaging>pom</packaging>
+
+
+	<url>http://maven.apache.org</url>
+	
+		<dependencyManagement>
+			<dependencies>
+			<dependency>
+			<groupId>org.jumbune</groupId>
+				<artifactId>examples-usregionportouts</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+			<groupId>org.jumbune</groupId>
+				<artifactId>examples-wordcount</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+			<groupId>org.jumbune</groupId>
+				<artifactId>examples-movierating</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+			<groupId>org.jumbune</groupId>
+				<artifactId>examples-bankdefaulters</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			</dependencies>
+
+		</dependencyManagement>
+			<dependencies>
+			<dependency>
+			<groupId>org.jumbune</groupId>
+				<artifactId>examples-usregionportouts</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+			<groupId>org.jumbune</groupId>
+				<artifactId>examples-wordcount</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+			<groupId>org.jumbune</groupId>
+				<artifactId>examples-movierating</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+			<groupId>org.jumbune</groupId>
+				<artifactId>examples-bankdefaulters</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			</dependencies>
+		
+		<modules>
+		<module>debugger</module>
+		<module>wordcount</module>
+		<module>profiling</module>
+		</modules>
+</project>

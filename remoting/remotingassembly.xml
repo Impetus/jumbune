@@ -1,0 +1,54 @@
+<assembly
+	xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+	<id>agent</id>
+	<formats>
+		<format>jar</format>
+	</formats>
+	<includeBaseDirectory>false</includeBaseDirectory>
+	<dependencySets>
+		<dependencySet>
+			<outputDirectory>/</outputDirectory>
+			<unpack>true</unpack>
+			<useTransitiveDependencies>false</useTransitiveDependencies>
+			<includes>
+				
+				<include>org.apache.logging.log4j:log4j-api:jar:2.0-beta4</include>
+				<include>org.apache.logging.log4j:log4j-core:jar:2.0-beta4</include>
+				<include>io.netty:netty:jar:3.5.10.Final</include>
+				<include>com.jcraft:jsch:jar:0.1.51</include>
+
+			</includes>
+
+		</dependencySet>
+		<dependencySet>
+			<useTransitiveDependencies>false</useTransitiveDependencies>
+			<unpack>true</unpack>
+
+			<unpackOptions>
+				<includes>
+					<include>org/jumbune/remoting/writable**/*</include>
+					<include>org/jumbune/remoting/server**/*</include>
+					<include>org/jumbune/remoting/common**/*</include>
+					<include>org/jumbune/remoting/handlers**/*</include>
+					<include>log4j2.xml</include>
+				</includes>
+			</unpackOptions>
+		</dependencySet>
+		<dependencySet>
+			<outputDirectory>/</outputDirectory>
+			<unpack>true</unpack>
+			<useTransitiveDependencies>false</useTransitiveDependencies>
+
+			<includes>
+				<include>${project.groupId}:jumbune-utils</include>
+
+			</includes>
+
+		</dependencySet>
+		
+
+
+	</dependencySets>
+</assembly>

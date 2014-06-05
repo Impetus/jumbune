@@ -1,0 +1,92 @@
+# Application log messages
+4000={0} is an interface, hence will not be instrumented.
+4001={0} is already instrumented, hence will not be instrumented.
+4002=Instrumenting class... {0}
+4003={0} is either an interface or is already instrumented. Hence not marking them as instrumented.
+4004={0} is marked as instrumented
+4005=The archive being instrumented is: {0}
+4006=The archive could not be instrumented
+4007=The archive {0} has been instrumented to {1}
+4008=Input stream could not be closed
+4009=Output stream could not be closed
+4010=Total time taken for instrumentation is {0} milliseconds
+4011=The archive {0} will be instrumented to {1}
+4012=Adding class {0} to the jar
+4013=Instrumenting using {0}
+4014=Instrumented to class {0}
+4015=Adding class member: {0}
+4016=Instrumenting {0}
+4017={0} is not Implementing the org.hadooptestingframework.utilities.PatternValidator Interface, hence will not be Proceed
+
+# Libraries 
+4100=Added file {0} to the archive
+4101=Excluding the file {0} and not added to the archive
+4102=Given file/folder doesn't exists: {0}
+
+# Adapter for if blocks, loops
+4200=Multiple if conditions found separated by ||
+4201=Multiple if conditions found separated by &&
+4202=Multiple if conditions not found
+4203=GOTO found
+4204=GOTO not found
+4205={0}: Adding logging statement before if block: {1} 
+4206={0}: Adding logging statement after if block: {1} 
+4207={0}: Adding logging statement in if block: {1} 
+4208={0}: Loop found
+4209={0}: Adding logging statement in else block: {1}
+4210={0}: Adding logging statement in elseif block: {1}
+
+# cleanup setup
+4250={0}: cleanup() method found
+4251={0}: setup() method found
+4252={0}: cleanup() method not found
+4253={0}: setup() method not found
+4254={0}: Adding cleanup() method
+4255={0}: Adding setup() method
+4256={0}: Modifying cleanup() method
+4257={0}: Modifying setup() method
+4258={0}: Setting context in ThreadLocal
+4259={0}: Removing context from ThreadLocal
+4260={0}: Adding pattern compile
+4261={0}: Initializing pattern validators
+4262={0}: loading logger
+
+# Job related
+4301={0}: Job submission method call found
+4302={0}: Main method found
+4303={0} has been instrumented for profiling
+4304={0}: Owner is job, hence job submission is found
+
+# inside map/reduce 
+4400={0}: Adding logging statement while entering the method
+4401={0}: Adding logging statement while exiting the method
+4402={0}: Adding logging statement before context.write call: {1}
+4403={0}: Adding a call to RegEx matching or user defined class for validation key/value context.write: {1}
+4404={0}: Adding logging statement while entering the method
+4405={0}: Adding logging statement while exiting the method
+
+# Log messages to be injected
+4800={0}En
+4801={0}Ex
+4802=ctxWrt
+4803=ctxWrt
+4804=InIf
+4805=InElseIf
+4806=InElse
+4807=IfEn
+4808=IfEx
+4809=Loop
+4810=Valid
+4811=ValValid
+4812=SEn
+4813=SEx
+4814=SCEn
+4815=SCEx
+4816=PI
+4817=TerEn
+4818=TerEx
+4819=RetIf
+4820=mEn
+4821=mEx
+4822=lEn
+4823=lEx

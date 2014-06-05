@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<artifactId>jumbune</artifactId>
+		<groupId>org.jumbune</groupId>
+		<version>${build.number}</version>
+	</parent>
+	<groupId>org.jumbune</groupId>
+	<artifactId>jumbune-exec</artifactId>
+	<name>execution</name>
+	<version>${project.parent.version}</version>
+	<url>http://maven.apache.org</url>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>org.jumbune</groupId>
+			<artifactId>jumbune-common</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jumbune</groupId>
+			<artifactId>jumbune-debugger</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jumbune</groupId>
+			<artifactId>jumbune-utils</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jumbune</groupId>
+			<artifactId>jumbune-profiling</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jumbune</groupId>
+			<artifactId>jumbune-datavalidation</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>3.8</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-io</artifactId>
+		</dependency>
+	</dependencies>
+</project>

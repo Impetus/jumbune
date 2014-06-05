@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<title>Job View Analysis</title>
+</head>
+<body>
+
+<div class="page-content boxed" id="wikiArticle">
+<p>Below is the description of each field in the Job view of debug analysis:</p>
+<h2 name="Parameters" id="Parameters">Parameters</h2>
+
+<ul>
+	<li>Name
+		<ul>
+			<li>Identify the name of instrumented hadoop job that have run through the jumbune.</li>
+		</ul>
+	</li>
+	<li>Input Keys
+		<ul>
+			<li>Identify the total no of input records and the value of this field must be same
+as total input records for all mappers.</li>
+		</ul>
+	</li>
+	<li>Context Writes
+		<ul>
+			<li>Identify the total no of output records of specific instrumented job. The
+value of this field must be same as the total output records of all reducers.</li>
+		</ul>
+	</li>
+	<li>Unmatched keys
+		<ul>
+			<li>Identify the total filtered keys of all mappers & reducer through the regex
+and user defined validation for a specific job.</li>
+		</ul>
+	</li>
+	<li>Unmatched values
+		<ul>
+			<li>Identify the total filtered values of all mappers & reducer through the
+regex and user defined validation for a specific job.</li>
+		</ul>
+	</li>
+</ul>
+
+</div>
+
+</body>
+</html>

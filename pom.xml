@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>org.jumbune</groupId>
+	<artifactId>jumbune</artifactId>
+	<version>${build.number}</version>
+	<packaging>pom</packaging>
+
+	<name>Jumbune</name>
+	<url>http://maven.apache.org</url>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<build.number>1.0.1-SNAPSHOT</build.number>
+	</properties>
+	<repositories>
+		<repository>
+			<id>MavenCentral</id>
+			<name>Maven repository</name>
+			<url>http://repo1.maven.org/maven2</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</repository>
+		<repository>
+
+			<id>Sonatype</id>
+			<name>Sonatype</name>
+			<url>http://repository.sonatype.org/</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</repository>
+	</repositories>
+	<dependencyManagement>
+		<dependencies>
+
+			<!-- gson dependencies -->
+			<dependency>
+				<groupId>com.google.code.gson</groupId>
+				<artifactId>gson</artifactId>
+				<version>2.1</version>
+				<scope>compile</scope>
+			</dependency>
+
+			<!-- jsch dependencies -->
+			<dependency>
+				<groupId>com.jcraft</groupId>
+				<artifactId>jsch</artifactId>
+ 				<version>0.1.51</version>
+			</dependency>
+
+			<!-- ASM dependencies -->
+			<dependency>
+				<groupId>org.ow2.asm</groupId>
+				<artifactId>asm</artifactId>
+				<version>4.0</version>
+			</dependency>
+			
+			<dependency>
+				<groupId>org.ow2.asm</groupId>
+				<artifactId>asm-tree</artifactId>
+				<version>4.0</version>
+			</dependency>
+
+			<!-- Servlet dependencies -->
+			<dependency>
+				<groupId>javax.servlet</groupId>
+				<artifactId>servlet-api</artifactId>
+				<version>2.5</version>
+				<scope>provided</scope>
+			</dependency>
+
+			<!-- Commons dependencies -->
+			<dependency>
+				<groupId>commons-fileupload</groupId>
+				<artifactId>commons-fileupload</artifactId>
+				<version>1.2.2</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-io</artifactId>
+				<version>1.3.2</version>
+			</dependency>
+
+			<dependency>
+				<groupId>commons-configuration</groupId>
+				<artifactId>commons-configuration</artifactId>
+				<version>1.6</version>
+				<exclusions>
+					<exclusion>
+						<groupId>commons-beanutils</groupId>
+						<artifactId>commons-beanutils</artifactId>
+						
+					</exclusion>
+					<exclusion>
+						<groupId>commons-collections</groupId>
+						<artifactId>commons-collections</artifactId>
+						
+					</exclusion>
+					<exclusion>
+						<groupId>commons-digester</groupId>
+						<artifactId>commons-digester</artifactId>
+						
+					</exclusion>
+					<exclusion>
+						<groupId>commons-beanutils</groupId>
+						<artifactId>commons-beanutils-core</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+
+			<dependency>
+				<groupId>commons-cli</groupId>
+				<artifactId>commons-cli</artifactId>
+				<version>1.2</version>
+			</dependency>
+
+			<dependency>
+				<groupId>commons-lang</groupId>
+				<artifactId>commons-lang</artifactId>
+				<version>2.4</version>
+			</dependency>
+
+			<!-- jackson dependencies -->
+			<dependency>
+				<groupId>org.codehaus.jackson</groupId>
+				<artifactId>jackson-mapper-asl</artifactId>
+				<version>1.8.8</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.codehaus.jackson</groupId>
+				<artifactId>jackson-core-asl</artifactId>
+				<version>1.8.8</version>
+			</dependency>
+
+			<!-- Snake yaml dependencies -->
+			<dependency>
+				<groupId>org.yaml</groupId>
+				<artifactId>snakeyaml</artifactId>
+				<version>1.9</version>
+			</dependency>
+
+				
+			<!-- Module dependencies -->
+			<dependency>
+				<groupId>org.jumbune</groupId>
+				<artifactId>jumbune-common</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jumbune</groupId>
+				<artifactId>jumbune-exec</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jumbune</groupId>
+				<artifactId>jumbune-datavalidation</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jumbune</groupId>
+				<artifactId>jumbune-utils</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jumbune</groupId>
+				<artifactId>jumbune-debugger</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jumbune</groupId>
+				<artifactId>jumbune-profiling</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jumbune</groupId>
+				<artifactId>jumbune-deploy</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jumbune</groupId>
+				<artifactId>jumbune-remoting</artifactId>
+				<version>${project.version}</version>
+
+			</dependency>
+			<dependency>
+				<groupId>org.jumbune</groupId>
+				<artifactId>jumbune-web</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jumbune</groupId>
+				<artifactId>jumbune-rumen</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+		
+			<!-- jetty runner dependencies -->
+			<dependency>
+				<groupId>org.mortbay.jetty</groupId>
+				<artifactId>jetty-runner</artifactId>
+				<version>8.1.3.v20120416</version>
+				<exclusions>
+					<exclusion>
+						<artifactId>jetty-plus</artifactId>
+						<groupId>org.eclipse.jetty</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jetty-annotations</artifactId>
+						<groupId>org.eclipse.jetty</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jetty-jsp</artifactId>
+						<groupId>org.eclipse.jetty</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>jetty-jndi</artifactId>
+						<groupId>org.eclipse.jetty</groupId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+	<dependencies>
+		
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.10</version>
+			<scope>test</scope>
+	<exclusions>
+		<exclusion>
+		<groupId>org.hamcrest</groupId>
+		<artifactId>hamcrest-core</artifactId>
+		</exclusion>
+	</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-api</artifactId>
+			<version>2.0-beta4</version>
+		</dependency>
+		
+			
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>2.0-beta4</version>
+		</dependency>
+
+		
+		
+	</dependencies>
+	<profiles>
+		<profile>
+			<id>default</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<dependencies>
+			<!-- hadoop dependencies -->
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-core</artifactId>
+				<version>1.0.4</version>
+				<scope>system</scope>
+				<systemPath>${user.dir}/lib/hadoop-core-1.0.4.jar</systemPath>
+			</dependency>
+	      </dependencies>
+			<properties>
+				<env>default</env>
+				<outputDir>${HOME}/Desktop/jumbune</outputDir>
+			</properties>
+
+		</profile>
+		
+	       <profile>
+		<id>cdh</id>
+	        <dependencies>
+		<!-- hadoop dependencies -->
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-core</artifactId>
+				<version>2.0.0-cdh4.3.0</version>
+				<scope>system</scope>
+				<systemPath>${user.dir}/lib/hadoop-core-2.0.0-mr1-cdh4.3.0.jar</systemPath>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-common</artifactId>
+				<version>2.0.0-cdh4.3.0</version>
+				<scope>system</scope>
+				<systemPath>${user.dir}/lib/hadoop-common-2.0.0-cdh4.3.0.jar</systemPath>
+			</dependency>	
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-mapreduce-client-core</artifactId>
+				<version>2.0.0-cdh4.3.0</version>
+				<scope>system</scope>
+				<systemPath>${user.dir}/lib/hadoop-mapreduce-client-core-2.0.0-cdh4.3.0.jar</systemPath>
+			</dependency>	
+              </dependencies>
+		<properties>
+				<env>default</env>
+				<outputDir>${HOME}/Desktop/jumbune/cdh</outputDir>
+			</properties>
+	      </profile>
+	</profiles>
+
+	<build>
+		<defaultGoal>install</defaultGoal>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.0.2</version>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+
+					<reportPlugins>
+						<plugin>
+							<groupId>org.apache.maven.plugins</groupId>
+							<artifactId>maven-project-info-reports-plugin</artifactId>
+							<version>2.1.1</version>
+						</plugin>
+		
+						<plugin>
+							<groupId>org.apache.maven.plugins</groupId>
+							<artifactId>maven-javadoc-plugin</artifactId>
+							<version>2.7</version>
+							<configuration>
+								<aggregate>true</aggregate>
+							</configuration>
+						</plugin>
+						<plugin>
+							<groupId>org.apache.maven.plugins</groupId>
+							<artifactId>maven-surefire-report-plugin</artifactId>
+							<version>2.6</version>
+						</plugin>
+						 <plugin>
+						        <groupId>org.codehaus.mojo</groupId>
+    							    <artifactId>sonar-maven-plugin</artifactId>
+  					    		  <version>2.0</version>
+      						</plugin>
+						<plugin>
+							<groupId>org.apache.maven.plugins</groupId>
+							<artifactId>maven-checkstyle-plugin</artifactId>
+							<version>2.10</version>
+							<configuration>
+							<sourceDirectory>src</sourceDirectory>
+							</configuration>
+						</plugin>
+						<plugin>
+							    <groupId>org.apache.maven.plugins</groupId>
+							    <artifactId>maven-jxr-plugin</artifactId>
+							    <version>2.3</version>
+						  </plugin>
+						<plugin>
+						            <groupId>org.apache.maven.plugins</groupId>
+						            <artifactId>maven-pmd-plugin</artifactId>
+						            <version>2.7.1</version>
+						            <configuration>
+					        	        <linkXRef>false</linkXRef>
+						                <targetJdk>1.7</targetJdk>
+						                <rulesets>
+						                    <ruleset>/rulesets/basic.xml</ruleset>
+						                </rulesets>				
+						            </configuration>
+					        </plugin>
+						<plugin>
+							<groupId>org.codehaus.mojo</groupId>
+							<artifactId>cobertura-maven-plugin</artifactId>
+							<version>2.5.1</version>
+							<configuration>
+								<aggregate>true</aggregate>
+								<formats>
+									<format>xml</format>
+									<format>html</format>
+								</formats>
+								<check>
+									<haltOnFailure>false</haltOnFailure>
+									<regexes>
+										<regex>
+											<pattern>org.jumbune.*</pattern>
+										</regex>
+									</regexes>
+								</check>
+								<instrumentation>
+									<excludes>
+										<exclude>org.jumbune/**/*Test.class</exclude>
+									</excludes>
+								</instrumentation>
+							</configuration>
+						</plugin>						
+					</reportPlugins>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>2.3</version>
+				<configuration>
+					<descriptors>
+						<descriptor>assembly.xml</descriptor>
+					</descriptors>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-eclipse-plugin</artifactId>
+				<version>2.9</version>
+				<configuration>
+					<useProjectReferences>false</useProjectReferences>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<modules>
+		<module>utilities</module>
+		<module>contrib</module>
+		<module>common</module>
+		<module>debugger</module>
+		<module>profiling</module>
+		<module>datavalidation</module>
+		<module>remoting</module>
+		<module>execution</module>
+		<module>web</module>
+		<module>deploy</module>
+		<module>distribution</module>
+		<module>examples</module>
+		<module>rumen</module>
+
+	</modules>
+</project>
