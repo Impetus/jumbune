@@ -56,7 +56,7 @@ Code examples are packages inside the distribution,
 - Administration Guide: http://bit.ly/1uq5LVV
 - Troubleshooting Guide: http://bit.ly/1pXEYOd
 - Getting Involved Guide: http://bit.ly/1i7XjDn
-- 
+
 ## License
 
 Jumbune is licensed under LGPLv3 license
