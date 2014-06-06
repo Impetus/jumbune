@@ -1,3 +1,5 @@
 language: java
 jdk:
   - oraclejdk7
+env:
+  - JUMBUNE_HOME=/home/travis/build/impetus-opensource/jumbune/
