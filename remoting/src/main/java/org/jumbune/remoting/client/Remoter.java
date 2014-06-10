@@ -369,9 +369,7 @@ public class Remoter {
 			channel.setAttachment(attachment);
 		}
 		
-		channel.write(ChannelBuffers.wrappedBuffer(magicBytes[0].getBytes()));
-		channel.write(ChannelBuffers.wrappedBuffer(magicBytes[1].getBytes()));
-		channel.write(ChannelBuffers.wrappedBuffer(magicBytes[2].getBytes()));
+		channel.write(ChannelBuffers.wrappedBuffer(magicBytes[0].getBytes(), magicBytes[1].getBytes(), magicBytes[2].getBytes()));
 		channel.write(pathOrCommand);
 		channel.setReadable(true);
 	}
