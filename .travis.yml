@@ -2,3 +2,10 @@ language: java
 jdk:
   - oraclejdk7
 install: mvn clean install -DskipTests=true
+
+notifications:
+  email:
+    recipients:
+      - dev@collaborate.jumbune.org
+    on_success: change # default: change
+    on_failure: change # default: always
