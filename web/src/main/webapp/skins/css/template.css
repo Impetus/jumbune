@@ -885,6 +885,8 @@ span.reducer_ident { width:7px; height:7px; float:left; margin:3px 5px 0 0; back
 
 .partitionHighlight { background: none repeat scroll 0 0 #FFFFFF;border: 1px solid #CCCCCC;margin-right: 5px;padding-left: 4px;font-weight:bold;float:left;cursor:pointer;}
 
+div.exportlink { float:right; margin: 5px 15px 0 0; }
+div.exportlink a { color:#fff; background:url('../images/downloadicon.png') right no-repeat; padding-right:25px; float:right; height:30px; line-height: 28px;}
 .dsPopBox{padding-right: 20px;float:left;}
 .dsPopBox .lbl{width:auto;padding-right:5px;float:left;}
 .txtCenter{text-align:center};

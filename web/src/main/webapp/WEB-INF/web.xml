@@ -14,6 +14,11 @@
 	</servlet>
 
 	<servlet>
+		<servlet-name>ExportExcelServlet</servlet-name>
+		<servlet-class>org.jumbune.web.servlet.ExportExcelServlet</servlet-class>
+	</servlet>
+	
+	<servlet>
 		<servlet-name>UploadServlet</servlet-name>
 		<servlet-class>org.jumbune.web.servlet.UploadServlet</servlet-class>
 	</servlet>
@@ -75,6 +80,11 @@
 	<servlet-mapping>
 		<servlet-name>ResultServlet</servlet-name>
 		<url-pattern>/ResultServlet</url-pattern>
+	</servlet-mapping>
+	
+	<servlet-mapping>
+		<servlet-name>ExportExcelServlet</servlet-name>
+		<url-pattern>/ExportExcelServlet</url-pattern>
 	</servlet-mapping>
 
 	<servlet-mapping>
