@@ -293,9 +293,20 @@ public class ExecutionServlet extends HttpServlet {
 		clusterWideInfo
 				.setJobTracker(dump.getAllJMXAttribute(JMXDeamons.JOB_TRACKER, hadoopVersion, master.getHost(), master.getJobTrackerJmxPort()));
 		clusterWideInfo.setNameNode(dump.getAllJMXAttribute(JMXDeamons.NAME_NODE, hadoopVersion, master.getHost(), master.getNameNodeJmxPort()));
-		levelJMXInfo.setDataNode(dump.getAllJMXAttribute(JMXDeamons.DATA_NODE, hadoopVersion, master.getHost(), slave.getDataNodeJmxPort()));
-		levelJMXInfo.setTaskTracker(dump.getAllJMXAttribute(JMXDeamons.TASK_TRACKER, hadoopVersion, master.getHost(), slave.getTaskTrackerJmxPort()));
-
+		for (Slave slaves : loader.getYamlConfiguration().getSlaves()) {
+			for (String slaveIp : slaves.getHosts()) {
+				if(master.getHost().equalsIgnoreCase(slaveIp)){
+						
+					levelJMXInfo.setDataNode(dump.getAllJMXAttribute(JMXDeamons.DATA_NODE, hadoopVersion, master.getHost(), slave.getDataNodeJmxPort()));
+					levelJMXInfo.setTaskTracker(dump.getAllJMXAttribute(JMXDeamons.TASK_TRACKER, hadoopVersion, master.getHost(), slave.getTaskTrackerJmxPort()));
+				}else{
+					
+					levelJMXInfo.setDataNode(dump.getAllJMXAttribute(JMXDeamons.DATA_NODE, hadoopVersion, slaveIp, slave.getDataNodeJmxPort()));
+					levelJMXInfo.setTaskTracker(dump.getAllJMXAttribute(JMXDeamons.TASK_TRACKER, hadoopVersion, slaveIp, slave.getTaskTrackerJmxPort()));
+						
+				}
+			}	
+		}
 		String systemStatsJson = WebUtil.getPropertyFromResource(WebConstants.PROFILING_PROPERTY_FILE, WebConstants.PROFILING_SYSTEM_JSON);
 		SystemStats stats = gson.fromJson(systemStatsJson, SystemStats.class);
 
