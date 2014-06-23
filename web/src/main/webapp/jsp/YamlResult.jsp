@@ -29,6 +29,9 @@
 		<div id="contentBox">
 			<div class="contentinnerbox">
 				<div id="tabs">
+					<div id="exportlinkBox" class="exportlink" style="display: none;">
+						<a id="exportXlData" href="javascript:void(0);">Export</a>
+					</div>
 
 					<ul id="tabUl">
 
@@ -219,6 +222,7 @@
 		var counter = 0;
 		var stopAjaxCall = false;
 		var stopProfileAjaxCall = false;
+		var showExcel = false;
 		var timerId;
 		var profileTimerId;
 		var profileAvailNodeTimerId;
@@ -234,6 +238,34 @@
 		$(document)
 				.ready(
 						function() {
+								//Click on export button
+							$('#exportXlData')
+									.click(
+											function() {
+												$
+														.ajax(
+																{
+																	type : "POST",
+																	cache : false,
+																	async : true,
+																	url : "ExportExcelServlet"
+																})
+														.done(
+																function(
+																		response) {
+																	var URL = response;
+																	if (response
+																			.indexOf(" Export Utility failure") != -1) {
+																		alert(response);
+																	} else {
+																		window
+																				.open(
+																						URL,
+																						"_blank");
+																	}
+																});
+
+											});
 							$("#homeLink").hide();
 							$(".logoBox a").bind("click", function() {
 								return false;
@@ -376,6 +408,7 @@
 															loadedModules.push('dataValidationTabContent');
 															$('#dataValidationJSPContent').show();
 															$('#dataValidationTabLoader').remove();
+															showExcel = true;
 															enableDataValidationTab(finalJSONVal);
 															
 														}
@@ -383,6 +416,7 @@
 															loadedModules.push('debugAnalysisTabContent');
 															$('#debugAnalysisJSPContent').show();
 															$('#debugAnalysisTabLoader').remove();
+															showExcel = true;
 															enableDebugAnalysis(finalJSONVal);
 															
 														}
@@ -394,6 +428,7 @@
 															$(
 																	'#pureJobsTabLoader')
 																	.hide();
+															showExcel = true;
 															enablePureJobGrid(finalJSONVal);
 														}
 														if (finalJSONKey == "INSTRUMENTED_JAR_COUNTER") {
@@ -404,6 +439,7 @@
 															$(
 																	'#pureJobsTabLoader')
 																	.hide();
+															showExcel = true;
 															enableInstrumentJobGrid(finalJSONVal);
 														}
 														if (finalJSONKey == "DATA_SCIENCE_REQUEST") {
@@ -414,7 +450,18 @@
 															checkAllAJAXComplete();
 															$('.loaderMainBox').html('<div class="status info"><span>Information: </span>Unable to process the module as the dependent component(s) failed</div>');
 															
-															
+															if (showExcel == true) {
+																$(
+																		'#exportlinkBox')
+																		.show(
+																				'slow');
+															}
+														}
+														if (showExcel == true) {
+															$(
+																	'#exportlinkBox')
+																	.show(
+																			'slow');
 														}
 
 													});
