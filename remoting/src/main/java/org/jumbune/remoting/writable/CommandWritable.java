@@ -77,6 +77,10 @@ public class CommandWritable implements Serializable{
 	 */
 	private boolean isAuthenticationRequired;
 	
+/*	public CommandWritable(){
+		batchedCommands = new ArrayList<Command>(1);
+	}
+*/	
 	/**
 	 * @return the username
 	 */

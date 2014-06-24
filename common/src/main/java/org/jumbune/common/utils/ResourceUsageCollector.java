@@ -117,10 +117,9 @@ public class ResourceUsageCollector {
 				builder.addCommand(command.toString(), true, params).populate(loader.getYamlConfiguration(), host);
 				remoter.fireAndForgetCommand(builder.getCommandWritable());
 				builder.getCommandBatch().clear();
-			}
-			
+			}			
 		}
-			
+		remoter.close();
 		LOGGER.debug("Executed command [Top] on worker nodes [" + command.toString()+"]");
 	}
 
@@ -152,10 +151,8 @@ public class ResourceUsageCollector {
 			remoter.fireAndForgetCommand(builder.getCommandWritable());
 			builder.getCommandBatch().clear();
 		}
-		
+		remoter.close();
 		LOGGER.debug("Command (analyzing top dumps) [" + cpuCommand.toString()+"]");
-	
-		
 	}
 
 	/**
@@ -179,8 +176,8 @@ public class ResourceUsageCollector {
 				builder.getCommandBatch().clear();
 			}
 		}
-			LOGGER.debug("Executed command [ShutTop] on worker nodes [" + command.toString()+"]");
-
+		LOGGER.debug("Executed command [ShutTop] on worker nodes [" + command.toString()+"]");
+		remoter.close();
 	}
 
 	/**

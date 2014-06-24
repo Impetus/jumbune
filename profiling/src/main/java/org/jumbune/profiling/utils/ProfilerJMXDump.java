@@ -567,6 +567,7 @@ public class ProfilerJMXDump {
 			else{
 				vmStats = getRemoteVmStats(response);
 			}
+			remoter.close();
 		}
 
 		return vmStats;
@@ -967,6 +968,7 @@ public class ProfilerJMXDump {
 			cpuDetails = getRemoteCPUDetails(config, host);
 			cpuStats.put("numberOfCores", String.valueOf(cpuDetails.get(1)));
 			cpuStats.put("threadsPerCore", String.valueOf(cpuDetails.get(0)));
+			remoter.close();
 		}
 		return cpuStats;
 
@@ -1053,6 +1055,7 @@ public class ProfilerJMXDump {
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand("cat /proc/cpuinfo", false, null).populate(config, host);
 		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		remoter.close();
 		ResultParser resultParser = new ResultParser();
 		cpuStats = resultParser.parseRemoteCPUDetailsResult(response);
 		return cpuStats;
@@ -1405,6 +1408,7 @@ public class ProfilerJMXDump {
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand(sb.toString(), false, null).populate(config, host);
 		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		remoter.close();
 		latency = 0.0f;
 		ResultParser resultParser = new ResultParser();
 		latency = resultParser.parseRemoteNetworkLatencyResult(response);

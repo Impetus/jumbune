@@ -1,23 +1,21 @@
 package org.jumbune.remoting.client.consumers;
 
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.WriteCompletionEvent;
-
+import org.apache.logging.log4j.Logger;
+import org.jumbune.remoting.common.RemotingConstants;
 
 /**
  * The Class StringResponseHandler.
  */
-public class StringResponseHandler extends SimpleChannelUpstreamHandler {
+public class StringResponseHandler extends SimpleChannelInboundHandler<String> {
 	
 	/** The logger. */
 	private static Logger logger = LogManager
@@ -32,38 +30,19 @@ public class StringResponseHandler extends SimpleChannelUpstreamHandler {
 	public StringResponseHandler() {
 	}
 
-	/* (non-Javadoc)
-	 * @see org.jboss.netty.channel.SimpleChannelUpstreamHandler#channelClosed(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.ChannelStateEvent)
-	 */
-	@Override
-	public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
-			{
-			logger.debug("Channel is now getting Closed...");
-		ctx.sendUpstream(e);
-	}
 
-	/**
-	 * Invoked when something was written into a {@link Channel}.
-	 *
-	 * @param ctx the ctx
-	 * @param e the e
-	 */
 	@Override
-	public void writeComplete(ChannelHandlerContext ctx, WriteCompletionEvent e)
-			{
-		ctx.sendUpstream(e);
-	}
-
-	/* (non-Javadoc)
-	 * @see org.jboss.netty.channel.SimpleChannelUpstreamHandler#messageReceived(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.MessageEvent)
-	 */
-	@Override
-	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
-		CyclicBarrier barrier = (CyclicBarrier) ctx.getChannel()
-				.getAttachment();
+	protected void channelRead0(io.netty.channel.ChannelHandlerContext ctx,
+			String msg) throws Exception {
+		CyclicBarrier barrier = (CyclicBarrier) ctx.channel().attr(RemotingConstants.barrierKey).get();
 		if (barrier != null) {
-			logger.debug("Message received ["+e.getMessage()+"]");
-			byte[] responseBytes = ((String) e.getMessage()).getBytes();
+			logger.debug("Message received ["+msg+"]");
+			byte[] responseBytes = msg.getBytes();
+			if(responseBytes.length>0){
+				if("FailAck".equals(new String(responseBytes))){
+					logger.warn("Jumbune Agent failed to write file on other side, refer Agent logs for details");
+				}
+			}
 			this.stream = new ByteArrayInputStream(responseBytes);
 			try {
 				barrier.await();
@@ -84,5 +63,11 @@ public class StringResponseHandler extends SimpleChannelUpstreamHandler {
 	 */
 	public InputStream getResponseStream() {
 		return this.stream;
+	}
+
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+	    throws Exception {
+	    logger.error("Internal Server Error",cause);
 	}
 }

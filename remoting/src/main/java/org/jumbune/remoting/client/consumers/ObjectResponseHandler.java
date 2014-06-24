@@ -1,21 +1,18 @@
 package org.jumbune.remoting.client.consumers;
 
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.WriteCompletionEvent;
-
+import org.apache.logging.log4j.Logger;
 
 /**
  * The Class ObjectResponseHandler.
  */
-public class ObjectResponseHandler extends SimpleChannelUpstreamHandler {
+public class ObjectResponseHandler extends SimpleChannelInboundHandler<Object> {
 	
 	/** The logger. */
 	private static Logger logger = LogManager
@@ -36,34 +33,10 @@ public class ObjectResponseHandler extends SimpleChannelUpstreamHandler {
 		this.barrier = barrier;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.jboss.netty.channel.SimpleChannelUpstreamHandler#channelClosed(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.ChannelStateEvent)
-	 */
 	@Override
-	public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
-			{
-			logger.debug("FYI channelClosed...");
-		ctx.sendUpstream(e);
-	}
-
-	/**
-	 * Invoked when something was written into a {@link Channel}.
-	 *
-	 * @param ctx the ctx
-	 * @param e the e
-	 */
-	@Override
-	public void writeComplete(ChannelHandlerContext ctx, WriteCompletionEvent e)
-			{
-		ctx.sendUpstream(e);
-	}
-
-	/* (non-Javadoc)
-	 * @see org.jboss.netty.channel.SimpleChannelUpstreamHandler#messageReceived(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.MessageEvent)
-	 */
-	@Override
-	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
-		this.responseObject = (Object) e.getMessage();
+	protected void channelRead0(io.netty.channel.ChannelHandlerContext ctx,
+			Object msg) throws Exception {
+		this.responseObject = msg;
 		if(responseObject==null){
 			barrier.reset();
 		}
@@ -88,4 +61,10 @@ public class ObjectResponseHandler extends SimpleChannelUpstreamHandler {
 		return this.responseObject;
 	}
 
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+	    throws Exception {
+	    logger.error("Internal Server Error",cause);
+	}
+	
 }

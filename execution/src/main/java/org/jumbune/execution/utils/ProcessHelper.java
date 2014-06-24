@@ -411,6 +411,7 @@ public class ProcessHelper {
 			if (relativePath.indexOf("profiling") != -1){
 				remoter.receiveLogFiles(relativePath.substring(0, relativePath.indexOf("profiling")), relativePath);
 			}
+			remoter.close();
 			jobInfoBean.setProcessResponse(response);
 		} catch (Exception e) {
 			LOGGER.error("Working directory does not exist so could not execute jar !!! ", e);
@@ -664,6 +665,7 @@ public class ProcessHelper {
 		String [] stringArray=(String[]) sb.toList().toArray(new String [sb.toList().size()]);
 		builder.addCommand(commandBuffer.toString(), true, Arrays.asList(stringArray));
 		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		remoter.close();
 		if (response == null || response.trim().equals("")){
 			throw new IllegalArgumentException("DV::Invalid Hadoop Job Response!!!");
 		}

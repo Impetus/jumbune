@@ -1,5 +1,10 @@
 package org.jumbune.remoting.common;
 
+import java.util.concurrent.CyclicBarrier;
+
+import io.netty.channel.ChannelInboundHandler;
+import io.netty.util.AttributeKey;
+
 
 
 // TODO: Auto-generated Javadoc
@@ -8,6 +13,10 @@ package org.jumbune.remoting.common;
  */
 public interface RemotingConstants {
 
+	AttributeKey<CyclicBarrier> barrierKey = AttributeKey.valueOf("barrier");
+	
+	AttributeKey<ChannelInboundHandler> handlerKey = AttributeKey.valueOf("handler");
+	
 	/** The command channel. */
 	String COMMAND_CHANNEL = "CommandChannel";
 	

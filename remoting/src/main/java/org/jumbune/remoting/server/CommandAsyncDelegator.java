@@ -2,6 +2,7 @@ package org.jumbune.remoting.server;
 
 import static org.jumbune.remoting.common.RemotingConstants.REDIRECT_SYMBOL;
 import static org.jumbune.remoting.common.RemotingConstants.SINGLE_SPACE;
+import io.netty.channel.SimpleChannelInboundHandler;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -15,10 +16,9 @@ import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.WriteCompletionEvent;
+
+import io.netty.channel.ChannelHandlerContext;
+
 import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.JschUtil;
 import org.jumbune.remoting.common.RemotingConstants;
@@ -32,7 +32,7 @@ import com.jcraft.jsch.Session;
  * The Class CommandAsyncDelegator created to support asynchronous execution 
  * Executes command in separate thread and sends the ack beforehand
  */
-public class CommandAsyncDelegator extends SimpleChannelUpstreamHandler {
+public class CommandAsyncDelegator extends SimpleChannelInboundHandler<CommandWritable> {
 
 	/** The logger. */
 	private static final Logger LOGGER = LogManager
@@ -44,39 +44,14 @@ public class CommandAsyncDelegator extends SimpleChannelUpstreamHandler {
 	private static final String PID_FILE = "pid.txt";
 	private static final String KILL_PID_CMD = "kill -9";
 
-	/**
-	 * Invoked when something was written into a {@link Channel}.
-	 * 
-	 * @param ctx
-	 *            the ctx
-	 * @param e
-	 *            the e
-	 * @throws Exception
-	 *             the exception
-	 */
 	@Override
-	public void writeComplete(ChannelHandlerContext ctx, WriteCompletionEvent e) {
-		LOGGER.debug("write completed");
-		ctx.sendUpstream(e);
-	}
-
-	/**
-	 * Invoked when a message is received
-	 * @param ctx
-	 *            the ctx
-	 * @param e
-	 * 			  the message event        
-	 */
-	@Override
-	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
-
-		final CommandWritable cmdWritable = (CommandWritable) e.getMessage();
-
+	protected void channelRead0(ChannelHandlerContext ctx, final CommandWritable cmdWritable)
+			throws Exception {
 		if (cmdWritable != null) {
 			if (LOGGER.isDebugEnabled()) {
 				LOGGER.debug(cmdWritable);
 			}
-			e.getChannel().write("Ack");
+			ctx.channel().writeAndFlush("Ack");
 			LOGGER.debug("Now sending Ack");
 
 			Thread processThread = new Thread() {
@@ -93,7 +68,6 @@ public class CommandAsyncDelegator extends SimpleChannelUpstreamHandler {
 			};
 			processThread.start();
 		}
-
 	}
 
 	/**

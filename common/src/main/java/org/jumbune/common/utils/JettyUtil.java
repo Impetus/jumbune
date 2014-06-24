@@ -180,6 +180,7 @@ public final class JettyUtil {
 			commandWritable.setRsaFilePath(config.getRsaFile());
 			commandWritable.setSlaveHost(host);
 			remoter.fireAndForgetCommand(commandWritable);
+			remoter.close();
 		}
 		ConsoleLogUtil.CONSOLELOGGER.info("Executed command [ShutTop] on worker nodes..");
 

@@ -109,6 +109,7 @@ public class RemoteFileUtil {
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand(command, false, null);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
+		remoter.close();
 		LOGGER.debug("Sent Async command on master machine [" + command + "]");
 	}
 
@@ -136,6 +137,7 @@ public class RemoteFileUtil {
 				builder.addCommand(command, false, null).populateFromLogConsolidationInfo(logCollection, hostNode);
 				LOGGER.debug("Removing log file from Worker node [" + hostNode + "]" + ", command [" + "] command");
 				remoter.fireAndForgetCommand(builder.getCommandWritable());
+				remoter.close();
 			}
 		}
 	}
@@ -169,6 +171,7 @@ public class RemoteFileUtil {
 				remoter.fireAndForgetCommand(builder.getCommandWritable());
 			}
 		}
+		remoter.close();
 	}
 
 	/**
@@ -222,6 +225,7 @@ public class RemoteFileUtil {
 		for (String string : files) {
 			remoter.receiveLogFiles(relativePath, relativePath + "/" + string);
 		}
+		remoter.close();
 	}
 
 	/**
@@ -285,7 +289,7 @@ public class RemoteFileUtil {
 		for (String string : files) {
 			remoter.receiveLogFiles(relativePath, relativePath + "/" + string);
 		}
-
+		remoter.close();
 		for (String string : files) {
 			if (!string.contains("mrChain")) {
 				execute(new String[] { "unzip", string }, appHome + relativePath + "/");
@@ -330,7 +334,7 @@ public class RemoteFileUtil {
 			builder.addCommand(command, false, null).populate(loader.getYamlConfiguration(), null);
 			remoter.fireAndForgetCommand(builder.getCommandWritable());
 		}
-
+		remoter.close();
 	}
 
 	/**
@@ -408,6 +412,7 @@ public class RemoteFileUtil {
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand(command, false, null).populate(loader.getYamlConfiguration(), null);
 		String line = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		remoter.close();
 		if (line == null || "".equals(line.trim())) {
 			throw JumbuneRuntimeException.throwUnresponsiveIOException(RemoteFileUtil.class.getName(),"getRemoteThreadsOrCore","",Constants.FOUR_HUNDERED_FIFTY_SEVEN);
 		}
@@ -635,7 +640,7 @@ public class RemoteFileUtil {
 		for (String string : files) {
 			remoter.receiveLogFiles(relativePath, relativePath + File.separator + string);
 		}
-		
+		remoter.close();
 	}
 
 

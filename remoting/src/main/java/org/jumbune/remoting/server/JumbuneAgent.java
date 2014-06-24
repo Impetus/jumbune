@@ -1,5 +1,15 @@
 package org.jumbune.remoting.server;
 
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -7,13 +17,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
-import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.concurrent.Executors;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -23,17 +31,10 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jumbune.remoting.common.BasicYamlConfig;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.remoting.writable.CommandWritable;
 import org.jumbune.remoting.writable.CommandWritable.Command;
-
-
 
 /**
  * The Class JumbuneAgent is used for running the remoting jar on agent
@@ -61,6 +62,10 @@ public final class JumbuneAgent {
 	private static final String SPACE = " ";
 	
 	private static final String YAML_INFO = "/yamlInfo.ser";
+	
+    private static EventLoopGroup bossGroup;
+    
+    private static EventLoopGroup workerGroup;
 	
 	/**
 	 * Instantiates a new jumbune agent.
@@ -116,26 +121,34 @@ public final class JumbuneAgent {
 			extractlibJars(libLocation);
 		}
 		copyAgentLibJarsToHadoopLib(jars, storageDir);
+		ServerBootstrap bootstrap;
+        bossGroup = new NioEventLoopGroup(1);
+        workerGroup = new NioEventLoopGroup();
+        try {
+            bootstrap = new ServerBootstrap();
+            bootstrap.group(bossGroup, workerGroup)
+             .channel(NioServerSocketChannel.class)
+             .handler(new LoggingHandler(LogLevel.INFO))
+             .childHandler(new ChannelInitializer<SocketChannel>() {
+                 @Override
+                 public void initChannel(SocketChannel ch) throws Exception {
+                     ch.pipeline().addLast("JaDecoder", new JumbuneAgentDecoder(storageDir));
+                 }
+             });
 
-		final ServerBootstrap bootstrap = new ServerBootstrap(new NioServerSocketChannelFactory(Executors.newCachedThreadPool(),
-				Executors.newCachedThreadPool()));
+             // Bind and start to accept incoming connections.
+             bootstrap.bind(port).sync().channel().closeFuture().sync();
+        }finally{
+	         bossGroup.shutdownGracefully();
+	         workerGroup.shutdownGracefully();
+	         
+	         // Wait until all threads are terminated.
+	         bossGroup.terminationFuture().sync();
+	         workerGroup.terminationFuture().sync();	         
+        }
 
-		bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-			/**
-			 * This method provides channelhandler which handles or intercepts ChannelEvents of a Channel. 
-			 */
-			public ChannelPipeline getPipeline() {
-				ChannelPipeline pipeLine = Channels.pipeline();
-				pipeLine.addLast("handler", new JumbuneAgentDecoder(storageDir));
-				return pipeLine;
-			}
-		});
-		bootstrap.bind(new InetSocketAddress(port));
-		CONSOLE_LOGGER.info("Jumbune Agent started successfully on port [" + port + "]");
+   		CONSOLE_LOGGER.info("Jumbune Agent started successfully on port [" + port + "]");
 		Runtime.getRuntime().addShutdownHook(new Thread() {
-			/**
-			 * This method is uesd to release the external resources
-			 */
 			public void run(){
 				//killing top command
 				String agentHome = System.getenv("AGENT_HOME");
@@ -157,19 +170,16 @@ public final class JumbuneAgent {
 			        if(streamIn!= null){
 			        	streamIn.close();
 			        }
-				 }
-				    
-				bootstrap.releaseExternalResources();
+				 }				    
+		         bossGroup.shutdownGracefully();
+		         workerGroup.shutdownGracefully();
 				LOGGER.debug("Released external resources !");
 				}catch (IOException e) {
 					LOGGER.error(e);
 				}catch (ClassNotFoundException e) {
 					LOGGER.error(e);
 				}
-				
 			}
-
-		
 		});
 	}
 	
@@ -230,8 +240,10 @@ public final class JumbuneAgent {
 	 * @throws InterruptedException the interrupted exception
 	 */
 	private static void extractlibJars(String destinationDir) throws URISyntaxException, IOException, InterruptedException {
-		CodeSource codeSource = JumbuneAgent.class.getProtectionDomain().getCodeSource();
-		File file = new File(codeSource.getLocation().toURI().getPath());
+//		CodeSource codeSource = JumbuneAgent.class.getProtectionDomain().getCodeSource();
+//		File file = new File(codeSource.getLocation().toURI().getPath());
+		//TODO: Change it
+		File file = new File("/home/impadmin/GitHub-Jumbune/remoting/target/jumbune-remoting-1.0.1-SNAPSHOT-agent.jar");
 		byte[] entryContent = null;
 		BufferedInputStream bis = null;
 		FileOutputStream fos = null;
@@ -261,7 +273,9 @@ public final class JumbuneAgent {
 			}
 
 		} finally {
-			jarFile.close();
+			if(jarFile!=null){
+				jarFile.close();
+			}
 		}
 	}
 

@@ -565,6 +565,7 @@ public class ProfilerUtil {
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand(sbReport.toString(), false, null).populate(loader.getYamlConfiguration(), null);
 		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		remoter.close();
 		return response.split("\n");
 	}
 

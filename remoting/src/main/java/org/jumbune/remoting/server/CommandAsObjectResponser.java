@@ -1,5 +1,9 @@
 package org.jumbune.remoting.server;
 
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.TooLongFrameException;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -17,10 +21,6 @@ import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.JschUtil;
 import org.jumbune.remoting.common.RemoterUtility;
@@ -35,7 +35,7 @@ import com.jcraft.jsch.Session;
 /**
  * The Class CommandAsObjectResponser.
  */
-public class CommandAsObjectResponser extends SimpleChannelUpstreamHandler {
+public class CommandAsObjectResponser extends SimpleChannelInboundHandler<CommandWritable> {
 
 	private static final String HADOOP_JOB_COMPLETED = "Hadoop#Job@Completed......";
 	private static final String DONE_VERSION_1 = "done/version-1";
@@ -44,34 +44,15 @@ public class CommandAsObjectResponser extends SimpleChannelUpstreamHandler {
 	private static final String LOG_DIR_SUFFIX = "000000";
 	
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.jboss.netty.channel.SimpleChannelUpstreamHandler#messageReceived( org.jboss.netty.channel.ChannelHandlerContext,
-	 * org.jboss.netty.channel.MessageEvent)
-	 */
 	@Override
-	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws JSchException, IOException{
-		CommandWritable cmdWritable = (CommandWritable) e.getMessage();
-		
-		if (cmdWritable!=null) {
-				if(LOGGER.isDebugEnabled()){
-					LOGGER.debug(cmdWritable);
-				}
-				e.getChannel().write(performAction(cmdWritable));
+	protected void channelRead0(io.netty.channel.ChannelHandlerContext ctx,
+			CommandWritable msg) throws Exception {
+		if (msg != null) {
+			if (LOGGER.isDebugEnabled()) {
+				LOGGER.debug(msg);
+			}
+			ctx.channel().writeAndFlush(performAction(msg));
 		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.jboss.netty.channel.SimpleChannelUpstreamHandler#exceptionCaught( org.jboss.netty.channel.ChannelHandlerContext,
-	 * org.jboss.netty.channel.ExceptionEvent)
-	 */
-	@Override
-	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-		LOGGER.warn("Unexpected exception occured from downstream", e.getCause());
-		e.getChannel().close();
 	}
 
 	/**
@@ -497,4 +478,19 @@ public class CommandAsObjectResponser extends SimpleChannelUpstreamHandler {
 		InetAddress addr = InetAddress.getByName(hostName);
 		return addr.getHostAddress();
 	}
+
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+	    throws Exception {
+	  io.netty.channel.Channel ch = ctx.channel();
+	  if (cause instanceof TooLongFrameException) {
+		  LOGGER.error("Corrupted fram recieved from: " + ch.remoteAddress());
+	    return;
+	  }
+
+	  if (ch.isActive()) {
+	    LOGGER.error("Internal Server Error",cause);
+	  }
+	}
+	
 }

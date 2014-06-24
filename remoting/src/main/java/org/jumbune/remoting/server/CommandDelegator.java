@@ -2,6 +2,9 @@ package org.jumbune.remoting.server;
 
 import static org.jumbune.remoting.common.RemotingConstants.REDIRECT_SYMBOL;
 import static org.jumbune.remoting.common.RemotingConstants.SINGLE_SPACE;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.TooLongFrameException;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -15,10 +18,6 @@ import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.WriteCompletionEvent;
 import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.JschUtil;
 import org.jumbune.remoting.common.RemotingConstants;
@@ -31,7 +30,7 @@ import com.jcraft.jsch.Session;
 /**
  * The Class CommandDelegator.
  */
-public class CommandDelegator extends SimpleChannelUpstreamHandler {
+public class CommandDelegator extends SimpleChannelInboundHandler<CommandWritable> {
 
 	/** The logger. */
 	private static final Logger LOGGER = LogManager.getLogger(CommandDelegator.class);
@@ -41,34 +40,10 @@ public class CommandDelegator extends SimpleChannelUpstreamHandler {
 	private static final String ECHO_CMD = "echo";
 	private static final String PID_FILE = "pid.txt";
 	private static final String KILL_PID_CMD = "kill -9";
-
-	/**
-	 * Invoked when something was written into a {@link Channel}.
-	 * 
-	 * @param ctx
-	 *            the ctx
-	 * @param e
-	 *            the e
-	 * @throws Exception
-	 *             the exception
-	 */
+	
 	@Override
-	public void writeComplete(ChannelHandlerContext ctx, WriteCompletionEvent e) {
-		ctx.sendUpstream(e);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.jboss.netty.channel.SimpleChannelUpstreamHandler#messageReceived(
-	 * org.jboss.netty.channel.ChannelHandlerContext,
-	 * org.jboss.netty.channel.MessageEvent)
-	 */
-	@Override
-	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
-
-		CommandWritable cmdWritable = (CommandWritable) e.getMessage();
+	protected void channelRead0(io.netty.channel.ChannelHandlerContext ctx,
+			CommandWritable cmdWritable) throws Exception {
 		try {
 			if (cmdWritable != null) {
 				if (LOGGER.isDebugEnabled()) {
@@ -80,10 +55,9 @@ public class CommandDelegator extends SimpleChannelUpstreamHandler {
 			LOGGER.error(cmdWritable + " having some problem", exception);
 		}
 		LOGGER.debug("Now sending Ack");
-		e.getChannel().write("Ack");
-
+		ctx.channel().writeAndFlush("Ack");
 	}
-
+	
 	/**
 	 * Perform action.
 	 * 
@@ -107,10 +81,23 @@ public class CommandDelegator extends SimpleChannelUpstreamHandler {
 				executeCommandsWithJsch(commandWritable, command);
 			} else  {
 				String agentHome = System.getenv(RemotingConstants.AGENT_HOME);
-				rippedCommand = command.getCommandString().replace(RemotingConstants.AGENT_HOME, agentHome).trim();
+				rippedCommand = command.getCommandString().replace(RemotingConstants.AGENT_HOME, agentHome);
+				if(command.isHasParams()){
+					rippedCommand = rippedCommand+" "+addSpacedParams(command.getParams());
+					rippedCommand.trim();
+				}				
 				execute(rippedCommand.split(RemotingConstants.SINGLE_SPACE));
 			}
 		}
+	}
+	
+	private static String addSpacedParams(List<String> params){
+		StringBuilder builder = new StringBuilder();
+		for(String param: params){
+			builder.append(param);
+			builder.append(" ");
+		}
+		return builder.toString().trim();
 	}
 
 	/**
@@ -254,4 +241,19 @@ public class CommandDelegator extends SimpleChannelUpstreamHandler {
 			
 		}
 	}
+	
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+	    throws Exception {
+	  io.netty.channel.Channel ch = ctx.channel();
+	  if (cause instanceof TooLongFrameException) {
+		  LOGGER.error("Corrupted fram recieved from: " + ch.remoteAddress());
+	    return;
+	  }
+
+	  if (ch.isActive()) {
+	    LOGGER.error("Internal Server Error",cause);
+	  }
+	}	
+
 }

@@ -460,6 +460,7 @@ public class ValidateInput {
 		builder.getCommandBatch().clear();
 		builder.addCommand(lsDsa.toString(), false, null);
 		String responseDsa = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		remoter.close();
 		String dsaResponse = responseDsa.substring(0, responseDsa.length()-1);
 		if (!(master.getRsaFile() != null && rsaResponse.equalsIgnoreCase(master.getRsaFile()))
 				&& !(master.getDsaFile() != null && dsaResponse.equalsIgnoreCase(master.getDsaFile()))) {

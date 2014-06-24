@@ -16,7 +16,11 @@
 				
 				<include>org.apache.logging.log4j:log4j-api:jar:2.0-beta4</include>
 				<include>org.apache.logging.log4j:log4j-core:jar:2.0-beta4</include>
-				<include>io.netty:netty:jar:3.5.10.Final</include>
+				<include>io.netty:netty-handler:jar:4.0.20.Final</include>
+				<include>io.netty:netty-buffer:jar:4.0.20.Final</include>
+				<include>io.netty:netty-common:jar:4.0.20.Final</include>
+				<include>io.netty:netty-codec:jar:4.0.20.Final</include>
+				<include>io.netty:netty-transport:jar:4.0.20.Final</include>
 				<include>com.jcraft:jsch:jar:0.1.51</include>
 
 			</includes>
@@ -31,7 +35,7 @@
 					<include>org/jumbune/remoting/writable**/*</include>
 					<include>org/jumbune/remoting/server**/*</include>
 					<include>org/jumbune/remoting/common**/*</include>
-					<include>org/jumbune/remoting/handlers**/*</include>
+					<include>org/jumbune/remoting/codecs**/*</include>
 					<include>log4j2.xml</include>
 				</includes>
 			</unpackOptions>

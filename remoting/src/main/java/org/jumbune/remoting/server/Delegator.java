@@ -1,18 +1,17 @@
 package org.jumbune.remoting.server;
 
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+
 import java.io.File;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 
 /**
  * The Class Delegator.
  */
-public class Delegator extends SimpleChannelUpstreamHandler {
+public class Delegator extends SimpleChannelInboundHandler<String> {
 
 	/** The logger. */
 	private static final Logger LOGGER = LogManager.getLogger(Delegator.class);
@@ -30,35 +29,15 @@ public class Delegator extends SimpleChannelUpstreamHandler {
 		this.receiveDirectory = receiveDirectory;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.jboss.netty.channel.SimpleChannelUpstreamHandler#messageReceived(
-	 * org.jboss.netty.channel.ChannelHandlerContext,
-	 * org.jboss.netty.channel.MessageEvent)
-	 */
 	@Override
-	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
-		LOGGER.debug("Message received ["+e.getMessage()+"]");
-		String relativePath = (String) e.getMessage();
-		e.getChannel().write(
-				(String) this.receiveDirectory + File.separator + relativePath);
+	protected void channelRead0(io.netty.channel.ChannelHandlerContext ctx,
+			String relativePath) throws Exception {
+		ctx.channel().writeAndFlush((String) this.receiveDirectory + File.separator + relativePath);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.jboss.netty.channel.SimpleChannelUpstreamHandler#exceptionCaught(
-	 * org.jboss.netty.channel.ChannelHandlerContext,
-	 * org.jboss.netty.channel.ExceptionEvent)
-	 */
 	@Override
-	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-		LOGGER.warn("Unexpected exception occured from downstream",
-				e.getCause());
-		e.getChannel().close();
-	}
-
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+	    throws Exception {
+	    LOGGER.error("Internal Server Error",cause);
+	}	
 }

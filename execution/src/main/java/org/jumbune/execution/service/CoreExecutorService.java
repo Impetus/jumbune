@@ -311,6 +311,7 @@ public abstract class CoreExecutorService {
 		builder.getCommandBatch().clear();
 		builder.addCommand(claSb.toString(), false, null);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
+		remoter.close();
 		LOGGER.info("Cleaned jumbune generated temp directory and logs");
 		}
 	}

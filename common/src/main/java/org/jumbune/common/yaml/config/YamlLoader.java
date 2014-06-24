@@ -321,6 +321,7 @@ public class YamlLoader {
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand(ECHO_HADOOP_HOME, false, null).populate(loader.getYamlConfiguration(), null);
 		hadoopHomeTemp = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		remoter.close();
 		return hadoopHomeTemp;
 	}
 
@@ -1294,6 +1295,7 @@ public class YamlLoader {
 			CONSOLELOGGER.info("Log directory generation on WorkerNodes ");
 
 		}
+		remoter.close();
 	}
 	
 	

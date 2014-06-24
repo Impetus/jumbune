@@ -166,6 +166,7 @@ public class HadoopLogParser {
 				jacksonMapperAslJar, jacksonMapperCoreJar, rumenJar, sb);
 		LOGGER.debug("Rumen processing command [" + sb.toString()+"]");
 		startRumenProcessing(remoter, relLocalPath, relRemotePath, sb);
+		remoter.close();
 		// process json
 		Gson gson = new Gson();
 		JobDetails jobDetails = extractJobDetails(appHome, relLocalPath, gson);
