@@ -27,53 +27,8 @@ public class ValidateInputTest {
 		when(config.getEnableDataValidation()).thenReturn(enable);
 		assertNotNull(fixture.validateYaml(config));
 		
-		
-		
+			
 	}
 
-	@Test
-	public void testIsEnable() {
-		
-	}
-
-	@Test
-	public void testValidateProfiling() {
-		
-	}
-
-	@Test
-	public void testCheckIPAdressString() {
-		
-	}
-
-	@Test
-	public void testCheckIPAdressStringListOfString() {
-		
-	}
-
-	@Test
-	public void testCheckCommand() {
-		
-	}
-
-	@Test
-	public void testIsHadoopInputPath() {
-		
-	}
-
-	@Test
-	public void testIsPortAvailable() {
-		
-	}
-
-	@Test
-	public void testCheckPortAvailablity() {
-		
-	}
-
-	@Test
-	public void testCheckPortAvailablityTask() {
-		
-	}
-
+	
 }

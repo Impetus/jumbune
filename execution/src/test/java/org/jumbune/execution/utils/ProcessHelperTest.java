@@ -32,11 +32,7 @@ public class ProcessHelperTest {
 		Assert.assertTrue(pHelper.writetoServiceFile(sInfo));
 	}
 
-	// @Test(expected = IOException.class)
-	public void testExecuteJar() throws IOException {
-		String inputJarPath = YamlConfigUtil.getServiceYamlPath();
-		pHelper.executeJar(inputJarPath, false, testYamlLoader, false);
-	}
+	
 
 	@Test
 	public void testValidateJobs() throws IOException {
