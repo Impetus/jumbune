@@ -149,7 +149,7 @@ public class ResultServlet extends HttpServlet {
 		String commandResponse = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		LOG.info("Hadoop Job has been killed ["+jobName+"]");
 		LOG.debug("Killed Hadoop Job command response ["+commandResponse+"]");
-	
+		remoter.close();
 
 	}
 }
