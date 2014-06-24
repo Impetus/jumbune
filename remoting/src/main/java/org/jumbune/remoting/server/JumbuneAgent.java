@@ -240,10 +240,8 @@ public final class JumbuneAgent {
 	 * @throws InterruptedException the interrupted exception
 	 */
 	private static void extractlibJars(String destinationDir) throws URISyntaxException, IOException, InterruptedException {
-//		CodeSource codeSource = JumbuneAgent.class.getProtectionDomain().getCodeSource();
-//		File file = new File(codeSource.getLocation().toURI().getPath());
-		//TODO: Change it
-		File file = new File("/home/impadmin/GitHub-Jumbune/remoting/target/jumbune-remoting-1.0.1-SNAPSHOT-agent.jar");
+		CodeSource codeSource = JumbuneAgent.class.getProtectionDomain().getCodeSource();
+		File file = new File(codeSource.getLocation().toURI().getPath());
 		byte[] entryContent = null;
 		BufferedInputStream bis = null;
 		FileOutputStream fos = null;
