@@ -81,7 +81,7 @@ public class CommandDelegator extends SimpleChannelInboundHandler<CommandWritabl
 				executeCommandsWithJsch(commandWritable, command);
 			} else  {
 				String agentHome = System.getenv(RemotingConstants.AGENT_HOME);
-				rippedCommand = command.getCommandString().replace(RemotingConstants.AGENT_HOME, agentHome);
+				rippedCommand = command.getCommandString().replace(RemotingConstants.AGENT_HOME, agentHome).trim();
 /*				if(command.isHasParams()){
 					rippedCommand = rippedCommand+" "+addSpacedParams(command.getParams());
 					rippedCommand.trim();
