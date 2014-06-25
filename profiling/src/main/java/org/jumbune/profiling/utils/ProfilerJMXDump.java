@@ -554,9 +554,10 @@ public class ProfilerJMXDump {
 		Map<String, String> vmStats = null;
 
 		Remoter remoter = null;
+		remoter = new Remoter(config.getMaster().getHost(), Integer.valueOf(config.getMaster().getAgentPort()),
+				config.getFormattedJumbuneJobName());
+
 		for (String host : hosts) {
-			remoter = new Remoter(config.getMaster().getHost(), Integer.valueOf(config.getMaster().getAgentPort()),
-					config.getFormattedJumbuneJobName());
 			
 			CommandWritableBuilder builder = new CommandWritableBuilder();
 			builder.addCommand(VMSTAT_COMMAND, false, null).populate(config, host);
@@ -567,9 +568,8 @@ public class ProfilerJMXDump {
 			else{
 				vmStats = getRemoteVmStats(response);
 			}
-			remoter.close();
 		}
-
+		remoter.close();
 		return vmStats;
 	}
 
@@ -945,9 +945,10 @@ public class ProfilerJMXDump {
 		Map<String, String> cpuStats = null;
 		Remoter remoter = null;
 		String response = null;
+		remoter = new Remoter(config.getMaster().getHost(), Integer.valueOf(config.getMaster().getAgentPort()),
+				config.getFormattedJumbuneJobName());
+		
 		for (String host : hosts) {
-			remoter = new Remoter(config.getMaster().getHost(), Integer.valueOf(config.getMaster().getAgentPort()),
-					config.getFormattedJumbuneJobName());
 			
 			
 			CommandWritableBuilder builder = new CommandWritableBuilder();
@@ -968,8 +969,8 @@ public class ProfilerJMXDump {
 			cpuDetails = getRemoteCPUDetails(config, host);
 			cpuStats.put("numberOfCores", String.valueOf(cpuDetails.get(1)));
 			cpuStats.put("threadsPerCore", String.valueOf(cpuDetails.get(0)));
-			remoter.close();
 		}
+		remoter.close();
 		return cpuStats;
 
 	}
