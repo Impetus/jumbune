@@ -74,9 +74,9 @@ public class CommandDelegator extends SimpleChannelInboundHandler<CommandWritabl
 			if (ApiInvokeHintsEnum.JOB_EXECUTION.equals(commandWritable.getApiInvokeHints())) {
 				String arr[] = command.getCommandString().split(RemotingConstants.SINGLE_SPACE);
 				JschUtil.execSlaveCleanUpTask(new String[] {
-						RemotingConstants.SSH, arr[1], arr[2],
-						arr[RemotingConstants.THREE],
-						arr[RemotingConstants.FOUR] }, null);
+						RemotingConstants.SSH, arr[0], arr[1],
+						arr[RemotingConstants.TWO],
+						arr[RemotingConstants.THREE] }, null);
 			} else if (commandWritable.isAuthenticationRequired()) {
 				executeCommandsWithJsch(commandWritable, command);
 			} else  {
