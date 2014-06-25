@@ -142,9 +142,9 @@ public final class JumbuneAgent {
 	         workerGroup.shutdownGracefully();
 	         
 	         // Wait until all threads are terminated.
-	         bossGroup.terminationFuture().sync();
+/*	         bossGroup.terminationFuture().sync();
 	         workerGroup.terminationFuture().sync();	         
-        }
+*/        }
 
    		CONSOLE_LOGGER.info("Jumbune Agent started successfully on port [" + port + "]");
 		Runtime.getRuntime().addShutdownHook(new Thread() {
