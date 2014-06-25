@@ -39,7 +39,6 @@ public class LogFilesEncoder extends ObjectEncoder {
 						+ "] existed for given name.");
 				return;
 			}
-			LOGGER.info("ChannelBuffer " + Arrays.toString(splits));
 			Serializable fileOrfiles = prepareTextFileORFiles(splits, out);
 			super.encode(ctx, fileOrfiles, out);
 	}

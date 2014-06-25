@@ -122,8 +122,8 @@ public final class JumbuneAgent {
 		}
 		copyAgentLibJarsToHadoopLib(jars, storageDir);
 		ServerBootstrap bootstrap;
-        bossGroup = new NioEventLoopGroup(1);
-        workerGroup = new NioEventLoopGroup();
+        bossGroup = new NioEventLoopGroup(5);
+        workerGroup = new NioEventLoopGroup(10);
         try {
             bootstrap = new ServerBootstrap();
             bootstrap.group(bossGroup, workerGroup)
