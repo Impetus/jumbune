@@ -223,7 +223,7 @@ public class JumbuneAgentDecoder extends ByteToMessageDecoder {
 		ChannelPipeline p = ctx.pipeline();
 
         // Enable stream compression (you can remove these two if unnecessary)
-        p.addLast(ZlibCodecFactory.newZlibEncoder(ZlibWrapper.GZIP));
+//        p.addLast(ZlibCodecFactory.newZlibEncoder(ZlibWrapper.GZIP));
 
 		
 		p.addLast("stringDecoder", new StringDecoder());
@@ -264,7 +264,7 @@ public class JumbuneAgentDecoder extends ByteToMessageDecoder {
         p.addLast(ZlibCodecFactory.newZlibDecoder(ZlibWrapper.GZIP));
 */
         // Enable stream compression (you can remove these two if unnecessary)
-        p.addLast(ZlibCodecFactory.newZlibEncoder(ZlibWrapper.GZIP));
+//        p.addLast(ZlibCodecFactory.newZlibEncoder(ZlibWrapper.GZIP));
 //        p.addLast(ZlibCodecFactory.newZlibDecoder(ZlibWrapper.GZIP));
 		
 		p.addLast("stringDecoder", new StringDecoder());
