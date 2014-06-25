@@ -86,7 +86,7 @@
 				<include>io.netty:netty-common:jar:4.0.20.Final</include>
 				<include>io.netty:netty-codec:jar:4.0.20.Final</include>
 				<include>io.netty:netty-transport:jar:4.0.20.Final</include>
-				<include>com.jcraft:jzlib:1.1.3</include>
+				<include>com.jcraft:jzlib:jar:1.1.3</include>
 				<include>org.apache.logging.log4j:log4j-api:jar:2.0-beta4</include>
 				<include>org.apache.logging.log4j:log4j-core:jar:2.0-beta4</include>
 				<include>org.apache.poi:poi:jar:3.8:</include>
