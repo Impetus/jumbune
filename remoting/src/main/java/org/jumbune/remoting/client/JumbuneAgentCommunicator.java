@@ -57,7 +57,7 @@ public final class JumbuneAgentCommunicator {
 	 */
 	public void releaseBootstrapResources() throws InterruptedException {
 		group.shutdownGracefully();
-		group.terminationFuture().sync();
+//		group.terminationFuture().sync();
 	}
 
 	/**

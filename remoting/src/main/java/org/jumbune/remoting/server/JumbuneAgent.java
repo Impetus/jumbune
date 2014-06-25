@@ -122,13 +122,12 @@ public final class JumbuneAgent {
 		}
 		copyAgentLibJarsToHadoopLib(jars, storageDir);
 		ServerBootstrap bootstrap;
-        bossGroup = new NioEventLoopGroup(5);
-        workerGroup = new NioEventLoopGroup(10);
+        bossGroup = new NioEventLoopGroup(4);
+        workerGroup = new NioEventLoopGroup(8);
         try {
             bootstrap = new ServerBootstrap();
             bootstrap.group(bossGroup, workerGroup)
              .channel(NioServerSocketChannel.class)
-             .handler(new LoggingHandler(LogLevel.INFO))
              .childHandler(new ChannelInitializer<SocketChannel>() {
                  @Override
                  public void initChannel(SocketChannel ch) throws Exception {
