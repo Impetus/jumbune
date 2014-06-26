@@ -99,6 +99,9 @@ public class ResultServlet extends HttpServlet {
 					file.delete();
 					ResourceUsageCollector collector = new ResourceUsageCollector(yamlLoader);
 					collector.shutTopCmdOnSlaves(null);
+					HttpExecutorService service=(HttpExecutorService) session.getAttribute("ExecutorServReference");
+					session.removeAttribute("ExecutorServReference");
+					service.stopExecution();					
 					final RequestDispatcher rd = getServletContext().getRequestDispatcher(
 							WebConstants.HOME_URL);
 					rd.forward(request, response);

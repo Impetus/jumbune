@@ -15,6 +15,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -122,7 +123,10 @@ public class HomeServlet extends HttpServlet {
 		if (file.exists()) {
 			file.delete();
 		}
-
+		HttpSession session = request.getSession();
+		session.removeAttribute("ExecutorServReference");
+		session.removeAttribute("ReportsBean");
+		session.removeAttribute("loader");
 		final RequestDispatcher rd = getServletContext().getRequestDispatcher(
 				WebConstants.HOME_URL);
 		rd.forward(request, response);
