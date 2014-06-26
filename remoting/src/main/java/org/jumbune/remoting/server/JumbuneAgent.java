@@ -128,6 +128,7 @@ public final class JumbuneAgent {
             bootstrap = new ServerBootstrap();
             bootstrap.group(bossGroup, workerGroup)
              .channel(NioServerSocketChannel.class)
+             .handler(new LoggingHandler(LogLevel.INFO))
              .childHandler(new ChannelInitializer<SocketChannel>() {
                  @Override
                  public void initChannel(SocketChannel ch) throws Exception {
@@ -172,7 +173,7 @@ public final class JumbuneAgent {
 				 }				    
 		         bossGroup.shutdownGracefully();
 		         workerGroup.shutdownGracefully();
-				LOGGER.debug("Released external resources !");
+				 LOGGER.debug("Released external resources !");
 				}catch (IOException e) {
 					LOGGER.error(e);
 				}catch (ClassNotFoundException e) {
