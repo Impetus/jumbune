@@ -99,8 +99,6 @@ public class ResultServlet extends HttpServlet {
 					file.delete();
 					ResourceUsageCollector collector = new ResourceUsageCollector(yamlLoader);
 					collector.shutTopCmdOnSlaves(null);
-/*					HttpExecutorService service=(HttpExecutorService) session.getAttribute("ExecutorServReference");
-					service.stopExecution();*/
 					final RequestDispatcher rd = getServletContext().getRequestDispatcher(
 							WebConstants.HOME_URL);
 					rd.forward(request, response);
@@ -119,8 +117,6 @@ public class ResultServlet extends HttpServlet {
 					out.println(WebConstants.AJAX_STOP_MSG);
 					LOG.warn("Json Bean was not created");
 				}
-				HttpExecutorService service=(HttpExecutorService) session.getAttribute("ExecutorServReference");
-				service.stopExecution();
 			} catch (Exception e) {
 				LOG.error("Unable to get reports of current job: ", e);
 			} finally {
