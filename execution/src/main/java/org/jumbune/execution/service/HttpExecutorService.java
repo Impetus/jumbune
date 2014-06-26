@@ -189,6 +189,7 @@ public class HttpExecutorService extends CoreExecutorService {
 
 				}
 				try {
+					stopExecution();
 					cleanUpSlavesTempFldr(loader);
 					LOGGER.info("Completed worker node cleanup");
 				} catch (Exception e) {
