@@ -141,13 +141,13 @@ public class HomeServlet extends HttpServlet {
 		StringBuilder command = new StringBuilder();
 		command.append(CAT_CMD).append(SPACE).append(slaveTmpDir).append(File.separator).append(PID_FILE);
 		Remoter remoter = new Remoter(config.getHost(), Integer.parseInt(config.getPort()));
-		List<String> params = new ArrayList<String>();
+		List<String> params = new ArrayList<String>(1);
 		params.add(slaveTmpDir);
-		
+		List<Command> commands= new ArrayList<Command>(1);
 		for (String host : config.getSlaves()) {
 			CommandWritable commandWritable = new CommandWritable();	
 			CommandWritable.Command cmd = new CommandWritable.Command();
-			List<Command> commands= new ArrayList<Command>();
+			commands.clear();
 			
 			cmd.setCommandString(command.toString());
 			cmd.setHasParams(true);
