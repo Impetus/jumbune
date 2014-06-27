@@ -122,7 +122,7 @@ public class ProfilerUtil {
 	private ProfilerBean readFileAndGetTopNSamples(final File filepath) throws IOException {
 		FileInputStream fs = null;
 		final ProfilerBean pBean = new ProfilerBean();
-		final BufferedInputStream bis = null;
+		BufferedInputStream bis = null;
 		try {
 			fs = new FileInputStream(filepath);
 			LOGGER.debug("Currently reading file " + filepath);
