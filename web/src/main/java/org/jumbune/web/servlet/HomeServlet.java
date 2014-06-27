@@ -162,8 +162,8 @@ public class HomeServlet extends HttpServlet {
 			commandWritable.setRsaFilePath(config.getRsaFile());
 			commandWritable.setSlaveHost(host);
 			remoter.fireAndForgetCommand(commandWritable);
-			remoter.close();
 		}
+		remoter.close();
 		ConsoleLogUtil.CONSOLELOGGER.info("Executed command [ShutTop] on worker nodes..");
 
 	}
