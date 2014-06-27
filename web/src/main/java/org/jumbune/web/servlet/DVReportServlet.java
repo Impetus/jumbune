@@ -33,19 +33,19 @@ import com.google.gson.Gson;
 public class DVReportServlet extends HttpServlet {
 	
 	/** The Constant JOB_JAR_LOCATION. */
-	private static final String JOB_JAR_LOCATION = "jobJars/";
+	private final String JOB_JAR_LOCATION = "jobJars/";
 	
 	/** The Constant DV_FOLDER_LOCATION. */
-	private static final String DV_FOLDER_LOCATION = "dv/";
+	private final String DV_FOLDER_LOCATION = "dv/";
 	
 	/** The Constant LOGGER. */
 	private static final Logger LOGGER = LogManager.getLogger(DVReportServlet.class);
 	
 	/** The Constant NUM_OF_ROWS. */
-	private static final int NUM_OF_ROWS = 200;
+	private final int NUM_OF_ROWS = 200;
 	
 	/** The Constant DEAFULT_PAGE. */
-	private static final int DEAFULT_PAGE = 1;
+	private final int DEAFULT_PAGE = 1;
 
 	
 
@@ -59,6 +59,7 @@ public class DVReportServlet extends HttpServlet {
 		HttpSession session = request.getSession();
 		// Getting yamlloader stored in session.
 		YamlLoader loader = (YamlLoader) session.getAttribute("loader");
+		session.removeAttribute("loader");
 		String fileName = request.getParameter(WebConstants.FILE_NAME);
 		String dvType = request.getParameter(WebConstants.DV_TYPE);
 		String pageNum = request.getParameter(WebConstants.PAGE_NUMBER);
@@ -149,8 +150,12 @@ public class DVReportServlet extends HttpServlet {
 			LOGGER.error("Unable to read file ", e);
 
 		} finally {
-			out.close();
-			br.close();
+			if(out!=null){
+				out.close();
+			}
+			if(br!=null){
+				br.close();
+			}
 		}
 	}
 }

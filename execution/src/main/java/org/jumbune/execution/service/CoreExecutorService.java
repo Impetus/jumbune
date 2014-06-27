@@ -242,23 +242,23 @@ public abstract class CoreExecutorService {
 	protected static  void cleanUpSlavesTempFldr(YamlLoader loader) throws JumbuneException, IOException, InterruptedException
 	{
 
-		ExecutorService service = null;
+		ExecutorService cleanUpSlavesservice = null;
 		List<Slave> listSlave = loader.getLogDefinition().getSlaves();
 		LOGGER.info("Starting clean up process................");
 		for (Slave slaveDefinition : listSlave) {
 			String[] hostsNode = slaveDefinition.getHosts();
 			try {
-			service=Executors.newFixedThreadPool(listSlave.size());
+			cleanUpSlavesservice=Executors.newFixedThreadPool(listSlave.size());
 			for (String hostNode : hostsNode) {
 				CleanUpSlaves cleanUpSlaves = new CleanUpSlaves(loader,hostNode);
-				service.execute(cleanUpSlaves);
+				cleanUpSlavesservice.execute(cleanUpSlaves);
 
 			}
 		
 		}catch (Exception e) {
 			LOGGER.error(e);
 			}finally {
-				service.shutdown();
+				cleanUpSlavesservice.shutdown();
 			}
 			}
 	}

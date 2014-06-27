@@ -471,7 +471,9 @@ public final class DeployUtil {
 				}
 
 			} finally {
-				input.close();
+				if(input!=null){
+					input.close();
+				}
 			}
 
 			BufferedWriter out = new BufferedWriter(new FileWriter(f));

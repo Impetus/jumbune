@@ -110,7 +110,9 @@ public class ValidateYamlServlet extends HttpServlet {
 		response.setContentType("application/json");
 		out.print(validateString);
 	    out.flush();
-
+	    if(out!=null){
+	    	out.close();
+	    }
 	}
 
 	/**

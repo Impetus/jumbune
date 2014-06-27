@@ -468,6 +468,9 @@ public class ProcessHelper {
 						reader, jobName, line);
 			}
 		}
+		if(reader!=null){
+			reader.close();
+		}
 		if (isDebugged && jobs.size() > 1) {
 			
 			String fileName = loader.getMasterConsolidatedLogLocation() + "jobChain-" + processName + "_instrumented.log";
@@ -621,7 +624,9 @@ public class ProcessHelper {
 			}
 			LOGGER.debug("Data validation command ["+sb.toString()+"] and got back response ["+dvJson+"]");
 		} finally {
-			is.close();
+			if(reader!=null){
+				reader.close();
+			}
 		}
 		return dvJson;
 	}
@@ -694,6 +699,9 @@ public class ProcessHelper {
 					errorString.append(line);
 				}
 			}
+		}
+		if(reader!=null){
+			reader.close();
 		}
 		return dvJson;
 	}

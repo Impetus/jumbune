@@ -45,49 +45,49 @@ public class ProfilerServlet extends HttpServlet {
 			.getLogger(ProfilerServlet.class);
 	
 	/** The Constant NODE_VIEW. */
-	private static final String NODE_VIEW = "NODE_VIEW";
+	private final String NODE_VIEW = "NODE_VIEW";
 	
 	/** The Constant CLUSTER_VIEW. */
-	private static final String CLUSTER_VIEW = "CLUSTER_VIEW";
+	private final String CLUSTER_VIEW = "CLUSTER_VIEW";
 	
 	/** The Constant DEFAULT_VIEW. */
-	private static final String DEFAULT_VIEW = CLUSTER_VIEW;
+	private final String DEFAULT_VIEW = CLUSTER_VIEW;
 	
 	/** The Constant NETWORK_LATENCY_VIEW. */
-	private static final String NETWORK_LATENCY_VIEW = "NETWORK_LATENCY_VIEW";
+	private final String NETWORK_LATENCY_VIEW = "NETWORK_LATENCY_VIEW";
 	
 	/** The Constant NETWORK_LATENCY_RESULT. */
-	private static final String NETWORK_LATENCY_RESULT = "NETWORK_LATENCY_RESULT";
+	private final String NETWORK_LATENCY_RESULT = "NETWORK_LATENCY_RESULT";
 	
 	/** The Constant COLOR. */
-	private static final String COLOR = "color";
+	private final String COLOR = "color";
 	
 	/** The Constant NODE_IP. */
-	private static final String NODE_IP = "nodeIp";
+	private final String NODE_IP = "nodeIp";
 	
 	/** The Constant NODE_LIST. */
-	private static final String NODE_LIST = "NODE_LIST";
+	private final String NODE_LIST = "NODE_LIST";
 	
 	/** The Constant REPORT_JSON. */
-	private static final String REPORT_JSON = "reports";
+	private final String REPORT_JSON = "reports";
 	
 	/** The Constant NODE_CONFIG. */
-	private static final String NODE_CONFIG = "nodeConfig";
+	private final String NODE_CONFIG = "nodeConfig";
 	
 	/** The Constant COLOR_CONFIG. */
-	private static final String COLOR_CONFIG = "colorConfig";
+	private final String COLOR_CONFIG = "colorConfig";
 	
 	/** The Constant GENERAL_SETTINGS. */
-	private static final String GENERAL_SETTINGS = "general_settings";
+	private final String GENERAL_SETTINGS = "general_settings";
 	
 	/** The Constant DATALOAD_VIEW. */
-	private static final String DATALOAD_VIEW = "DATALOAD_VIEW";
+	private final String DATALOAD_VIEW = "DATALOAD_VIEW";
 	
 	/** The Constant DATA_DISTRIBUTION_VIEW. */
-	private static final String DATA_DISTRIBUTION_VIEW = "DATA_DISTRIBUTION_VIEW";
+	private final String DATA_DISTRIBUTION_VIEW = "DATA_DISTRIBUTION_VIEW";
 	
 	/** The Constant HDFS_PATH. */
-	private static final String HDFS_PATH = "HDFS_PATH";
+	private final String HDFS_PATH = "HDFS_PATH";
 
 	
 	/** The general settings. */
