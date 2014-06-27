@@ -122,7 +122,7 @@ public final class JumbuneAgent {
 		}
 		copyAgentLibJarsToHadoopLib(jars, storageDir);
 		ServerBootstrap bootstrap;
-        bossGroup = new NioEventLoopGroup(5);
+        bossGroup = new NioEventLoopGroup(10);
         workerGroup = new NioEventLoopGroup(10);
         try {
             bootstrap = new ServerBootstrap();
