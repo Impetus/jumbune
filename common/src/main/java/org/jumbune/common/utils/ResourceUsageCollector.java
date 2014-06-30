@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.WeakHashMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -234,28 +235,51 @@ public class ResourceUsageCollector {
 		PhaseOutput po = jobOutput.getPhaseOutput();
 		PhaseDetails setupDetails = po.getSetupDetails();
 		// nodes on which setup tasks ran
+		WeakHashMap<String, String> hostConversions = new WeakHashMap<String, String>();
+		
 		List<TaskOutputDetails> setupTaskDetails = setupDetails.getTaskOutputDetails();
 		for (TaskOutputDetails tod : setupTaskDetails) {
-			addHostToNodeList(tod.getLocation(), hosts);
+			String location = tod.getLocation();
+			if(!hostConversions.containsKey(location)){
+				String host = convertHostNameToIP(location);
+				hosts.add(host);
+				hostConversions.put(location, host);
+			}
 		}
 		// nodes on which map tasks ran
 		PhaseDetails mapDetails = po.getMapDetails();
 		List<TaskOutputDetails> mapTaskDetails = mapDetails.getTaskOutputDetails();
 		for (TaskOutputDetails tod : mapTaskDetails) {
-			addHostToNodeList(tod.getLocation(), hosts);
+			String location = tod.getLocation();
+			if(!hostConversions.containsKey(location)){
+				String host = convertHostNameToIP(location);
+				hosts.add(host);
+				hostConversions.put(location, host);
+			}
 		}
 		// nodes on which reduce tasks ran
 		PhaseDetails reduceDetails = po.getReduceDetails();
 		List<TaskOutputDetails> reduceTaskDetails = reduceDetails.getTaskOutputDetails();
 		for (TaskOutputDetails tod : reduceTaskDetails) {
-			addHostToNodeList(tod.getLocation(), hosts);
+			String location = tod.getLocation();
+			if(!hostConversions.containsKey(location)){
+				String host = convertHostNameToIP(location);
+				hosts.add(host);
+				hostConversions.put(location, host);
+			}
 		}
 		// nodes on which cleanup tasks ran
 		PhaseDetails cleanupDetails = po.getCleanupDetails();
 		List<TaskOutputDetails> cleanupTaskDetails = cleanupDetails.getTaskOutputDetails();
 		for (TaskOutputDetails tod : cleanupTaskDetails) {
-			addHostToNodeList(tod.getLocation(), hosts);
+			String location = tod.getLocation();
+			if(!hostConversions.containsKey(location)){
+				String host = convertHostNameToIP(location);
+				hosts.add(host);
+				hostConversions.put(location, host);
+			}
 		}
+		hostConversions.clear();
 		return hosts;
 	}
 
