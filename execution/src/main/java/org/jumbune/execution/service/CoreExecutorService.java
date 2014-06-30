@@ -334,7 +334,6 @@ public abstract class CoreExecutorService {
 			
 			//In "working directory in worker node/jobjars", remove the currently ran job name folder
 			StringBuilder cleanLocationStrBuilder = new StringBuilder()
-					.append(hostNode).append(RemotingConstants.SINGLE_SPACE)
 					.append(RemotingConstants.REMOVE_FOLDER)
 					.append(RemotingConstants.SINGLE_SPACE).append(jumbuneHome)
 					.append(Constants.JOB_JARS_LOC)
@@ -347,8 +346,7 @@ public abstract class CoreExecutorService {
 			remoter.fireAndForgetCommand(builder.getCommandWritable());
 			
 			//removing top.txt file under slave working directory
-			cleanLocationStrBuilder = new StringBuilder().append(hostNode)
-					.append(RemotingConstants.SINGLE_SPACE)
+			cleanLocationStrBuilder = new StringBuilder()
 					.append(RemotingConstants.REMOVE)
 					.append(RemotingConstants.SINGLE_SPACE)
 					.append(jumbuneHome)

@@ -77,6 +77,6 @@ public interface ExecutionConstants {
 	int TEN = 10;
 	int THREE = 3 ;
 	
-	String TOPTXTFILE = "top.txt";
+	String TOPTXTFILE = "/top.txt";
 
 }
