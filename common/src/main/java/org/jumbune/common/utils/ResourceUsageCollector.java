@@ -514,20 +514,6 @@ public class ResourceUsageCollector {
 	}
 
 	/**
-	 * Adds the host to node list if already not present.
-	 *
-	 * @param location the location
-	 * @param hosts the hosts
-	 * @throws UnknownHostException the unknown host exception
-	 */
-	private void addHostToNodeList(String location, List<String> hosts) throws UnknownHostException {
-		String host = convertHostNameToIP(location);
-		if (!hosts.contains(host)) {
-			hosts.add(host);
-		}
-	}
-
-	/**
 	 * Replaces defualt rack suffix and converts host name to node IP.
 	 *
 	 * @param hostName the host name
