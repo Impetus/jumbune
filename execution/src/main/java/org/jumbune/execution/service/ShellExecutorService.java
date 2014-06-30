@@ -160,6 +160,7 @@ public class ShellExecutorService extends CoreExecutorService {
 		} 
 		try {
 			LOGGER.debug("clean up process slave tmp + agent home shell case ");
+			cleanUpJumbuneAgentCurrentJobFolder(loader);
 			cleanUpSlavesTempFldr(loader);
 			}
 		 catch (Exception e) {

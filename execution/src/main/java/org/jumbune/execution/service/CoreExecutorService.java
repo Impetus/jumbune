@@ -32,13 +32,13 @@ import org.jumbune.execution.processor.DataValidationProcessor;
 import org.jumbune.execution.processor.DebugProcessor;
 import org.jumbune.execution.processor.Processor;
 import org.jumbune.execution.processor.ProfilingProcessor;
+import org.jumbune.execution.utils.ExecutionConstants;
 import org.jumbune.execution.utils.ExecutionUtil;
 import org.jumbune.execution.utils.ProcessHelper;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.utils.exception.JumbuneException;
-
 
 /**
  * Class that contains the chaning logic of processors based on modules selected
@@ -55,7 +55,7 @@ public abstract class CoreExecutorService {
 	protected static final boolean HTTP_BASED = false;
 	protected static final boolean CONSOLE_BASED = true;
 	protected static final ProcessHelper HELPER = new ProcessHelper();
-	
+
 	/**
 	 * Method that performs the desired chaining of the processors.
 	 * 
@@ -85,8 +85,7 @@ public abstract class CoreExecutorService {
 
 	/**
 	 * This method decides which all modules to be added for execution. if
-	 * DebugAnalysis is selected by default profiling will be
-	 * enabled.
+	 * DebugAnalysis is selected by default profiling will be enabled.
 	 * 
 	 * @param config
 	 * @return
@@ -95,11 +94,11 @@ public abstract class CoreExecutorService {
 		List<Module> modules = new ArrayList<Module>();
 		boolean isAddProfiling = false;
 
-		if (config.getEnableDataValidation().equals(Enable.TRUE)){
+		if (config.getEnableDataValidation().equals(Enable.TRUE)) {
 			modules.add(Module.DATA_VALIDATION);
 		}
 
-		if (config.getEnableStaticJobProfiling().equals(Enable.TRUE)){
+		if (config.getEnableStaticJobProfiling().equals(Enable.TRUE)) {
 			isAddProfiling = true;
 		}
 
@@ -107,11 +106,11 @@ public abstract class CoreExecutorService {
 			modules.add(Module.DEBUG_ANALYSER);
 		}
 
-		if (isAddProfiling){
+		if (isAddProfiling) {
 			modules.add(Module.PROFILING);
 		}
 		Collections.sort(modules);
-		LOGGER.debug("Executable Modules ["+modules+"]");
+		LOGGER.debug("Executable Modules [" + modules + "]");
 		return modules;
 	}
 
@@ -128,7 +127,6 @@ public abstract class CoreExecutorService {
 
 		if (modules != null && modules.size() > 0) {
 
-			
 			Processor previous = null;
 			for (Iterator<Module> iterator = modules.iterator(); iterator
 					.hasNext();) {
@@ -178,7 +176,6 @@ public abstract class CoreExecutorService {
 
 		return processor;
 	}
-	
 
 	protected void persistReports(ReportsBean reports, String reportFolderPath)
 			throws IOException {
@@ -198,8 +195,8 @@ public abstract class CoreExecutorService {
 		}
 	}
 
-
-	protected static synchronized boolean checkProfilingState() throws JumbuneException {
+	protected static synchronized boolean checkProfilingState()
+			throws JumbuneException {
 		String tokenFilePath = YamlLoader.getjHome() + TEMP_DIR + TOKEN_FILE;
 		File fToken = new File(tokenFilePath);
 
@@ -233,14 +230,18 @@ public abstract class CoreExecutorService {
 
 	/**
 	 * This method cleans up the job name folder in temp directory on slaves.
-	 *
-	 * @param loader the loader
-	 * @throws JumbuneException the hTF exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws InterruptedException the interrupted exception
+	 * 
+	 * @param loader
+	 *            the loader
+	 * @throws JumbuneException
+	 *             the hTF exception
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 * @throws InterruptedException
+	 *             the interrupted exception
 	 */
-	protected static  void cleanUpSlavesTempFldr(YamlLoader loader) throws JumbuneException, IOException, InterruptedException
-	{
+	protected void cleanUpSlavesTempFldr(YamlLoader loader)
+			throws JumbuneException, IOException, InterruptedException {
 
 		ExecutorService cleanUpSlavesservice = null;
 		List<Slave> listSlave = loader.getLogDefinition().getSlaves();
@@ -248,74 +249,120 @@ public abstract class CoreExecutorService {
 		for (Slave slaveDefinition : listSlave) {
 			String[] hostsNode = slaveDefinition.getHosts();
 			try {
-			cleanUpSlavesservice=Executors.newFixedThreadPool(listSlave.size());
-			for (String hostNode : hostsNode) {
-				CleanUpSlaves cleanUpSlaves = new CleanUpSlaves(loader,hostNode);
-				cleanUpSlavesservice.execute(cleanUpSlaves);
+				cleanUpSlavesservice = Executors.newFixedThreadPool(listSlave
+						.size());
+				for (String hostNode : hostsNode) {
+					CleanUpSlaves cleanUpSlaves = new CleanUpSlaves(loader,
+							hostNode);
+					cleanUpSlavesservice.execute(cleanUpSlaves);
+				}
 
-			}
-		
-		}catch (Exception e) {
-			LOGGER.error(e);
-			}finally {
+			} catch (Exception e) {
+				LOGGER.error(e);
+			} finally {
 				cleanUpSlavesservice.shutdown();
 			}
-			}
+		}
 	}
+	
+	protected void cleanUpJumbuneAgentCurrentJobFolder(YamlLoader loader){
+		//Remove Agent Home/Job jar/Jobname folder, this is skipped only in case if cluster monitoring
+
+		Master master = loader.getLogDefinition().getMaster();
+		String hostMaster = master.getHost();
+		Remoter remoter = new Remoter(hostMaster, Integer.valueOf(master
+				.getAgentPort()));
+		CommandWritableBuilder builder = new CommandWritableBuilder();
+		
+		if (!loader.getYamlConfiguration().getHadoopJobProfile()
+				.getEnumValue()) {
+			StringBuilder cleanLocationAgentStrBuilder = new StringBuilder()
+					.append(RemotingConstants.REMOVE_FOLDER)
+					.append(RemotingConstants.SINGLE_SPACE)
+					.append(RemotingConstants.AGENT_HOME)
+					.append(Constants.JOB_JARS_LOC)
+					.append(loader.getJumbuneJobName());
+			LOGGER.debug("Cleanup agent temporary directories command ["
+					+ cleanLocationAgentStrBuilder + "]");
+			builder.getCommandBatch().clear();
+			builder.addCommand(cleanLocationAgentStrBuilder.toString(),
+					false, null);
+			remoter.fireAndForgetCommand(builder.getCommandWritable());
+		}
+		remoter.close();
+	}
+
 	/**
 	 * The Class CleanUpSlaves.
 	 */
 	private static class CleanUpSlaves implements Runnable {
-	
-	/** The loader. */
-	private YamlLoader loader;
-	
-	/** The host node. */
-	private String hostNode;
-	
-	/**
-	 * Instantiates a new clean up slaves.
-	 *
-	 * @param loader the loader
-	 * @param hostNode the host node
-	 */
-	public CleanUpSlaves(YamlLoader loader,String hostNode)
-	{
-		this.loader=loader;
-		this.hostNode=hostNode;
-	}
-	
-	/* (non-Javadoc)
-	 * @see java.lang.Runnable#run()
-	 */
-	@Override
-	public void run() {
-		
-		Master master = loader.getLogDefinition().getMaster();
-		String hostMaster = master.getHost();
-		
-		
-		Remoter remoter = new Remoter(hostMaster, Integer.valueOf(master.getAgentPort()));
-		StringBuilder clSb = new StringBuilder().append(hostNode).append(RemotingConstants.SINGLE_SPACE).append(RemotingConstants.REMOVE_FOLDER)
-		.append(RemotingConstants.SINGLE_SPACE).append(loader.getYamlConfiguration().getsJumbuneHome())
-		.append(Constants.JOB_JARS_LOC).append(loader.getJumbuneJobName());
-		LOGGER.debug("Cleanup temporary directories command ["+clSb+"]");
-		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(clSb.toString(), false, null).setApiInvokeHints(ApiInvokeHintsEnum.JOB_EXECUTION);
-		remoter.fireAndForgetCommand(builder.getCommandWritable());
-		if(!loader.getYamlConfiguration().getHadoopJobProfile().getEnumValue()) {
-		StringBuilder claSb = new StringBuilder().append(RemotingConstants.REMOVE_FOLDER).append(RemotingConstants.SINGLE_SPACE)
-		.append(RemotingConstants.AGENT_HOME).append(Constants.JOB_JARS_LOC).append(loader.getJumbuneJobName());
-		LOGGER.debug("Cleanup agent temporary directories command ["+claSb+"]");
-		
-		builder.getCommandBatch().clear();
-		builder.addCommand(claSb.toString(), false, null);
-		remoter.fireAndForgetCommand(builder.getCommandWritable());
-		remoter.close();
-		LOGGER.info("Cleaned jumbune generated temp directory and logs");
+
+		/** The loader. */
+		private YamlLoader loader;
+
+		/** The host node. */
+		private String hostNode;
+
+		/**
+		 * Instantiates a new clean up slaves.
+		 * 
+		 * @param loader
+		 *            the loader
+		 * @param hostNode
+		 *            the host node
+		 */
+		public CleanUpSlaves(YamlLoader loader, String hostNode) {
+			this.loader = loader;
+			this.hostNode = hostNode;
 		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Runnable#run()
+		 */
+		@Override
+		public void run() {
+
+			Master master = loader.getLogDefinition().getMaster();
+			String hostMaster = master.getHost();
+			String jumbuneHome = loader.getYamlConfiguration()
+					.getsJumbuneHome();
+			YamlConfig config = loader.getYamlConfiguration();
+			Remoter remoter = new Remoter(hostMaster, Integer.valueOf(master
+					.getAgentPort()));
+			
+			//In "working directory in worker node/jobjars", remove the currently ran job name folder
+			StringBuilder cleanLocationStrBuilder = new StringBuilder()
+					.append(hostNode).append(RemotingConstants.SINGLE_SPACE)
+					.append(RemotingConstants.REMOVE_FOLDER)
+					.append(RemotingConstants.SINGLE_SPACE).append(jumbuneHome)
+					.append(Constants.JOB_JARS_LOC)
+					.append(loader.getJumbuneJobName());
+			LOGGER.debug("Cleanup temporary directories command ["
+					+ cleanLocationStrBuilder + "]");
+			CommandWritableBuilder builder = new CommandWritableBuilder();
+			builder.populate(config, hostNode);
+			builder.addCommand(cleanLocationStrBuilder.toString(), false, null);
+			remoter.fireAndForgetCommand(builder.getCommandWritable());
+			
+			//removing top.txt file under slave working directory
+			cleanLocationStrBuilder = new StringBuilder().append(hostNode)
+					.append(RemotingConstants.SINGLE_SPACE)
+					.append(RemotingConstants.REMOVE)
+					.append(RemotingConstants.SINGLE_SPACE)
+					.append(jumbuneHome)
+					.append(ExecutionConstants.TOPTXTFILE);
+			LOGGER.debug("Cleanup top txt file on slave command ["+ cleanLocationStrBuilder + "]");
+			builder = new CommandWritableBuilder();
+			builder.addCommand(cleanLocationStrBuilder.toString(), false, null);
+			builder.populate(config, hostNode);
+			remoter.fireAndForgetCommand(builder.getCommandWritable());
+
+			remoter.close();
+			LOGGER.info("Cleaned jumbune generated temp directory and logs");
+		}
+
 	}
-	
-}
 
 }

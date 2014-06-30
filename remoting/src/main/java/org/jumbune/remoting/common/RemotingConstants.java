@@ -240,4 +240,6 @@ public interface RemotingConstants {
 
 	int EIGHT_ZERO_NINE_SIX_ZERO = 80960;
 
+	String REMOVE = "rm";
+
 }
