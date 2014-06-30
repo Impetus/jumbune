@@ -152,7 +152,7 @@ public class ResourceUsageCollector {
 			builder.getCommandBatch().clear();
 		}
 		remoter.close();
-		LOGGER.debug("Command (analyzing top dumps) [" + cpuCommand.toString()+"]");
+		LOGGER.info("Command (analyzing top dumps) [" + cpuCommand.toString()+"]");
 	}
 
 	/**

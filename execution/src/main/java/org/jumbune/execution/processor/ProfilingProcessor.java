@@ -111,12 +111,13 @@ public class ProfilingProcessor extends BaseProcessor {
 			collector.shutTopCmdOnSlaves(receiveDir);
 			LOGGER.debug("Stopped top command on Workers");
 			jobOutput = getJobOutput(jobID);
+			LOGGER.info("Received Job Output");
 			List<String> selectedHosts = collector.getNodesForJob(jobOutput);
 			collector.processTopDumpFile(receiveDir, selectedHosts);
 			calcStatsFromLogConsolidationInfo(jobOutput, collector);
 			// populating data validation report
 			populateReport(pureJarCounterJson);
-			LOGGER.debug("Profiling final JSON ["+jobOutput+"]");
+			LOGGER.info("Profiling final JSON ["+jobOutput+"]");
 		} catch (IOException e) {
 			LOGGER.error("Error while executing pure jar.", e);
 			return false;
@@ -158,7 +159,7 @@ public class ProfilingProcessor extends BaseProcessor {
 			ResourceUsageCollector collector, LogConsolidationInfo lci)
 			throws JumbuneException, IOException, InterruptedException {
 		RemoteFileUtil cu = new RemoteFileUtil();
-		LOGGER.debug("Copying remote stats file");
+		LOGGER.info("Copying remote stats file");
 		cu.copyRemoteSysStatsFiles(lci);
 		collector.addPhaseResourceUsage(jobOutput);
 	}
