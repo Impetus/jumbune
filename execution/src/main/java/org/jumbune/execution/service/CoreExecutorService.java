@@ -284,7 +284,7 @@ public abstract class CoreExecutorService {
 					.append(loader.getJumbuneJobName());
 			LOGGER.debug("Cleanup agent temporary directories command ["
 					+ cleanLocationAgentStrBuilder + "]");
-			builder.getCommandBatch().clear();
+			
 			builder.addCommand(cleanLocationAgentStrBuilder.toString(),
 					false, null);
 			remoter.fireAndForgetCommand(builder.getCommandWritable());
