@@ -58,6 +58,7 @@ public final class YamlConfigUtil {
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand("ls lib/", false, null);
 		String result = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		remoter.close();
 		return (result.length() > 0) ? true : false;
 	}
 
@@ -70,16 +71,18 @@ public final class YamlConfigUtil {
 	 */
 	public static boolean isMRJobJarPresent(YamlConfig config, String jarFilepath){
 		Master master = config.getMaster();
-		Remoter remoter = new Remoter(master.getHost(), Integer.valueOf(master.getAgentPort()));
 		File resourceDir = new File(jarFilepath);
 		if(resourceDir.exists()){
+			Remoter remoter = new Remoter(master.getHost(), Integer.valueOf(master.getAgentPort()));
 			CommandWritableBuilder builder = new CommandWritableBuilder();
 			builder.addCommand("ls "+jarFilepath, false, null);
 			String result = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+			remoter.close();
 			return (result.length() > 0) ? true : false;
 		}else{
 			return false;
 		}
+
 	}
 
 	/**
@@ -122,7 +125,7 @@ public final class YamlConfigUtil {
 				sendLibJarCommand(remoter, config, copyJarToHadoopLib.toString());
 			}
 		}
-	
+		remoter.close();
 	}
 
 	/**
@@ -152,6 +155,7 @@ public final class YamlConfigUtil {
 					remoter.sendJar(relativeAgentPath, filename);
 			}
 			}
+		remoter.close();
 	}
 
 	/**

@@ -22,10 +22,29 @@
 	<dependencies>
 		<dependency>
 			<groupId>io.netty</groupId>
-			<artifactId>netty</artifactId>
-			<version>3.5.10.Final</version>
+			<artifactId>netty-handler</artifactId>
+			<version>4.0.20.Final</version>
 		</dependency>
-		
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-buffer</artifactId>
+			<version>4.0.20.Final</version>
+		</dependency>
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-common</artifactId>
+			<version>4.0.20.Final</version>
+		</dependency>
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-codec</artifactId>
+			<version>4.0.20.Final</version>
+		</dependency>
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-transport</artifactId>
+			<version>4.0.20.Final</version>
+		</dependency>		
 		<dependency>
 			<groupId>org.easymock</groupId>
 			<artifactId>easymock</artifactId>
@@ -37,8 +56,7 @@
 			<artifactId>jsch</artifactId>
 			<version>0.1.51</version>
 		</dependency>
-
-	</dependencies>
+		</dependencies>
 
 	<build>
 		<plugins>
@@ -84,7 +102,7 @@
 						</goals>
 						<configuration>
 							<includes>
-								<include>org/jumbune/remoting/handlers**/*</include>
+								<include>org/jumbune/remoting/codecs**/*</include>
 								<include>org/jumbune/remoting/writable**/*</include>
 								<include>org/jumbune/remoting/client**/**/*</include>
 								<include>org/jumbune/remoting/common**/*</include>

@@ -166,6 +166,11 @@ public class HadoopLogParser {
 				jacksonMapperAslJar, jacksonMapperCoreJar, rumenJar, sb);
 		LOGGER.debug("Rumen processing command [" + sb.toString()+"]");
 		startRumenProcessing(remoter, relLocalPath, relRemotePath, sb);
+		remoter.close();
+		remoter = RemotingUtil.getRemoter(loader, appHome);
+		remoter.receiveLogFiles(relLocalPath, relRemotePath);
+		remoter.close();
+		LOGGER.debug("Received log files from:"+ relRemotePath);
 		// process json
 		Gson gson = new Gson();
 		JobDetails jobDetails = extractJobDetails(appHome, relLocalPath, gson);
@@ -196,7 +201,6 @@ public class HadoopLogParser {
 		builder.addCommand(sb.toString(), false, null);
 		remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		LOGGER.info("Completed Rumen processing");
-		remoter.receiveLogFiles(relLocalPath, relRemotePath);
 	}
 
 	/**
@@ -345,6 +349,7 @@ public class HadoopLogParser {
 		PhaseDetails cleanupDetails = addPhaseDetails(cleanupTasks, startTime);
 		phaseOutput.setCleanupDetails(cleanupDetails);
 		jobOutput.setPhaseOutput(phaseOutput);
+		LOGGER.debug("Converted the Json to final output");
 		return jobOutput;
 	}
 

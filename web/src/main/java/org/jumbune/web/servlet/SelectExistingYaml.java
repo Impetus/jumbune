@@ -37,7 +37,7 @@ import com.google.gson.JsonObject;
 public class SelectExistingYaml extends HttpServlet {
 	
 	/** The Constant YAML_FILE_LOCATION. */
-	private static final String YAML_FILE_LOCATION = "yamlrepo/";
+	private final String YAML_FILE_LOCATION = "yamlrepo/";
 	
 	/** The Constant serialVersionUID. */
 	private static final long serialVersionUID = -5670494587459539993L;
@@ -90,8 +90,10 @@ public class SelectExistingYaml extends HttpServlet {
 				out.println(returnJsonString);
 
 			} finally {
-				out.close();
-				out.flush();
+				if (out != null) {
+					out.flush();
+					out.close();
+				}
 			}
 		} else {
 			String yamlFileName = request.getParameter("selectedYamlFileName");
@@ -117,8 +119,8 @@ public class SelectExistingYaml extends HttpServlet {
 			} finally {
 				if (out != null) {
 					out.flush();
+					out.close();
 				}
-				out.close();
 			}
 			
 
@@ -155,7 +157,4 @@ public class SelectExistingYaml extends HttpServlet {
 			}
 		}
 	}
-
-	
-
 }

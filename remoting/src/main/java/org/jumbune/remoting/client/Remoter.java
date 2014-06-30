@@ -1,5 +1,17 @@
 package org.jumbune.remoting.client;
 
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelInboundHandler;
+import io.netty.handler.codec.serialization.ClassResolvers;
+import io.netty.handler.codec.serialization.ObjectDecoder;
+import io.netty.handler.codec.serialization.ObjectEncoder;
+import io.netty.handler.codec.string.StringDecoder;
+import io.netty.handler.codec.string.StringEncoder;
+
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
@@ -9,26 +21,14 @@ import java.util.concurrent.TimeoutException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.channel.ChannelHandler;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.handler.codec.string.StringDecoder;
-import org.jboss.netty.handler.codec.string.StringEncoder;
 import org.jumbune.remoting.client.consumers.ObjectResponseHandler;
 import org.jumbune.remoting.client.consumers.StringResponseHandler;
+import org.jumbune.remoting.codecs.ArchiveDecoder;
+import org.jumbune.remoting.codecs.ArchiveEncoder;
+import org.jumbune.remoting.codecs.LogFilesDecoder;
+import org.jumbune.remoting.codecs.LogFilesEncoder;
 import org.jumbune.remoting.common.RemotingConstants;
-import org.jumbune.remoting.handlers.ArchiveDecoder;
-import org.jumbune.remoting.handlers.ArchiveEncoder;
-import org.jumbune.remoting.handlers.LogFilesDecoder;
-import org.jumbune.remoting.handlers.LogFilesEncoder;
-import org.jumbune.remoting.handlers.ObjectDecoder;
-import org.jumbune.remoting.handlers.ObjectEncoder;
 import org.jumbune.remoting.writable.CommandWritable;
-
-
 
 /**
  * The Class Remoter.
@@ -91,6 +91,7 @@ public class Remoter {
 		List<ChannelHandler> handlers = new LinkedList<ChannelHandler>();
 
 		handlers.add(new ArchiveEncoder());
+		
 		StringResponseHandler stringResponseHandler = new StringResponseHandler();
 		handlers.add(new StringDecoder());
 		handlers.add(stringResponseHandler);
@@ -98,12 +99,12 @@ public class Remoter {
 		channelFuture = acquireChannelFuture("JAS", handlers);
 		// sending barrier as channel attachment for dynamic integration of
 		// barrier
-		writeToChannel(channelFuture.getChannel(), new String[] { "J", "A", "S" }, jarAbsolutePathAtSource + RemotingConstants.PATH_DEMARKER
+		writeToChannel(channelFuture.channel(), new String[] { "J", "A", "S" }, jarAbsolutePathAtSource + RemotingConstants.PATH_DEMARKER
 				+ destinationRelativePath, barrier);
 
 		confirmBarrierAndGo(barrier);
 		addCloseListener(channelFuture);
-		jac.releaseBootstrapResources();
+		channelFuture.channel().close();
 	}
 
 	/**
@@ -119,6 +120,7 @@ public class Remoter {
 		CyclicBarrier barrier = new CyclicBarrier(2);
 
 		List<ChannelHandler> handlers = new LinkedList<ChannelHandler>();
+
 		ArchiveDecoder decoder = new ArchiveDecoder(receiveDirectory);
 		handlers.add(new StringEncoder());
 		handlers.add(decoder);
@@ -126,12 +128,12 @@ public class Remoter {
 		channelFuture = acquireChannelFuture("JAR", handlers);
 		// sending barrier as channel attachment for dynamic integration of
 		// barrier
-		writeToChannel(channelFuture.getChannel(), new String[] { "J", "A", "R" }, relativePathOfRemoteJar + RemotingConstants.PATH_DEMARKER
+		writeToChannel(channelFuture.channel(), new String[] { "J", "A", "R" }, relativePathOfRemoteJar + RemotingConstants.PATH_DEMARKER
 				+ destinationRelativePathOnLocal, barrier);
 
 		confirmBarrierAndGo(barrier);
 		addCloseListener(channelFuture);
-		jac.releaseBootstrapResources();
+		channelFuture.channel().close();
 	}
 
 	/**
@@ -147,7 +149,9 @@ public class Remoter {
 		CyclicBarrier barrier = new CyclicBarrier(2);
 
 		List<ChannelHandler> handlers = new LinkedList<ChannelHandler>();
+		
 		handlers.add(new LogFilesEncoder());
+		
 		StringResponseHandler stringResponseHandler = new StringResponseHandler();
 		handlers.add(new StringDecoder());
 		handlers.add(stringResponseHandler);
@@ -155,12 +159,12 @@ public class Remoter {
 		channelFuture = acquireChannelFuture("TXS", handlers);
 		// sending barrier as channel attachment for dynamic integration of
 		// barrier
-		writeToChannel(channelFuture.getChannel(), new String[] { "T", "X", "S" }, logFilesAbsolutePathAtSource + RemotingConstants.PATH_DEMARKER
+		writeToChannel(channelFuture.channel(), new String[] { "T", "X", "S" }, logFilesAbsolutePathAtSource + RemotingConstants.PATH_DEMARKER
 				+ destinationRelativePath, barrier);
 
 		confirmBarrierAndGo(barrier);
 		addCloseListener(channelFuture);
-		jac.releaseBootstrapResources();
+		channelFuture.channel().close();
 	}
 
 	/**
@@ -176,6 +180,7 @@ public class Remoter {
 		CyclicBarrier barrier = new CyclicBarrier(2);
 
 		List<ChannelHandler> handlers = new LinkedList<ChannelHandler>();
+
 		LogFilesDecoder decoder = new LogFilesDecoder(receiveDirectory);
 		handlers.add(new StringEncoder());
 		handlers.add(decoder);
@@ -183,14 +188,13 @@ public class Remoter {
 		channelFuture = acquireChannelFuture("TXR", handlers);
 		// sending barrier as channel attachment for dynamic integration of
 		// barrier
-		writeToChannel(channelFuture.getChannel(), new String[] { "T", "X", "R" }, relativePathOfRemoteLogFiles + RemotingConstants.PATH_DEMARKER
+		writeToChannel(channelFuture.channel(), new String[] { "T", "X", "R" }, relativePathOfRemoteLogFiles + RemotingConstants.PATH_DEMARKER
 				+ destinationRelativePathOnLocal, barrier);
 
 		confirmBarrierAndGo(barrier);
 		addCloseListener(channelFuture);
-		jac.releaseBootstrapResources();
+		channelFuture.channel().close();
 	}
-
 
 	/**
 	 * Fire and forget command.
@@ -211,11 +215,11 @@ public class Remoter {
 		channelFuture = acquireChannelFuture("CMD", handlers);
 		// sending barrier as channel attachment for dynamic integration of
 		// barrier
-		writeToChannel(channelFuture.getChannel(), new String[] { "C", "M", "D" }, commandWritable, barrier);
+		writeToChannel(channelFuture.channel(), new String[] { "C", "M", "D" }, commandWritable, barrier);
 
 		confirmBarrierAndGo(barrier);
 		addCloseListener(channelFuture);
-		jac.releaseBootstrapResources();
+		channelFuture.channel().close();
 	}
 	
 	/**
@@ -236,12 +240,20 @@ public class Remoter {
 		handlers.add(stringResponseHandler);
 		channelFuture = acquireChannelFuture("CMA", handlers);
 
-		writeToChannel(channelFuture.getChannel(), new String[] { "C", "M", "A" }, commandWritable, barrier);
+		writeToChannel(channelFuture.channel(), new String[] { "C", "M", "A" }, commandWritable, barrier);
 		confirmBarrierAndGo(barrier);
 		addCloseListener(channelFuture);
-		jac.releaseBootstrapResources();
+		channelFuture.channel().close();
 	}
 	
+	
+	public void close(){
+		try {
+			jac.releaseBootstrapResources();
+		} catch (InterruptedException e) {
+			logger.warn(e);			
+		}
+	}
 	
 	/**
 	 * Adds the close listener.
@@ -252,14 +264,14 @@ public class Remoter {
 		future.addListener(new ChannelFutureListener() {
 			@Override
 			public void operationComplete(ChannelFuture future) {
-				Channel channel = future.getChannel();
+				Channel channel = future.channel();
 				future.awaitUninterruptibly();
 		
 					synchronized (channel) {
 						if (channel.isOpen()) {
 							channel.close();
 							if (logger.isDebugEnabled()) {
-								logger.debug("operation completed, closing the channel #" + channel.getId());
+								logger.debug("operation completed, closing the channel #" + channel.hashCode());
 							}
 						}
 					}
@@ -288,17 +300,14 @@ public class Remoter {
 		List<ChannelHandler> handlers = new LinkedList<ChannelHandler>();
 		ObjectResponseHandler objectResponseHandler = new ObjectResponseHandler(barrier);
 		handlers.add(new ObjectEncoder());
-		handlers.add(new ObjectDecoder());
+		handlers.add(new ObjectDecoder(ClassResolvers.cacheDisabled(null)));
 		handlers.add(objectResponseHandler);
 
 		channelFuture = acquireChannelFuture("CMO", handlers);
-		writeToChannel(channelFuture.getChannel(), new String[] { "C", "M", "O" }, commandWritable, objectResponseHandler);
+		writeToChannel(channelFuture.channel(), new String[] { "C", "M", "O" }, commandWritable, objectResponseHandler);
 
 		confirmBarrierAndGo(barrier);
-
-		channelFuture.getChannel().close();
-		jac.releaseBootstrapResources();
-
+		channelFuture.channel().close();
 		return objectResponseHandler.getResponseObject();
 	}
 	
@@ -329,13 +338,12 @@ public class Remoter {
 	 * @return the channel future
 	 */
 	private ChannelFuture acquireChannelFuture(String requestedOperation, List<ChannelHandler> handlers) {
-		ChannelPipelineFactory pipeLineFactory = jac.createOrGetChannelPipelineFactory(requestedOperation, handlers);
-		ChannelFuture channelFuture = jac.getChannelFuture(pipeLineFactory);
-		if (logger.isDebugEnabled()) {
-			logger.debug("Created Remoting Channel #" + channelFuture.getChannel().getId());
-			
+		try {
+			return jac.getChannelFuture(handlers);
+		} catch (InterruptedException e) {
+			logger.error(e);
 		}
-		return channelFuture;
+		return null;
 	}
 
 	/**
@@ -349,7 +357,7 @@ public class Remoter {
 	private void writeToChannel(Channel channel, String[] magicBytes, Object pathOrCommand, Object attachment) {
 		long firstAttempt = System.currentTimeMillis();
 		long timeOut = RemotingConstants.TEN * RemotingConstants.THOUSAND;
-		while (!channel.isOpen() || !channel.isConnected()) {
+		while (!channel.isOpen() || !channel.isActive()) {
 			if (System.currentTimeMillis() - firstAttempt >= timeOut) {
 				try {
 					throw new TimeoutException();
@@ -359,21 +367,19 @@ public class Remoter {
 				break;
 			}
 		}
-		if (channel.isConnected()) {
-			logger.debug("channel #" + channel.getId() + " connected");
+		if (channel.isActive()) {
+			logger.debug("channel #" + channel.hashCode() + " connected");
 		} else {
-			logger.warn("channel #" + channel.getId() + " still disconnected, about to write on disconnected Channel");
+			logger.warn("channel #" + channel.hashCode() + " still disconnected, about to write on disconnected Channel");
 		}
-		channel.setReadable(false);
-		if (attachment != null) {
-			channel.setAttachment(attachment);
+		if (attachment != null && attachment instanceof CyclicBarrier) {
+			channel.attr(RemotingConstants.barrierKey).set((CyclicBarrier)attachment);
+		}else if (attachment != null) {
+			channel.attr(RemotingConstants.handlerKey).set((ChannelInboundHandler)attachment);
 		}
-		
-		channel.write(ChannelBuffers.wrappedBuffer(magicBytes[0].getBytes(), magicBytes[1].getBytes(), magicBytes[2].getBytes()));
+		channel.write(Unpooled.wrappedBuffer(magicBytes[0].getBytes(), magicBytes[1].getBytes(), magicBytes[2].getBytes()));
 		channel.write(pathOrCommand);
-		channel.setReadable(true);
+		channel.flush();
 	}
-	
-	
-	
+
 }

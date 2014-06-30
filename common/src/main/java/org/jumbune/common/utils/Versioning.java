@@ -14,9 +14,9 @@ public final class Versioning {
 	}
 	
 	/** The Constant BUILD_VERSION. */
-	public static final String BUILD_VERSION="1.0.1";
+	public static final String BUILD_VERSION="1.1.0";
 	
 	/** The Constant DISTRIBUTION_NAME. */
-	public static final String DISTRIBUTION_NAME="-SNAPSHOT";
+	public static final String DISTRIBUTION_NAME="";
 
 }

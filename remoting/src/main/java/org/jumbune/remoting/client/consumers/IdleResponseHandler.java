@@ -1,40 +1,35 @@
 package org.jumbune.remoting.client.consumers;
 
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-
 
 /**
  * The Class IdleResponseHandler.
  */
-public class IdleResponseHandler extends SimpleChannelUpstreamHandler {
+public class IdleResponseHandler extends SimpleChannelInboundHandler<Object> {
 	
 	/** The logger. */
 	private static Logger logger = LogManager
 			.getLogger(IdleResponseHandler.class);
 
 	/* (non-Javadoc)
-	 * @see org.jboss.netty.channel.SimpleChannelUpstreamHandler#channelClosed(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.ChannelStateEvent)
+	 * @see io.netty.channel.SimpleChannelInboundHandler#channelRead0(io.netty.channel.ChannelHandlerContext, java.lang.Object)
 	 */
 	@Override
-	public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
-			{
-		if (logger.isInfoEnabled()) {
-			logger.info("FYI channelClosed...");
-		}
-		ctx.sendUpstream(e);
+	protected void channelRead0(io.netty.channel.ChannelHandlerContext ctx,
+			Object msg) throws Exception {
+		logger.warn(msg);
 	}
 
 	/* (non-Javadoc)
-	 * @see org.jboss.netty.channel.SimpleChannelUpstreamHandler#messageReceived(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.MessageEvent)
+	 * @see io.netty.channel.ChannelInboundHandlerAdapter#exceptionCaught(io.netty.channel.ChannelHandlerContext, java.lang.Throwable)
 	 */
 	@Override
-	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
-		logger.warn(e.getMessage());
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+	    throws Exception {
+	    logger.error("Internal Server Error",cause);
 	}
-
 }

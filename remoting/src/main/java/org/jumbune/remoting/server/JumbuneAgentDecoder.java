@@ -1,28 +1,31 @@
 package org.jumbune.remoting.server;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.handler.codec.compression.ZlibCodecFactory;
+import io.netty.handler.codec.compression.ZlibWrapper;
+import io.netty.handler.codec.serialization.ClassResolvers;
+import io.netty.handler.codec.serialization.ObjectDecoder;
+import io.netty.handler.codec.serialization.ObjectEncoder;
+import io.netty.handler.codec.string.StringDecoder;
+import io.netty.handler.codec.string.StringEncoder;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.handler.codec.frame.FrameDecoder;
-import org.jboss.netty.handler.codec.string.StringDecoder;
-import org.jboss.netty.handler.codec.string.StringEncoder;
+import java.util.List;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jumbune.remoting.codecs.ArchiveDecoder;
+import org.jumbune.remoting.codecs.ArchiveEncoder;
+import org.jumbune.remoting.codecs.LogFilesDecoder;
+import org.jumbune.remoting.codecs.LogFilesEncoder;
 import org.jumbune.remoting.common.RemotingConstants;
-import org.jumbune.remoting.handlers.ArchiveDecoder;
-import org.jumbune.remoting.handlers.ArchiveEncoder;
-import org.jumbune.remoting.handlers.LogFilesDecoder;
-import org.jumbune.remoting.handlers.LogFilesEncoder;
-import org.jumbune.remoting.handlers.ObjectDecoder;
-import org.jumbune.remoting.handlers.ObjectEncoder;
-
-
-
 
 /**
  * The Class JumbuneAgentDecoder  
  */
-public class JumbuneAgentDecoder extends FrameDecoder {
+public class JumbuneAgentDecoder extends ByteToMessageDecoder {
 
 	/** The Constant STREAMER. */
 	private static final String STREAMER = "streamer";
@@ -37,6 +40,8 @@ public class JumbuneAgentDecoder extends FrameDecoder {
 	
 	/** The receive directory. */
 	private String receiveDirectory;
+	
+	public static final Logger LOGGER = LogManager.getLogger(JumbuneAgentDecoder.class);
 
 	/**
 	 * Instantiates a new jumbune agent decoder.
@@ -52,53 +57,52 @@ public class JumbuneAgentDecoder extends FrameDecoder {
 		this.receiveDirectory = tempDir;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.jboss.netty.handler.codec.frame.FrameDecoder#decode(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.Channel, org.jboss.netty.buffer.ChannelBuffer)
-	 */
 	@Override
-	protected Object decode(ChannelHandlerContext ctx, Channel channel,
-			ChannelBuffer buffer) {
-		if (buffer.readableBytes() < RemotingConstants.THREE) {
-			return null;
+	protected void decode(ChannelHandlerContext ctx, ByteBuf in,
+			List<Object> out) throws Exception {
+		if (in.readableBytes() < RemotingConstants.THREE) {
+			return;
 		}
-		final int magic1 = buffer.getUnsignedByte(0);
-		final int magic2 = buffer.getUnsignedByte(1);
-		final int magic3 = buffer.getUnsignedByte(2);
+		final int magic1 = in.getUnsignedByte(in.readerIndex());
+		final int magic2 = in.getUnsignedByte(in.readerIndex()+1);
+		final int magic3 = in.getUnsignedByte(in.readerIndex()+2);
 		if (isJar(magic1, magic2, magic3)) {
-			throwAwayReadUnsignedBytes(buffer);
+			throwAwayReadUnsignedBytes(in);
 			invokeJarReceiveHandler(ctx);
 		} else if (isJas(magic1, magic2, magic3)) {
-			throwAwayReadUnsignedBytes(buffer);
+			throwAwayReadUnsignedBytes(in);
 			invokeJarSendHandler(ctx);
 		} else if (isTxr(magic1, magic2, magic3)) {
-			throwAwayReadUnsignedBytes(buffer);
+			throwAwayReadUnsignedBytes(in);
 			invokeLogFilesReceiveHandler(ctx);
 		} else if (isTxs(magic1, magic2, magic3)) {
-			throwAwayReadUnsignedBytes(buffer);
+			throwAwayReadUnsignedBytes(in);
 			invokeLogFilesSendHandler(ctx);
 		} else if (isCmd(magic1, magic2, magic3)) {
-			throwAwayReadUnsignedBytes(buffer);
+			throwAwayReadUnsignedBytes(in);
 			invokeFireAndForgetCommandHandler(ctx);
 		} else if(isCma(magic1, magic2, magic3)){
-			throwAwayReadUnsignedBytes(buffer);
+			throwAwayReadUnsignedBytes(in);
 			invokeAsyncFireAndForgetCommandHandler(ctx);
 		}else if (isCmg(magic1, magic2, magic3)) {
-			throwAwayReadUnsignedBytes(buffer);
+			throwAwayReadUnsignedBytes(in);
 			invokeFireAndGetCommandHandler(ctx);
 		} else if (isCmo(magic1, magic2, magic3)) {
-			throwAwayReadUnsignedBytes(buffer);
+			throwAwayReadUnsignedBytes(in);
 			invokeFireAndGetObjectResponseCommandHandler(ctx);
+		} else {
+	        // Unknown protocol; discard everything and close the connection.
+	        in.clear();
+	        ctx.close();
 		}
-		// Forward the current read buffer as is to the new handlers.
-		return buffer.readBytes(buffer.readableBytes());
 	}
-
-	/**
+	
+/*	*//**
 	 * Throw away read unsigned bytes.
 	 *
 	 * @param buffer the buffer
 	 */
-	private void throwAwayReadUnsignedBytes(ChannelBuffer buffer) {
+	private void throwAwayReadUnsignedBytes(ByteBuf buffer) {
 		buffer.readUnsignedByte();
 		buffer.readUnsignedByte();
 		buffer.readUnsignedByte();
@@ -216,10 +220,15 @@ public class JumbuneAgentDecoder extends FrameDecoder {
 	 * @param ctx the ctx
 	 */
 	private void invokeJarReceiveHandler(ChannelHandlerContext ctx) {
-		ChannelPipeline p = ctx.getPipeline();
+		ChannelPipeline p = ctx.pipeline();
+
+        // Enable stream compression (you can remove these two if unnecessary)
+//        p.addLast(ZlibCodecFactory.newZlibEncoder(ZlibWrapper.GZIP));
+
+		
 		p.addLast("stringDecoder", new StringDecoder());
 		p.addLast("delegator", new Delegator(receiveDirectory));
-		p.addLast("stringEncoder", new StringEncoder());
+//		p.addLast("stringEncoder", new StringEncoder());
 		p.addLast("binaryEncoder", new ArchiveEncoder());
 		p.remove(this);
 	}
@@ -231,8 +240,11 @@ public class JumbuneAgentDecoder extends FrameDecoder {
 	 * @param ctx the ctx
 	 */
 	private void invokeJarSendHandler(ChannelHandlerContext ctx) {
-		ChannelPipeline p = ctx.getPipeline();
-		p.addLast(STREAMER, new ArchiveDecoder(receiveDirectory));
+		ChannelPipeline p = ctx.pipeline();
+/*        // Enable stream compression (you can remove these two if unnecessary)
+        p.addLast(ZlibCodecFactory.newZlibDecoder(ZlibWrapper.GZIP));
+*/		
+		p.addLast(STREAMER, new ArchiveDecoder(10485760, receiveDirectory));
 		p.addLast(ACK_RESPONSER, new AckResponser());
 		p.addLast(ENCODER, new StringEncoder());
 		p.remove(this);
@@ -245,7 +257,16 @@ public class JumbuneAgentDecoder extends FrameDecoder {
 	 * @param ctx the ctx
 	 */
 	private void invokeLogFilesReceiveHandler(ChannelHandlerContext ctx) {
-		ChannelPipeline p = ctx.getPipeline();
+		ChannelPipeline p = ctx.pipeline();
+		
+/*        // Enable stream compression (you can remove these two if unnecessary)
+        p.addLast(ZlibCodecFactory.newZlibEncoder(ZlibWrapper.GZIP));
+        p.addLast(ZlibCodecFactory.newZlibDecoder(ZlibWrapper.GZIP));
+*/
+        // Enable stream compression (you can remove these two if unnecessary)
+//        p.addLast(ZlibCodecFactory.newZlibEncoder(ZlibWrapper.GZIP));
+//        p.addLast(ZlibCodecFactory.newZlibDecoder(ZlibWrapper.GZIP));
+		
 		p.addLast("stringDecoder", new StringDecoder());
 		p.addLast("delegator", new Delegator(receiveDirectory));
 		p.addLast("stringEncoder", new StringEncoder());
@@ -260,7 +281,11 @@ public class JumbuneAgentDecoder extends FrameDecoder {
 	 * @param ctx the ctx
 	 */
 	private void invokeLogFilesSendHandler(ChannelHandlerContext ctx) {
-		ChannelPipeline p = ctx.getPipeline();
+		ChannelPipeline p = ctx.pipeline();
+		
+/*        // Enable stream compression (you can remove these two if unnecessary)
+        p.addLast(ZlibCodecFactory.newZlibDecoder(ZlibWrapper.GZIP));
+*/		
 		p.addLast(STREAMER, new LogFilesDecoder(receiveDirectory));
 		p.addLast(ACK_RESPONSER, new AckResponser());
 		p.addLast(ENCODER, new StringEncoder());
@@ -274,8 +299,8 @@ public class JumbuneAgentDecoder extends FrameDecoder {
 	 * @param ctx the ctx
 	 */
 	private void invokeFireAndForgetCommandHandler(ChannelHandlerContext ctx) {
-		ChannelPipeline p = ctx.getPipeline();
-		p.addLast(DECODER, new ObjectDecoder());
+		ChannelPipeline p = ctx.pipeline();
+		p.addLast(DECODER, new ObjectDecoder(ClassResolvers.cacheDisabled(null)));
 		p.addLast("commandExecutor", new CommandDelegator());
 		p.addLast(ENCODER, new StringEncoder());
 		p.remove(this);
@@ -287,8 +312,8 @@ public class JumbuneAgentDecoder extends FrameDecoder {
 	 * @param ctx the ctx
 	 */
 	private void invokeAsyncFireAndForgetCommandHandler(ChannelHandlerContext ctx) {
-		ChannelPipeline p = ctx.getPipeline();
-		p.addLast(DECODER, new ObjectDecoder());
+		ChannelPipeline p = ctx.pipeline();
+		p.addLast(DECODER, new ObjectDecoder(ClassResolvers.cacheDisabled(null)));
 		p.addLast("commandExecutor", new CommandAsyncDelegator());
 		p.addLast(ENCODER, new StringEncoder());
 		p.remove(this);
@@ -300,7 +325,7 @@ public class JumbuneAgentDecoder extends FrameDecoder {
 	 * @param ctx the ctx
 	 */
 	private void invokeFireAndGetCommandHandler(ChannelHandlerContext ctx) {
-		ChannelPipeline p = ctx.getPipeline();
+		ChannelPipeline p = ctx.pipeline();
 		p.addLast(DECODER, new StringDecoder());
 		p.addLast("commandHandler", new CommandResponser());
 		p.addLast(ENCODER, new StringEncoder());
@@ -314,12 +339,18 @@ public class JumbuneAgentDecoder extends FrameDecoder {
 	 */
 	private void invokeFireAndGetObjectResponseCommandHandler(
 			ChannelHandlerContext ctx) {
-		ChannelPipeline p = ctx.getPipeline();
-		p.addLast(DECODER, new ObjectDecoder());
+		ChannelPipeline p = ctx.pipeline();
+		p.addLast(DECODER, new ObjectDecoder(ClassResolvers.cacheDisabled(null)));
 		p.addLast("commandHandler", new CommandAsObjectResponser());
 		p.addLast(ENCODER, new ObjectEncoder());
 		p.remove(this);
 	}
+	
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        // Close the connection when an exception is raised.
+        LOGGER.error(cause);
+        ctx.close();
+    }    
 
 }
-

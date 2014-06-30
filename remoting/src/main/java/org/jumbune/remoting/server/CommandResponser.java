@@ -1,5 +1,8 @@
 package org.jumbune.remoting.server;
 
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -9,10 +12,6 @@ import java.util.Arrays;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jumbune.remoting.common.JschUtil;
 import org.jumbune.remoting.common.RemotingConstants;
 
@@ -23,48 +22,36 @@ import com.jcraft.jsch.Session;
 /**
  * The Class CommandResponser.
  */
-public class CommandResponser extends SimpleChannelUpstreamHandler {
+public class CommandResponser extends SimpleChannelInboundHandler<String> {
 
 	/** The logger. */
 	private static final Logger LOGGER = LogManager.getLogger(CommandResponser.class);
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.jboss.netty.channel.SimpleChannelUpstreamHandler#messageReceived(
-	 * org.jboss.netty.channel.ChannelHandlerContext,
-	 * org.jboss.netty.channel.MessageEvent)
+	/* (non-Javadoc)
+	 * @see io.netty.channel.SimpleChannelInboundHandler#channelRead0(io.netty.channel.ChannelHandlerContext, java.lang.Object)
 	 */
 	@Override
-	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
-		String strCmd = (String) e.getMessage();
+	protected void channelRead0(ChannelHandlerContext ctx, String strCmd) throws Exception{
 		if (!isEmpty(strCmd)) {
 			try {
-				e.getChannel().write(performAction(strCmd));
+				ctx.writeAndFlush(performAction(strCmd));
 			} catch (JSchException e1) {
-				LOGGER.error(e.getMessage(), e1);
+				LOGGER.error(e1.getMessage(), e1);
 			} catch (IOException e1) {
-				LOGGER.error(e.getMessage(), e1);
+				LOGGER.error(e1.getMessage(), e1);
 			}
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.jboss.netty.channel.SimpleChannelUpstreamHandler#exceptionCaught(
-	 * org.jboss.netty.channel.ChannelHandlerContext,
-	 * org.jboss.netty.channel.ExceptionEvent)
+	/* (non-Javadoc)
+	 * @see io.netty.channel.ChannelInboundHandlerAdapter#exceptionCaught(io.netty.channel.ChannelHandlerContext, java.lang.Throwable)
 	 */
 	@Override
-	public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-		LOGGER.warn("Unexpected exception occured from downstream",
-				e.getCause());
-		e.getChannel().close();
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+	    throws Exception {
+	    LOGGER.error("Internal Server Error in channel with ["+ctx.channel().remoteAddress()+"]",cause);
+	    ctx.channel().close();
 	}
-
 	/**
 	 * Perform action.
 	 * 
@@ -123,7 +110,7 @@ public class CommandResponser extends SimpleChannelUpstreamHandler {
 				Channel ch = JschUtil.getChannelWithResponse(session, command);
 				in = ch.getInputStream();
 				ch.connect();
-				sReturnValue = converToString(in);
+				sReturnValue = convertToString(in);
 			} else if (command.contains(RemotingConstants.CPU)) {
 				if (params.length != RemotingConstants.FOUR){
 					throw new IllegalArgumentException("Invalid method parameters!!!");
@@ -133,7 +120,7 @@ public class CommandResponser extends SimpleChannelUpstreamHandler {
 				Channel ch = JschUtil.getChannelWithResponse(session, command);
 				in = ch.getInputStream();
 				ch.connect();
-				sReturnValue = converToString(in);
+				sReturnValue = convertToString(in);
 			} else if (command.contains(RemotingConstants.DF)) {
 				if (params.length != RemotingConstants.FOUR){throw new IllegalArgumentException("Invalid method parameters!!!");
 				
@@ -143,7 +130,7 @@ public class CommandResponser extends SimpleChannelUpstreamHandler {
 				Channel ch = JschUtil.getChannelWithResponse(session, command);
 				in = ch.getInputStream();
 				ch.connect();
-				sReturnValue = converToString(in);
+				sReturnValue = convertToString(in);
 			}
 		} finally {
 			if (session != null){
@@ -208,7 +195,7 @@ public class CommandResponser extends SimpleChannelUpstreamHandler {
 	 * @return the string
 	 * @throws IOException 
 	 */
-	private String converToString(InputStream in) throws IOException {
+	private String convertToString(InputStream in) throws IOException {
 
 		StringBuilder sb = new StringBuilder();
 		BufferedReader br = null;
@@ -228,4 +215,5 @@ public class CommandResponser extends SimpleChannelUpstreamHandler {
 		}
 		return sb.toString();
 	}
+
 }

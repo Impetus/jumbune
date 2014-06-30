@@ -89,23 +89,23 @@ public class ExecutionServlet extends HttpServlet {
 	/***
 	 * Mapping identifier for JobName
 	 */
-	private static final String JOB_NAME = "JobName";
+	private final String JOB_NAME = "JobName";
 
-	private static final String STATS_INTERVAL = "stats_interval";
+	private final String STATS_INTERVAL = "stats_interval";
 
-	private static final String TABS = "tabs";
+	private final String TABS = "tabs";
 
-	private static final String LOADER = "loader";
+	private final String LOADER = "loader";
 
 	/** The Constant LOG. */
 	private static final Logger LOG = LogManager.getLogger(ExecutionServlet.class);
 
 	/** The Constant FORWARD_SLASH. */
-	private static final String FORWARD_SLASH = "/";
+	private final String FORWARD_SLASH = "/";
 
 	
 	/** The Constant REPORTS_BEAN. */
-	private static final String REPORTS_BEAN = "ReportsBean";
+	private final String REPORTS_BEAN = "ReportsBean";
 
 	
 	/** The json string. */

@@ -122,11 +122,12 @@ public class ProfilerUtil {
 	private ProfilerBean readFileAndGetTopNSamples(final File filepath) throws IOException {
 		FileInputStream fs = null;
 		final ProfilerBean pBean = new ProfilerBean();
-
+		BufferedInputStream bis = null;
 		try {
 			fs = new FileInputStream(filepath);
 			LOGGER.debug("Currently reading file " + filepath);
-			final BinaryHprofReader reader = new BinaryHprofReader(new BufferedInputStream(fs));
+			bis = new BufferedInputStream(fs);
+			final BinaryHprofReader reader = new BinaryHprofReader(bis);
 			reader.setStrict(false);
 			reader.read();
 
@@ -138,7 +139,9 @@ public class ProfilerUtil {
 			throw ie;
 		} finally {
 			try {
-				fs.close();
+				if(bis!=null){
+					bis.close();
+				}
 			} catch (final IOException e) {
 				LOGGER.error("Error closing stream.", e);
 				throw e;
@@ -565,6 +568,7 @@ public class ProfilerUtil {
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand(sbReport.toString(), false, null).populate(loader.getYamlConfiguration(), null);
 		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		remoter.close();
 		return response.split("\n");
 	}
 

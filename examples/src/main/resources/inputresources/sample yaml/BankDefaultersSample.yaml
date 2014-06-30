@@ -19,7 +19,7 @@ enableStaticJobProfiling: 'FALSE'
 hadoopJobProfile: 'FALSE'
 hdfsInputPath: null
 includeClassJar: 'TRUE'
-inputFile: user.home.directory/Desktop/Jumbune_Home/examples/example-distribution/examples-bankdefaulters-1.0.1-SNAPSHOT.jar
+inputFile: user.home.directory/Desktop/Jumbune_Home/examples/example-distribution/examples-bankdefaulters-1.1.0.jar
 jobs:
 - {jobClass: null, name: ListDefaulter, parameters: /Jumbune/examples/defaulter /Jumbune/examples/output1}
 jumbuneJobName: BankDefaultersSample

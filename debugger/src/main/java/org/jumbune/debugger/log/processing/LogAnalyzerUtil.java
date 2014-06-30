@@ -325,7 +325,9 @@ public class LogAnalyzerUtil {
 					chainingInfoBean.setName(line);
 					jobChain.add(chainingInfoBean);
 				}
-				bufferedReader.close();
+				if(bufferedReader!=null){
+					bufferedReader.close();
+				}
 				return returnedMRChainSortedMap;
 			}
 		}
@@ -393,7 +395,9 @@ public class LogAnalyzerUtil {
 				chainList.add(line);
 			}
 		}
-		bufferedReader.close();
+		if(bufferedReader!=null){
+			bufferedReader.close();
+		}
 
 		jobDetails.put(key, chainList);
 		returnedMRChainSortedMap.put(jobId, jobDetails);

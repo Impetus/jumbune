@@ -115,8 +115,9 @@ public final class RemotingUtil {
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand(command, false, null).populate(config, null);
 		
-		
-		return (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		remoter.close();
+		return response;
 		
 	}
 
@@ -138,7 +139,7 @@ public final class RemotingUtil {
 			builder.addCommand(Constants.ECHO_AGENT_HOME, false, null).populate(config, null);
 			
 			agentHome =  (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
-			
+			remoter.close();
 		}
 		if (agentHome == null || "".equals(agentHome.trim())) {
 			throw new IllegalArgumentException("Agent home found null or empty!!!");
@@ -194,7 +195,9 @@ public final class RemotingUtil {
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand(commandToExecute, false, null).populate(yamlConfig, null);
 		
-		return (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		remoter.close();
+		return response;
 	}
 
 	/**
@@ -278,6 +281,7 @@ public final class RemotingUtil {
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 		//If execution happended to fast, we won't be able to get a directory to find files for next command
 		remoter.receiveLogFiles(File.separator + Constants.JOB_JARS_LOC  + jumbuneJobName, File.separator + Constants.JOB_JARS_LOC + jumbuneJobName + hadoopConfigurationFile);
+		remoter.close();
 		return destinationReceiveDir;
 	}
 	
@@ -303,6 +307,7 @@ public final class RemotingUtil {
 		String destinationReceiveDir = jumbuneHome + File.separator + Constants.JOB_JARS_LOC  + jumbuneJobName;
 		Remoter remoter = getRemoter(config, jumbuneHome + File.separator);
 		remoter.receiveLogFiles(File.separator + Constants.JOB_JARS_LOC  + jumbuneJobName, File.separator + Constants.JOB_JARS_LOC + jumbuneJobName + hadoopConfigurationFile);
+		remoter.close();
 		return destinationReceiveDir;
 	}
 	
@@ -355,8 +360,9 @@ public final class RemotingUtil {
 		String command =  hostName;
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand(command, false, null).setApiInvokeHints(ApiInvokeHintsEnum.HOST_TO_IP_OP);
-		return (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
-
+		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		remoter.close();
+		return response;
 	}
 	
 	/**
@@ -375,6 +381,7 @@ public final class RemotingUtil {
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand(command.toString(), false, null);
 		remote.fireAndForgetCommand(builder.getCommandWritable());
+		remote.close();
 	}
 	
 	

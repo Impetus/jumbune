@@ -37,18 +37,18 @@ import com.google.gson.Gson;
  * The Class ResultServlet is responsible for displaying the reports on the UI.
  */
 public class ResultServlet extends HttpServlet {
-	private static final String JOBJARS = "/jobJars/";
-	private static final String BIN_HADOOP = "/bin/hadoop";
-	private static final String RUNNING_JOB = "Running job:";
-	private static final String JOB_KILL = "job -kill ";
-	private static final String EXECUTED_HADOOP_JOB_INFO = "executedHadoopJob.info";
-	private static final String HADOOP_JOB_COMPLETED = "Hadoop#Job@Completed......";
+	private  final String JOBJARS = "/jobJars/";
+	private final String BIN_HADOOP = "/bin/hadoop";
+	private final String RUNNING_JOB = "Running job:";
+	private final String JOB_KILL = "job -kill ";
+	private final String EXECUTED_HADOOP_JOB_INFO = "executedHadoopJob.info";
+	private final String HADOOP_JOB_COMPLETED = "Hadoop#Job@Completed......";
 	/** The Constant LOG. */
 	private static final Logger LOG = LogManager.getLogger(ResultServlet.class);
 
 	
 	/** The Constant REPORT_JSON. */
-	private static final String REPORT_JSON = "reports";
+	private final String REPORT_JSON = "reports";
 
 	/**
 	 * Instantiates a new result servlet.
@@ -100,7 +100,8 @@ public class ResultServlet extends HttpServlet {
 					ResourceUsageCollector collector = new ResourceUsageCollector(yamlLoader);
 					collector.shutTopCmdOnSlaves(null);
 					HttpExecutorService service=(HttpExecutorService) session.getAttribute("ExecutorServReference");
-					service.stopExecution();
+					session.removeAttribute("ExecutorServReference");
+					service.stopExecution();					
 					final RequestDispatcher rd = getServletContext().getRequestDispatcher(
 							WebConstants.HOME_URL);
 					rd.forward(request, response);
@@ -122,8 +123,10 @@ public class ResultServlet extends HttpServlet {
 			} catch (Exception e) {
 				LOG.error("Unable to get reports of current job: ", e);
 			} finally {
-				out.close();
-				out.flush();
+				if (out != null) {
+					out.flush();
+					out.close();
+				}
 			}
 		}
 
@@ -139,6 +142,9 @@ public class ResultServlet extends HttpServlet {
 				jobName=line.split(RUNNING_JOB)[1].trim();
 			}
 		}
+		if(br!=null){
+			br.close();
+		}
 		Remoter remoter = RemotingUtil.getRemoter(yamlLoader, "");
 		StringBuilder sbReport = new StringBuilder();
 		sbReport.append(yamlLoader.getHadoopHome(yamlLoader)).append(BIN_HADOOP).append(" ").append(JOB_KILL)
@@ -149,7 +155,7 @@ public class ResultServlet extends HttpServlet {
 		String commandResponse = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		LOG.info("Hadoop Job has been killed ["+jobName+"]");
 		LOG.debug("Killed Hadoop Job command response ["+commandResponse+"]");
-	
+		remoter.close();
 
 	}
 }

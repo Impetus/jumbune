@@ -554,9 +554,10 @@ public class ProfilerJMXDump {
 		Map<String, String> vmStats = null;
 
 		Remoter remoter = null;
+		remoter = new Remoter(config.getMaster().getHost(), Integer.valueOf(config.getMaster().getAgentPort()),
+				config.getFormattedJumbuneJobName());
+
 		for (String host : hosts) {
-			remoter = new Remoter(config.getMaster().getHost(), Integer.valueOf(config.getMaster().getAgentPort()),
-					config.getFormattedJumbuneJobName());
 			
 			CommandWritableBuilder builder = new CommandWritableBuilder();
 			builder.addCommand(VMSTAT_COMMAND, false, null).populate(config, host);
@@ -568,7 +569,7 @@ public class ProfilerJMXDump {
 				vmStats = getRemoteVmStats(response);
 			}
 		}
-
+		remoter.close();
 		return vmStats;
 	}
 
@@ -944,9 +945,10 @@ public class ProfilerJMXDump {
 		Map<String, String> cpuStats = null;
 		Remoter remoter = null;
 		String response = null;
+		remoter = new Remoter(config.getMaster().getHost(), Integer.valueOf(config.getMaster().getAgentPort()),
+				config.getFormattedJumbuneJobName());
+		
 		for (String host : hosts) {
-			remoter = new Remoter(config.getMaster().getHost(), Integer.valueOf(config.getMaster().getAgentPort()),
-					config.getFormattedJumbuneJobName());
 			
 			
 			CommandWritableBuilder builder = new CommandWritableBuilder();
@@ -968,6 +970,7 @@ public class ProfilerJMXDump {
 			cpuStats.put("numberOfCores", String.valueOf(cpuDetails.get(1)));
 			cpuStats.put("threadsPerCore", String.valueOf(cpuDetails.get(0)));
 		}
+		remoter.close();
 		return cpuStats;
 
 	}
@@ -1053,6 +1056,7 @@ public class ProfilerJMXDump {
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand("cat /proc/cpuinfo", false, null).populate(config, host);
 		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		remoter.close();
 		ResultParser resultParser = new ResultParser();
 		cpuStats = resultParser.parseRemoteCPUDetailsResult(response);
 		return cpuStats;
@@ -1405,6 +1409,7 @@ public class ProfilerJMXDump {
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand(sb.toString(), false, null).populate(config, host);
 		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		remoter.close();
 		latency = 0.0f;
 		ResultParser resultParser = new ResultParser();
 		latency = resultParser.parseRemoteNetworkLatencyResult(response);

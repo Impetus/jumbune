@@ -111,6 +111,7 @@ public class ProfilingProcessor extends BaseProcessor {
 			collector.shutTopCmdOnSlaves(receiveDir);
 			LOGGER.debug("Stopped top command on Workers");
 			jobOutput = getJobOutput(jobID);
+			LOGGER.info("Received Job Output");
 			List<String> selectedHosts = collector.getNodesForJob(jobOutput);
 			collector.processTopDumpFile(receiveDir, selectedHosts);
 			calcStatsFromLogConsolidationInfo(jobOutput, collector);

@@ -189,6 +189,8 @@ public class HttpExecutorService extends CoreExecutorService {
 
 				}
 				try {
+					stopExecution();
+					cleanUpJumbuneAgentCurrentJobFolder(loader);
 					cleanUpSlavesTempFldr(loader);
 					LOGGER.info("Completed worker node cleanup");
 				} catch (Exception e) {

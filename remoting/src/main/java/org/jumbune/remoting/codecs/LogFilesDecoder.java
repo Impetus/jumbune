@@ -1,49 +1,36 @@
-package org.jumbune.remoting.handlers;
+package org.jumbune.remoting.codecs;
 
-import java.io.ByteArrayInputStream;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.serialization.ClassResolvers;
+import io.netty.handler.codec.serialization.ObjectDecoder;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
-import java.io.PushbackInputStream;
+import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.remoting.writable.TextFile;
 import org.jumbune.remoting.writable.TextFiles;
 
-
-
 /**
  * The Class LogFilesDecoder is responsible for processing and decoding the log files.
  */
-public class LogFilesDecoder extends AbstractUpstreamMarshaller {
+public class LogFilesDecoder extends ObjectDecoder {
 
 	/** The logger. */
 	private static final  Logger LOGGER = LogManager.getLogger(LogFilesDecoder.class);
 	
 	/** The receive directory. */
 	private String receiveDirectory;
-	
-	/** The dynamic buffer. */
-	private final ChannelBuffer dynamicBuffer = ChannelBuffers
-			.dynamicBuffer(8192);
-	
-	/** The expected data. */
-	private int expectedData;
-	
-	/** The pushback bytes. */
-	private byte[] pushbackBytes;
-	
+
 	/** The barrier. */
 	private CyclicBarrier barrier;
 
@@ -53,27 +40,26 @@ public class LogFilesDecoder extends AbstractUpstreamMarshaller {
 	 * @param receiveDirectory the receive directory
 	 */
 	public LogFilesDecoder(String receiveDirectory) {
+		super(1048576000, ClassResolvers.cacheDisabled(null));
 		this.receiveDirectory = receiveDirectory;
 	}
-
-	/* (non-Javadoc)
-	 * @see org.jumbune.remoting.handlers.AbstractUpstreamMarshaller#decode(org.jboss.netty.channel.ChannelHandlerContext, org.jboss.netty.channel.Channel, java.lang.Object)
-	 */
+	
+	public LogFilesDecoder(int maxObjectSize, String receiveDirectory){
+		super(maxObjectSize, ClassResolvers.cacheDisabled(null));
+		this.receiveDirectory = receiveDirectory;		
+	}
+	
 	@Override
-	protected Object decode(ChannelHandlerContext ctx, Channel channel,
-			Object msg) throws IOException, ClassNotFoundException, InterruptedException, BrokenBarrierException {
-		if (!(msg instanceof ChannelBuffer)) {
-			return msg;
-		}
-		byte[] buffer = ((ChannelBuffer) msg).array();
-		ByteArrayInputStream bis = new ByteArrayInputStream(buffer);
+	protected Object decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
+		Serializable fileOrFiles = (Serializable) super.decode(ctx, in);
 		// dynamically adding the new Barrier object
-		CyclicBarrier cyclicBarrier = (CyclicBarrier) channel.getAttachment();
+		CyclicBarrier cyclicBarrier = ctx.channel().attr(RemotingConstants.barrierKey).get();
 		if (cyclicBarrier != null) {
 			this.barrier = cyclicBarrier;
 		}
-		return writeTextFileOrFilesFromStream(bis);
-	}
+		writeTextFileOrFilesFromStream(fileOrFiles);
+		return fileOrFiles;
+	}	
 
 	/**
 	 * Write text file or files from stream.
@@ -85,45 +71,24 @@ public class LogFilesDecoder extends AbstractUpstreamMarshaller {
 	 * @throws InterruptedException the interrupted exception
 	 * @throws BrokenBarrierException the broken barrier exception
 	 */
-	private Object writeTextFileOrFilesFromStream(InputStream is) throws IOException, ClassNotFoundException,
+	private Object writeTextFileOrFilesFromStream(Serializable fileOrFiles) throws IOException, ClassNotFoundException,
 			InterruptedException, BrokenBarrierException {
-		dynamicBuffer.writeBytes(is, is.available());
-		is.close();
-		try{
-		checkForExpectedData();
-		}catch(IllegalArgumentException e){
-			return null;
-		}
-		
-		ByteArrayInputStream bis = null;
-		PushbackInputStream pis = null;
 		ObjectInputStream ois = null;
 		FileOutputStream fos = null;
 		File fileHandle = null;
 		try {
-			bis = new ByteArrayInputStream(dynamicBuffer.array(), RemotingConstants.EIGHT,
-					dynamicBuffer.readableBytes());
-			pis = new PushbackInputStream(bis, RemotingConstants.FOUR);
-			// pushing back unexpected occurances of bytes
-			pis.unread(pushbackBytes, 0, RemotingConstants.FOUR);
-			// now we have properly ordered bytes to create object, let's try
-			// now
-			ois = new ObjectInputStream(pis);
-			Object object = ois.readObject();
-			if (object instanceof TextFiles) {
-					fileHandle=processTextFiles(object);
-			} else if (object instanceof TextFile) {
-				TextFile textFile = (TextFile) object;
+			if (fileOrFiles instanceof TextFiles) {
+					fileHandle=processTextFiles(fileOrFiles);
+			} else if (fileOrFiles instanceof TextFile) {
+				TextFile textFile = (TextFile) fileOrFiles;
 				String fileName = textFile.getFileName();
-				LOGGER.debug("Expected Text File streams of length ["
-							+ expectedData
-							+ "] arrived, starting to write file: " + fileName
+				LOGGER.debug("Starting to write file: " + fileName
 							+ " at location [" + receiveDirectory
 							+ File.separator
 							+ textFile.getDestinationRelativePath() + "]");
 				File locationDir = new File(receiveDirectory + File.separator
 						+ textFile.getDestinationRelativePath());
-				varifyAndMakeDirectory(locationDir);
+				verifyAndMakeDirectory(locationDir);
 				
 				fileHandle = new File(locationDir.getAbsolutePath(), fileName);
 				fos = new FileOutputStream(fileHandle);
@@ -142,12 +107,7 @@ public class LogFilesDecoder extends AbstractUpstreamMarshaller {
 			}
 			if (ois != null) {
 				ois.close();
-			} else if (pis != null) {
-				pis.close();
-			} else if (bis != null) {
-				bis.close();
 			}
-			clearAndClose();
 		}
 		return fileHandle;
 	}
@@ -169,14 +129,12 @@ public class LogFilesDecoder extends AbstractUpstreamMarshaller {
 		try{
 		
 		String directoryLocation = textFiles.getDirectoryName();
-		LOGGER.debug("Expected Directory streams of length ["
-					+ expectedData
-					+ "] arrived, starting to write Directory & files at:"
+		LOGGER.debug("Starting to write Directory & files at:"
 					+ directoryLocation);
 		fileHandle = new File(receiveDirectory + File.separator
 				+ textFiles.getDestinationRelativePath(),
 				directoryLocation);
-		varifyAndMakeDirectory(fileHandle);
+		verifyAndMakeDirectory(fileHandle);
 		File fileEntry;
 		Map<String, byte[]> dirEntries = textFiles
 				.getDirectoryEntries();
@@ -195,7 +153,6 @@ public class LogFilesDecoder extends AbstractUpstreamMarshaller {
 			if(fos!=null){
 				fos.close();
 			}
-			
 		}
 		return fileHandle;
 	}
@@ -207,43 +164,12 @@ public class LogFilesDecoder extends AbstractUpstreamMarshaller {
 	 * @param locationDir the location dir
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	private void varifyAndMakeDirectory(File locationDir) throws IOException {
+	private void verifyAndMakeDirectory(File locationDir) throws IOException {
 		if (!locationDir.exists()) {
 			locationDir.mkdirs();
 		}
 		if (!locationDir.isDirectory()) {
 			throw new IOException("location must be a directory");
 		}
-	}
-	
-	/**
-	 * Check for expected data.
-	 */
-	private void checkForExpectedData() {
-		if (dynamicBuffer.readableBytes() < RemotingConstants.EIGHT) {
-			throw new IllegalArgumentException(); 
-		}
-		if (expectedData == 0) {
-			pushbackBytes = new byte[RemotingConstants.FOUR];
-			byte[] dataLengthByteArray = new byte[RemotingConstants.FOUR];
-			dynamicBuffer.readBytes(pushbackBytes);
-			dynamicBuffer.readBytes(dataLengthByteArray);
-			expectedData = byteArrayToInt(dataLengthByteArray);
-			LOGGER.debug("Expected binary data:" + expectedData);
-		}
-		if (expectedData > 0
-				&& dynamicBuffer.readableBytes() < (expectedData - pushbackBytes.length)) {
-			// ignoring the stream as it's not completed yet!
-			throw new IllegalArgumentException(); 
-		}
-		
-	}
-
-	/**
-	 * Clear and close.
-	 */
-	private void clearAndClose() {
-		dynamicBuffer.clear();
-		expectedData = 0;
-	}
+	}	
 }
