@@ -39,7 +39,7 @@ public class ArchiveDecoder extends ObjectDecoder {
 	 * @param receiveDirectory the receive directory
 	 */
 	public ArchiveDecoder(String receiveDirectory) {
-		super(10485760, ClassResolvers.cacheDisabled(null));
+		super(104857600, ClassResolvers.cacheDisabled(null));
 		this.receiveDirectory = receiveDirectory;
 	}
 	

@@ -170,7 +170,7 @@ public class HadoopLogParser {
 		remoter = RemotingUtil.getRemoter(loader, appHome);
 		remoter.receiveLogFiles(relLocalPath, relRemotePath);
 		remoter.close();
-		LOGGER.info("Received log files from:"+ relRemotePath);
+		LOGGER.debug("Received log files from:"+ relRemotePath);
 		// process json
 		Gson gson = new Gson();
 		JobDetails jobDetails = extractJobDetails(appHome, relLocalPath, gson);
@@ -349,7 +349,7 @@ public class HadoopLogParser {
 		PhaseDetails cleanupDetails = addPhaseDetails(cleanupTasks, startTime);
 		phaseOutput.setCleanupDetails(cleanupDetails);
 		jobOutput.setPhaseOutput(phaseOutput);
-		LOGGER.info("Converted the Json to final output");
+		LOGGER.debug("Converted the Json to final output");
 		return jobOutput;
 	}
 

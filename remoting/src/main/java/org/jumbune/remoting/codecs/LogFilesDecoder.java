@@ -40,7 +40,7 @@ public class LogFilesDecoder extends ObjectDecoder {
 	 * @param receiveDirectory the receive directory
 	 */
 	public LogFilesDecoder(String receiveDirectory) {
-		super(10485760, ClassResolvers.cacheDisabled(null));
+		super(1048576000, ClassResolvers.cacheDisabled(null));
 		this.receiveDirectory = receiveDirectory;
 	}
 	
