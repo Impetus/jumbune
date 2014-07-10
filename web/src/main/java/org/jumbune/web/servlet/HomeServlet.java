@@ -19,10 +19,13 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.ConsoleLogUtil;
+import org.jumbune.common.utils.Constants;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.client.SingleNIOEventGroup;
 import org.jumbune.remoting.common.BasicYamlConfig;
+import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.remoting.writable.CommandWritable;
 import org.jumbune.remoting.writable.CommandWritable.Command;
 import org.jumbune.web.utils.WebConstants;
@@ -73,28 +76,26 @@ public class HomeServlet extends HttpServlet {
 		    	LOGGER.error(e.getMessage(), e);
 				
 			}finally{
-		    	if(objectinputstream != null){
+		    	
 		            try {
+		            	if(objectinputstream != null){
 						objectinputstream .close();
+		            	}
 					} catch (IOException e) {
 					
 						LOGGER.error(e.getMessage(), e);
-					}
-		         } 
-		        if(streamIn!= null){
+					  } 
+		      
 		        	try {
+		        		  if(streamIn!= null){
 						streamIn.close();
+		        		  }
 					} catch (IOException e) {
 						LOGGER.error(e.getMessage(), e);
 						
-					}
-		        }
+				   }
 		 }		
 	}});
-	}
-	
-	private static void shutDownNettyEventLoopGroup() {
-		SingleNIOEventGroup.eventLoopGroup().shutdownGracefully();
 	}
 
 	/* (non-Javadoc)
@@ -129,6 +130,44 @@ public class HomeServlet extends HttpServlet {
 		if (file.exists()) {
 			file.delete();
 		}
+		String jHome = System.getenv("JUMBUNE_HOME");
+		ObjectInputStream objectinputstream = null;
+		InputStream streamIn = null;
+		 try {
+			 	File jHomeYamlFile = new File(jHome+YAML_FILE);
+			 	if(jHomeYamlFile.exists()){
+				 	streamIn = new FileInputStream(jHomeYamlFile);
+			        objectinputstream= new ObjectInputStream(streamIn);
+			        BasicYamlConfig config = (BasicYamlConfig) objectinputstream.readObject();
+			        cleanUpJumbuneAgentCurrentJobFolder(config);
+			       			}
+		    }catch(IOException e){
+		    	LOGGER.error(e.getMessage(), e);
+		    } catch (ClassNotFoundException e) {
+		    	LOGGER.error(e.getMessage(), e);
+				
+			}finally{
+		    
+		            try {
+		            	if(objectinputstream != null){
+						objectinputstream .close();
+		            	}
+					} catch (IOException e) {
+					
+						LOGGER.error(e.getMessage(), e);
+					}
+		          
+		        
+		        	try {
+		        		if(streamIn!= null){
+		        		streamIn.close();
+		        		}
+					} catch (IOException e) {
+						LOGGER.error(e.getMessage(), e);
+						
+					
+		        }
+		 }		
 		HttpSession session = request.getSession();
 		session.removeAttribute("ExecutorServReference");
 		session.removeAttribute("ReportsBean");
@@ -137,6 +176,10 @@ public class HomeServlet extends HttpServlet {
 				WebConstants.HOME_URL);
 		rd.forward(request, response);
 	}
+	
+	private static void shutDownNettyEventLoopGroup() {
+		SingleNIOEventGroup.eventLoopGroup().shutdownGracefully();
+	}	
 	
 	/**
 	 * Kills the proces on each node which dumps top result to a file.
@@ -172,5 +215,27 @@ public class HomeServlet extends HttpServlet {
 		remoter.close();
 		ConsoleLogUtil.CONSOLELOGGER.info("Executed command [ShutTop] on worker nodes..");
 
+	}
+	
+	private static void cleanUpJumbuneAgentCurrentJobFolder(BasicYamlConfig basicYamlConfig){
+		//Remove Agent Home/Job jar/Jobname folder
+
+		String hostMaster = basicYamlConfig.getHost();
+		Remoter remoter = new Remoter(hostMaster, Integer.valueOf(basicYamlConfig.getPort()));
+		CommandWritableBuilder builder = new CommandWritableBuilder();
+		
+		StringBuilder cleanLocationAgentStrBuilder = new StringBuilder()
+					.append(RemotingConstants.REMOVE_FOLDER)
+					.append(Constants.WHITE_SPACE)
+					.append(Constants.AGENT_ENV_VAR_NAME)
+					.append(Constants.JOB_JARS_LOC)
+					.append(basicYamlConfig.getJumbuneJobName());
+			LOGGER.info("Cleanup agent temporary directories command ["
+					+ cleanLocationAgentStrBuilder + "]");
+			
+			builder.addCommand(cleanLocationAgentStrBuilder.toString(),
+					false, null);
+			remoter.fireAndForgetCommand(builder.getCommandWritable());
+		    remoter.close();
 	}
 }

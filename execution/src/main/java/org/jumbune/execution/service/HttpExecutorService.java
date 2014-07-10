@@ -1,5 +1,6 @@
 package org.jumbune.execution.service;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -109,6 +110,12 @@ public class HttpExecutorService extends CoreExecutorService {
 		}
 		if (loader.getSlavesInfo() != null){
 			serviceInfo.setSlaves(loader.getSlavesInfo());
+		}
+		try {
+			persistYamlInfoForShutdownHook(loader,loader.getjHome());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			LOGGER.error(e.getMessage(),e);
 		}
 		HELPER.writetoServiceFile(serviceInfo);
 		if (processors.size() > 0) {

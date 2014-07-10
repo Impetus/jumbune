@@ -392,10 +392,9 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 		try{
 		while((line=bufferReader.readLine())!=null){
 			sb.append(line+"\n");
-//			bw.write(line+"\n");
-//			bw.flush();	
+			bw.write(line+"\n");
+			bw.flush();	
 		}
-		bw.write(sb.toString());
 		bw.write(HADOOP_JOB_COMPLETED);
 		bw.flush();
 		}catch(IOException io){
