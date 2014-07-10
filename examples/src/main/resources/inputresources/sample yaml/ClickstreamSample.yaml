@@ -19,7 +19,7 @@ enableStaticJobProfiling: 'FALSE'
 hadoopJobProfile: 'FALSE'
 hdfsInputPath: null
 includeClassJar: 'TRUE'
-inputFile: user.home.directory/Desktop/Jumbune_Home/examples/example-distribution/examples-clickstreamanalysis-1.1.0.jar
+inputFile: user.home.directory/Desktop/Jumbune_Home/examples/example-distribution/examples-clickstreamanalysis-1.1.1-SNAPSHOT.jar
 jobs:
 - {jobClass: null, name: ClickstreamAnalysis, parameters: /Jumbune/clickstreamdata /test/output18}
 jumbuneJobName: ClickstreamSample
