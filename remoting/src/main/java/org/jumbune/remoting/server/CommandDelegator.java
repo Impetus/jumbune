@@ -193,7 +193,7 @@ public class CommandDelegator extends SimpleChannelInboundHandler<CommandWritabl
 		ps.println(commandToExec);
 		br = new BufferedReader(new InputStreamReader(in));
 		
-		if(commandStr.contains("grep")){
+		if(commandStr.contains("grep") && !commandStr.contains("egrep")){
 			ps.println(EXIT_CMD);
 		}
 		while ((line = br.readLine()) != null) {
@@ -201,8 +201,8 @@ public class CommandDelegator extends SimpleChannelInboundHandler<CommandWritabl
 				line = line.replace(CONST_1, "");
 				String pid = line.trim();
 				StringBuffer sb = new StringBuffer(ECHO_CMD);
-				sb.append(SINGLE_SPACE).append("'").append(CONST_PID).append(pid).append("'").append(REDIRECT_SYMBOL).append(command.getParams().get(0))
-						.append(File.separator).append(PID_FILE);
+				sb.append(SINGLE_SPACE).append("'").append(CONST_PID).append(Integer.parseInt(pid)-2).append("'").append(REDIRECT_SYMBOL).append(command.getParams().get(0)).
+				append(PID_FILE);
 				ps.println(sb.toString());
 				ps.println(EXIT_CMD);
 				LOGGER.debug("Executed commmand [" + sb + EXIT_CMD + "] host" + host);			
