@@ -57,7 +57,7 @@ public class ResourceUsageCollector {
 	private static final String PID_FILE = "pid.txt";
 	
 	/** The Constant TOP_CMD. */
-	private static final String TOP_CMD = "top -b -d" + DELAY_INTERVAL;
+	private static final String TOP_CMD = "top -b -d "+DELAY_INTERVAL+"| egrep 'Cpu|Mem:'|awk '{print $1\" \"$2\" \"$4}'" ;
 	
 	/** The Constant CAT_CMD. */
 	private static final String CAT_CMD = "cat";
@@ -65,16 +65,16 @@ public class ResourceUsageCollector {
 
 	
 	/** The Constant GREP_CPU_CMD. */
-	private static final String GREP_CPU_CMD = "|grep Cpu|cut -c 8-12";
+	private static final String GREP_CPU_CMD = "|grep Cpu|awk '{print$2}'";
 	
 	/** The Constant GREP_MEM_CMD. */
-	private static final String GREP_MEM_CMD = "|grep Mem|cut -c 6-31";
+	private static final String GREP_MEM_CMD = "|grep Mem|awk '{print $2\" \"$3}'";
 	
 	/** The Constant REDIRECT_SYMBOL. */
 	private static final String REDIRECT_SYMBOL = ">";
 	
 	/** The Constant MEM_SUFFIX. */
-	private static final String MEM_SUFFIX = "k total,";
+	private static final String MEM_SUFFIX = "\\s+";
 	
 	/** The Constant SYSTEM_STATS_DIR. */
 	private static final String SYSTEM_STATS_DIR = "SystemStats";
@@ -338,6 +338,7 @@ public class ResourceUsageCollector {
 			long interval = 0;
 			while ((line = br.readLine()) != null) {
 				line = line.trim();
+				line = line.substring(0, line.indexOf("%"));
 				interval += DELAY_INTERVAL;
 				cpuUsage.put(interval, Float.parseFloat(line));
 			}
@@ -356,8 +357,10 @@ public class ResourceUsageCollector {
 				strArr = line.split(MEM_SUFFIX);
 				totalMem = strArr[0];
 				totalMem = totalMem.trim();
+				totalMem = totalMem.substring(0, totalMem.indexOf("k"));
 				usedMem = strArr[1];
 				usedMem = usedMem.trim();
+				usedMem = usedMem.substring(0, usedMem.indexOf("k"));
 				memPer = Float.parseFloat(usedMem) / Float.parseFloat(totalMem) * Constants.HUNDRED;
 				memUsage.put(interval, memPer);
 			}
