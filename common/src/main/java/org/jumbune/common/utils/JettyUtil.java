@@ -1,6 +1,7 @@
 package org.jumbune.common.utils;
 
 import static org.jumbune.common.utils.Constants.SPACE;
+import io.netty.channel.nio.NioEventLoopGroup;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jumbune.remoting.client.Remoter;
+import org.jumbune.remoting.client.SingleNIOEventGroup;
 import org.jumbune.remoting.common.BasicYamlConfig;
 import org.jumbune.remoting.writable.CommandWritable;
 import org.jumbune.remoting.writable.CommandWritable.Command;
@@ -69,6 +71,7 @@ public final class JettyUtil {
 			if (command != null && "stop".equalsIgnoreCase(command)) {
 				performTopCommandCleanUp();
 				specifyStopKey(stopPort, stopKey);
+				shutDownNettyEventLoopGroup();
 
 				InetAddress host = InetAddress.getByName("127.0.0.1");
 				Socket socket = new Socket(host.getHostName(), stopPort);
@@ -90,6 +93,9 @@ public final class JettyUtil {
 		}
 	}
 
+	private static void shutDownNettyEventLoopGroup() {
+		SingleNIOEventGroup.eventLoopGroup().shutdownGracefully();
+	}
 
 	private static void performTopCommandCleanUp()
 			throws IOException, ClassNotFoundException {
