@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.ConsoleLogUtil;
 import org.jumbune.remoting.client.Remoter;
+import org.jumbune.remoting.client.SingleNIOEventGroup;
 import org.jumbune.remoting.common.BasicYamlConfig;
 import org.jumbune.remoting.writable.CommandWritable;
 import org.jumbune.remoting.writable.CommandWritable.Command;
@@ -65,6 +66,7 @@ public class HomeServlet extends HttpServlet {
 			        BasicYamlConfig config = (BasicYamlConfig) objectinputstream.readObject();
 			        shutTopCmdOnSlaves(config);
 			 	}
+			 	shutDownNettyEventLoopGroup();
 		    }catch(IOException e){
 		    	LOGGER.error(e.getMessage(), e);
 		    } catch (ClassNotFoundException e) {
@@ -89,6 +91,10 @@ public class HomeServlet extends HttpServlet {
 		        }
 		 }		
 	}});
+	}
+	
+	private static void shutDownNettyEventLoopGroup() {
+		SingleNIOEventGroup.eventLoopGroup().shutdownGracefully();
 	}
 
 	/* (non-Javadoc)

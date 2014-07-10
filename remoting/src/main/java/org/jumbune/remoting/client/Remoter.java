@@ -248,12 +248,12 @@ public class Remoter {
 	
 	
 	public void close(){
-		try {
+/*		try {
 			jac.releaseBootstrapResources();
 		} catch (InterruptedException e) {
 			logger.warn(e);			
 		}
-	}
+*/	}
 	
 	/**
 	 * Adds the close listener.

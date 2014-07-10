@@ -29,14 +29,9 @@ public final class JumbuneAgentCommunicator {
 	private final int port;
 	
 	private  static final Logger LOGGER = LogManager.getLogger(JumbuneAgentCommunicator.class);
-	
-	/** The factory cache. */
-//	private static ChannelPipelineFactoryCache factoryCache = new ChannelPipelineFactoryCache(RemotingConstants.SEVEN);
 
 	/** The bootstrap. */
 	private Bootstrap bootstrap;
-	
-	private EventLoopGroup group;
 
 	/**
 	 * Instantiates a new jumbune agent communicator.
@@ -47,8 +42,7 @@ public final class JumbuneAgentCommunicator {
 	public JumbuneAgentCommunicator(String host,
 			int port) {
 		this.host = host;
-		this.port = port;
-	    group = new NioEventLoopGroup();		
+		this.port = port;		
 	}
 
 	/**
@@ -56,8 +50,7 @@ public final class JumbuneAgentCommunicator {
 	 * @throws InterruptedException 
 	 */
 	public void releaseBootstrapResources() throws InterruptedException {
-		group.shutdownGracefully();
-//		group.terminationFuture().sync();
+//		group.shutdownGracefully();
 	}
 
 	/**
@@ -71,7 +64,7 @@ public final class JumbuneAgentCommunicator {
 			final List<ChannelHandler> handlers) throws InterruptedException {
 		ChannelFuture future;
 		bootstrap = new Bootstrap();
-		bootstrap.group(group);
+		bootstrap.group(SingleNIOEventGroup.eventLoopGroup());
          bootstrap.channel(NioSocketChannel.class)
          .option(ChannelOption.SO_KEEPALIVE, true)
          .option(ChannelOption.TCP_NODELAY, true)
@@ -86,26 +79,7 @@ public final class JumbuneAgentCommunicator {
            });
         // Make the connection attempt.         
         future = bootstrap.connect(host, port).sync();
-        // Wait until the connection is closed.
-//        future.channel().closeFuture().sync();
         return future;
 	}
 
-/*	*//**
-	 * Creates the or get channel pipeline factory.
-	 *
-	 * @param requestedOperation the requested operation
-	 * @param handlers the handlers
-	 * @return the channel pipeline factory
-	 *//*
-	public ChannelPipelineFactory createOrGetChannelPipelineFactory(
-			String requestedOperation, List<ChannelHandler> handlers) {
-		
-		if (!factoryCache.containsKey(requestedOperation)) {
-			LOGGER.debug("Requested Operation keys ["+requestedOperation+"]");
-			factoryCache.put(requestedOperation, factoryBuilder(handlers));
-		}
-		return factoryCache.get(requestedOperation);
-	}
-*/
 }
