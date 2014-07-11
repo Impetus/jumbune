@@ -101,7 +101,7 @@ Running Jumbune Sample Jobs
     NOTE: We have used GenericOptionsParser for the examples, so do not provide class name information, just select 'Job Class defined in the Jar Manifest' option instead.    
     
 
-Let's tune the Jumbo!
+
 
 
         

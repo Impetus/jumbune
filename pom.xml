@@ -13,7 +13,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<build.number>1.1.1-SNAPSHOT</build.number>
+		<build.number>1.2.0-SNAPSHOT</build.number>
 	</properties>
 	<repositories>
 		<repository>
