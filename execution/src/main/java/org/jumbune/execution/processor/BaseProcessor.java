@@ -1,12 +1,6 @@
 package org.jumbune.execution.processor;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
@@ -14,14 +8,10 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Module;
 import org.jumbune.common.beans.ReportsBean;
 import org.jumbune.common.beans.ServiceInfo;
-import org.jumbune.common.beans.Slave;
 import org.jumbune.common.utils.MessageLoader;
-import org.jumbune.common.utils.RemotingUtil;
-import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.execution.beans.Parameters;
 import org.jumbune.execution.utils.ProcessHelper;
-import org.jumbune.remoting.common.BasicYamlConfig;
 import org.jumbune.utils.exception.JumbuneException;
 
 
@@ -46,7 +36,7 @@ public abstract class BaseProcessor implements Processor {
 	protected ServiceInfo serviceInfo;
 	private boolean isCommandBased;
 	
-	private static final String YAML_FILE = "/yamlInfo.ser";
+	
 
 	protected BaseProcessor(boolean isCommandBased) {
 		this.isCommandBased = isCommandBased;
@@ -239,43 +229,5 @@ public abstract class BaseProcessor implements Processor {
 				+ getModuleName() + "  " + message, t);
 	}
 	
-	protected void persistYamlInfoForShutdownHook(YamlLoader loader, String agentHome) throws IOException{
-		ObjectOutputStream oos = null;
-		FileOutputStream fout = null;
-		YamlConfig config = loader.getYamlConfiguration();
-		
-		List<Slave> slaveList = config.getSlaves();
-		List<String> hosts = new ArrayList<String>();
-		String[] slaveAgentList = null;
-		for(Slave host: slaveList){
-			for (String str : host.getHosts()) {
-				hosts.add(str);
-			}
-		}
-		slaveAgentList = hosts.toArray(new String[hosts.size()]);
-		BasicYamlConfig agentConfig = new BasicYamlConfig(config.getJumbuneJobName(),
-				config.getMaster().getHost(), config.getMaster().getAgentPort());
-		
-		agentConfig.setUser(config.getMaster().getUser());
-		agentConfig.setRsaFile(config.getMaster().getRsaFile());
-		agentConfig.setDsaFile(config.getMaster().getDsaFile());
-		agentConfig.setSlaves(slaveAgentList);
-		agentConfig.setTmpDir(config.getsJumbuneHome());
-		try{
-			//persisting  object
-			File file = new File(loader.getjHome()+YAML_FILE);
-			if(file.exists()){
-				file.delete();
-			}
-			fout = new FileOutputStream(loader.getjHome()+YAML_FILE, true);
-			oos = new ObjectOutputStream(fout);
-			oos.writeObject(agentConfig);
-		}finally{
-			if(oos != null){
-			oos.close();
-			}
-		}
-		//sends the file to Agent_Home
-		RemotingUtil.sendYamlInfoToAgent(loader, agentConfig);
-}
+	
 }

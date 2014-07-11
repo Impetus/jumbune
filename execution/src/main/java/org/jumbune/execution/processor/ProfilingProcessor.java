@@ -103,8 +103,7 @@ public class ProfilingProcessor extends BaseProcessor {
 			ResourceUsageCollector collector = new ResourceUsageCollector(super.getLoader());
 			LOGGER.debug("Fired top command on Workers");
 			String receiveDir = fireTopOnSlaves(collector);
-			persistYamlInfoForShutdownHook(super.getLoader(), super.getLoader().getjHome());
-			
+						
 			Map<String, Map<String, String>> jobsCounterMap = HELPER.executeJar(pureJarPath, super.isCommandBased(), super.getLoader(), false);
 			pureJarCounterJson = json.toJson(jobsCounterMap);
 			String jobID = getJobIdfromJobCountersMap(jobsCounterMap);
@@ -122,7 +121,7 @@ public class ProfilingProcessor extends BaseProcessor {
 			LOGGER.error("Error while executing pure jar.", e);
 			return false;
 		} catch (Exception ex) {
-			LOGGER.error("Error while processing per phase stats."+ex.getMessage());
+			LOGGER.error("Error while processing per phase stats.",ex);
 			return false;
 		} finally {
 			LOGGER.info("Pure Job Execution Completed");

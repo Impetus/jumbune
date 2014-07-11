@@ -304,13 +304,13 @@ public final class JumbuneAgent {
 		StringBuilder command = new StringBuilder();
 		command.append(CAT_CMD).append(SPACE).append(slaveTmpDir).append(File.separator).append(PID_FILE);
 		try{
-		List<String> params = new ArrayList<String>();
+		List<String> params = new ArrayList<String>(1);
 		params.add(slaveTmpDir);
 		
 		for (String host : config.getSlaves()) {
 			CommandWritable commandWritable = new CommandWritable();	
 			CommandWritable.Command cmd = new CommandWritable.Command();
-			List<Command> commands= new ArrayList<Command>();
+			List<Command> commands= new ArrayList<Command>(1);
 			
 			cmd.setCommandString(command.toString());
 			cmd.setHasParams(true);

@@ -371,18 +371,11 @@ public final class RemotingUtil {
 	 * @param config
 	 */
 	public static void sendYamlInfoToAgent(YamlLoader loader, BasicYamlConfig config){
-		File file = new File(loader.getjHome()+YAML_FILE);
-		String agentHome = getAgentHome(loader.getYamlConfiguration());
-		
-		StringBuilder command = new StringBuilder("scp ");
-		command.append(file).append(" ").append(config.getUser()).append("@").append(config.getHost())
-		.append(":").append(agentHome);
+		String jumbuneHome = System.getenv("JUMBUNE_HOME");
+		String yamlInfoPath = jumbuneHome + YAML_FILE;
 		Remoter remote = new Remoter(config.getHost(), Integer.parseInt(config.getPort()));
-		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(command.toString(), false, null);
-		remote.fireAndForgetCommand(builder.getCommandWritable());
-		remote.close();
-	}
+		remote.sendLogFiles(File.separator,yamlInfoPath);
+		}
 	
 	
 	/**

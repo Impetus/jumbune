@@ -22,6 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.HttpReportsBean;
 import org.jumbune.common.utils.CommandWritableBuilder;
+import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.common.utils.ResourceUsageCollector;
 import org.jumbune.common.yaml.config.YamlConfig;
@@ -84,6 +85,9 @@ public class ResultServlet extends HttpServlet {
 			HttpReportsBean reports;
 			try {
 				if("TRUE".equals(request.getParameter("killJob"))){
+					HttpExecutorService service=(HttpExecutorService) session.getAttribute("ExecutorServReference");
+					session.removeAttribute("ExecutorServReference");
+					service.stopExecution();
 					StringBuilder sb = new StringBuilder();
 					sb.append(System.getenv("JUMBUNE_HOME"))
 							.append(WebConstants.TMP_DIR_PATH)
@@ -91,17 +95,16 @@ public class ResultServlet extends HttpServlet {
 					File file = new File(sb.toString());
 					YamlLoader yamlLoader=(YamlLoader) session.getAttribute("loader");
 					YamlConfig config=yamlLoader.getYamlConfiguration();
-					RemotingUtil.receiveLogFilesFromAgent(yamlLoader, EXECUTED_HADOOP_JOB_INFO);
-					File hadoopJobStateFile=new File(YamlLoader.getjHome()+JOBJARS+config.getJumbuneJobName()+"/"+EXECUTED_HADOOP_JOB_INFO);
+					Remoter remoter = RemotingUtil.getRemoter(config, "");
+					String relativePath =  File.separator+Constants.JOB_JARS_LOC +yamlLoader.getJumbuneJobName();
+					remoter.receiveLogFiles(relativePath, relativePath+File.separator+EXECUTED_HADOOP_JOB_INFO);
+					File hadoopJobStateFile=new File(YamlLoader.getjHome()+File.separator+relativePath+File.separator+EXECUTED_HADOOP_JOB_INFO);
 					if(hadoopJobStateFile.exists()){
-					readHadoopJobIDAndKillJob(yamlLoader, hadoopJobStateFile);
+						readHadoopJobIDAndKillJob(yamlLoader, hadoopJobStateFile);
 					}
 					file.delete();
 					ResourceUsageCollector collector = new ResourceUsageCollector(yamlLoader);
 					collector.shutTopCmdOnSlaves(null);
-					HttpExecutorService service=(HttpExecutorService) session.getAttribute("ExecutorServReference");
-					session.removeAttribute("ExecutorServReference");
-					service.stopExecution();					
 					final RequestDispatcher rd = getServletContext().getRequestDispatcher(
 							WebConstants.HOME_URL);
 					rd.forward(request, response);

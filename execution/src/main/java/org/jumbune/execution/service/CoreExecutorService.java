@@ -4,7 +4,9 @@ import static org.jumbune.execution.utils.ExecutionConstants.TEMP_DIR;
 import static org.jumbune.execution.utils.ExecutionConstants.TOKEN_FILE;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -26,6 +28,7 @@ import org.jumbune.common.beans.ReportsBean.ReportName;
 import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
+import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.execution.processor.DataValidationProcessor;
@@ -37,6 +40,7 @@ import org.jumbune.execution.utils.ExecutionUtil;
 import org.jumbune.execution.utils.ProcessHelper;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.ApiInvokeHintsEnum;
+import org.jumbune.remoting.common.BasicYamlConfig;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.utils.exception.JumbuneException;
 
@@ -55,6 +59,7 @@ public abstract class CoreExecutorService {
 	protected static final boolean HTTP_BASED = false;
 	protected static final boolean CONSOLE_BASED = true;
 	protected static final ProcessHelper HELPER = new ProcessHelper();
+	private static final String YAML_FILE = "/yamlInfo.ser";
 
 	/**
 	 * Method that performs the desired chaining of the processors.
@@ -362,5 +367,45 @@ public abstract class CoreExecutorService {
 		}
 
 	}
+	
+	protected void persistYamlInfoForShutdownHook(YamlLoader loader, String agentHome) throws IOException{
+		ObjectOutputStream oos = null;
+		FileOutputStream fout = null;
+		YamlConfig config = loader.getYamlConfiguration();
+		
+		List<String> hosts = new ArrayList<String>();
+		String[] slaveAgentList = null;
+		for(Slave host: config.getSlaves()){
+			for (String str : host.getHosts()) {
+				hosts.add(str);
+			}
+		}
+		slaveAgentList = hosts.toArray(new String[hosts.size()]);
+		BasicYamlConfig agentConfig = new BasicYamlConfig(config.getJumbuneJobName(),
+				config.getMaster().getHost(), config.getMaster().getAgentPort());
+		
+		agentConfig.setUser(config.getMaster().getUser());
+		agentConfig.setRsaFile(config.getMaster().getRsaFile());
+		agentConfig.setDsaFile(config.getMaster().getDsaFile());
+		agentConfig.setSlaves(slaveAgentList);
+		agentConfig.setTmpDir(config.getsJumbuneHome());
+		try{
+			//persisting  object
+			String yamlFile = loader.getjHome()+YAML_FILE;
+			File file = new File(yamlFile);
+			if(file.exists()){
+				file.delete();
+			}
+			fout = new FileOutputStream(yamlFile, true);
+			oos = new ObjectOutputStream(fout);
+			oos.writeObject(agentConfig);
+		}finally{
+			if(oos != null){
+			oos.close();
+			}
+		}
+		//sends the file to Agent_Home
+		RemotingUtil.sendYamlInfoToAgent(loader, agentConfig);
+}
 
 }
