@@ -62,9 +62,10 @@ public class HomeServlet extends HttpServlet {
 		ObjectInputStream objectinputstream = null;
 		InputStream streamIn = null;
 		 try {
-			 	File file = new File(jHome+YAML_FILE);
+			 	String yamlFile = jHome+YAML_FILE;
+			 	File file = new File(yamlFile);
 			 	if(file.exists()){
-				 	streamIn = new FileInputStream(jHome+YAML_FILE);
+				 	streamIn = new FileInputStream(yamlFile);
 			        objectinputstream= new ObjectInputStream(streamIn);
 			        BasicYamlConfig config = (BasicYamlConfig) objectinputstream.readObject();
 			        shutTopCmdOnSlaves(config);
@@ -134,7 +135,8 @@ public class HomeServlet extends HttpServlet {
 		ObjectInputStream objectinputstream = null;
 		InputStream streamIn = null;
 		 try {
-			 	File jHomeYamlFile = new File(jHome+YAML_FILE);
+			 	String yamlFile = jHome+YAML_FILE;
+			 	File jHomeYamlFile = new File(yamlFile);
 			 	if(jHomeYamlFile.exists()){
 				 	streamIn = new FileInputStream(jHomeYamlFile);
 			        objectinputstream= new ObjectInputStream(streamIn);

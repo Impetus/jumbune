@@ -114,7 +114,6 @@ public class HttpExecutorService extends CoreExecutorService {
 		try {
 			persistYamlInfoForShutdownHook(loader,loader.getjHome());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			LOGGER.error(e.getMessage(),e);
 		}
 		HELPER.writetoServiceFile(serviceInfo);

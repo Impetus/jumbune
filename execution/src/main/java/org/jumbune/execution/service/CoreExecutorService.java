@@ -373,10 +373,9 @@ public abstract class CoreExecutorService {
 		FileOutputStream fout = null;
 		YamlConfig config = loader.getYamlConfiguration();
 		
-		List<Slave> slaveList = config.getSlaves();
 		List<String> hosts = new ArrayList<String>();
 		String[] slaveAgentList = null;
-		for(Slave host: slaveList){
+		for(Slave host: config.getSlaves()){
 			for (String str : host.getHosts()) {
 				hosts.add(str);
 			}
@@ -392,11 +391,12 @@ public abstract class CoreExecutorService {
 		agentConfig.setTmpDir(config.getsJumbuneHome());
 		try{
 			//persisting  object
-			File file = new File(loader.getjHome()+YAML_FILE);
+			String yamlFile = loader.getjHome()+YAML_FILE;
+			File file = new File(yamlFile);
 			if(file.exists()){
 				file.delete();
 			}
-			fout = new FileOutputStream(loader.getjHome()+YAML_FILE, true);
+			fout = new FileOutputStream(yamlFile, true);
 			oos = new ObjectOutputStream(fout);
 			oos.writeObject(agentConfig);
 		}finally{
