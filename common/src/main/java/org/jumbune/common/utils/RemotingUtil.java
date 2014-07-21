@@ -235,6 +235,7 @@ public final class RemotingUtil {
 		String destinationReceiveDir = copyAndGetHadoopConfigurationFilePath(loader, hadoopConfigurationFile);
 		return parseConfiguration(destinationReceiveDir + "/" + hadoopConfigurationFile, configurationToGet);
 	}
+		
 
 	/**
 	 * Parses the configuration.
@@ -243,7 +244,7 @@ public final class RemotingUtil {
 	 * @param configurationToGet the configuration to get
 	 * @return the string
 	 */
-	private static String parseConfiguration(String destinationRelativePathOnLocal, String configurationToGet) {
+	public static String parseConfiguration(String destinationRelativePathOnLocal, String configurationToGet) {
 		Configuration conf = new Configuration();
 		LOGGER.debug("Parsed configuration file path [" + destinationRelativePathOnLocal+"]");
 		conf.addResource(new Path(destinationRelativePathOnLocal));
@@ -259,7 +260,7 @@ public final class RemotingUtil {
 	 * @param hadoopConfigurationFile which we wants to receive the path of.
 	 * @return the string
 	 */
-	public static String copyAndGetHadoopConfigurationFilePath(YamlLoader loader, String hadoopConfigurationFile) {
+	private static String copyAndGetHadoopConfigurationFilePath(YamlLoader loader, String hadoopConfigurationFile) {
 
 		String jumbuneHome = YamlLoader.getjHome();
 		String dirInJumbuneHome = jumbuneHome + File.separator + Constants.JOB_JARS_LOC + loader.getJumbuneJobName();
@@ -283,6 +284,28 @@ public final class RemotingUtil {
 		remoter.receiveLogFiles(File.separator + Constants.JOB_JARS_LOC  + jumbuneJobName, File.separator + Constants.JOB_JARS_LOC + jumbuneJobName + hadoopConfigurationFile);
 		remoter.close();
 		return destinationReceiveDir;
+	}
+	
+	public static String copyAndGetHadoopConfigurationFilePath(String remoteAbsolutePath, YamlLoader loader){
+		String jumbuneHome = YamlLoader.getjHome();
+		String dirInJumbuneHome = jumbuneHome + File.separator + Constants.JOB_JARS_LOC + loader.getJumbuneJobName();
+		File dir = new File(dirInJumbuneHome);
+		if (!dir.exists()) {
+			dir.mkdirs();
+		}
+		String jumbuneJobName = loader.getJumbuneJobName() + File.separator;
+		YamlConfig config = loader.getYamlConfiguration();
+		jumbuneHome = new String(jumbuneHome+File.separator);
+		String destinationReceiveDir = jumbuneHome + Constants.JOB_JARS_LOC  + jumbuneJobName;
+		
+		Remoter remoter = getRemoter(config, "");
+		String copyCommand = new StringBuilder().append("cp ").append(remoteAbsolutePath).append(" ").append(getAgentHome(config)).append("/jobJars/").append(jumbuneJobName).toString();
+		CommandWritableBuilder builder = new CommandWritableBuilder();
+		builder.addCommand(MAKE_JOBJARS_DIR_ON_AGENT + jumbuneJobName, false, null).addCommand(copyCommand, false, null);
+		remoter.fireAndForgetCommand(builder.getCommandWritable());
+		String fileName = remoteAbsolutePath.substring(remoteAbsolutePath.lastIndexOf(File.separator)+1);
+		remoter.receiveLogFiles(File.separator + Constants.JOB_JARS_LOC  + jumbuneJobName, File.separator + Constants.JOB_JARS_LOC + jumbuneJobName + fileName);
+		return destinationReceiveDir+File.separator+fileName;		
 	}
 	
 	/**

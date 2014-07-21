@@ -299,7 +299,7 @@
 							$("#tabs").tabs("refresh");
                                                 
 	<%if (tabs.contains("Static Profiling")) {%>
-	$('#summary-profiler').show();
+		//$('#summary-profiler').show();
 		timerId = setInterval(callServletForJSON, ajaxInterval);
 	<%}%>
 

@@ -23,14 +23,22 @@ public class TaskInfo {
   private final long bytesOut;
   private final int recsOut;
   private final long maxMemory;
+  private final ResourceUsageMetrics metrics;
+  
+  public TaskInfo(long bytesIn, int recsIn, long bytesOut, int recsOut,
+	       long maxMemory) {
+	    this(bytesIn, recsIn, bytesOut, recsOut, maxMemory, 
+	         new ResourceUsageMetrics());
+	  }
 
   public TaskInfo(long bytesIn, int recsIn, long bytesOut, int recsOut,
-      long maxMemory) {
+      long maxMemory, ResourceUsageMetrics metrics) {
     this.bytesIn = bytesIn;
     this.recsIn = recsIn;
     this.bytesOut = bytesOut;
     this.recsOut = recsOut;
     this.maxMemory = maxMemory;
+    this.metrics = metrics;
   }
 
   /**
@@ -69,5 +77,13 @@ public class TaskInfo {
   public long getTaskMemory() {
     return maxMemory;
   }
+  
+  /**
+  * @return Resource usage metrics
+  */
+  public ResourceUsageMetrics getResourceUsageMetrics() {
+  return metrics;
+  }
 
 }
+

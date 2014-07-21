@@ -29,6 +29,7 @@ distributedHDFSPath: null
 doNotInstrument: null
 enableDataValidation: 'TRUE'
 enableStaticJobProfiling: 'FALSE'
+existingJobName: null
 hadoopJobProfile: 'FALSE'
 hdfsInputPath: /Jumbune/sensordata
 includeClassJar: 'FALSE'
@@ -44,6 +45,7 @@ profilingParams: {dataNodeJmxPort: null, jobTrackerJmxPort: null, mapers: 0-1, m
   reducers: 0-1, statsInterval: 5000, taskTrackerJmxPort: null}
 reducerSuperClasses: null
 regexValidations: []
+runJobFromJumbune: 'FALSE'
 sJumbuneHome: user.home.directory/tmp/jHome
 slaveParam: {dataNodeJmxPort: '5679', taskTrackerJmxPort: '5678'}
 slaves:

@@ -100,6 +100,12 @@ public class YamlConfig{
 
 	/** The slave param. */
 	private SlaveParam slaveParam;
+	
+	/** Launches a new job from Jumbune if set to TRUE**/
+	private Enable runJobFromJumbune = Enable.FALSE;
+	
+	/** Specify the job name of an existing job on Hadoop cluster **/
+	private String existingJobName;
 
 	/**
 	 * Gets the formatted jumbune job name.
@@ -551,7 +557,38 @@ public class YamlConfig{
 		this.hdfsInputPath = hdfsInputPath;
 	}
 
+	/**
+	 * gets the runJobFromJumbune
+	 * @return
+	 */
+	public Enable getRunJobFromJumbune() {
+		return runJobFromJumbune;
+	}
 
+	/**
+	 * sets the runJobFromJumbune
+	 * @param runJobFromJumbune
+	 */
+	public void setRunJobFromJumbune(Enable runJobFromJumbune) {
+		this.runJobFromJumbune = runJobFromJumbune;
+	}
+
+	
+	/**
+	 * gets the existingJobName
+	 * @return
+	 */
+	public String getExistingJobName() {
+		return existingJobName;
+	}
+
+	/**
+	 * sets the existingJobName
+	 * @param existingJobName
+	 */
+	public void setExistingJobName(String existingJobName) {
+		this.existingJobName = existingJobName;
+	}
 
 	/**
 	 * To string.
@@ -577,7 +614,7 @@ public class YamlConfig{
 				+ ", partitionerSampleInterval=" + partitionerSampleInterval
 				+ ", sJumbuneHome=" + sJumbuneHome + ", hdfsInputPath="
 				+ hdfsInputPath + ", dataValidation=" + dataValidation
-				+ ", jumbuneJobName=" + jumbuneJobName + "]";
+				+ ", jumbuneJobName=" + jumbuneJobName + ", runJobFromJumbune="+runJobFromJumbune+"]";
 	}
 
 	/**
@@ -634,3 +671,4 @@ public class YamlConfig{
 		return slaveParam;
 	}
 }
+

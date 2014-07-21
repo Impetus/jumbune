@@ -57,6 +57,9 @@ public class TaskOutputDetails {
 	/** The output records. */
 	private long outputRecords;
 
+	/** The resource usage metrics. */
+	private ResourceUsageMetrics resourceUsageMetrics;
+	
 	/**
 	 * Gets the task type.
 	 *
@@ -362,5 +365,25 @@ public class TaskOutputDetails {
 	public void setOutputRecords(long outputRecords) {
 		this.outputRecords = outputRecords;
 	}
+	
+	/**
+	 * Gets the resource usage metrics.
+	 *
+	 * @return the resourceUsageMetrics
+	 */
+	public ResourceUsageMetrics getResourceUsageMetrics() {
+		return resourceUsageMetrics;
+	}
+
+	/**
+	 * Sets the resource usage metrics.
+	 *
+	 * @param resourceUsageMetrics the resourceUsageMetrics to set
+	 */
+	public void setResourceUsageMetrics(ResourceUsageMetrics resourceUsageMetrics) {
+		this.resourceUsageMetrics = resourceUsageMetrics;
+	}
+
 
 }
+

@@ -460,19 +460,18 @@ public class ProfilerUtil {
 	 * @param profilerInfoMap
 	 * @return Json string for entire ProfilerBean
 	 */
-	public String convertProfilingReportToJson(final Map<String, ProfilerBean> profilerInfoMap, JobOutput jobOutput) {
+	public String convertProfilingReportToJson(JobOutput jobOutput) {
 		Gson gson = new GsonBuilder().setExclusionStrategies(new HeapAllocStackTraceExclStrat()).setPrettyPrinting().create();
 		String resultJson = null;
 		JsonObject jsonObject = new JsonObject();
 		try {
-			ProfilerDashBoardReport boardReport = new ProfilingReportGenerator().generateProfilingReport(profilerInfoMap);
-			JsonElement jsonElement = gson.toJsonTree(boardReport, ProfilerDashBoardReport.class);
-			jsonObject.add(HPROF_SUMMARY, jsonElement);
+			//JsonElement jsonElement = gson.toJsonTree("", ProfilerDashBoardReport.class);
+			//jsonObject.add(HPROF_SUMMARY, jsonElement);
 
 		} catch (Exception e) {
 			LOGGER.error("Profiler map could not be read ", e);
 		} finally {
-			jsonObject.add("staticProfilerData", gson.toJsonTree(profilerInfoMap));
+			//jsonObject.add("staticProfilerData", gson.toJsonTree(profilerInfoMap));
 			jsonObject.add("graphData", gson.toJsonTree(jobOutput, JobOutput.class));
 			resultJson = jsonObject.toString();
 		}

@@ -77,7 +77,7 @@ public class HadoopLogParser {
 	private static final String HADOOP_JAR_CONFIF_FILE = "hadoop-jarConfig.properties";
 	
 	/** The Constant RUMEN_MAIN_CLASS. */
-	private static final String RUMEN_MAIN_CLASS = "org.apache.hadoop.tools.rumen.TraceBuilder";
+	//private static final String RUMEN_MAIN_CLASS = "org.apache.hadoop.tools.rumen.TraceBuilder";
 	
 	/** The Constant RUMEN_MAIN_CLASS_OLD. */
 	private static final String RUMEN_MAIN_CLASS_OLD = "org.jumbune.org.apache.hadoop.tools.rumen.TraceBuilder";
@@ -137,13 +137,13 @@ public class HadoopLogParser {
 		Properties props = loadHadoopJarConfigurationProperties();
 		
 		String coreJar;
-		String toolsJar = null;
+		//String toolsJar = null;
 		if(SupportedApacheHadoopVersions.Hadoop_1_0_4.equals(hadoopVersion)) {
 			coreJar = remoteHadoop + props.getProperty("coreJar");	
-			toolsJar = remoteHadoop + props.getProperty("toolsJar");
+			//toolsJar = remoteHadoop + props.getProperty("toolsJar");
 		}else if(SupportedApacheHadoopVersions.HADOOP_1_0_3.equals(hadoopVersion)){
 			coreJar = remoteHadoop + props.getProperty("coreJar_1.0.3.15");	
-			toolsJar = remoteHadoop + props.getProperty("toolsJar_1.0.3.15");
+			//toolsJar = remoteHadoop + props.getProperty("toolsJar_1.0.3.15");
 		}else if(SupportedApacheHadoopVersions.HADOOP_0_20_2.equals(hadoopVersion)){
 			coreJar = remoteHadoop + props.getProperty("coreJarOld");
 		}else {
@@ -156,12 +156,12 @@ public class HadoopLogParser {
 		String commonsLangJar = agentHome + LIB + props.getProperty("commonsLangJar");
 		String jacksonMapperAslJar = agentHome + LIB + props.getProperty("jacksonMapperAslJar");
 		String jacksonMapperCoreJar = agentHome + LIB + props.getProperty("jacksonMapperCoreJar");
-		String rumenJar = agentHome + LIB + props.getProperty("rumenJar")+"-"+Versioning.BUILD_VERSION+"-SNAPSHOT.jar";
+		String rumenJar = agentHome + LIB + props.getProperty("rumenJar")+"-"+Versioning.BUILD_VERSION+Versioning.DISTRIBUTION_NAME+".jar";
 		
 		StringBuilder sb = new StringBuilder(JAVA_CP_CMD);
 		
 		checkHadoopVersionsForRumen(hadoopVersion, logfilePath, jsonFilepath,
-				topologyFilePath, coreJar, toolsJar, commonsLoggingJar,
+				topologyFilePath, coreJar, commonsLoggingJar,
 				commonsCliJar, commonsConfigurationJar, commonsLangJar,
 				jacksonMapperAslJar, jacksonMapperCoreJar, rumenJar, sb);
 		LOGGER.debug("Rumen processing command [" + sb.toString()+"]");
@@ -276,7 +276,7 @@ public class HadoopLogParser {
 	private void checkHadoopVersionsForRumen(
 			SupportedApacheHadoopVersions hadoopVersion, String logfilePath,
 			String jsonFilepath, String topologyFilePath, String coreJar,
-			String toolsJar, String commonsLoggingJar, String commonsCliJar,
+			String commonsLoggingJar, String commonsCliJar,
 			String commonsConfigurationJar, String commonsLangJar,
 			String jacksonMapperAslJar, String jacksonMapperCoreJar,
 			String rumenJar, StringBuilder sb) {
@@ -289,14 +289,14 @@ public class HadoopLogParser {
 				.append(SPACE).append(FILE_PREFIX).append(topologyFilePath).append(SPACE).append(FILE_PREFIX).append(logfilePath);
 		}else if(SupportedApacheHadoopVersions.HADOOP_DEFAULT.equals(hadoopVersion)){
 			// fallback for default hadoop version
-			 sb.append(coreJar).append(COLON).append(commonsLoggingJar).append(COLON).append(commonsCliJar).append(COLON)
+			 sb.append(coreJar).append(COLON).append(rumenJar).append(COLON).append(commonsLoggingJar).append(COLON).append(commonsCliJar).append(COLON)
 				.append(commonsConfigurationJar).append(COLON).append(commonsLangJar).append(COLON).append(jacksonMapperAslJar).append(COLON)
-				.append(jacksonMapperCoreJar).append(SPACE).append(RUMEN_MAIN_CLASS).append(SPACE).append(FILE_PREFIX).append(jsonFilepath)
+				.append(jacksonMapperCoreJar).append(SPACE).append(RUMEN_MAIN_CLASS_OLD).append(SPACE).append(FILE_PREFIX).append(jsonFilepath)
 				.append(SPACE).append(FILE_PREFIX).append(topologyFilePath).append(SPACE).append(FILE_PREFIX).append(logfilePath);
 		}else{
-			 sb.append(coreJar).append(COLON).append(toolsJar).append(COLON).append(commonsLoggingJar).append(COLON).append(commonsCliJar).append(COLON)
+			 sb.append(coreJar).append(COLON).append(rumenJar).append(COLON).append(commonsLoggingJar).append(COLON).append(commonsCliJar).append(COLON)
 				.append(commonsConfigurationJar).append(COLON).append(commonsLangJar).append(COLON).append(jacksonMapperAslJar).append(COLON)
-				.append(jacksonMapperCoreJar).append(SPACE).append(RUMEN_MAIN_CLASS).append(SPACE).append(FILE_PREFIX).append(jsonFilepath)
+				.append(jacksonMapperCoreJar).append(SPACE).append(RUMEN_MAIN_CLASS_OLD).append(SPACE).append(FILE_PREFIX).append(jsonFilepath)
 				.append(SPACE).append(FILE_PREFIX).append(topologyFilePath).append(SPACE).append(FILE_PREFIX).append(logfilePath);
 		}
 	}
@@ -400,6 +400,7 @@ public class HadoopLogParser {
 		for (AttemptDetails attempt : attempts) {
 			if (SUCCESS.equals(attempt.getResult())) {
 				pd.setLocation(attempt.getHostName());
+				pd.setResourceUsageMetrics(attempt.getResourceUsageMetrics());
 				// adding parameters for shuffle and sort
 				if (REDUCE.equals(td.getTaskType())) {
 					long attemptStartPoint = pd.getStartPoint();
@@ -433,3 +434,4 @@ public class HadoopLogParser {
 	}
 
 }
+

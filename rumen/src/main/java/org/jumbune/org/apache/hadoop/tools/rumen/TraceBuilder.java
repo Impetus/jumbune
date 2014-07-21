@@ -17,6 +17,7 @@
  */
 package org.jumbune.org.apache.hadoop.tools.rumen;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,6 +48,11 @@ public class TraceBuilder extends Configured implements Tool {
   static final private Log LOG = LogFactory.getLog(TraceBuilder.class);
 
   static final int RUN_METHOD_FAILED_EXIT_CODE = 3;
+  
+  protected static final String JOB = "job";
+  //JobHistory filename regex
+  public static final Pattern JOBHISTORY_FILENAME_REGEX = 
+    Pattern.compile("(" + JOB + "_" + "[0-9]+" + "_" + "[0-9]+" + ")_.+");
 
   TopologyBuilder topologyBuilder = new TopologyBuilder();
   JobConfigurationParser jobConfParser;
@@ -128,8 +134,14 @@ public class TraceBuilder extends Configured implements Tool {
    */
   static String extractJobID(String fileName) {
 
-      String jobId = applyParser(fileName, 
+	  String jobId = applyParser(fileName, JOBHISTORY_FILENAME_REGEX);
+	  LOG.warn("jobId is:  "+jobId);
+	  if (jobId == null) {
+	      // check if its a pre21 jobhistory file
+		  jobId = applyParser(fileName, 
                           Pre21JobHistoryConstants.JOBHISTORY_FILENAME_REGEX);
+		  LOG.warn("jobId is:  "+jobId);
+	  }
     return jobId;
   }
 
@@ -267,4 +279,5 @@ public class TraceBuilder extends Configured implements Tool {
     IOUtils.cleanup(LOG, traceWriter, topologyWriter);
   }
 }
+
 

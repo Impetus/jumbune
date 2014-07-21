@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,10 +31,12 @@ import org.jumbune.common.beans.PhaseDetails;
 import org.jumbune.common.beans.PhaseOutput;
 import org.jumbune.common.beans.PhaseType;
 import org.jumbune.common.beans.Slave;
+import org.jumbune.common.beans.SupportedApacheHadoopVersions;
 import org.jumbune.common.beans.TaskOutputDetails;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.remoting.client.Remoter;
-
+import org.jumbune.remoting.common.ApiInvokeHintsEnum;
+import org.jumbune.remoting.common.RemotingConstants;
 
 
 /**
@@ -58,7 +61,7 @@ public class ResourceUsageCollector {
 	
 	/** The Constant TOP_CMD. */
 	private static final String TOP_CMD = "top -b -d "+DELAY_INTERVAL+"| egrep 'Cpu|Mem:'|awk '{print $1\" \"$2\" \"$4}'" ;
-	
+
 	/** The Constant CAT_CMD. */
 	private static final String CAT_CMD = "cat";
 	
@@ -88,6 +91,16 @@ public class ResourceUsageCollector {
 	/** The loader. */
 	private YamlLoader loader;
 
+	/** The Constant LOGS **/
+	private static final String LOGS = "/logs/";
+	
+	/** The Constant HISTORY_DIR_SUFFIX. */
+	private static final String HISTORY_DIR_SUFFIX = "/history/done/version-1";
+	
+	/** The Constant HISTORY_DIR_SUFFIX_OLD. */
+	private static final String HISTORY_DIR_SUFFIX_OLD = "/history/";
+	
+	
 	/**
 	 * Instantiates a new resource usage collector.
 	 *
@@ -221,6 +234,39 @@ public class ResourceUsageCollector {
 		}
 		jobOutput.setCpuUsage(avgCpuUsage);
 		jobOutput.setMemUsage(avgMemUsage);
+	}
+
+	
+	public void addPhaseResourceUsageFromRumen(JobOutput jobOutput, String jobID) throws IOException{
+		long totalTime = jobOutput.getTotalTime();
+		PhaseOutput po = jobOutput.getPhaseOutput();
+		Map<Long, IntervalStats> statsMap = new HashMap<Long, IntervalStats>();
+		Map<Long, Float> avgMemUsage = new LinkedHashMap<Long, Float>();
+		Map<Long, Float> avgCpuUsage = new LinkedHashMap<Long, Float>();
+		
+		// resource usage for setup phase
+		PhaseDetails setupDetails = po.getSetupDetails();
+		setMemPhaseResourceUsage(setupDetails.getTaskOutputDetails(), statsMap, jobOutput, jobID, PhaseType.SETUP);
+
+		// resource usage for map phase
+		PhaseDetails mapDetails = po.getMapDetails();
+		setMemPhaseResourceUsage(mapDetails.getTaskOutputDetails(), statsMap, jobOutput, jobID, PhaseType.MAP);
+		
+		// resource usage for reduce phase
+		PhaseDetails reduceDetails = po.getReduceDetails();
+		setMemPhaseResourceUsage(reduceDetails.getTaskOutputDetails(), statsMap, jobOutput, jobID, PhaseType.REDUCE);
+		
+		// resource usage for cleanup phase
+		PhaseDetails cleanupDetails = po.getCleanupDetails();
+		setMemPhaseResourceUsage(cleanupDetails.getTaskOutputDetails(), statsMap, jobOutput, jobID, PhaseType.CLEANUP);
+		
+		IntervalStats is;
+		for (Map.Entry<Long, IntervalStats> stats : statsMap.entrySet()) {
+			is = stats.getValue();
+			avgMemUsage.put(stats.getKey(), getAvgValue(is.getMemStats()));
+		}
+		jobOutput.setMemUsage(avgMemUsage);
+		jobOutput.setCpuUsage(avgCpuUsage);
 	}
 
 	/**
@@ -367,6 +413,92 @@ public class ResourceUsageCollector {
 			nodeStats.setMemUsage(memUsage);
 			nodeStats.setMaxMem(Collections.max(memUsage.values()));
 		}
+	}
+	
+	private void setMemPhaseResourceUsage(
+			List<TaskOutputDetails> taskDetails,
+			Map<Long, IntervalStats> statsMap, JobOutput jobOutput, String jobID, PhaseType phase) throws UnknownHostException{
+		IntervalStats intervalStats;
+		List<Float> cpuPer;
+		List<Float> memPer;
+		float maxPhaseMem = 0;
+		float totalPhaseCpu = 0;
+		int interval = 0;
+		Map<NodeSystemStats, Float> memStatsMap = new HashMap<NodeSystemStats, Float>();
+		int minStartPoint= -1, maxEndPoint=0; 
+		
+		Remoter remoter = RemotingUtil.getRemoter(loader, null);
+		CommandWritableBuilder builder = new CommandWritableBuilder();
+		String remoteHadoop = RemotingUtil.getHadoopHome(remoter, loader.getYamlConfiguration()) + File.separator;
+		String user = loader.getYamlConfiguration().getMaster().getUser();
+		SupportedApacheHadoopVersions hadoopVersion = RemotingUtil.getHadoopVersion(loader.getYamlConfiguration());
+		String logsHistory = changeLogHistoryPathAccToHadoopVersion(remoteHadoop,
+				hadoopVersion, user);
+		String command = jobID + RemotingConstants.SINGLE_SPACE + logsHistory;
+		
+		builder.addCommand(command, false, null).setApiInvokeHints(ApiInvokeHintsEnum.GET_HADOOP_CONFIG);
+		String configFilePath = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		
+		String destinationReceiveDir = RemotingUtil.copyAndGetHadoopConfigurationFilePath(configFilePath, loader);
+		for (TaskOutputDetails tod : taskDetails) {
+			String location = convertHostNameToIP(tod.getLocation());
+			float mem = tod.getResourceUsageMetrics().getPhysicalMemoryUsage();
+			minStartPoint = setMinStartPoint(minStartPoint, tod.getStartPoint());
+			long start = minStartPoint;
+			maxEndPoint = setMaxEndPoint(maxEndPoint, tod.getEndPoint());
+			long end = maxEndPoint;
+			long startPt = Math.max(start, DELAY_INTERVAL);
+			float memoryStats = 0.0f;
+					
+			String jvmChildOpts = null;
+			if(PhaseType.REDUCE.equals(phase)){
+				jvmChildOpts = RemotingUtil.parseConfiguration(destinationReceiveDir, "mapred.reduce.child.java.opts");
+				if(jvmChildOpts == null){
+					jvmChildOpts = RemotingUtil.parseConfiguration( destinationReceiveDir, "mapred.child.java.opts");
+				}
+			}else{
+				jvmChildOpts = RemotingUtil.parseConfiguration(destinationReceiveDir, "mapred.map.child.java.opts");
+				if(jvmChildOpts == null){
+					jvmChildOpts = RemotingUtil.parseConfiguration(destinationReceiveDir, "mapred.child.java.opts");
+				}
+			}
+			if(jvmChildOpts!= null){
+				int childOptsVal = ConfigurationUtil.getJavaOptsinMB(jvmChildOpts);
+				memoryStats = ((mem / (childOptsVal *1024*1024)) * 100);
+				
+				int avg = (int) (tod.getEndPoint() - startPt)/2;
+				interval = (int) (avg + startPt);
+				
+				maxPhaseMem = setMaxPhaseMemory(memoryStats, maxPhaseMem);
+			}
+			}
+		if (statsMap.containsKey(interval)) {
+			intervalStats = statsMap.get(interval);
+			cpuPer = intervalStats.getCpuStats();
+			memPer = intervalStats.getMemStats();
+		} else {
+			intervalStats = new IntervalStats();
+			cpuPer = new ArrayList<Float>();
+			memPer = new ArrayList<Float>();
+		}
+			setIntervalStats(statsMap, 0.0f, maxPhaseMem, intervalStats, cpuPer,
+				memPer, interval);
+		}
+
+	private int setMaxEndPoint(int maxEndPoint, long endPoint) {
+		int maxEnd=maxEndPoint;
+		if (endPoint > maxEnd) {
+			maxEnd = (int) endPoint;
+		}
+		return maxEnd;
+	}
+
+	private int setMinStartPoint(int minStartPoint, long startPoint) {
+		int minStart=minStartPoint;
+		if(minStart == -1 || startPoint < minStart){
+			minStart = (int) startPoint;
+		}
+		return minStart;
 	}
 
 	/**
@@ -546,4 +678,27 @@ public class ResourceUsageCollector {
 		return maxInterval;
 
 	}
+	
+	/**
+	 * Change log history path acc to hadoop version.
+	 *
+	 * @param remoteHadoop the remote hadoop
+	 * @param hadoopVersion constants for hadoop specific versions.
+	 * @param user TODO
+	 * @return the string
+	 */
+	private String changeLogHistoryPathAccToHadoopVersion(String remoteHadoop,
+			SupportedApacheHadoopVersions hadoopVersion, String user) {
+		String logsHistory;
+		if(SupportedApacheHadoopVersions.Hadoop_1_0_4.equals(hadoopVersion)|| SupportedApacheHadoopVersions.HADOOP_1_0_3.equals(hadoopVersion)) {
+			logsHistory = remoteHadoop + LOGS + HISTORY_DIR_SUFFIX;
+		}else if(SupportedApacheHadoopVersions.HADOOP_0_20_2.equals(hadoopVersion)){
+			logsHistory = remoteHadoop + LOGS + HISTORY_DIR_SUFFIX_OLD;
+		}else{
+			logsHistory = remoteHadoop + LOGS + user + HISTORY_DIR_SUFFIX;
+		}
+		return logsHistory;
+	}
+
+	
 }

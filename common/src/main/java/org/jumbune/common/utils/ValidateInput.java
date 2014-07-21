@@ -95,6 +95,9 @@ public class ValidateInput {
 			if (isEnable(config.getDebugAnalysis())) {
 				validateDebugField(config);
 			}
+			if(isEnable(config.getEnableStaticJobProfiling())){
+				validateProfilingField(config);
+			}
 
 		}
 		if (!failedValidation.isEmpty()) {
@@ -107,6 +110,33 @@ public class ValidateInput {
 	}
 
 	
+	private void validateProfilingField(YamlConfig config) {
+		Map<String,String> failedCases = new HashMap<String,String>();
+		Map<String,String> suggestionList = new HashMap<String,String>();
+		
+		if(Enable.FALSE.equals(config.getRunJobFromJumbune())){
+			String existingJobId = config.getExistingJobName();
+			if(!isNullOrEmpty(existingJobId)){
+				
+				Remoter remoter = new Remoter(config.getMaster().getHost(), Integer.valueOf(config.getMaster().getAgentPort()));
+				String remoteHadoop = RemotingUtil.getHadoopHome(remoter, config) + File.separator; 
+				String command = remoteHadoop+"bin/hadoop job -status "+existingJobId;
+				
+				CommandWritableBuilder builder = new CommandWritableBuilder();
+				builder.addCommand(command, false, null);
+				String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+				//checks for a completed hadoop job
+				if(!response.contains("Counters:")){
+					failedCases.put("profiling",errorMessages.get(ErrorMessages.EXISTING_JOB_INVALID));
+					failedValidation.put(Constants.JOB_PROFILING, failedCases);
+				}
+			}else{
+				failedCases.put("profiling",errorMessages.get(ErrorMessages.EXISTING_JOB_INVALID));
+				failedValidation.put(Constants.JOB_PROFILING, failedCases);
+			}
+		}
+	}
+
 	/**
 	 * This method checks initial settings ex hadoop home is set or not or jumbune home is set or not and check if yaml is not empty and check if a
 	 * module is enabled or not.
