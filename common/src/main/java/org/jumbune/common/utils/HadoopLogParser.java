@@ -76,9 +76,6 @@ public class HadoopLogParser {
 	/** The Constant HADOOP_JAR_CONFIF_FILE. */
 	private static final String HADOOP_JAR_CONFIF_FILE = "hadoop-jarConfig.properties";
 	
-	/** The Constant RUMEN_MAIN_CLASS. */
-	//private static final String RUMEN_MAIN_CLASS = "org.apache.hadoop.tools.rumen.TraceBuilder";
-	
 	/** The Constant RUMEN_MAIN_CLASS_OLD. */
 	private static final String RUMEN_MAIN_CLASS_OLD = "org.jumbune.org.apache.hadoop.tools.rumen.TraceBuilder";
 	
@@ -137,13 +134,10 @@ public class HadoopLogParser {
 		Properties props = loadHadoopJarConfigurationProperties();
 		
 		String coreJar;
-		//String toolsJar = null;
 		if(SupportedApacheHadoopVersions.Hadoop_1_0_4.equals(hadoopVersion)) {
 			coreJar = remoteHadoop + props.getProperty("coreJar");	
-			//toolsJar = remoteHadoop + props.getProperty("toolsJar");
 		}else if(SupportedApacheHadoopVersions.HADOOP_1_0_3.equals(hadoopVersion)){
 			coreJar = remoteHadoop + props.getProperty("coreJar_1.0.3.15");	
-			//toolsJar = remoteHadoop + props.getProperty("toolsJar_1.0.3.15");
 		}else if(SupportedApacheHadoopVersions.HADOOP_0_20_2.equals(hadoopVersion)){
 			coreJar = remoteHadoop + props.getProperty("coreJarOld");
 		}else {
@@ -434,4 +428,3 @@ public class HadoopLogParser {
 	}
 
 }
-

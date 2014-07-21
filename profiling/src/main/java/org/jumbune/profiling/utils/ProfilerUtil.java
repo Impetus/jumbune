@@ -464,17 +464,9 @@ public class ProfilerUtil {
 		Gson gson = new GsonBuilder().setExclusionStrategies(new HeapAllocStackTraceExclStrat()).setPrettyPrinting().create();
 		String resultJson = null;
 		JsonObject jsonObject = new JsonObject();
-		try {
-			//JsonElement jsonElement = gson.toJsonTree("", ProfilerDashBoardReport.class);
-			//jsonObject.add(HPROF_SUMMARY, jsonElement);
-
-		} catch (Exception e) {
-			LOGGER.error("Profiler map could not be read ", e);
-		} finally {
-			//jsonObject.add("staticProfilerData", gson.toJsonTree(profilerInfoMap));
-			jsonObject.add("graphData", gson.toJsonTree(jobOutput, JobOutput.class));
-			resultJson = jsonObject.toString();
-		}
+		jsonObject.add("graphData", gson.toJsonTree(jobOutput, JobOutput.class));
+		resultJson = jsonObject.toString();
+		
 		LOGGER.debug("MR JVM profiler resultJson:" + resultJson);
 		return resultJson;
 	}

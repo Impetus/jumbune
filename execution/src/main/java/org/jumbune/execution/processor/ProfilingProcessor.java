@@ -205,9 +205,6 @@ public class ProfilingProcessor extends BaseProcessor {
 		} else {
 			ProfilerUtil profileUtil = new ProfilerUtil(super.getLoader());
 			try {
-				//Map<String, ProfilerBean> profilerInfoMap = profileUtil.parseProfilingInfo(super.getLoader().getLogDefinition().getLogSummaryLocation()
-				//		.getProfilingFilesLocation());
-
 				String profilingData = profileUtil.convertProfilingReportToJson(jobOutput);
 				// populating profiling analysis report
 				report.put(ReportName.PURE_PROFILING, profilingData);
@@ -295,4 +292,3 @@ public class ProfilingProcessor extends BaseProcessor {
 	}
 	
 	}
-
