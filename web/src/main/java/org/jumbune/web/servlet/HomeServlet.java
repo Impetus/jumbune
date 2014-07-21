@@ -69,8 +69,8 @@ public class HomeServlet extends HttpServlet {
 			        objectinputstream= new ObjectInputStream(streamIn);
 			        BasicYamlConfig config = (BasicYamlConfig) objectinputstream.readObject();
 			        shutTopCmdOnSlaves(config);
-			 	}
-			 	shutDownNettyEventLoopGroup();
+			        shutDownNettyEventLoopGroup();
+		  			}
 		    }catch(IOException e){
 		    	LOGGER.error(e.getMessage(), e);
 		    } catch (ClassNotFoundException e) {
@@ -134,46 +134,49 @@ public class HomeServlet extends HttpServlet {
 		String jHome = System.getenv("JUMBUNE_HOME");
 		ObjectInputStream objectinputstream = null;
 		InputStream streamIn = null;
-		 try {
-			 	String yamlFile = jHome+YAML_FILE;
-			 	File jHomeYamlFile = new File(yamlFile);
-			 	if(jHomeYamlFile.exists()){
-				 	streamIn = new FileInputStream(jHomeYamlFile);
-			        objectinputstream= new ObjectInputStream(streamIn);
-			        BasicYamlConfig config = (BasicYamlConfig) objectinputstream.readObject();
-			        cleanUpJumbuneAgentCurrentJobFolder(config);
-			       			}
-		    }catch(IOException e){
-		    	LOGGER.error(e.getMessage(), e);
-		    } catch (ClassNotFoundException e) {
-		    	LOGGER.error(e.getMessage(), e);
-				
-			}finally{
-		    
-		            try {
-		            	if(objectinputstream != null){
-						objectinputstream .close();
-		            	}
-					} catch (IOException e) {
-					
-						LOGGER.error(e.getMessage(), e);
-					}
-		          
-		        
-		        	try {
-		        		if(streamIn!= null){
-		        		streamIn.close();
-		        		}
-					} catch (IOException e) {
-						LOGGER.error(e.getMessage(), e);
-						
-					
-		        }
-		 }		
 		HttpSession session = request.getSession();
-		session.removeAttribute("ExecutorServReference");
-		session.removeAttribute("ReportsBean");
-		session.removeAttribute("loader");
+		synchronized (session) {
+			 try {
+				 	String yamlFile = jHome+YAML_FILE;
+				 	File jHomeYamlFile = new File(yamlFile);
+				 	if(jHomeYamlFile.exists()){
+					 	streamIn = new FileInputStream(jHomeYamlFile);
+				        objectinputstream= new ObjectInputStream(streamIn);
+				        BasicYamlConfig config = (BasicYamlConfig) objectinputstream.readObject();
+				        cleanUpJumbuneAgentCurrentJobFolder(config);
+				       			}
+			    }catch(IOException e){
+			    	LOGGER.error(e.getMessage(), e);
+			    } catch (ClassNotFoundException e) {
+			    	LOGGER.error(e.getMessage(), e);
+					
+				}finally{
+			    
+			            try {
+			            	if(objectinputstream != null){
+							objectinputstream .close();
+			            	}
+						} catch (IOException e) {
+						
+							LOGGER.error(e.getMessage(), e);
+						}
+			          
+			        
+			        	try {
+			        		if(streamIn!= null){
+			        		streamIn.close();
+			        		}
+						} catch (IOException e) {
+							LOGGER.error(e.getMessage(), e);
+							
+						
+			        }
+			 }		
+			session.removeAttribute("ExecutorServReference");
+			session.removeAttribute("ReportsBean");
+			session.removeAttribute("loader");
+		}
+		
 		final RequestDispatcher rd = getServletContext().getRequestDispatcher(
 				WebConstants.HOME_URL);
 		rd.forward(request, response);

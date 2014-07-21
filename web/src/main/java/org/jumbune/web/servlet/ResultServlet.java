@@ -79,32 +79,36 @@ public class ResultServlet extends HttpServlet {
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		PrintWriter out = response.getWriter();
 		response.setContentType("text/html");
-
+			
 			HttpSession session = request.getSession();
 
 			HttpReportsBean reports;
 			try {
 				if("TRUE".equals(request.getParameter("killJob"))){
-					HttpExecutorService service=(HttpExecutorService) session.getAttribute("ExecutorServReference");
-					session.removeAttribute("ExecutorServReference");
-					service.stopExecution();
-					StringBuilder sb = new StringBuilder();
-					sb.append(System.getenv("JUMBUNE_HOME"))
-							.append(WebConstants.TMP_DIR_PATH)
-							.append(WebConstants.JUMBUNE_STATE_FILE);
-					File file = new File(sb.toString());
-					YamlLoader yamlLoader=(YamlLoader) session.getAttribute("loader");
-					YamlConfig config=yamlLoader.getYamlConfiguration();
-					Remoter remoter = RemotingUtil.getRemoter(config, "");
-					String relativePath =  File.separator+Constants.JOB_JARS_LOC +yamlLoader.getJumbuneJobName();
-					remoter.receiveLogFiles(relativePath, relativePath+File.separator+EXECUTED_HADOOP_JOB_INFO);
-					File hadoopJobStateFile=new File(YamlLoader.getjHome()+File.separator+relativePath+File.separator+EXECUTED_HADOOP_JOB_INFO);
-					if(hadoopJobStateFile.exists()){
-						readHadoopJobIDAndKillJob(yamlLoader, hadoopJobStateFile);
-					}
-					file.delete();
-					ResourceUsageCollector collector = new ResourceUsageCollector(yamlLoader);
-					collector.shutTopCmdOnSlaves(null);
+					HttpExecutorService service = null;
+					YamlLoader yamlLoader = null;
+					synchronized (session) {
+						service=(HttpExecutorService) session.getAttribute("ExecutorServReference");
+						session.removeAttribute("ExecutorServReference");
+						service.stopExecution();
+						StringBuilder sb = new StringBuilder();
+						sb.append(System.getenv("JUMBUNE_HOME"))
+								.append(WebConstants.TMP_DIR_PATH)
+								.append(WebConstants.JUMBUNE_STATE_FILE);
+						File file = new File(sb.toString());
+						yamlLoader =(YamlLoader) session.getAttribute("loader");
+						YamlConfig config=yamlLoader.getYamlConfiguration();
+						Remoter remoter = RemotingUtil.getRemoter(config, "");
+						String relativePath =  File.separator+Constants.JOB_JARS_LOC +yamlLoader.getJumbuneJobName();
+						remoter.receiveLogFiles(relativePath, relativePath+File.separator+EXECUTED_HADOOP_JOB_INFO);
+						File hadoopJobStateFile=new File(YamlLoader.getjHome()+File.separator+relativePath+File.separator+EXECUTED_HADOOP_JOB_INFO);
+						if(hadoopJobStateFile.exists()){
+							readHadoopJobIDAndKillJob(yamlLoader, hadoopJobStateFile);
+						}
+						file.delete();
+						ResourceUsageCollector collector = new ResourceUsageCollector(yamlLoader);
+						collector.shutTopCmdOnSlaves(null);
+				}
 					final RequestDispatcher rd = getServletContext().getRequestDispatcher(
 							WebConstants.HOME_URL);
 					rd.forward(request, response);
