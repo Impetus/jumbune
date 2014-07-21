@@ -26,6 +26,7 @@ distributedHDFSPath: null
 doNotInstrument: null
 enableDataValidation: 'TRUE'
 enableStaticJobProfiling: 'TRUE'
+existingJobName: null
 hadoopJobProfile: 'TRUE'
 hdfsInputPath: /Jumbune/Demo/input/PREPROCESSED/data1
 includeClassJar: 'TRUE'
@@ -44,6 +45,7 @@ reducerSuperClasses: null
 regexValidations:
 - {classname: org.jumbune.wordcount.mappers.WordCountMapper, key: '^[1-9][0-9]{8}',
   value: null}
+runJobFromJumbune: 'TRUE'
 sJumbuneHome: user.home.directory/tmp/jHome
 slaveParam: {dataNodeJmxPort: '5679', taskTrackerJmxPort: '5678'}
 slaves:

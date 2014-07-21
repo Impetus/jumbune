@@ -627,8 +627,11 @@
 									<div class="fld">
 										<input type="text" name="profilingParams.reducers" id="reducerInstancesProfiled" class="inputbox"/>
 									</div>				
-								</div>					
-
+								</div>		
+								<div>
+							<input type="checkbox" name="runJobFromJumbune" id="runJobFromJumbune" value="TRUE"/> Run Job From Jumbune &nbsp;&nbsp;&nbsp; 
+							Existing Job Name <input type="text" name="existingJobName" />
+						</div>			
 							</div>
 						</fieldset>
 						</div>				
@@ -1376,3 +1379,4 @@
 	populateForm();      
             	
 </script>
+

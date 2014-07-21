@@ -609,12 +609,15 @@ var uploader_mr;
 										id="mapInstancesProfiled" class="inputbox" value="0-1" previewText="Map Instances are profiled." />
 										
 										<input type="hidden" name="profilingParams.reducers"
-										id="reducerInstancesProfiled" class="inputbox" value="0-1" previewText="Reducer Instances are profiled."/>
+										id="reducerInstancesProfiled" class="inputbox" value="0-1" previewText="Reducer Instances are profiled."/>	
 							</div>
 							<div class="">
 								<label class="bold">Job Profiling</label>
 						</div>
-							
+						<div>
+							<input type="checkbox" name="runJobFromJumbune" id="runJobFromJumbune" value="TRUE"/> Run From Jumbune &nbsp;&nbsp;&nbsp; 
+							Existing Job Name <input type="text" name="existingJobName" id="existingJobName" />
+						</div>
 						</div>
 						<div id="ProfilePreviewBox" style="display: none;width:100%;margin-left:10px;">
 							<div class="fixWidthBox">
@@ -818,6 +821,16 @@ var uploader_mr;
 		} else {
 			$(".buttonFinish").addClass("disableNextStep");
 		}
+			
+		
+		if($("#enableStaticJobProfiling").is(':checked')){
+			if(!$("#runJobFromJumbune").is(':checked'))
+				if($("#existingJobName").val()==""){						
+						$(".buttonFinish").addClass("disableNextStep");
+				}
+				
+		}
+			
 	}
 						
 	var isValid = false;
@@ -1025,6 +1038,31 @@ var uploader_mr;
 							//alert(id);
 							//hostRangeValue
 						});
+						
+						$("#runJobFromJumbune").live("click", function(){
+							if($(this).is(":checked")){
+								$("#existingJobName").attr("disabled", "disabled");
+								$("#existingJobName").val('');								
+								$(".buttonFinish").removeClass("disableNextStep");
+								
+							}else{
+								$("#existingJobName").attr("disabled", false);								
+								$(".buttonFinish").addClass("disableNextStep");								
+							}					
+							
+						});	
+
+						$("#enableStaticJobProfiling").live("click", function(){
+							if($("#enableStaticJobProfiling").is(':checked')){
+								$("#runJobFromJumbune").attr('checked','checked');	
+								$("#existingJobName").attr("disabled", "disabled");
+								$("#existingJobName").val('');				
+							}else{
+								$("#runJobFromJumbune").attr('checked',false);			
+							}
+						});	
+						
+									
 
 						// no. of salves field onblur code
 						$('#noOfSlavesBtn')

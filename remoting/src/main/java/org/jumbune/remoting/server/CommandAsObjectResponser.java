@@ -79,6 +79,9 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 					case GET_JOB_LOG_FILE_OP:
 						String[] strArr = command.getCommandString().split(RemotingConstants.SINGLE_SPACE);
 						return getJobHistoryFilefromJobID(strArr[0], strArr[1]);
+					case GET_HADOOP_CONFIG:
+						String[] strTmp = command.getCommandString().split(RemotingConstants.SINGLE_SPACE);
+						return getHadoopConfigFilefromJobID(strTmp[0], strTmp[1]);
 					case HOST_TO_IP_OP:
 						return convertHostNameToIP(command.getCommandString());
 					case JOB_EXECUTION:
@@ -454,6 +457,51 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 		}
 		return jobHistoryFile;
 	}
+	
+	/**
+	 * Gets the config file given a job Id
+	 * 
+	 * @param jobID
+	 * @param jobHistoryDir
+	 * @return
+	 */
+	private String getHadoopConfigFilefromJobID(String jobID, String jobHistoryDir) {
+		long timestamp = 0, latestTimestamp = 0;
+		String name, jobDir = null, configFile = null;
+		File file = new File(jobHistoryDir);
+		String[] nameAttribs;
+		File[] files = file.listFiles();
+		List<File> fileList = Arrays.asList(files);
+
+		// check if need to modify path.Not required for older versions of hadoop.
+		if (jobHistoryDir.contains(DONE_VERSION_1)) {
+			for (File f : fileList) {
+				name = f.getName();
+				nameAttribs = name.split("_");
+				timestamp = Long.parseLong(nameAttribs[nameAttribs.length - 1]);
+				if (timestamp > latestTimestamp) {
+					latestTimestamp = timestamp;
+					jobDir = name;
+				}
+			}
+			DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+			Date date = new Date();
+			String currentDate = dateFormat.format(date);
+			String[] dateArr = currentDate.split("-");
+			// preparing the absolute path to job history log file
+			StringBuffer sb = new StringBuffer(jobHistoryDir);
+			sb.append(File.separator).append(jobDir).append(File.separator).append(dateArr[0]).append(File.separator).append(dateArr[1])
+					.append(File.separator).append(dateArr[2]).append(File.separator).append(LOG_DIR_SUFFIX);
+			file = new File(sb.toString());
+			files = file.listFiles();
+			fileList = Arrays.asList(files);
+			configFile = iterateFileListAndGetConfigFile(fileList, jobID);
+
+		} else {
+			configFile = iterateFileListAndGetConfigFile(fileList, jobID);
+		}
+		return configFile;
+	}
 
 	/***
 	 * This method iterate over list of files and return absolute path of specific file which having desired JOBID.
@@ -466,6 +514,24 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 		for (File f : fileList) {
 			fileName = f.getName();
 			if ((fileName.contains(jobID)) && (!fileName.endsWith("crc")) && (!fileName.endsWith("xml"))) {
+				return f.getAbsolutePath();
+			}
+		}
+		return null;
+
+	}
+	
+	/***
+	 * This method iterate over list of files and return absolute path of config file which having desired JOBID.
+	 * @param fileList
+	 * @param jobID
+	 * @return
+	 */
+	private String iterateFileListAndGetConfigFile(List<File> fileList, String jobID) {
+		String fileName = null;
+		for (File f : fileList) {
+			fileName = f.getName();
+			if ((fileName.contains(jobID)) && fileName.endsWith("xml")) {
 				return f.getAbsolutePath();
 			}
 		}
@@ -493,3 +559,4 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 	}
 	
 }
+

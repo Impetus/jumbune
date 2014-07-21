@@ -14,6 +14,7 @@ import java.util.Scanner;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.JobOutput;
 import org.jumbune.common.beans.LogConsolidationInfo;
 import org.jumbune.common.beans.Module;
@@ -85,38 +86,40 @@ public class ProfilingProcessor extends BaseProcessor {
 
 		String pureJarPath = super.getLoader().getInputFile();
 
-		// Generate profiling information . For this first instrument the jar to enable
-		// profiling option on job basis. Then reset the pureJarPath to the profiled Jar path
-		Instrumenter profilingInstrumenter = new PureJarInstrumenter(super.getLoader());
+		Enable runFromJumbune = super.getLoader().getYamlConfiguration().getRunJobFromJumbune();
+		LOGGER.debug("Pure MapReduce jar path :" + pureJarPath);
+		String pureJarCounterJson = null;
 		JobOutput jobOutput = null;
 		try {
-			profilingInstrumenter.instrumentJar();
-		} catch (IOException e) {
-			LOGGER.error("Not able to instrument jar.", e);
-			return false;
-		}
-		pureJarPath = super.getLoader().getProfiledOutputFile();
-				LOGGER.debug("Pure MapReduce jar path :" + pureJarPath);
-		String pureJarCounterJson = null;
-		try {
-
+			
+			String jobID = null;
 			ResourceUsageCollector collector = new ResourceUsageCollector(super.getLoader());
-			LOGGER.debug("Fired top command on Workers");
-			String receiveDir = fireTopOnSlaves(collector);
-						
-			Map<String, Map<String, String>> jobsCounterMap = HELPER.executeJar(pureJarPath, super.isCommandBased(), super.getLoader(), false);
-			pureJarCounterJson = json.toJson(jobsCounterMap);
-			String jobID = getJobIdfromJobCountersMap(jobsCounterMap);
-			collector.shutTopCmdOnSlaves(receiveDir);
-			LOGGER.debug("Stopped top command on Workers");
-			jobOutput = getJobOutput(jobID);
-			LOGGER.info("Received Job Output");
-			List<String> selectedHosts = collector.getNodesForJob(jobOutput);
-			collector.processTopDumpFile(receiveDir, selectedHosts);
-			calcStatsFromLogConsolidationInfo(jobOutput, collector);
-			// populating data validation report
-			populateReport(pureJarCounterJson);
-			LOGGER.debug("Profiling final JSON ["+jobOutput+"]");
+			if(runFromJumbune.getEnumValue()){
+				LOGGER.debug("Fired top command on Workers");
+				String receiveDir = fireTopOnSlaves(collector);
+				
+				Map<String, Map<String, String>> jobsCounterMap = HELPER.executeJar(pureJarPath, super.isCommandBased(), super.getLoader(), false);
+				pureJarCounterJson = json.toJson(jobsCounterMap);
+				jobID = getJobIdfromJobCountersMap(jobsCounterMap);
+				
+				collector.shutTopCmdOnSlaves(receiveDir);
+				LOGGER.debug("Stopped top command on Workers");
+				
+				jobOutput = getJobOutput(jobID);
+				List<String> selectedHosts = collector.getNodesForJob(jobOutput);
+				collector.processTopDumpFile(receiveDir, selectedHosts);
+				calcStatsFromLogConsolidationInfo(jobOutput, collector);
+				// populating data validation report
+				populateReport(pureJarCounterJson);
+				LOGGER.debug("Profiling final JSON ["+jobOutput+"]");
+			}else{
+				jobID = super.getLoader().getYamlConfiguration().getExistingJobName();
+				//rumen processing
+				jobOutput = getJobOutput(jobID);
+				collector.addPhaseResourceUsageFromRumen(jobOutput, jobID);
+			}
+			
+			
 		} catch (IOException e) {
 			LOGGER.error("Error while executing pure jar.", e);
 			return false;
@@ -195,17 +198,14 @@ public class ProfilingProcessor extends BaseProcessor {
 	private void populateProfilingAnalysisReport(JobOutput jobOutput,
 			String pureJarCounterJson) {
 		Map<ReportName, String> report = super.getReports().getReport(Module.PROFILING);
-		if (pureJarCounterJson.contains(ERRORANDEXCEPTION)) {
+		if (pureJarCounterJson!=null && pureJarCounterJson.contains(ERRORANDEXCEPTION)) {
 			report.put(ReportName.PURE_PROFILING, pureJarCounterJson);
 			// setting the profiling analyser report as complete
 			super.getReports().setCompleted(Module.PROFILING);
 		} else {
 			ProfilerUtil profileUtil = new ProfilerUtil(super.getLoader());
 			try {
-				Map<String, ProfilerBean> profilerInfoMap = profileUtil.parseProfilingInfo(super.getLoader().getLogDefinition().getLogSummaryLocation()
-						.getProfilingFilesLocation());
-
-				String profilingData = profileUtil.convertProfilingReportToJson(profilerInfoMap, jobOutput);
+				String profilingData = profileUtil.convertProfilingReportToJson(jobOutput);
 				// populating profiling analysis report
 				report.put(ReportName.PURE_PROFILING, profilingData);
 			} catch (Exception htfe) {

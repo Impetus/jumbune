@@ -157,7 +157,6 @@ public class WebUtil {
 		}
 		if (config.getEnableStaticJobProfiling().equals(Enable.TRUE)) {
 			tabBuilder.append(separator).append("Static Profiling");
-			isDashBoardNeeded = true;
 		}
 
 		if (config.getDebugAnalysis().equals(Enable.TRUE)) {
@@ -318,3 +317,4 @@ public class WebUtil {
 	}
 	
 }
+

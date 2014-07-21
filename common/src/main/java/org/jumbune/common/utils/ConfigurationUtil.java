@@ -58,6 +58,8 @@ public final class ConfigurationUtil {
 	
 	/** The Constant SLASH. */
 	private static final char SLASH = '/';
+	
+	private static final short standardMapReduceChildJavaOpts = 200;
 
 	/**
 	 * Instantiates a new configuration util.
@@ -431,5 +433,67 @@ public final class ConfigurationUtil {
 		} catch (Exception e) {
 			return false;
 		}
+	}
+	
+	public static int getJavaOptsinMB(String stringMapJavaOpts) {
+		int memoryDenotationIndex = getLastIndexofJVMMemorySettings(stringMapJavaOpts);
+		char ch = getDenotationOfJVMMemorySettings(stringMapJavaOpts);
+		switch (ch) {
+		case 'k': {
+			return Integer.parseInt(stringMapJavaOpts.substring(stringMapJavaOpts.lastIndexOf('x') + 1, memoryDenotationIndex)) / 1024;
+		}
+		case 'K': {
+			return Integer.parseInt(stringMapJavaOpts.substring(stringMapJavaOpts.lastIndexOf('x') + 1, memoryDenotationIndex)) / 1024;
+		}
+		case 'm': {
+			return Integer.parseInt(stringMapJavaOpts.substring(stringMapJavaOpts.lastIndexOf('x') + 1, memoryDenotationIndex));
+		}
+		case 'M': {
+			return Integer.parseInt(stringMapJavaOpts.substring(stringMapJavaOpts.lastIndexOf('x') + 1, memoryDenotationIndex));
+		}
+		case 'g': {
+			return Integer.parseInt(stringMapJavaOpts.substring(stringMapJavaOpts.lastIndexOf('x') + 1, memoryDenotationIndex)) * 1024;
+		}
+		case 'G': {
+			return Integer.parseInt(stringMapJavaOpts.substring(stringMapJavaOpts.lastIndexOf('x') + 1, memoryDenotationIndex)) * 1024;
+		}
+		}
+		return standardMapReduceChildJavaOpts;
+	}
+
+	private static int getLastIndexofJVMMemorySettings(String stringMapJavaOpts) {
+		int index = -1;
+		if ((index = stringMapJavaOpts.lastIndexOf('k')) != -1) {
+			return index;
+		} else if ((index = stringMapJavaOpts.lastIndexOf('K')) != -1) {
+			return index;
+		} else if ((index = stringMapJavaOpts.lastIndexOf('m')) != -1 && index != 2) {
+			return index;
+		} else if ((index = stringMapJavaOpts.lastIndexOf('M')) != -1) {
+			return index;
+		} else if ((index = stringMapJavaOpts.lastIndexOf('g')) != -1) {
+			return index;
+		} else if ((index = stringMapJavaOpts.lastIndexOf('G')) != -1) {
+			return index;
+		}
+		return index;
+	}
+
+	private static char getDenotationOfJVMMemorySettings(String stringMapJavaOpts) {
+		int index = -1;
+		if (stringMapJavaOpts.lastIndexOf('k') != -1) {
+			return 'k';
+		} else if (stringMapJavaOpts.lastIndexOf('K') != -1) {
+			return 'K';
+		} else if ((index = stringMapJavaOpts.lastIndexOf('m')) != -1 && index != 2) {
+			return 'm';
+		} else if ((index = stringMapJavaOpts.lastIndexOf('M')) != -1) {
+			return 'M';
+		} else if ((index = stringMapJavaOpts.lastIndexOf('g')) != -1) {
+			return 'g';
+		} else if ((index = stringMapJavaOpts.lastIndexOf('G')) != -1) {
+			return 'G';
+		}
+		return (char) -1;
 	}
 }

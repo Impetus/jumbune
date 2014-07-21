@@ -31,6 +31,7 @@
 2038=Profiling- Reducer instances to be profiled field should  not be left blank
 2039=Profiling- Map instances to be profiled field should  not be left blank
 2040=Profiling- Reducer string is left blank
+
 2042=Data Validation- HDFS input path field is  left blank
 2043=HDFS Validation- Tuple Field Separator field should not be left blank
 2044=HDFS Validation- Field Seprator - Field  has spaces 
@@ -98,3 +99,4 @@
 2108=Flow Debugging - Sample hdfs path is invalid
 2109=Basic Section- 'From' value cannot be greater than 'To' value in slave host range.
 2110=Profiler is already running, Please wait for the completion of profiling. 
+2111=Profiling- The existing job name is invalid.

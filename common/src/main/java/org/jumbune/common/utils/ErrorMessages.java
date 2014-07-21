@@ -312,4 +312,7 @@ public interface ErrorMessages {
 
 	/** profiler is already runnig. */
 	int PROFILER_ALREADY_RUNNING = 2110;
+	
+	/**existing job name invalid */
+	int EXISTING_JOB_INVALID = 2111;
 }
