@@ -30,7 +30,7 @@ existingJobName: null
 hadoopJobProfile: 'TRUE'
 hdfsInputPath: /Jumbune/Demo/input/PREPROCESSED/data1
 includeClassJar: 'TRUE'
-inputFile: user.home.directory/Desktop/Jumbune_Home/examples/example-distribution/examples-wordcount-1.2.0-SNAPSHOT.jar
+inputFile: user.home.directory/Desktop/Jumbune_Home/examples/example-distribution/examples-wordcount-1.2.1-SNAPSHOT.jar
 jobs:
 - {jobClass: null, name: WordCount, parameters: /Jumbune/Demo/input/PREPROCESSED/data1 /Jumbune/Demo/output1}
 jumbuneJobName: WordCountSample

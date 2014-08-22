@@ -13,7 +13,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<build.number>1.2.0-SNAPSHOT</build.number>
+		<build.number>1.2.1-SNAPSHOT</build.number>
 	</properties>
 	<repositories>
 		<repository>
@@ -318,8 +318,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>2.0.2</version>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
+					<source>1.6</source>
+					<target>1.6</target>
 
 					<reportPlugins>
 						<plugin>
