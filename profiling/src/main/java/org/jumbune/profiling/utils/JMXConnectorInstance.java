@@ -61,7 +61,9 @@ public final class JMXConnectorInstance {
 	 */
 	public static void closeJMXConnection(JMXConnector instance){
 		try{
-			instance.close();
+			if(instance!= null){
+				instance.close();
+			}
 		}catch (IOException e) {
 			LOGGER.error(e);
 		}
