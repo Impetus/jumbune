@@ -227,6 +227,7 @@ public class ProfilerJMXDump {
 				}
 			}
 		}
+		JMXConnectorInstance.closeJMXConnection(connector);
 		return serviceStats;
 
 	}
@@ -273,6 +274,7 @@ public class ProfilerJMXDump {
 				}
 			}
 		}
+		JMXConnectorInstance.closeJMXConnection(connector);
 		return suppressMultipleOccurrenceAttributes(jmxAttributeList);
 		
 

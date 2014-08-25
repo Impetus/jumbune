@@ -54,6 +54,7 @@ import org.jumbune.profiling.beans.WorkerJMXInfo;
 import org.jumbune.profiling.hprof.NodePerformance;
 import org.jumbune.profiling.utils.DataDistributionStats;
 import org.jumbune.profiling.utils.HTFProfilingException;
+import org.jumbune.profiling.utils.JMXConnectorInstance;
 import org.jumbune.profiling.utils.ProfilerConstants;
 import org.jumbune.profiling.utils.ProfilerStats;
 import org.jumbune.profiling.utils.ViewHelper;
@@ -210,16 +211,33 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 				UnavailableHost[] unAvailableHostsArray = new UnavailableHost[unavailableHosts.size()];
 				unavailableHosts.toArray(unAvailableHostsArray);
 				slave.setUnavailableHosts(Arrays.asList(unAvailableHostsArray));
+				
+				//terminating JMX instances for slave after use
+				if(taskTrackerInstance!=null){
+					terminateJMXConnection(taskTrackerInstance);
+				}
+				if(dataNodeInstance!=null){
+					terminateJMXConnection(dataNodeInstance);
+				}
 			}
 			List<UnavailableHost> unavailableHostsAll = slave
 					.getUnavailableHosts();
 			unavailableHosts.addAll(unavailableHostsAll);
 			clusterId = processUnavailableHosts(viewHelper, clusterId,
-					dataCenters, racks, unavailableHosts);
-
+					dataCenters, racks, unavailableHosts);	
+			
 		}
 		clusterInfo.setClusterId(clusterId);
 		clusterInfo.setDataCenters(dataCenters.values());
+		
+		//terminating JMX instances for master after use
+		if(nameNodeInstance!=null){
+			terminateJMXConnection(nameNodeInstance);
+		}
+		if(jobTrackerInstance!=null){
+			terminateJMXConnection(jobTrackerInstance);
+		}
+		
 		return clusterInfo;
 	}
 
@@ -296,6 +314,11 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 				+ ProfilerConstants.JMX_URL_POSTFIX);
 		return JMXConnectorFactory.connect(url, null);
 
+	}
+	
+	private void terminateJMXConnection(JMXConnector instance){
+
+		JMXConnectorInstance.closeJMXConnection(instance);
 	}
 
 	/*
