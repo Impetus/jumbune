@@ -14,8 +14,8 @@
 			<useTransitiveDependencies>false</useTransitiveDependencies>
 			<includes>
 				
-				<include>org.apache.logging.log4j:log4j-api:jar:2.0-beta4</include>
-				<include>org.apache.logging.log4j:log4j-core:jar:2.0-beta4</include>
+				<include>org.apache.logging.log4j:log4j-api:jar:2.0</include>
+				<include>org.apache.logging.log4j:log4j-core:jar:2.0</include>
 				<include>io.netty:netty-handler:jar:4.0.20.Final</include>
 				<include>io.netty:netty-buffer:jar:4.0.20.Final</include>
 				<include>io.netty:netty-common:jar:4.0.20.Final</include>
