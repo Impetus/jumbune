@@ -54,5 +54,19 @@ public final class JMXConnectorInstance {
 		return connector;
 
 	}
+	
+	/**
+	 * This method is used to close JMX connections after use.
+	 * @param instance
+	 */
+	public static void closeJMXConnection(JMXConnector instance){
+		try{
+			if(instance!= null){
+				instance.close();
+			}
+		}catch (IOException e) {
+			LOGGER.error(e);
+		}
+	}
 
 }
