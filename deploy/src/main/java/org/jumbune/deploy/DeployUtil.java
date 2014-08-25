@@ -15,6 +15,7 @@ import java.net.InetAddress;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.security.CodeSource;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,7 +35,7 @@ import com.jcraft.jsch.Session;
 
 /**
  * 
- * Class for deploying jumbune at specific location
+ * Class for deploying Jumbune at specific location
  * 
  */
 public final class DeployUtil {
@@ -48,18 +49,15 @@ public final class DeployUtil {
 	private static final String[] FOLDERS = { "tmp/" };
 	private static final Scanner SCANNER = new Scanner(System.in);
 	private static final String CLEAN_UNUSED_FILES_AND_DIRS = "rm -rf WEB-INF/ skins META-INF/ jsp/ lib/";
-	private static final String UPDATE_WAR_FILE = "/modules/jumbune-web-" + Versioning.BUILD_VERSION + Versioning.DISTRIBUTION_NAME
+	private static final String UPDATE_WAR_FILE = "/modules/jumbune-web-"+ Versioning.BUILD_VERSION + Versioning.DISTRIBUTION_NAME
 			+ ".war WEB-INF/lib";
-	private static final String UPDATE_AGENT_JAR = "/agent-distribution/jumbune-remoting-" + Versioning.BUILD_VERSION 
-			+ Versioning.DISTRIBUTION_NAME + "-agent.jar lib/";
+	private static final String UPDATE_AGENT_JAR = "/agent-distribution/jumbune-remoting-" + Versioning.BUILD_VERSION + Versioning.DISTRIBUTION_NAME + "-agent.jar lib/";
 	private static final String UPDATE_JAR = "jar -uvf ";
 	private static final String USER_DIR = "user.dir";
 	public static final String WEB_FOLDER_STRUCTURE = "/WEB-INF/lib/";
-	private static final Map<String, String> TOKENS = new HashMap<String, String>();
-	private static final String[] ADDITIONAL_HADOOP_JARS_FOR_SHELL = { "commons-lang-*.jar", "commons-configuration-*.jar",
-			"jackson-mapper-asl-*.jar", "jackson-core-asl-*.jar" };
-	private static final String[] ADDITIONAL_HADOOP_JARS_FOR_WEB = { "/lib/jackson-mapper-asl-*.jar", "/lib/jackson-core-asl-*.jar",
-			"/hadoop*core*.jar" };
+	private static final Map<String, String> FoundPaths = new HashMap<String, String>();
+	private static final String[] ADDITIONAL_HADOOP_JARS_FOR_SHELL = {"commons-lang-*.jar", "commons-configuration-*.jar", "jackson-mapper-asl-*.jar", "jackson-core-asl-*.jar" };
+	private static final String[] ADDITIONAL_HADOOP_JARS_FOR_WEB = {"/lib/jackson-mapper-asl-*.jar", "/lib/jackson-core-asl-*.jar", "/hadoop*core*.jar" };
 	private static String namenodeIP = null;
 	private static String username;
 
@@ -107,184 +105,206 @@ public final class DeployUtil {
 		Session session = null;
 		try {
 			Console c = System.console();
-			File localFile = new File("");
-			localFile.mkdir();
-			new File(localFile.getAbsoluteFile() + "/WEB-INF/lib/").mkdirs();
-			// checking jdk installation directory
+			new File("./WEB-INF/lib/").mkdirs();
 			javaHomeStr = getAndCheckDirectoryExistence(JAVA_ENV_VAR);
-
-			TOKENS.put("<JAVA.HOME>", javaHomeStr);
-			// checking hadoop installation directory
+			FoundPaths.put("<JAVA.HOME>", javaHomeStr);
 			session = validateUserAuthentication(session, c);
 
 			String jumbuneHomeStr = null;
 			File jumbuneHome = null;
-
-			// checking jumbune installation directory
+			// Checking Jumbune installation directory
 			jumbuneHomeStr = getAndCheckDirectoryExistence(JUMBUNE_ENV_VAR);
 			jumbuneHome = new File(jumbuneHomeStr);
-
 			if (!ensureDirectoryExists(jumbuneHome)) {
-				LOGGER.error("Failed to create " + jumbuneHomeStr, new Exception("Not able to create jumbune home directory."));
+				LOGGER.error("Failed to create " + jumbuneHomeStr);
 			}
-
-			TOKENS.put("<JUMBUNE.HOME>", jumbuneHomeStr);
+			FoundPaths.put("<JUMBUNE.HOME>", jumbuneHomeStr);
 
 			File directory = new File(".");
 			String currentDir = System.getProperty(USER_DIR) + "/";
 			new File(currentDir + "/lib/").mkdirs();
 			CodeSource codeSource = DeployUtil.class.getProtectionDomain().getCodeSource();
 			File file = new File(codeSource.getLocation().toURI().getPath());
-			String jarPath = directory.getCanonicalPath() + "/" + file.getName();
-			LOGGER.debug("Jumbune distribution path : " + jarPath);
+			String jarPath = directory.getCanonicalPath() + "/"+ file.getName();
 			URL url = new URL("jar:file:" + jarPath + "!/");
 			JarURLConnection jarConnection = (JarURLConnection) url.openConnection();
 			LOGGER.info("Extracting Jumbune...");
 			copyJarResourcesRecursively(jumbuneHome, jarConnection);
 			for (int j = 0; j < FOLDERS.length; j++) {
 				final File f = new File(jumbuneHome, FOLDERS[j]);
-				LOGGER.debug("Creating directory..." + f.getAbsolutePath());
 				if (!DeployUtil.ensureDirectoryExists(f)) {
-					throw new IOException("Error occurred while creating : " + f.getAbsolutePath());
+					LOGGER.error("Error occurred while creating: "+ f.getAbsolutePath());
 				}
 			}
-			
 			doAdditionalTaskDuringDeployment(javaHomeStr, session, jumbuneHomeStr);
-
 			LOGGER.info("!!! Jumbune deployment got completed successfully. !!!");
-
 		} catch (Exception e) {
 			LOGGER.error("Error occurred while deploying jumbune.", e);
 		} finally {
-			session.disconnect();
+			if(session!=null){
+				session.disconnect();
+			}
 			cleanup();
 		}
 	}
 
 	/**
-	 * This takes directory from user and checks whether it is exists or not.it also takes directory path if it is set in envrioment variable.
+	 * This takes directory from user and checks whether it is exists or not.it also takes directory path if it is set in environment variable.
 	 * 
-	 * @param envriomentVariable
+	 * @param enviromentVariable
 	 *            , the expected environment variable
 	 * @return Directory name if it is valid and exist.
 	 */
-	private static String getAndCheckDirectoryExistence(String envriomentVariable) {
+	private static String getAndCheckDirectoryExistence(String enviromentVariable) {
 		String directoryPath = null;
 		File file = null;
-		if (!System.getenv().containsKey((envriomentVariable))) {
+		if (!System.getenv().containsKey((enviromentVariable))) {
 
-			LOGGER.info(envriomentVariable + "  not found as environment variable.");
-			if (envriomentVariable.equals(JUMBUNE_ENV_VAR)) {
+			LOGGER.info(enviromentVariable + " not set as environment variable.");
+			if (enviromentVariable.equals(JUMBUNE_ENV_VAR)) {
 				LOGGER.info("Please provide the absolute path to a folder where you want to deploy Jumbune");
 			}
-			directoryPath = readFromReader();
+			directoryPath = SCANNER.nextLine().trim();
 			file = new File(directoryPath);
-			while (isNullOrEmpty(directoryPath) || !DeployUtil.ensureDirectoryExists(file)) {
-
-				LOGGER.info("INVALID INPUT : Please provide a valid existing directory!!!");
-				directoryPath = readFromReader();
+			while (isNullOrEmpty(directoryPath)	|| !DeployUtil.ensureDirectoryExists(file)) {
+				LOGGER.info("INVALID : Please provide a valid existing directory!!!");
+				directoryPath = SCANNER.nextLine().trim();
 				file = new File(directoryPath);
 			}
 		} else {
-			directoryPath = System.getenv(envriomentVariable);
+			directoryPath = System.getenv(enviromentVariable);
 			file = new File(directoryPath);
-			LOGGER.info(envriomentVariable + " Path : " + directoryPath);
+			LOGGER.info(enviromentVariable + " linked to : " + directoryPath);
 		}
 		return directoryPath;
 	}
 
 	/***
-	 * This method does other addition task like fetching hadoop core jars and other required jar from libs of namenode. and adds essential agent
-	 * specific jars to distribution of agent.
+	 * This method does other addition task like fetching hadoop core jars and other required jar from libs of namenode. and adds essential agent specific jars to distribution of agent.
 	 * 
-	 * @param javaHomeStr
-	 *            , absolute path of java home
-	 * @param session
-	 *            , jschSession instance
+	 * @param javaHomeStr, absolute path of java home
+	 * @param session, jschSession instance
 	 * @param jumbuneHomeStr
 	 * @param currentDir
 	 * @throws JSchException
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	private static void doAdditionalTaskDuringDeployment(String javaHomeStr, Session session, String jumbuneHomeStr) throws JSchException,
-			IOException, InterruptedException {
+	private static void doAdditionalTaskDuringDeployment(String javaHomeStr, Session session, String jumbuneHomeStr) throws JSchException, IOException, InterruptedException {
 		String currentDir = System.getProperty(USER_DIR) + "/";
 		new File(currentDir + "/lib/").mkdirs();
 		String hadoopHome = null;
-		hadoopHome = SessionEstablisher.executeCommandUsingShell(session, SessionEstablisher.ECHO_HADOOP_HOME);
-		if (hadoopHome == null || hadoopHome.trim().isEmpty() || !hadoopHome.contains(File.separator)) {
-			LOGGER.info("Unable to find HADOOP_HOME on Namenode! Please set HADOOP_HOME environment variable and then run deployment again");
-			System.exit(1);
-		}
-		SessionEstablisher.fetchHadoopJarsFromNamenode(session, username, namenodeIP, hadoopHome, currentDir + WEB_FOLDER_STRUCTURE,
-				ADDITIONAL_HADOOP_JARS_FOR_WEB);
-
-		SessionEstablisher.fetchHadoopJarsFromNamenode(session, username, namenodeIP, hadoopHome + "/lib/", currentDir + WEB_FOLDER_STRUCTURE,
-				ADDITIONAL_HADOOP_JARS_FOR_SHELL);
-		
-		String copyJarsToLib = buildCommand("cp -r ", currentDir, "WEB-INF/lib/ ", jumbuneHomeStr, "/");
+		hadoopHome = getHadoopHome(session);
+		SessionEstablisher.fetchHadoopJarsFromNamenode(session, username, namenodeIP, hadoopHome, currentDir + WEB_FOLDER_STRUCTURE, ADDITIONAL_HADOOP_JARS_FOR_WEB);
+		SessionEstablisher.fetchHadoopJarsFromNamenode(session, username, namenodeIP, hadoopHome + "/lib/", currentDir + WEB_FOLDER_STRUCTURE, ADDITIONAL_HADOOP_JARS_FOR_SHELL);
+		LOGGER.debug("Fetched Jars from Hadoop");
 		String updateJumbuneWar = buildCommand(javaHomeStr, "/bin/", UPDATE_JAR, jumbuneHomeStr, UPDATE_WAR_FILE, "/");
 		String updateAgentJar = buildCommand(javaHomeStr, "/bin/", UPDATE_JAR, jumbuneHomeStr, UPDATE_AGENT_JAR);
 		String copyHadoopJarsToLib = buildCommand("cp -r ", currentDir, WEB_FOLDER_STRUCTURE, " ", jumbuneHomeStr, "");
-		executeCommandCurrentRuntime(updateJumbuneWar);
-		executeCommandCurrentRuntime(copyJarsToLib);
 		executeCommandCurrentRuntime(copyHadoopJarsToLib);
 		executeCommandCurrentRuntime(updateJumbuneWar);
 		executeCommandCurrentRuntime(updateAgentJar);
+		LOGGER.debug("Updated agent jar and war");
+	}
+
+	private static String getHadoopHome(Session session) throws JSchException, IOException{
+		LOGGER.debug("Trying to locate Hadoop with echo $HADOOP_HOME");
+		String hadoopHome = SessionEstablisher.executeCommandUsingShell(session, SessionEstablisher.ECHO_HADOOP_HOME, "$ echo $HADOOP_HOME");
+		LOGGER.debug("Hadoop location with echo $HADOOP_HOME " + hadoopHome);
+		if (hadoopHome == null || hadoopHome.trim().isEmpty()
+				|| !hadoopHome.contains(File.separator)) {
+			String possibleHome;
+			LOGGER.debug("Trying to locate Hadoop with whereis hadoop");
+			possibleHome = SessionEstablisher.executeCommand(session, SessionEstablisher.WHERE_IS_HADOOP);
+			LOGGER.debug("Hadoop location(s) with whereis hadoop" + possibleHome);
+			if (possibleHome == null || possibleHome.trim().isEmpty()
+					|| !possibleHome.contains(File.separator)) {
+				LOGGER.info("Unable to find location of Hadoop! Please make sure Hadoop deployment instruction are followed as recommended, then retry running the deployment.");
+				System.exit(1);
+			} else {
+				String[] hadoopSplits = possibleHome.split("\\s+");
+				LOGGER.debug("Found entries of whereis hadoop:"+ Arrays.toString(hadoopSplits));				
+				for(String split: hadoopSplits){
+					if(split.contains("/lib/") && containsHadoopLib(split)){
+						hadoopHome = split;
+					}
+				}
+				if (hadoopHome == null || hadoopHome.trim().isEmpty()
+						|| !hadoopHome.contains(File.separator)) {
+					LOGGER.info("Unable to find location of Hadoop! Please make sure Hadoop deployment instruction are followed as recommended, then retry running the deployment.");
+					System.exit(1);
+				}				
+			}
+		}
+		hadoopHome= hadoopHome.replace("\n", "");
+		LOGGER.info("Hadoop found at location " + hadoopHome);
+		return hadoopHome;
+	}
+
+	private static boolean containsHadoopLib(String location) {
+		File f = new File(location);
+		if(f.isDirectory()){
+			File[] childFiles = f.listFiles();
+			for(File childFile : childFiles){
+				if(childFile.getName().contains("lib")){
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/**
-	 * validate user authentication and ask for username ip of namenode and password.
+	 * validate user authentication and ask for username ip of namenode and
+	 * password.
 	 * 
 	 * @param session
 	 *            {@link Session} established user session using jsch
 	 * @param console
 	 *            Console for reading password on terminal
-	 * @return Session, established session after successfull user authentication.
+	 * @return Session, established session after successfull user
+	 *         authentication.
 	 */
-	private static Session validateUserAuthentication(final Session session, Console console) throws IOException{
+	private static Session validateUserAuthentication(final Session session,
+			Console console) throws IOException {
 		char[] password;
 		String privateKeyPath;
 		Session tempSession = session;
 		do {
 			String masterNode = InetAddress.getLocalHost().getHostAddress();
-			LOGGER.info("Please provide IP address of the machine designed to run hadoop namenode daemon ["+masterNode+"]");
-			namenodeIP = readFromReader();
-			if("".equals(namenodeIP)){
+			LOGGER.info("Please provide IP address of the machine designed to run hadoop namenode daemon ["+ masterNode + "]");
+			namenodeIP = SCANNER.nextLine().trim();
+			if ("".equals(namenodeIP)) {
 				namenodeIP = masterNode;
 			}
-			
+
 			String user = System.getProperty("user.name");
-			LOGGER.info("Username: ["+user+"]");
-			username = readFromReader();
-			if("".equals(username)){
+			LOGGER.info("Username: [" + user + "]");
+			username = SCANNER.nextLine().trim();
+			if ("".equals(username)) {
 				username = user;
 			}
 			LOGGER.info("Password:");
 			password = console.readPassword();
-			while("".equals(new String(password))){
+			while ("".equals(new String(password))) {
 				LOGGER.info("Please enter a valid password");
 				password = console.readPassword();
 			}
-			
-			String defaultPrivateKeyPath = "/home/"+user+"/.ssh/id_rsa";
-			LOGGER.info("Please provide private key file path ["+defaultPrivateKeyPath+"]");
-			privateKeyPath = readFromReader();
-			if("".equals(privateKeyPath)){
+
+			String defaultPrivateKeyPath = "/home/" + user + "/.ssh/id_rsa";
+			LOGGER.info("Please provide private key file path ["+ defaultPrivateKeyPath + "]");
+			privateKeyPath = SCANNER.nextLine().trim();
+			if ("".equals(privateKeyPath)) {
 				privateKeyPath = defaultPrivateKeyPath;
 			}
 			File privateKeyFile = new File(privateKeyPath);
 			while (!privateKeyFile.exists() || privateKeyFile.isDirectory()) {
 				LOGGER.info("private key file should exist, please provide file path");
-				privateKeyPath = readFromReader();
+				privateKeyPath = SCANNER.nextLine().trim();
 				privateKeyFile = new File(privateKeyPath);
 			}
-			try {
-				tempSession = SessionEstablisher.establishConnection(username, namenodeIP, new String(password), privateKeyPath);
-			} catch (Exception e) {
-				LOGGER.info("Failed to establish a connection to namenode! Please verify inputs");
-			}
+				tempSession = SessionEstablisher.establishConnection(username,
+						namenodeIP, new String(password), privateKeyPath); 
 		} while (tempSession == null || !tempSession.isConnected());
 		return tempSession;
 	}
@@ -325,20 +345,8 @@ public final class DeployUtil {
 	}
 
 	/**
-	 * This method is used to read input from buffered reader.
-	 * 
-	 * @param reader
-	 * @return String
-	 * @throws JumbuneException
-	 */
-	private static String readFromReader() {
-		String input;
-		input = SCANNER.nextLine().trim();
-		return input;
-	}
-
-	/**
-	 * This method copy the content of jar file recursively to a destination directory
+	 * This method copy the content of jar file recursively to a destination
+	 * directory
 	 * 
 	 * @param destDir
 	 * @param jarConnection
@@ -346,49 +354,47 @@ public final class DeployUtil {
 	 * @throws IOException
 	 */
 	public static boolean copyJarResourcesRecursively(final File destDir, final JarURLConnection jarConnection) throws IOException {
-
 		final JarFile jarFile = jarConnection.getJarFile();
-
 		for (final Enumeration<JarEntry> e = jarFile.entries(); e.hasMoreElements();) {
 			final JarEntry entry = e.nextElement();
-
 			if (entry.getName() != null) {
-
 				final String filename = entry.getName();
-
 				for (String str : INCLUSIONS) {
-
 					if ("lib".equals(str) || "modules".equals(str)) {
 						includeAdditionalFileInLib(entry, filename, jarFile);
 					}
 					if (filename.startsWith(str)) {
 						copyJarResources(destDir, jarFile, entry, filename);
 					}
-
 				}
-
 			}
 		}
 		return true;
 	}
 
-	private static boolean copyJarResources(final File destDir, final JarFile jarFile, final JarEntry entry, final String filename)
-			throws IOException {
+	private static boolean copyJarResources(final File destDir, final JarFile jarFile, final JarEntry entry, final String filename) throws IOException {
 		final File f = new File(destDir, filename);
 		if (!entry.isDirectory()) {
-			final InputStream entryInputStream = jarFile.getInputStream(entry);
-			if (!DeployUtil.copyStream(entryInputStream, f)) {
-				return false;
+			InputStream entryInputStream = null;
+			try {
+				entryInputStream = jarFile.getInputStream(entry);
+				if (!DeployUtil.copyStream(entryInputStream, f)) {
+					return false;
+				}
+
+				if (filename.indexOf("htfconf") != -1 || filename.indexOf(".properties") != -1 || filename.indexOf(".yaml") != -1) {
+					LOGGER.debug("Replacing placeholders for " + filename);
+					setPlaceHolders(f, FoundPaths);
+				}
+			} finally {
+				if (entryInputStream != null) {
+					entryInputStream.close();
+				}
 			}
 
-			if (filename.indexOf("htfconf") != -1 || filename.indexOf(".properties") != -1 || filename.indexOf(".yaml") != -1) {
-				LOGGER.debug("Replacing placeholders for " + filename);
-				setPlaceHolders(f, TOKENS);
-			}
-			entryInputStream.close();
 		} else {
 			if (!DeployUtil.ensureDirectoryExists(f)) {
-				throw new IOException("Error occurred while extracting : " + f.getAbsolutePath());
+				throw new IOException("Error occurred while extracting : "+ f.getAbsolutePath());
 			}
 		}
 		return true;
@@ -401,7 +407,6 @@ public final class DeployUtil {
 	 * @throws IOException
 	 */
 	private static void includeAdditionalFileInLib(JarEntry entry, String filename, JarFile jarFile) throws IOException {
-
 		String fileToBeCopyOnAgent = null;
 		String agentDestDir = System.getProperty(USER_DIR) + "/";
 		for (String jarName : AGENT_JARS_LIST) {
@@ -409,9 +414,13 @@ public final class DeployUtil {
 			fileToBeCopyOnAgent = filename.substring(index + 1, filename.length());
 			if (filename.contains(jarName)) {
 				File fJar = new File(agentDestDir, "lib/" + fileToBeCopyOnAgent);
-				InputStream entryInputStream = jarFile.getInputStream(entry);
-				DeployUtil.copyStream(entryInputStream, fJar);
-				entryInputStream.close();
+				InputStream entryInputStream = null;
+				try {
+					entryInputStream = jarFile.getInputStream(entry);
+					DeployUtil.copyStream(entryInputStream, fJar);
+				} finally {
+					entryInputStream.close();
+				}
 			}
 		}
 	}
@@ -426,11 +435,21 @@ public final class DeployUtil {
 	 * @return boolean if copied then return true otherwise false
 	 */
 	private static boolean copyStream(final InputStream is, final File f) {
+		OutputStream fStream = null;
 		try {
-			return DeployUtil.copyStream(is, new FileOutputStream(f));
-
+			fStream = new FileOutputStream(f);
+			boolean success = DeployUtil.copyStream(is, fStream);
+			return success;
 		} catch (FileNotFoundException e) {
 			LOGGER.error("file could not be copied.", e);
+		} finally {
+			try {
+				if (fStream != null) {
+					fStream.close();
+				}
+			} catch (IOException ioe) {
+				LOGGER.error("failed to close the stream", ioe);
+			}
 		}
 		return false;
 	}
@@ -443,7 +462,8 @@ public final class DeployUtil {
 	 * @param placeHolders
 	 * @return boolean
 	 */
-	private static boolean setPlaceHolders(final File f, Map<String, String> placeHolders) {
+	private static boolean setPlaceHolders(final File f,
+			Map<String, String> placeHolders) {
 		StringBuilder builder = new StringBuilder();
 		try {
 
@@ -455,7 +475,8 @@ public final class DeployUtil {
 					if (line.length() > 0) {
 						for (String placeHolder : placeHolders.keySet()) {
 							if (line.length() > 0 && line.indexOf(placeHolder) != -1) {
-								String val = line.replaceAll(placeHolder, placeHolders.get(placeHolder));
+								String val = line.replaceAll(placeHolder,
+										placeHolders.get(placeHolder));
 								builder.append(val);
 								flag = false;
 							}
@@ -471,7 +492,7 @@ public final class DeployUtil {
 				}
 
 			} finally {
-				if(input!=null){
+				if (input != null) {
 					input.close();
 				}
 			}
@@ -485,7 +506,7 @@ public final class DeployUtil {
 				}
 			}
 		} catch (IOException ex) {
-			LOGGER.error("cant get placeholders", ex);
+			LOGGER.error("can't get placeholders", ex);
 			return false;
 		}
 		return true;
@@ -498,24 +519,18 @@ public final class DeployUtil {
 	 *            InputStream to be copied
 	 * @param os
 	 *            OutputStream In which to file going to be written
-	 * @return boolean true if file succesfully copied on stream otherwise return false.
+	 * @return boolean true if file succesfully copied on stream otherwise
+	 *         return false.
 	 */
 	private static boolean copyStream(final InputStream is, final OutputStream os) {
+		final byte[] buf = new byte[Constants.ONE_ZERO_TWO_FOUR];
+		int len = 0;
 		try {
-			final byte[] buf = new byte[Constants.ONE_ZERO_TWO_FOUR];
-
-			int len = 0;
 			while ((len = is.read(buf)) > 0) {
 				os.write(buf, 0, len);
 			}
-			if (is != null) {
-				is.close();
-			}
-			if (os != null) {
-				os.close();
-			}
 			return true;
-		} catch (final IOException e) {
+		} catch (IOException e) {
 			LOGGER.error("error in copying stream", e);
 		}
 		return false;

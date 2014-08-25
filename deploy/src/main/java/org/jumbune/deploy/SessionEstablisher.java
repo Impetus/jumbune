@@ -27,10 +27,12 @@ import com.jcraft.jsch.UserInfo;
  */
 public final class SessionEstablisher {
 	private SessionEstablisher(){}
-	static final String ECHO_HADOOP_HOME = "echo $HADOOP_HOME \n \n";
+	static final String ECHO_HADOOP_HOME = "echo $HADOOP_HOME \n";
 	private static final String SCP_COMMAND = "scp -f ";
-	private static final Logger LOGGER = LogManager.getLogger(SessionEstablisher.class);
+	private static final Logger LOGGER = LogManager.getLogger("EventLogger");
+	public static final String WHERE_IS_HADOOP = "whereis hadoop";
 	private static byte[] bufs;
+	private static final String NEW_LINE = "\n";
 	
 	/**
 	 * method for establishing connection while authentication
@@ -43,17 +45,32 @@ public final class SessionEstablisher {
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	public static Session establishConnection(String username, String namenodeIP, String nnpwd, String privateKeyPath) throws JSchException, IOException, InterruptedException {
+	public static Session establishConnection(String username, String namenodeIP, String nnpwd, String privateKeyPath) {
 		JSch jsch = new JSch();
-		Session session = jsch.getSession(username, namenodeIP, Constants.TWENTY_TWO);
+		Session session = null;
+		try {
+
+			session = jsch.getSession(username, namenodeIP, Constants.TWENTY_TWO);
+		} catch (JSchException e) {
+			LOGGER.error(e);
+		}
 		session.setPassword(nnpwd);
 		UserInfo info = new JumbuneUserInfo();
-		jsch.addIdentity(privateKeyPath, nnpwd);
+		try {
+			jsch.addIdentity(privateKeyPath);
+		} catch (JSchException e) {
+			LOGGER.error(e);
+		}
 		session.setUserInfo(info);
 		java.util.Properties config = new java.util.Properties();
 		config.put("StrictHostKeyChecking", "no");
+		config.put("PreferredAuthentications", "password");
 		session.setConfig(config);
-		session.connect();
+		try {
+			session.connect();
+		} catch (JSchException e) {
+			LOGGER.error("Failed to authenticate, check username and password");
+		}
 		return session;
 	}
 
@@ -215,9 +232,10 @@ public final class SessionEstablisher {
 	 * @throws InterruptedException
 	 */
 	@SuppressWarnings("unused")
-	private static void executeCommand(Session session, String command) throws JSchException, IOException, InterruptedException {
+	static String executeCommand(Session session, String command) throws JSchException, IOException {
 		InputStream in = null;
 		Channel channel = null;
+		String msg = null;
 		try {
 			channel = session.openChannel("exec");
 			((ChannelExec) channel).setCommand(command);
@@ -225,7 +243,9 @@ public final class SessionEstablisher {
 			((ChannelExec) channel).setErrStream(System.err);
 			in = channel.getInputStream();
 			channel.connect();
-			String msg = validateCommandExecution(channel, in);
+			msg = validateCommandExecution(channel, in);
+		} catch (InterruptedException e) {
+			LOGGER.error(e);
 		} finally {
 			if (in != null) {
 				in.close();
@@ -234,6 +254,7 @@ public final class SessionEstablisher {
 				channel.disconnect();
 			}
 		}
+		return msg;
 	}
 
 	/**
@@ -309,50 +330,46 @@ public final class SessionEstablisher {
 		public void showMessage(String message) {
 		}
 	}
-
-	/**
-	 * This method execute the given command over SSH using shell prompt
-	 * 
-	 * @param session
-	 * @param command
-	 *            Command to be executed
-	 * @throws JSchException
-	 * @throws IOException
-	 * @throws InterruptedException
-	 */
-	public static  String executeCommandUsingShell(Session session, String echoCommand) throws JSchException, IOException {
+	
+	public static String executeCommandUsingShell(Session session, String simpleCommand, String lineBreaker) throws JSchException, IOException {
+		String response = null;
 		ChannelShell channelShell = null;
 		BufferedReader brIn = null;
 		DataOutputStream dataOut = null;
-		String hadoopHome = null;
+
 		try {
 			channelShell = (ChannelShell) session.openChannel("shell");
 			channelShell.connect();
 			brIn = new BufferedReader(new InputStreamReader(channelShell.getInputStream()));
 			dataOut = new DataOutputStream(channelShell.getOutputStream());
-			dataOut.writeBytes(echoCommand);
+			dataOut.writeBytes(simpleCommand);
 			dataOut.flush();
 			String line = null;
+			StringBuilder stringBuilder = new StringBuilder();
 			while ((line = brIn.readLine()) != null) {
-				if (line.contains("$ echo $HADOOP_HOME")) {
-					hadoopHome = brIn.readLine();
+				stringBuilder.append(line + NEW_LINE);
+				if (line.contains(lineBreaker)) {
+					if (lineBreaker.contains("echo")) {
+						stringBuilder.setLength(0);
+						stringBuilder = new StringBuilder(brIn.readLine());
+					}
 					break;
 				}
 
 			}
-
-		}finally {
+			response = stringBuilder.toString();
+		} finally {
 			if (brIn != null) {
-					brIn.close();
+				brIn.close();
 			}
 			if (dataOut != null) {
-					dataOut.close();
+				dataOut.close();
 			}
 			if (channelShell != null) {
 				channelShell.disconnect();
 			}
 		}
-		return hadoopHome;
+		return response;
 	}
-
+	
 }
