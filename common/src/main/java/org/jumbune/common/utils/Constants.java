@@ -77,10 +77,10 @@ public interface Constants {
 	String JOB_JARS_LOC = "jobJars/";
 	
 	/** The LO g4 j2_ ap i_ jar. */
-	String LOG4J2_API_JAR = "/lib/log4j-api-2.0-beta4.jar";
+	String LOG4J2_API_JAR = "/lib/log4j-api-2.0.jar";
 	
 	/** The LO g4 j2_ cor e_ jar. */
-	String LOG4J2_CORE_JAR = "/lib/log4j-core-2.0-beta4.jar";
+	String LOG4J2_CORE_JAR = "/lib/log4j-core-2.0.jar";
 	
 	/** The echo agent home. */
 	String ECHO_AGENT_HOME = "echo $AGENT_HOME \n \n";
@@ -122,7 +122,7 @@ public interface Constants {
 	String LIB_JARS = "-libjars";
 	
 	/** The gson jar. */
-	String GSON_JAR = "lib/gson-2.1"+ JAR;
+	String GSON_JAR = "lib/gson-2.2.4"+ JAR;
 	
 	/** The common jar. */
 	String COMMON_JAR = "lib/jumbune-common-"+Versioning.BUILD_VERSION+Versioning.DISTRIBUTION_NAME + JAR;
