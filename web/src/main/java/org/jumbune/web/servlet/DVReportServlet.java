@@ -59,7 +59,6 @@ public class DVReportServlet extends HttpServlet {
 		HttpSession session = request.getSession();
 		// Getting yamlloader stored in session.
 		YamlLoader loader = (YamlLoader) session.getAttribute("loader");
-		session.removeAttribute("loader");
 		String fileName = request.getParameter(WebConstants.FILE_NAME);
 		String dvType = request.getParameter(WebConstants.DV_TYPE);
 		String pageNum = request.getParameter(WebConstants.PAGE_NUMBER);
