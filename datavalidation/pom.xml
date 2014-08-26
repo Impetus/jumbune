@@ -67,13 +67,13 @@
 				<configuration>
 					<archive>
 						<manifest>
+							<!--addClasspath>true</addClasspath-->
+							<addDefaultImplementationEntries/>
 						</manifest>
 						<manifestEntries>
-							<Class-Path>./jumbune-common-${build.number}.jar</Class-Path>
-								<Class-Path>./commons-io-1.3.2.jar</Class-Path>
-								<Class-Path>./gson-2.2.4.jar</Class-Path>
-								<Class-Path>./jumbune-utils-${build.number}.jar</Class-Path>
+							<Class-Path>./jumbune-common-${build.number}.jar ./commons-io-1.3.2.jar ./gson-2.2.4.jar ./jumbune-utils-${build.number}.jar</Class-Path>
 						</manifestEntries>
+					  <pomPropertiesFile/>
 					</archive>
 				</configuration>
 			</plugin>
