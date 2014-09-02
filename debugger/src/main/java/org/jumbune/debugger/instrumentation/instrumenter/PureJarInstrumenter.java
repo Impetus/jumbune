@@ -63,7 +63,7 @@ public class PureJarInstrumenter extends Instrumenter {
 	public byte[] instrumentEntry(final byte[] bytes) throws IOException {
 		byte[] instrumentedBytes=bytes;
 		try {
-			ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+			ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
 			// Step 1: check if already instrumented or is an interface
 			InstrumentValidator ic = new InstrumentValidator(getLoader(), cw);
@@ -73,11 +73,11 @@ public class PureJarInstrumenter extends Instrumenter {
 			if (!ic.getAlreadyInstrumented() && !ic.getInterface()) {
 
 				if (getLoader().isHadoopJobProfileEnabled()) {
-					cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+					cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 					instrumentedBytes = InstrumentUtil.instrumentBytes(instrumentedBytes,
 							new ProfileAdapter(getLoader(), cw), cw);
 				}
-				cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+				cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 				instrumentedBytes = InstrumentUtil.instrumentBytes(instrumentedBytes,
 						new SubmitCaseAdapter(getLoader(), cw), cw);
 			}
