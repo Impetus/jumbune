@@ -138,7 +138,7 @@ public class JarInstrumenter extends Instrumenter {
 		boolean instrumentJobPartitioner = getLoader()
 				.isInstrumentEnabled("partitioner");
 
-		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
 		// Step 1: check if already instrumented or is an interface
 		InstrumentValidator ic = new InstrumentValidator(getLoader(), cw);
@@ -187,79 +187,79 @@ public class JarInstrumenter extends Instrumenter {
 		// Step 2: Handling for regex and user validations
 		if (instrumentMapreduceRegex
 				|| instrumentMapreduceUserDefinedValidation) {
-			cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+			cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 			instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
 					new ContextWriteValidationAdapter(getLoader(), cw), cw);
 		}
 
 		// Step 3: Add logging for map/reduce entry/exit
-		cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
 				new MREntryExitAdapter(getLoader(), cw,env), cw);
 
 		// Step 4: Add logging for map/reduce entry/exit
-		cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
 				new MethodEntryExitAdapter(getLoader(), cw,env), cw);
 
 		// Step 5: Add logging for Switch cases execution counters
 		if (instrumentSwitchCase) {
-			cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+			cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 			instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp, new CaseAdapter(
 					getLoader(), cw,env), cw);
 		}
 
 		// Step 6: Add logging for if blocks, loop execution counters
 		if (instrumentIfBlock) {
-			cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+			cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 			instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
 					new BlockLogAdapter(getLoader(), cw,env), cw);
 		}
 
 		// Step 7: Partitioner handler
 		if (instrumentJobPartitioner) {
-			cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+			cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 			instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
 					new PartitionerAdapter(getLoader(), cw), cw);
 		}
 
 		// Step 8: Add logging for map/reduce execution counters
 		if (InstrumentConfig.INSTRUMENT_MAPREDUCE_EXECUTION) {
-			cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+			cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 			instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
 					new ConfigureMapReduceAdapter(getLoader(), cw,env), cw);
 		}
 
 		// Step 9: Add logging for map/reduce context.write method calls
 		if (InstrumentConfig.INSTRUMENT_CONTEXT_WRITE) {
-			cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+			cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 			instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
 					new ContextWriteLogAdapter(getLoader(), cw), cw);
 		}
 
 		// Step 10: Handling Chained tasks
-		cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
 				new ChainedTaskClassAdapter(getLoader(), cw), cw);
 
 		// Step 11: Add class loading at runtime in main methods
-		cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp, new MainAdapter(
 				getLoader(), cw), cw);
 
 		// Step 12: for Handling Job.submit case for new API.
-		cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
 				new SubmitCaseAdapter(getLoader(), cw), cw);
 
 		// Step 13: Modify the job output path
-		cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp, new JobAdapter(
 				getLoader(), cw), cw);
 
 		// Step 14: Marking the class as instrumented. It won't be
 		// instrumented again.
-		cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
 				new InstrumentFinalizer(getLoader(), cw,env), cw);
 
@@ -343,7 +343,7 @@ public class JarInstrumenter extends Instrumenter {
 				LOGGER.debug(MessageFormat.format(InstrumentationMessageLoader
 						.getMessage(MessageConstants.ADDING_CLASS_TO_ARCHIVE),
 						clazz));
-				ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+				ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 				DoNotDisturbAdapter dnd = new DoNotDisturbAdapter(loader, cw);
 
 				byte[] bytes = InstrumentUtil.instrumentBytes(clazz, dnd, cw);

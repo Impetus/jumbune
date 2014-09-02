@@ -61,7 +61,7 @@ public class JarTraversal {
 				return null;
 			}
 
-			ClassWriter wr = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+			ClassWriter wr = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 			HTFClassVisitor cvmr = new HTFClassVisitor(Opcodes.ASM4, wr);
 
 			while ((entry = inputStream.getNextEntry()) != null) {
