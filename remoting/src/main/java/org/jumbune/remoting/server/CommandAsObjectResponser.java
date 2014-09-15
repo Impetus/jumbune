@@ -283,7 +283,15 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 			throw new IllegalArgumentException("No job jar found at " + jobJarAbsolutePath);
 		}
 		if(!commands[2].contains(RemotingConstants.DATA_VALIDATION_JAR)){
-			commands[2] = jobJarAbsolutePath + "/" + fileLoc.list()[0];
+			String[] fileList = fileLoc.list();
+			String jarName = null;
+			for (String filename : fileList) {
+				if(filename.contains(".jar")){
+					jarName = filename;
+					break;
+				}
+			}
+			commands[2] = jobJarAbsolutePath + "/" + jarName;
 		}
 		ProcessBuilder pb = new ProcessBuilder(commands);
 		File loc = new File(agentHome + dirLocation);

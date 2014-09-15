@@ -260,7 +260,7 @@ public final class RemotingUtil {
 	 * @param hadoopConfigurationFile which we wants to receive the path of.
 	 * @return the string
 	 */
-	private static String copyAndGetHadoopConfigurationFilePath(YamlLoader loader, String hadoopConfigurationFile) {
+	public static String copyAndGetHadoopConfigurationFilePath(YamlLoader loader, String hadoopConfigurationFile) {
 
 		String jumbuneHome = YamlLoader.getjHome();
 		String dirInJumbuneHome = jumbuneHome + File.separator + Constants.JOB_JARS_LOC + loader.getJumbuneJobName();

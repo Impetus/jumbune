@@ -46,7 +46,8 @@ public class ShellExecutorService extends CoreExecutorService {
 
 	private static final Logger LOGGER = LogManager.getLogger(ShellExecutorService.class);
 	private static final MessageLoader MESSAGES = MessageLoader.getInstance();
-
+	/** The Constant FORWARD_SLASH. */
+	private final String FORWARD_SLASH = "/";
 	/**
 	 * public constructor
 	 * @throws JumbuneException
@@ -147,6 +148,7 @@ public class ShellExecutorService extends CoreExecutorService {
 		 * (validatedData.get(Constants.FAILURE_KEY) != null && !validatedData.get(Constants.FAILURE_KEY).isEmpty()) {
 		 * ConsoleLogUtil.CONSOLELOGGER.debug(validatedData); throw new HTFException(ErrorCodesAndMessages.INVALID_YAML); }
 		 */
+		RemotingUtil.copyAndGetHadoopConfigurationFilePath(loader, "core-site.xml");
 		loadInitialSetup(yamlConfig);
 		disableModules(loader);
 		loader.createJumbuneDirectories();
@@ -172,7 +174,7 @@ public class ShellExecutorService extends CoreExecutorService {
 
 	private void startExecution(ReportsBean reports, YamlLoader loader) throws IOException, JumbuneException {
 		String reportFolderPath = new StringBuilder().append(loader.getShellUserReportLocation()).append(Constants.DIR_SEPARATOR)
-				.append(loader.getYamlConfiguration().getJumbuneJobName()).append(Constants.JUMBUNE_REPORT_EXTENTION).toString();
+				.append(loader.getYamlConfiguration().getJumbuneJobName().split(FORWARD_SLASH)[0]).append(Constants.JUMBUNE_REPORT_EXTENTION).toString();
 		List<Processor> processors = getProcessorChain(loader.getYamlConfiguration(), CONSOLE_BASED);
 		ServiceInfo serviceInfo = new ServiceInfo();
 		serviceInfo.setRootDirectory(loader.getRootDirectoryName());
