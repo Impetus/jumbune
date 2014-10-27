@@ -219,7 +219,7 @@ public class ShellExecutorService extends CoreExecutorService {
 	 * @throws JumbuneException
 	 */
 	private void loadInitialSetup(Config config) throws JumbuneException {
-		String agentHome = RemotingUtil.getAgentHome(yamlConfig);
+		String agentHome = RemotingUtil.getAgentHome(config);
 		ClasspathElement cse = ConfigurationUtil.loadJumbuneSuppliedJarList();
 		processClassPathElement(cse, agentHome);
 		YamlConfig yamlConfig = (YamlConfig)config;

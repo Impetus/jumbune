@@ -166,7 +166,7 @@ public final class RemotingUtil {
 		JobClient client = null;
 		Configuration config = new Configuration();
 		YamlLoader yamlLoader = (YamlLoader)loader;
-		yamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();		
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();		
 		config.set(yamlConfig.getMaster().getUser(), "");
 		try {
 			client = new JobClient(new InetSocketAddress(jobTrackerURI.split(":")[0], Integer.parseInt(jobTrackerURI.split(":")[1])), config);
@@ -425,7 +425,7 @@ public final class RemotingUtil {
 	 *
 	 * @return the hadoop version
 	 */
-	public static SupportedApacheHadoopVersions getHadoopVersion(Config yamlConfig) {
+	public static SupportedApacheHadoopVersions getHadoopVersion(Config config) {
 
 		if (hadoopVersion != null) {
 			return hadoopVersion;
