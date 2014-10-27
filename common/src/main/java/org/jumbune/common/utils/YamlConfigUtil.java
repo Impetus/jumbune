@@ -5,6 +5,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.ClasspathElement;
 import org.jumbune.common.beans.Master;
+import org.jumbune.common.yaml.config.Config;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.remoting.client.Remoter;
@@ -51,9 +53,9 @@ public final class YamlConfigUtil {
 	 *            the config
 	 * @return true, if is jumbune supplied jar present
 	 */
-	public static boolean isJumbuneSuppliedJarPresent(YamlConfig config) {
-	
-		Master master = config.getMaster();
+	public static boolean isJumbuneSuppliedJarPresent(Config config) {
+		YamlConfig yamlConfig = (YamlConfig)config;
+		Master master = yamlConfig.getMaster();
 		Remoter remoter = new Remoter(master.getHost(), Integer.valueOf(master.getAgentPort()));
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand("ls lib/", false, null);
@@ -69,8 +71,9 @@ public final class YamlConfigUtil {
 	 * @param jarFilepath the jar filepath
 	 * @return true, if is mR job jar present
 	 */
-	public static boolean isMRJobJarPresent(YamlConfig config, String jarFilepath){
-		Master master = config.getMaster();
+	public static boolean isMRJobJarPresent(Config config, String jarFilepath){
+		YamlConfig yamlConfig = (YamlConfig)config;
+		Master master = yamlConfig.getMaster();
 		File resourceDir = new File(jarFilepath);
 		if(resourceDir.exists()){
 			Remoter remoter = new Remoter(master.getHost(), Integer.valueOf(master.getAgentPort()));
@@ -92,7 +95,7 @@ public final class YamlConfigUtil {
 	 * @param config the config
 	 * @param command the command
 	 */
-	public static void sendLibJarCommand(Remoter remoter, YamlConfig config, String command) {
+	public static void sendLibJarCommand(Remoter remoter, Config config, String command) {
 		
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand(command, false, null).populate(config, null);
@@ -110,8 +113,7 @@ public final class YamlConfigUtil {
 	 * @param agentHome
 	 *            the agent home
 	 */
-	public static void sendJumbuneSuppliedJarOnAgent(YamlConfig config, ClasspathElement cse, String agentHome) {
-	
+	public static void sendJumbuneSuppliedJarOnAgent(Config config, ClasspathElement cse, String agentHome) {
 		String jh = YamlLoader.getjHome();
 		Remoter remoter = RemotingUtil.getRemoter(config, jh);
 		String hadoopHome = RemotingUtil.getHadoopHome(remoter, config);
@@ -134,7 +136,8 @@ public final class YamlConfigUtil {
 	 * @param config the config
 	 * @param jarFilepath the jar filepath
 	 */
-	public static void sendMRJobJarOnAgent(YamlConfig config, String jarFilepath){
+	public static void sendMRJobJarOnAgent(Config config, String jarFilepath){
+		YamlConfig yamlConfig = (YamlConfig)config;
 		String jh =YamlLoader.getjHome() + "/";
 		Remoter remoter = RemotingUtil.getRemoter(config, jh);
 		File resourceDir =new File(jarFilepath);
@@ -145,9 +148,9 @@ public final class YamlConfigUtil {
 				}else{
 					String filename = file.getAbsolutePath();
 					
-					String relativeAgentPath = Constants.JOB_JARS_LOC + "/"+config.getFormattedJumbuneJobName()+Constants.MR_RESOURCES;
+					String relativeAgentPath = Constants.JOB_JARS_LOC + "/"+yamlConfig.getFormattedJumbuneJobName()+Constants.MR_RESOURCES;
 					String resourceFolder = System.getenv("AGENT_HOME") + "/"+Constants.JOB_JARS_LOC+"/"
-						+config.getFormattedJumbuneJobName()+ Constants.MR_RESOURCES;
+						+yamlConfig.getFormattedJumbuneJobName()+ Constants.MR_RESOURCES;
 					File resourceDirAgent = new File(resourceFolder);
 					if (!resourceDirAgent.exists()) {
 						resourceDirAgent.mkdirs();
@@ -163,10 +166,11 @@ public final class YamlConfigUtil {
 	 *
 	 * @param config checks of Jumbune Home ends with slash or not.
 	 */
-	public static  void checkIfJumbuneHomeEndsWithSlash(YamlConfig config) {
-		if (!(config.getsJumbuneHome().endsWith(File.separator))) {
-			String jumbuneHome = config.getsJumbuneHome();
-			config.setsJumbuneHome(jumbuneHome + File.separator);
+	public static  void checkIfJumbuneHomeEndsWithSlash(Config config) {
+		YamlConfig yamlConfig = (YamlConfig)config;
+		if (!(yamlConfig.getsJumbuneHome().endsWith(File.separator))) {
+			String jumbuneHome = yamlConfig.getsJumbuneHome();
+			yamlConfig.setsJumbuneHome(jumbuneHome + File.separator);
 		}
 	}
 

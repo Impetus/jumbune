@@ -13,6 +13,7 @@ import org.jumbune.common.beans.ServiceInfo;
 import org.jumbune.common.beans.ReportsBean.ReportName;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.RemoteFileUtil;
+import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.datavalidation.report.DVReportGenerator;
 import org.jumbune.execution.beans.Parameters;
 import org.jumbune.utils.exception.JumbuneException;
@@ -48,24 +49,25 @@ public class DataValidationProcessor extends BaseProcessor {
 		try {
 			final Gson gsonDV = new Gson();
 			// getting params path
-			String inputPath = super.getLoader().getHdfsInputPath();
+			YamlLoader yamlLoader = (YamlLoader)super.getLoader();
+			String inputPath = yamlLoader.getHdfsInputPath();
 			// get datavalidation bean
-			DataValidationBean dataValidationBean = super.getLoader().getDataValidation();
+			DataValidationBean dataValidationBean = yamlLoader.getDataValidation();
 			String fieldSeparator = dataValidationBean.getFieldSeparator();
 			fieldSeparator = fieldSeparator.replaceAll(Constants.SPACE, Constants.SPACE_SEPARATOR);
 			dataValidationBean.setFieldSeparator(fieldSeparator);
 			final String dvBeanString = gsonDV.toJson(dataValidationBean);
-			String dvFileDir = super.getLoader().getSlaveDVLocationWithPlaceHolder().substring(0,
-					super.getLoader().getSlaveDVLocationWithPlaceHolder().lastIndexOf('/') + 1);
+			String dvFileDir = yamlLoader.getSlaveDVLocationWithPlaceHolder().substring(0,
+					yamlLoader.getSlaveDVLocationWithPlaceHolder().lastIndexOf('/') + 1);
 			dvReport = HELPER.remoteValidateData(super.getLoader(), inputPath, dvFileDir, dvBeanString);
 			dvReport = new DVReportGenerator().generateDataValidationReport(dvReport);
 
 			// Copy logs from slaves only when there are slaves if there are no
 			// slaves then don't go for copying
-			if (super.getLoader().getDVDefinition().getSlaves() != null && super.getLoader().getDVDefinition().getSlaves().size() > 0) {
+			if (yamlLoader.getDVDefinition().getSlaves() != null && yamlLoader.getDVDefinition().getSlaves().size() > 0) {
 				LOGGER.debug("Copying files from all nodes!!!");
 				RemoteFileUtil remoteFileUtil = new RemoteFileUtil();
-				remoteFileUtil.copyLogFilesToMaster(super.getLoader().getDVDefinition());
+				remoteFileUtil.copyLogFilesToMaster(yamlLoader.getDVDefinition());
 			}
 			LOGGER.info("Successfully Exiting [Data Validation] Processor...");
 			return true;
@@ -93,7 +95,8 @@ public class DataValidationProcessor extends BaseProcessor {
 	@Override
 	protected void updateServiceInfo(ServiceInfo serviceInfo) throws JumbuneException {
 		if (serviceInfo != null){
-			serviceInfo.setDataValidationResultLocation(super.getLoader().getDataValidationResultLocation());
+			YamlLoader yamlLoader = (YamlLoader)super.getLoader();
+			serviceInfo.setDataValidationResultLocation(yamlLoader.getDataValidationResultLocation());
 		}
 	}
 

@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.SupportedApacheHadoopVersions;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.hadoop.distro.ApacheDistributionFileSystem;
 import org.jumbune.hadoop.distro.ClouderaDistributionFileSystem;
@@ -21,7 +22,7 @@ import org.jumbune.utils.beans.VirtualFileSystem;
 public class HadoopFileSystemUtility {
 	
 	/** The loader. */
-	private YamlLoader loader = null;
+	private Loader loader = null;
 	
 	/** The hadoop versions. */
 	private SupportedApacheHadoopVersions hadoopVersions = null;
@@ -34,9 +35,10 @@ public class HadoopFileSystemUtility {
 	 *
 	 * @param loader the loader
 	 */
-	public HadoopFileSystemUtility(YamlLoader loader) {
+	public HadoopFileSystemUtility(Loader loader) {
 		this.loader = loader;
-		this.hadoopVersions = RemotingUtil.getHadoopVersion(loader.getYamlConfiguration());
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		this.hadoopVersions = RemotingUtil.getHadoopVersion(yamlLoader.getYamlConfiguration());
 	}
 
 	/**
@@ -44,7 +46,7 @@ public class HadoopFileSystemUtility {
 	 *
 	 * @return the loader
 	 */
-	public YamlLoader getLoader() {
+	public Loader getLoader() {
 		return loader;
 	}
 
@@ -53,7 +55,7 @@ public class HadoopFileSystemUtility {
 	 *
 	 * @param loader the new loader
 	 */
-	public void setLoader(YamlLoader loader) {
+	public void setLoader(Loader loader) {
 		this.loader = loader;
 	}
 

@@ -5,8 +5,9 @@ import java.util.Map;
 
 import org.jumbune.common.beans.Slave;
 import org.jumbune.common.beans.SupportedApacheHadoopVersions;
+import org.jumbune.common.yaml.config.Config;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
-import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.profiling.beans.JMXDeamons;
 import org.jumbune.profiling.beans.JumbuneInferredStats;
 import org.jumbune.profiling.beans.NodeInfo;
@@ -80,8 +81,8 @@ public class ProfilerStats {
 	 * @param nodeIp
 	 *            the node ip
 	 */
-	public ProfilerStats(YamlConfig config, String nodeIp, SupportedApacheHadoopVersions version) {
-		this.config = config;
+	public ProfilerStats(Config config, String nodeIp, SupportedApacheHadoopVersions version) {
+		this.config = (YamlConfig) config;
 		this.nodeIp = nodeIp;
 		profilerJMXDump = new ProfilerJMXDump();
 		this.version = version;
@@ -103,8 +104,8 @@ public class ProfilerStats {
 	 * @param config
 	 *            the config
 	 */
-	public ProfilerStats(YamlConfig config) {
-		this.config = config;
+	public ProfilerStats(Config config) {
+		this.config = (YamlConfig) config;
 		profilerJMXDump = new ProfilerJMXDump();
 	}
 
@@ -381,11 +382,11 @@ public class ProfilerStats {
 	 * @throws HTFProfilingException
 	 *             the hTF profiling exception
 	 */
-	public String getDataLoadPartitionStats(String nodeIp, NodeInfo node, YamlLoader yamlLoader) throws HTFProfilingException {
+	public String getDataLoadPartitionStats(String nodeIp, NodeInfo node, Loader loader) throws HTFProfilingException {
 		double dataLoad;
 		String statValue;
 		try {
-			dataLoad = profilerJMXDump.getDataLoadonNodes(nodeIp, node, yamlLoader);
+			dataLoad = profilerJMXDump.getDataLoadonNodes(nodeIp, node, loader);
 			statValue = String.valueOf(dataLoad);
 		} catch (Exception e) {
 			/*

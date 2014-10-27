@@ -9,8 +9,8 @@ import junit.framework.Assert;
 import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.beans.ServiceInfo;
 import org.jumbune.common.utils.YamlConfigUtil;
-import org.jumbune.common.yaml.config.YamlLoader;
-import org.jumbune.execution.TestYamlLoaderProvider;
+import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.execution.YamlLoaderProviderTest;
 import org.jumbune.execution.utils.ProcessHelper;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,12 +18,12 @@ import org.junit.Test;
 
 public class ProcessHelperTest {
 	ProcessHelper pHelper;
-	YamlLoader testYamlLoader;
+	Loader testYamlLoader;
 
 	@Before
 	public void setup() {
 		pHelper = new ProcessHelper();
-		testYamlLoader = TestYamlLoaderProvider.getYamlLoader();
+		testYamlLoader = YamlLoaderProviderTest.getYamlLoader();
 	}
 
 	//@Test

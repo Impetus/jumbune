@@ -22,6 +22,8 @@ import org.jumbune.common.beans.PhaseOutput;
 import org.jumbune.common.beans.SupportedApacheHadoopVersions;
 import org.jumbune.common.beans.TaskDetails;
 import org.jumbune.common.beans.TaskOutputDetails;
+import org.jumbune.common.yaml.config.Config;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.remoting.client.Remoter;
@@ -99,23 +101,23 @@ public class HadoopLogParser {
 	 * @return the job details
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public JobOutput getJobDetails(YamlLoader loader, String jobID) throws IOException {
-
-		String appHome = YamlLoader.getjHome() + File.separator;
-		YamlConfig config = loader.getYamlConfiguration();
-		String agentHome = RemotingUtil.getAgentHome(config);
+	public JobOutput getJobDetails(Loader loader, String jobID) throws IOException {
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		String appHome = yamlLoader.getjHome() + File.separator;
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		String agentHome = RemotingUtil.getAgentHome(yamlConfig);
 		Remoter remoter = RemotingUtil.getRemoter(loader, appHome);
-		String remoteHadoop = RemotingUtil.getHadoopHome(remoter, config) + File.separator;
+		String remoteHadoop = RemotingUtil.getHadoopHome(remoter, yamlConfig) + File.separator;
 		String logsHistory = null;
-		SupportedApacheHadoopVersions hadoopVersion = RemotingUtil.getHadoopVersion(loader.getYamlConfiguration());
-		String user = config.getMaster().getUser();
+		SupportedApacheHadoopVersions hadoopVersion = RemotingUtil.getHadoopVersion(yamlConfig);
+		String user = yamlConfig.getMaster().getUser();
 		logsHistory = changeLogHistoryPathAccToHadoopVersion(remoteHadoop,
 				hadoopVersion, user);
 		
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		String logfilePath = getLogFilePath(jobID, remoter, logsHistory,
 				builder);
-		String relLocalPath = Constants.JOB_JARS_LOC + loader.getJumbuneJobName();
+		String relLocalPath = Constants.JOB_JARS_LOC + yamlLoader.getJumbuneJobName();
 		String relRemotePath = relLocalPath + RUMEN;
 		StringBuilder stringAppender = new StringBuilder(agentHome);
 		stringAppender.append(File.separator).append(relRemotePath).append(File.separator);

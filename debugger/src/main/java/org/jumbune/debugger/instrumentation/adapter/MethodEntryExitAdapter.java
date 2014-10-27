@@ -4,7 +4,7 @@ import java.text.MessageFormat;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.debugger.instrumentation.utils.Environment;
 import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
 import org.jumbune.debugger.instrumentation.utils.InstrumentationMessageLoader;
@@ -45,7 +45,7 @@ public class MethodEntryExitAdapter extends BaseAdapter {
 	 * @param cv
 	 *            Class visitor
 	 */
-	public MethodEntryExitAdapter(YamlLoader loader, ClassVisitor cv) {
+	public MethodEntryExitAdapter(Loader loader, ClassVisitor cv) {
 		super(loader, Opcodes.ASM4);
 		this.cv = cv;
 	}
@@ -58,7 +58,7 @@ public class MethodEntryExitAdapter extends BaseAdapter {
 	 * @param cv
 	 * @param env
 	 */
-	public MethodEntryExitAdapter(YamlLoader loader, ClassVisitor cv,Environment env) {
+	public MethodEntryExitAdapter(Loader loader, ClassVisitor cv,Environment env) {
 		super(loader, Opcodes.ASM4);
 		this.cv = cv;
 		this.env = env;

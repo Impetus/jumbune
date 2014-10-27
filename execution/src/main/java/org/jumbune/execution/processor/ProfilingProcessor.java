@@ -24,6 +24,9 @@ import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.HadoopLogParser;
 import org.jumbune.common.utils.RemoteFileUtil;
 import org.jumbune.common.utils.ResourceUsageCollector;
+import org.jumbune.common.yaml.config.Config;
+import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.debugger.instrumentation.instrumenter.Instrumenter;
 import org.jumbune.debugger.instrumentation.instrumenter.PureJarInstrumenter;
@@ -69,9 +72,10 @@ public class ProfilingProcessor extends BaseProcessor {
 		List<String> jarJobList = null;
 		// if main class is not defined in jar manifest, then only traverse the
 		// jar for main classes
-		if (!super.getLoader().isMainClassDefinedInJobJar()) {
+		YamlLoader yamlLoader = (YamlLoader)super.getLoader();
+		if (yamlLoader.isMainClassDefinedInJobJar()) {
 			try {
-				jarJobList = tra.getAlljobs(super.getLoader().getInputFile());
+				jarJobList = tra.getAlljobs(yamlLoader.getInputFile());
 			} catch (IOException ioe) {
 				LOGGER.error("Not able to get jobs list from jar.", ioe);
 				return false;
@@ -84,9 +88,9 @@ public class ProfilingProcessor extends BaseProcessor {
 		// classes with main classes in jar
 		checkJobClassesInJar(jarJobList);
 
-		String pureJarPath = super.getLoader().getInputFile();
-
-		Enable runFromJumbune = super.getLoader().getYamlConfiguration().getRunJobFromJumbune();
+		String pureJarPath = yamlLoader.getInputFile();
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		Enable runFromJumbune = yamlConfig.getRunJobFromJumbune();
 		LOGGER.debug("Pure MapReduce jar path :" + pureJarPath);
 		String pureJarCounterJson = null;
 		JobOutput jobOutput = null;
@@ -113,7 +117,7 @@ public class ProfilingProcessor extends BaseProcessor {
 				populateReport(pureJarCounterJson);
 				LOGGER.debug("Profiling final JSON ["+jobOutput+"]");
 			}else{
-				jobID = super.getLoader().getYamlConfiguration().getExistingJobName();
+				jobID = yamlConfig.getExistingJobName();
 				//rumen processing
 				jobOutput = getJobOutput(jobID);
 				collector.addPhaseResourceUsageFromRumen(jobOutput, jobID);
@@ -130,7 +134,7 @@ public class ProfilingProcessor extends BaseProcessor {
 			LOGGER.info("Pure Job Execution Completed");
 		}
 
-		if (super.getLoader().isHadoopJobProfileEnabled()) {
+		if (yamlLoader.isHadoopJobProfileEnabled()) {
 			populateProfilingAnalysisReport(jobOutput, pureJarCounterJson);
 		}
 		LOGGER.info("Exited from [Profiling] processor...");
@@ -140,7 +144,8 @@ public class ProfilingProcessor extends BaseProcessor {
 	private void calcStatsFromLogConsolidationInfo(JobOutput jobOutput,
 			ResourceUsageCollector collector) throws JumbuneException, IOException,
 			InterruptedException {
-		LogConsolidationInfo lci = super.getLoader().getSysResourceFileConsolidation();
+		YamlLoader yamlLoader = (YamlLoader)super.getLoader();
+		LogConsolidationInfo lci = yamlLoader.getSysResourceFileConsolidation();
 		copyRemoteStats(jobOutput, collector, lci);
 	}
 
@@ -173,7 +178,8 @@ public class ProfilingProcessor extends BaseProcessor {
 
 	private void checkJobClassesInJar(List<String> jarJobList)
 			throws JumbuneException {
-		if (!super.getLoader().isMainClassDefinedInJobJar() && (jarJobList != null && !HELPER.validateJobs(super.getLoader().getJobDefinitionList(), jarJobList))) {
+		YamlLoader yamlLoader = (YamlLoader)super.getLoader();
+		if (!yamlLoader.isMainClassDefinedInJobJar() && (jarJobList != null && !HELPER.validateJobs(yamlLoader.getJobDefinitionList(), jarJobList))) {
 		
 				throw new JumbuneException(ErrorCodesAndMessages.MESSAGE_JOBS_NOT_MATCH);
 		
@@ -182,14 +188,14 @@ public class ProfilingProcessor extends BaseProcessor {
 
 	private void executeForCommandBased(Scanner scanner) throws JumbuneException {
 		if (super.isCommandBased()) {
-
-			ExecutionUtil.showDefinedJobs(super.getLoader().getJobDefinitionList());
+			YamlLoader yamlLoader = (YamlLoader)super.getLoader();
+			ExecutionUtil.showDefinedJobs(yamlLoader.getJobDefinitionList());
 			boolean yamlModification = ExecutionUtil.askYesNoInfo(scanner, MESSAGES.get(MESSAGE_VALID_INPUT),
 
 			MESSAGES.get(MESSAGE_EXECUTION_YAML_COMMAND));
 
 			if (yamlModification) {
-				UserInputUtil cbe = new UserInputUtil(super.getLoader(), scanner);
+				UserInputUtil cbe = new UserInputUtil(yamlLoader, scanner);
 				cbe.getInfo();
 			}
 		}
@@ -228,11 +234,11 @@ public class ProfilingProcessor extends BaseProcessor {
 	@Override
 	protected void updateServiceInfo(ServiceInfo serviceInfo) throws JumbuneException {
 		if (serviceInfo != null) {
+			YamlLoader yamlLoader = (YamlLoader)super.getLoader();
+			serviceInfo.setPureJarCounterLocation(yamlLoader.getLogDefinition().getLogSummaryLocation().getPureJarCounterLocation());
 
-			serviceInfo.setPureJarCounterLocation(super.getLoader().getLogDefinition().getLogSummaryLocation().getPureJarCounterLocation());
-
-			if (super.getLoader().isHadoopJobProfileEnabled()) {
-				serviceInfo.setPureJarProfilingCountersLocation(super.getLoader().getLogDefinition().getLogSummaryLocation()
+			if (yamlLoader.isHadoopJobProfileEnabled()) {
+				serviceInfo.setPureJarProfilingCountersLocation(yamlLoader.getLogDefinition().getLogSummaryLocation()
 						.getPureJarProfilingCountersLocation());
 			}
 		}
@@ -240,7 +246,8 @@ public class ProfilingProcessor extends BaseProcessor {
 
 	@Override
 	protected Module getModuleName() {
-		return (super.getLoader().isHadoopJobProfileEnabled()) ? Module.PROFILING : Module.PURE_AND_INSTRUMENTED;
+		YamlLoader yamlLoader = (YamlLoader)super.getLoader();
+		return (yamlLoader.isHadoopJobProfileEnabled()) ? Module.PROFILING : Module.PURE_AND_INSTRUMENTED;
 	}
 
 	/**

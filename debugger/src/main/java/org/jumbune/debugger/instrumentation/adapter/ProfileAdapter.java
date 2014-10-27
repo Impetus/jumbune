@@ -5,6 +5,7 @@ import java.text.MessageFormat;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.debugger.instrumentation.utils.EnumJobSubmitMethods;
 import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
@@ -40,7 +41,7 @@ public class ProfileAdapter extends BaseAdapter {
 	 * @param cv
 	 *            Class visitor
 	 */
-	public ProfileAdapter(YamlLoader loader, ClassVisitor cv) {
+	public ProfileAdapter(Loader loader, ClassVisitor cv) {
 		super(loader, Opcodes.ASM4);
 		this.cv = cv;
 	}
@@ -138,9 +139,9 @@ public class ProfileAdapter extends BaseAdapter {
 	 * @return Instructions
 	 */
 	private InsnList addProfiling(int jobVariableIndex) {
-		YamlLoader loader=getLoader();
-		boolean iSHadoopJobProfiling = loader.isHadoopJobProfileEnabled();
-		String hadoopJobProfilingParams = loader.getHadoopJobProfileParams();
+		YamlLoader yamlLoader = (YamlLoader)getLoader();
+		boolean iSHadoopJobProfiling = yamlLoader.isHadoopJobProfileEnabled();
+		String hadoopJobProfilingParams = yamlLoader.getHadoopJobProfileParams();
 		String hadoopJobProfilingMaps = PROFILING_MAPPERS_INSTANCES;
 		String hadoopJobProfilingReduces = PROFILING_REDUCER_INSTANCES;
 
@@ -219,9 +220,9 @@ public class ProfileAdapter extends BaseAdapter {
 	 * @return Instructions
 	 */
 	private InsnList addProfilingForOldAPI(int jobVariableIndex) {
-		YamlLoader loader=getLoader();
-		boolean isHadoopJobProfiling = loader.isHadoopJobProfileEnabled();
-		String hadoopJobProfilingParams = loader.getHadoopJobProfileParams();
+		YamlLoader yamlLoader = (YamlLoader)getLoader();
+		boolean isHadoopJobProfiling = yamlLoader.isHadoopJobProfileEnabled();
+		String hadoopJobProfilingParams = yamlLoader.getHadoopJobProfileParams();
 		String hadoopJobProfilingMaps = PROFILING_MAPPERS_INSTANCES;
 		String hadoopJobProfilingReduces = PROFILING_REDUCER_INSTANCES ;
 

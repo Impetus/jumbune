@@ -20,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.DebuggerConf;
 import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.utils.MessageLoader;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.utils.beans.LogLevel;
 import org.jumbune.utils.exception.JumbuneException;
@@ -35,7 +36,7 @@ public class UserInputUtil {
 	private static final Logger LOGGER = LogManager
 			.getLogger(UserInputUtil.class);
 
-	private YamlLoader loader;
+	private Loader loader;
 	private static final MessageLoader MESSAGES = MessageLoader.getInstance();
 	private static String validInput;
 	private Scanner scanner;
@@ -45,7 +46,7 @@ public class UserInputUtil {
 	 * @param loader
 	 * @param scanner
 	 */
-	public UserInputUtil(YamlLoader loader, Scanner scanner) {
+	public UserInputUtil(Loader loader, Scanner scanner) {
 		this.scanner = scanner;
 		this.loader = loader;
 		validInput = MESSAGES.get(MESSAGE_VALID_INPUT);
@@ -88,7 +89,8 @@ public class UserInputUtil {
 					break;
 				}
 			}
-			loader.setJobDefinitionList(jobDefList);
+			YamlLoader yamlLoader = (YamlLoader)loader;
+			yamlLoader.setJobDefinitionList(jobDefList);
 		}
 
 		String askForLoggingEnabled = MessageFormat.format(
@@ -98,7 +100,8 @@ public class UserInputUtil {
 		// Changing instrumentation enabling information
 		if (ExecutionUtil.askYesNoInfo(scanner, validInput,
 				askForLoggingEnabled)) {
-			DebuggerConf instruDef = loader.getInstrumentation();
+			YamlLoader yamlLoader = (YamlLoader)loader;
+			DebuggerConf instruDef = yamlLoader.getInstrumentation();
 
 			Map<String, LogLevel> logLevelMap = instruDef.getLogLevel();
 

@@ -25,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Enable;
 import org.jumbune.common.utils.ValidateInput;
+import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
 import org.jumbune.utils.exception.JumbuneException;
@@ -115,7 +116,7 @@ public class WebUtil {
 	 * @return the yaml conf from file
 	 * @throws FileNotFoundException the file not found exception
 	 */
-	public YamlConfig getYamlConfFromFile(File file) throws FileNotFoundException {
+	public Config getYamlConfFromFile(File file) throws FileNotFoundException {
 		try {
 			InputStream input = new FileInputStream(file);
 			Constructor constructor = new Constructor(YamlConfig.class);
@@ -123,10 +124,10 @@ public class WebUtil {
 			constructor.addTypeDescription(desc);
 			Yaml yaml = new Yaml(new Loader(constructor));
 
-			YamlConfig conf = (YamlConfig) yaml.load(input);
+			YamlConfig yamlConfig = (YamlConfig) yaml.load(input);
 
-			LOG.info("YAML loaded successfully from " + file.getAbsolutePath() + " conf " + conf);
-			return conf;
+			LOG.info("YAML loaded successfully from " + file.getAbsolutePath() + " conf " + yamlConfig);
+			return yamlConfig;
 
 		} catch (FileNotFoundException fne) {
 			LOG.error("Could not find YAML file : " + file.getAbsolutePath());
@@ -141,25 +142,25 @@ public class WebUtil {
 	 * @param config  bean for the yaml file
 	 * @return it returns a list containing the tab information.
 	 */
-	public String getTabsInformation(YamlConfig config) {
+	public String getTabsInformation(Config config) {
 		boolean isDashBoardNeeded = false;
 		StringBuilder tabBuilder = new StringBuilder();
 
 		final char separator = ',';
-
-		if (config.getEnableDataValidation().equals(Enable.TRUE)) {
+		YamlConfig yamlConfig = (YamlConfig)config;
+		if (yamlConfig.getEnableDataValidation().equals(Enable.TRUE)) {
 			tabBuilder.append("Data Validation");
 			isDashBoardNeeded = true;
 		}
 
-		if (config.getHadoopJobProfile().equals(Enable.TRUE)) {
+		if (yamlConfig.getHadoopJobProfile().equals(Enable.TRUE)) {
 			tabBuilder.append(separator).append("Cluster Profiling");
 		}
-		if (config.getEnableStaticJobProfiling().equals(Enable.TRUE)) {
+		if (yamlConfig.getEnableStaticJobProfiling().equals(Enable.TRUE)) {
 			tabBuilder.append(separator).append("Static Profiling");
 		}
 
-		if (config.getDebugAnalysis().equals(Enable.TRUE)) {
+		if (yamlConfig.getDebugAnalysis().equals(Enable.TRUE)) {
 			tabBuilder.append(separator).append("Debug Analysis");
 			isDashBoardNeeded = true;
 		}
@@ -205,9 +206,10 @@ public class WebUtil {
 	 * @param config the config
 	 * @return true if at least one required module is enabled
 	 */
-	public static boolean isRequiredModuleEnable(YamlConfig config) {
-		return (ValidateInput.isEnable(config.getHadoopJobProfile())  || ValidateInput
-				.isEnable(config.getDebugAnalysis()));
+	public static boolean isRequiredModuleEnable(Config config) {
+		YamlConfig yamlConfig = (YamlConfig)config;
+		return (ValidateInput.isEnable(yamlConfig.getHadoopJobProfile())  || ValidateInput
+				.isEnable(yamlConfig.getDebugAnalysis()));
 	}
 
 	/**
@@ -310,7 +312,7 @@ public class WebUtil {
 	 * @throws FileUploadException
 	 *             the file upload exception
 	 */
-	public static YamlConfig prepareYamlConfig(String data) throws IOException, FileUploadException {
+	public static Config prepareYamlConfig(String data) throws IOException, FileUploadException {
 		Gson gson = new Gson();
 		return gson.fromJson(data, YamlConfig.class);
 		

@@ -7,7 +7,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.yaml.config.Loader;
 
 
 
@@ -56,9 +56,9 @@ public final class FileUtil {
 	 * @throws InterruptedException If an error occurs
 	 * @throws IOException If an IO error occurs during the operation
 	 * @see Constants#USER_LIB_LOC
-	 * @see YamlLoader#getUserLibLocatinAtMaster()
+	 * @see Loader#getUserLibLocatinAtMaster()
 	 */
-	public static void copyLibFilesToMaster(YamlLoader loader) throws InterruptedException, IOException {
+	public static void copyLibFilesToMaster(Loader loader) throws InterruptedException, IOException {
 		RemoteFileUtil cu = new RemoteFileUtil();
 	
 		cu.copyRemoteLibFilesToMaster(loader);

@@ -17,30 +17,29 @@ import org.jumbune.common.beans.SlaveParam;
 import org.jumbune.common.beans.Validation;
 import org.jumbune.utils.YamlUtil;
 
-
 /**
  * This class is the bean for the yaml file.
  */
-public class YamlConfig{
+public class YamlConfig implements Config {
 
 	/** The Constant DEFAULT_PARTITION_SAMPLE_INTERVAL. */
 	private static final int DEFAULT_PARTITION_SAMPLE_INTERVAL = 1000;
-	
+
 	/** The distributed hdfs path. */
 	private String distributedHDFSPath;
 	/* Hadoop configurations */
 	/** The master. */
 	private Master master;
-	
+
 	/** The slaves. */
 	private List<Slave> slaves;
 	/* Jumbune Modules */
 	/** The hadoop job profile. */
 	private Enable hadoopJobProfile = Enable.FALSE;
-	
+
 	/** The enable data validation. */
 	private Enable enableDataValidation = Enable.FALSE;
-	
+
 	/** The debug analysis. */
 	private Enable debugAnalysis = Enable.FALSE;
 
@@ -53,7 +52,7 @@ public class YamlConfig{
 	/* Job configurations */
 	/** The jobs. */
 	private List<JobDefinition> jobs;
-	
+
 	/** The include class jar. */
 	private Enable includeClassJar = Enable.FALSE;
 
@@ -63,28 +62,28 @@ public class YamlConfig{
 	/* Jar debugging configuration */
 	/** The do not instrument. */
 	private DoNotInstrument doNotInstrument;
-	
+
 	/** The mapper super classes. */
 	private String[] mapperSuperClasses;
-	
+
 	/** The reducer super classes. */
 	private String[] reducerSuperClasses;
-	
+
 	/** The debugger conf. */
 	private DebuggerConf debuggerConf;
-	
+
 	/** The classpath. */
 	private Classpath classpath;
-	
+
 	/** The regex validations. */
 	private List<Validation> regexValidations;
-	
+
 	/** The user validations. */
 	private List<Validation> userValidations;
-	
+
 	/** It tells after how many keys the partitioning time should be calculated. */
 	private int partitionerSampleInterval;
-	
+
 	/** The s jumbune home. */
 	private String sJumbuneHome;
 
@@ -100,16 +99,16 @@ public class YamlConfig{
 
 	/** The slave param. */
 	private SlaveParam slaveParam;
-	
-	/** Launches a new job from Jumbune if set to TRUE**/
+
+	/** Launches a new job from Jumbune if set to TRUE **/
 	private Enable runJobFromJumbune = Enable.FALSE;
-	
+
 	/** Specify the job name of an existing job on Hadoop cluster **/
 	private String existingJobName;
 
 	/**
 	 * Gets the formatted jumbune job name.
-	 *
+	 * 
 	 * @return the formatted jumbune job name
 	 */
 	public String getFormattedJumbuneJobName() {
@@ -118,7 +117,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the jumbune job name.
-	 *
+	 * 
 	 * @return the jumbune job name
 	 */
 	public String getJumbuneJobName() {
@@ -127,7 +126,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the un formatted jumbune job name.
-	 *
+	 * 
 	 * @return the un formatted jumbune job name
 	 */
 	public String getUnFormattedJumbuneJobName() {
@@ -136,8 +135,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the jumbune job name.
-	 *
-	 * @param jumbuneJobName the new jumbune job name
+	 * 
+	 * @param jumbuneJobName
+	 *            the new jumbune job name
 	 */
 	public void setJumbuneJobName(final String jumbuneJobName) {
 		String jumbuneJobNameTemp = jumbuneJobName;
@@ -145,13 +145,13 @@ public class YamlConfig{
 		this.jumbuneJobName = jumbuneJobNameTemp;
 	}
 
-
 	/**
 	 * Appends jobName and adds / at the end if it is missing. Modifying jumbune
 	 * job name is required as all the jobs related folder should be under this
 	 * jumbunejob name
-	 *
-	 * @param jobName the job name
+	 * 
+	 * @param jobName
+	 *            the job name
 	 * @return the string
 	 */
 	private String formatJumbuneJobName(final String jobName) {
@@ -168,7 +168,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the s jumbune home.
-	 *
+	 * 
 	 * @return the s jumbune home
 	 */
 	public String getsJumbuneHome() {
@@ -177,8 +177,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the s jumbune home.
-	 *
-	 * @param sJumbuneHome the new s jumbune home
+	 * 
+	 * @param sJumbuneHome
+	 *            the new s jumbune home
 	 */
 	public void setsJumbuneHome(String sJumbuneHome) {
 		this.sJumbuneHome = sJumbuneHome;
@@ -198,7 +199,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the hadoop job profile.
-	 *
+	 * 
 	 * @return the hadoop job profile
 	 */
 	public Enable getHadoopJobProfile() {
@@ -207,8 +208,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the hadoop job profile.
-	 *
-	 * @param hadoopJobProfile the new hadoop job profile
+	 * 
+	 * @param hadoopJobProfile
+	 *            the new hadoop job profile
 	 */
 	public void setHadoopJobProfile(Enable hadoopJobProfile) {
 		this.hadoopJobProfile = hadoopJobProfile;
@@ -216,7 +218,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the enable data validation.
-	 *
+	 * 
 	 * @return the enable data validation
 	 */
 	public Enable getEnableDataValidation() {
@@ -225,8 +227,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the enable data validation.
-	 *
-	 * @param enableDataValidation the new enable data validation
+	 * 
+	 * @param enableDataValidation
+	 *            the new enable data validation
 	 */
 	public void setEnableDataValidation(Enable enableDataValidation) {
 		this.enableDataValidation = enableDataValidation;
@@ -234,7 +237,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the debug analysis.
-	 *
+	 * 
 	 * @return the debug analysis
 	 */
 	public Enable getDebugAnalysis() {
@@ -243,18 +246,19 @@ public class YamlConfig{
 
 	/**
 	 * Sets the debug analysis.
-	 *
-	 * @param debugAnalysis the new debug analysis
+	 * 
+	 * @param debugAnalysis
+	 *            the new debug analysis
 	 */
 	public void setDebugAnalysis(Enable debugAnalysis) {
 		this.debugAnalysis = debugAnalysis;
 	}
 
-
 	/**
 	 * Sets the input file.
-	 *
-	 * @param inputFile the new input file
+	 * 
+	 * @param inputFile
+	 *            the new input file
 	 */
 	public final void setInputFile(String inputFile) {
 		this.inputFile = YamlUtil.getAndReplaceHolders(inputFile);
@@ -262,7 +266,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the include class jar.
-	 *
+	 * 
 	 * @return the include class jar
 	 */
 	public Enable getIncludeClassJar() {
@@ -271,8 +275,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the include class jar.
-	 *
-	 * @param includeClassJar the new include class jar
+	 * 
+	 * @param includeClassJar
+	 *            the new include class jar
 	 */
 	public void setIncludeClassJar(Enable includeClassJar) {
 		this.includeClassJar = includeClassJar;
@@ -280,7 +285,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the mapper super classes.
-	 *
+	 * 
 	 * @return the mapper super classes
 	 */
 	public final String[] getMapperSuperClasses() {
@@ -289,8 +294,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the mapper super classes.
-	 *
-	 * @param mapperSuperClasses the new mapper super classes
+	 * 
+	 * @param mapperSuperClasses
+	 *            the new mapper super classes
 	 */
 	public final void setMapperSuperClasses(String[] mapperSuperClasses) {
 		if (mapperSuperClasses != null && mapperSuperClasses.length > 0) {
@@ -301,7 +307,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the reducer super classes.
-	 *
+	 * 
 	 * @return the reducer super classes
 	 */
 	public final String[] getReducerSuperClasses() {
@@ -310,8 +316,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the reducer super classes.
-	 *
-	 * @param reducerSuperClasses the new reducer super classes
+	 * 
+	 * @param reducerSuperClasses
+	 *            the new reducer super classes
 	 */
 	public final void setReducerSuperClasses(String[] reducerSuperClasses) {
 		if (reducerSuperClasses != null && reducerSuperClasses.length > 0) {
@@ -322,7 +329,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the jobs.
-	 *
+	 * 
 	 * @return the jobs
 	 */
 	public final List<JobDefinition> getJobs() {
@@ -331,7 +338,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the do not instrument.
-	 *
+	 * 
 	 * @return the do not instrument
 	 */
 	public final DoNotInstrument getDoNotInstrument() {
@@ -340,8 +347,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the do not instrument.
-	 *
-	 * @param doNotInstrument the new do not instrument
+	 * 
+	 * @param doNotInstrument
+	 *            the new do not instrument
 	 */
 	public final void setDoNotInstrument(DoNotInstrument doNotInstrument) {
 		this.doNotInstrument = doNotInstrument;
@@ -349,7 +357,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the partitioner sample interval.
-	 *
+	 * 
 	 * @return the partitioner sample interval
 	 */
 	public final int getPartitionerSampleInterval() {
@@ -358,8 +366,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the partitioner sample interval.
-	 *
-	 * @param partitionerSampleInterval the new partitioner sample interval
+	 * 
+	 * @param partitionerSampleInterval
+	 *            the new partitioner sample interval
 	 */
 	public final void setPartitionerSampleInterval(
 			final int partitionerSampleInterval) {
@@ -372,7 +381,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the master.
-	 *
+	 * 
 	 * @return the master
 	 */
 	public Master getMaster() {
@@ -381,8 +390,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the master.
-	 *
-	 * @param master the new master
+	 * 
+	 * @param master
+	 *            the new master
 	 */
 	public void setMaster(Master master) {
 		this.master = master;
@@ -390,7 +400,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the slaves.
-	 *
+	 * 
 	 * @return the slaves
 	 */
 	public List<Slave> getSlaves() {
@@ -399,8 +409,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the slaves.
-	 *
-	 * @param slaves the new slaves
+	 * 
+	 * @param slaves
+	 *            the new slaves
 	 */
 	public void setSlaves(List<Slave> slaves) {
 		this.slaves = slaves;
@@ -408,7 +419,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the debugger conf.
-	 *
+	 * 
 	 * @return the debugger conf
 	 */
 	public DebuggerConf getDebuggerConf() {
@@ -417,8 +428,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the debugger conf.
-	 *
-	 * @param debuggerConf the new debugger conf
+	 * 
+	 * @param debuggerConf
+	 *            the new debugger conf
 	 */
 	public void setDebuggerConf(DebuggerConf debuggerConf) {
 		this.debuggerConf = debuggerConf;
@@ -426,7 +438,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the classpath.
-	 *
+	 * 
 	 * @return the classpath
 	 */
 	public Classpath getClasspath() {
@@ -435,8 +447,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the classpath.
-	 *
-	 * @param classpath the new classpath
+	 * 
+	 * @param classpath
+	 *            the new classpath
 	 */
 	public void setClasspath(Classpath classpath) {
 		this.classpath = classpath;
@@ -444,7 +457,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the regex validations.
-	 *
+	 * 
 	 * @return the regex validations
 	 */
 	public List<Validation> getRegexValidations() {
@@ -454,8 +467,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the regex validations.
-	 *
-	 * @param regexValidations the new regex validations
+	 * 
+	 * @param regexValidations
+	 *            the new regex validations
 	 */
 	public void setRegexValidations(List<Validation> regexValidations) {
 		this.regexValidations = regexValidations;
@@ -463,7 +477,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the user validations.
-	 *
+	 * 
 	 * @return the user validations
 	 */
 	public List<Validation> getUserValidations() {
@@ -473,8 +487,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the user validations.
-	 *
-	 * @param userValidations the new user validations
+	 * 
+	 * @param userValidations
+	 *            the new user validations
 	 */
 	public void setUserValidations(List<Validation> userValidations) {
 		this.userValidations = userValidations;
@@ -482,7 +497,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the input file.
-	 *
+	 * 
 	 * @return the input file
 	 */
 	public String getInputFile() {
@@ -496,8 +511,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the jobs.
-	 *
-	 * @param jobs the new jobs
+	 * 
+	 * @param jobs
+	 *            the new jobs
 	 */
 	public void setJobs(List<JobDefinition> jobs) {
 		this.jobs = jobs;
@@ -505,7 +521,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the profiling params.
-	 *
+	 * 
 	 * @return the profiling params
 	 */
 	public ProfilingParam getProfilingParams() {
@@ -514,8 +530,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the profiling params.
-	 *
-	 * @param profilingParams the new profiling params
+	 * 
+	 * @param profilingParams
+	 *            the new profiling params
 	 */
 	public void setProfilingParams(ProfilingParam profilingParams) {
 		this.profilingParams = profilingParams;
@@ -523,7 +540,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the data validation.
-	 *
+	 * 
 	 * @return the data validation
 	 */
 	public final DataValidationBean getDataValidation() {
@@ -532,8 +549,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the data validation.
-	 *
-	 * @param dataValidation the new data validation
+	 * 
+	 * @param dataValidation
+	 *            the new data validation
 	 */
 	public final void setDataValidation(DataValidationBean dataValidation) {
 		this.dataValidation = dataValidation;
@@ -541,7 +559,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the hdfs input path.
-	 *
+	 * 
 	 * @return the hdfs input path
 	 */
 	public final String getHdfsInputPath() {
@@ -550,8 +568,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the hdfs input path.
-	 *
-	 * @param hdfsInputPath the new hdfs input path
+	 * 
+	 * @param hdfsInputPath
+	 *            the new hdfs input path
 	 */
 	public final void setHdfsInputPath(String hdfsInputPath) {
 		this.hdfsInputPath = hdfsInputPath;
@@ -559,6 +578,7 @@ public class YamlConfig{
 
 	/**
 	 * gets the runJobFromJumbune
+	 * 
 	 * @return
 	 */
 	public Enable getRunJobFromJumbune() {
@@ -567,15 +587,16 @@ public class YamlConfig{
 
 	/**
 	 * sets the runJobFromJumbune
+	 * 
 	 * @param runJobFromJumbune
 	 */
 	public void setRunJobFromJumbune(Enable runJobFromJumbune) {
 		this.runJobFromJumbune = runJobFromJumbune;
 	}
 
-	
 	/**
 	 * gets the existingJobName
+	 * 
 	 * @return
 	 */
 	public String getExistingJobName() {
@@ -584,6 +605,7 @@ public class YamlConfig{
 
 	/**
 	 * sets the existingJobName
+	 * 
 	 * @param existingJobName
 	 */
 	public void setExistingJobName(String existingJobName) {
@@ -592,7 +614,7 @@ public class YamlConfig{
 
 	/**
 	 * To string.
-	 *
+	 * 
 	 * @return the string
 	 * @see java.lang.Object#toString()
 	 */
@@ -601,10 +623,10 @@ public class YamlConfig{
 		return "YamlConfig [master=" + master + ", slaves=" + slaves
 				+ ", hadoopJobProfile=" + hadoopJobProfile
 				+ ", enableDataValidation=" + enableDataValidation
-				+ ", debugAnalysis=" + debugAnalysis 
-				+ ", profilingParams=" + profilingParams + ", jobs=" + jobs
-				+ ", includeClassJar=" + includeClassJar + ", inputFile="
-				+ inputFile + ", doNotInstrument=" + doNotInstrument
+				+ ", debugAnalysis=" + debugAnalysis + ", profilingParams="
+				+ profilingParams + ", jobs=" + jobs + ", includeClassJar="
+				+ includeClassJar + ", inputFile=" + inputFile
+				+ ", doNotInstrument=" + doNotInstrument
 				+ ", mapperSuperClasses=" + Arrays.toString(mapperSuperClasses)
 				+ ", reducerSuperClasses="
 				+ Arrays.toString(reducerSuperClasses) + ", debuggerConf="
@@ -614,13 +636,15 @@ public class YamlConfig{
 				+ ", partitionerSampleInterval=" + partitionerSampleInterval
 				+ ", sJumbuneHome=" + sJumbuneHome + ", hdfsInputPath="
 				+ hdfsInputPath + ", dataValidation=" + dataValidation
-				+ ", jumbuneJobName=" + jumbuneJobName + ", runJobFromJumbune="+runJobFromJumbune+"]";
+				+ ", jumbuneJobName=" + jumbuneJobName + ", runJobFromJumbune="
+				+ runJobFromJumbune + "]";
 	}
 
 	/**
 	 * Sets the distributed hdfs path.
-	 *
-	 * @param distributedHDFSPath the distributedHDFSPath to set
+	 * 
+	 * @param distributedHDFSPath
+	 *            the distributedHDFSPath to set
 	 */
 	public void setDistributedHDFSPath(String distributedHDFSPath) {
 		this.distributedHDFSPath = distributedHDFSPath;
@@ -628,7 +652,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the distributed hdfs path.
-	 *
+	 * 
 	 * @return the distributedHDFSPath
 	 */
 	public String getDistributedHDFSPath() {
@@ -637,8 +661,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the enable static job profiling.
-	 *
-	 * @param enableStaticJobProfiling the enableStaticJobProfiling to set
+	 * 
+	 * @param enableStaticJobProfiling
+	 *            the enableStaticJobProfiling to set
 	 */
 	public void setEnableStaticJobProfiling(Enable enableStaticJobProfiling) {
 		this.enableStaticJobProfiling = enableStaticJobProfiling;
@@ -646,7 +671,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the enable static job profiling.
-	 *
+	 * 
 	 * @return the enableStaticJobProfiling
 	 */
 	public Enable getEnableStaticJobProfiling() {
@@ -655,8 +680,9 @@ public class YamlConfig{
 
 	/**
 	 * Sets the slave param.
-	 *
-	 * @param slaveParam the new slave param
+	 * 
+	 * @param slaveParam
+	 *            the new slave param
 	 */
 	public void setSlaveParam(SlaveParam slaveParam) {
 		this.slaveParam = slaveParam;
@@ -664,7 +690,7 @@ public class YamlConfig{
 
 	/**
 	 * Gets the slave param.
-	 *
+	 * 
 	 * @return the slave param
 	 */
 	public SlaveParam getSlaveParam() {

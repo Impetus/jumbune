@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import org.jumbune.common.beans.Enable;
 import org.jumbune.common.utils.ValidateInput;
+import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.junit.Before;
 import org.junit.Test;

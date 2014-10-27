@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.InstructionsBean;
 import org.jumbune.common.beans.Validation;
 import org.jumbune.common.utils.CollectionUtil;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.debugger.instrumentation.utils.ContextWriteParams;
 import org.jumbune.debugger.instrumentation.utils.InstrumentConstants;
@@ -43,7 +44,7 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 	 * @param loader
 	 * @param cv
 	 */
-	public ContextWriteValidationAdapter(YamlLoader loader, ClassVisitor cv) {
+	public ContextWriteValidationAdapter(Loader loader, ClassVisitor cv) {
 		super(loader, Opcodes.ASM4);
 		this.cv = cv;
 		validateingMessage = InstrumentationMessageLoader
@@ -66,10 +67,10 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 	 */
 	@Override
 	public void visitEnd() {
-		YamlLoader loader=getLoader();
-		if (validateUserValidationClass(loader.getUserValidations(),
+		YamlLoader yamlLoader = (YamlLoader)getLoader();
+		if (validateUserValidationClass(yamlLoader.getUserValidations(),
 				getClassName())
-				|| validateRegexValidationClass(loader.getRegex(),
+				|| validateRegexValidationClass(yamlLoader.getRegex(),
 						getClassName())) {
 			for (int i = 0; i < methods.size(); i++) {
 				MethodNode mn = (MethodNode) methods.get(i);
@@ -168,14 +169,14 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 	 *            - method which holds context.write either map/reduce
 	 */
 	private void addValidations(InsnList patternValidationInsnList, InstructionsBean insBean, String methodName) {
-		YamlLoader loader=getLoader();
-		String keyValidationClass = loader
+		YamlLoader yamlLoader = (YamlLoader)getLoader();
+		String keyValidationClass = yamlLoader
 				.getMapReduceKeyValidator(getClassName());
-		String valueValidationClass = loader
+		String valueValidationClass = yamlLoader
 				.getMapReduceValueValidator(getClassName());
-		boolean instrumentMapreduceUserdefinedValidation = loader
+		boolean instrumentMapreduceUserdefinedValidation = yamlLoader
 				.isInstrumentEnabled("instrumentUserDefValidate");
-		boolean instrumentMapreduceRegex = loader
+		boolean instrumentMapreduceRegex = yamlLoader
 				.isInstrumentEnabled("instrumentRegex");
 
 		int keyIndex = 0;
@@ -184,7 +185,7 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 		boolean[] isValidated = new boolean[2];
 		String[] validators = new String[2];
 
-		if (instrumentMapreduceUserdefinedValidation && validateUserValidationClass(loader.getUserValidations(),
+		if (instrumentMapreduceUserdefinedValidation && validateUserValidationClass(yamlLoader.getUserValidations(),
 					getClassName())) {
 				validators[keyIndex] = keyValidationClass;
 				validators[valueIndex] = valueValidationClass;
@@ -213,12 +214,12 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 	
 	private void addRegexValidations(InsnList patternValidationInsnList, InstructionsBean insBean, String methodName,
 			boolean instrumentMapreduceRegex, boolean[] isValidated) {
-		YamlLoader loader=getLoader();
-		String keyRegex = loader.getMapReduceKeyRegex(getClassName());
-		String valueRegex = loader.getMapReduceValueRegex(getClassName());
+		YamlLoader yamlLoader = (YamlLoader)getLoader();
+		String keyRegex = yamlLoader.getMapReduceKeyRegex(getClassName());
+		String valueRegex = yamlLoader.getMapReduceValueRegex(getClassName());
 		int keyIndex = 0;
 		int valueIndex = 1;
-		if (instrumentMapreduceRegex && validateRegexValidationClass(loader.getRegex(), getClassName())) {
+		if (instrumentMapreduceRegex && validateRegexValidationClass(yamlLoader.getRegex(), getClassName())) {
 				// Fetching regEx for validating key/value
 				String[] validators=new String[2];
 				validators[keyIndex] = keyRegex;

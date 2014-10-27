@@ -11,7 +11,7 @@ import java.util.zip.ZipOutputStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.debugger.instrumentation.utils.InstrumentConstants;
 import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
 import org.jumbune.debugger.instrumentation.utils.InstrumentationMessageLoader;
@@ -32,14 +32,14 @@ import org.jumbune.debugger.instrumentation.utils.MessageConstants;
 public abstract class Instrumenter {
 	private static final Logger LOGGER = LogManager
 			.getLogger(Instrumenter.class);
-	private YamlLoader loader;
+	private Loader loader;
 
 	/**
 	 * <p>
 	 * Create a new instance of Instrumenter.
 	 * </p>
 	 */
-	public Instrumenter(YamlLoader loader) {
+	public Instrumenter(Loader loader) {
 		this.loader=loader;
 	}
 
@@ -218,14 +218,14 @@ public abstract class Instrumenter {
 	/**
 	 * @param loader the loader to set
 	 */
-	public void setLoader(YamlLoader loader) {
+	public void setLoader(Loader loader) {
 		this.loader = loader;
 	}
 
 	/**
 	 * @return the loader
 	 */
-	protected YamlLoader getLoader() {
+	protected Loader getLoader() {
 		return loader;
 	}
 }

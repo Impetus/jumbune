@@ -4,7 +4,7 @@ import java.text.MessageFormat;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.debugger.instrumentation.utils.Environment;
 import org.jumbune.debugger.instrumentation.utils.InstrumentationMessageLoader;
 import org.jumbune.debugger.instrumentation.utils.MessageConstants;
@@ -32,7 +32,7 @@ public class BlockLogAdapter extends BaseAdapter {
 	 * @param cv
 	 *            class visitor
 	 */
-	public BlockLogAdapter(YamlLoader loader, ClassVisitor cv) {
+	public BlockLogAdapter(Loader loader, ClassVisitor cv) {
 		super(loader, Opcodes.ASM4);
 		this.cv = cv;
 	}
@@ -45,7 +45,7 @@ public class BlockLogAdapter extends BaseAdapter {
 	 * @param cv
 	 * @param env
 	 */
-	public BlockLogAdapter(YamlLoader loader, ClassVisitor cv, Environment env) {
+	public BlockLogAdapter(Loader loader, ClassVisitor cv, Environment env) {
 		super(loader, Opcodes.ASM4);
 		this.cv = cv;
 		this.env = env;

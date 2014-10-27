@@ -6,6 +6,7 @@ import java.util.zip.ZipOutputStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.debugger.instrumentation.adapter.InstrumentValidator;
 import org.jumbune.debugger.instrumentation.adapter.ProfileAdapter;
@@ -33,7 +34,7 @@ public class PureJarInstrumenter extends Instrumenter {
 	 * Create a new instance of ProfilingInstrumenter.
 	 * </p>
 	 */
-	public PureJarInstrumenter(YamlLoader loader) {
+	public PureJarInstrumenter(Loader loader) {
 		super(loader);
 	}
 
@@ -44,8 +45,9 @@ public class PureJarInstrumenter extends Instrumenter {
 	 * @see org.jumbune.debugger.instrumentation.instrumenter.Instrumenter#instrumentJar()
 	 */
 	public void instrumentJar() throws IOException {
-		File fin = new File(getLoader().getInputFile());
-		File fout = new File(getLoader().getProfiledOutputFile());
+		YamlLoader yamlLoader = (YamlLoader)getLoader();
+		File fin = new File(yamlLoader.getInputFile());
+		File fout = new File(yamlLoader.getProfiledOutputFile());
 		instrumentJar(fin, fout);
 	}
 
@@ -71,8 +73,8 @@ public class PureJarInstrumenter extends Instrumenter {
 
 			// if the class has not been already instrumented
 			if (!ic.getAlreadyInstrumented() && !ic.getInterface()) {
-
-				if (getLoader().isHadoopJobProfileEnabled()) {
+				YamlLoader yamlLoader = (YamlLoader)getLoader();
+				if (yamlLoader.isHadoopJobProfileEnabled()) {
 					cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 					instrumentedBytes = InstrumentUtil.instrumentBytes(instrumentedBytes,
 							new ProfileAdapter(getLoader(), cw), cw);

@@ -24,6 +24,8 @@ import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.MessageLoader;
 import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.common.utils.ValidateInput;
+import org.jumbune.common.yaml.config.Config;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.profiling.beans.JMXDeamons;
@@ -61,8 +63,8 @@ public class ProfilerUtil {
 	 * @throws JumbuneException
 	 *             - If messages file is corrupt and unable to load it in MessageLoader
 	 */
-	public ProfilerUtil(YamlLoader loader) {
-		this.loader = loader;
+	public ProfilerUtil(Loader loader) {
+		this.loader = (YamlLoader) loader;
 		try {
 			initializeMessageLoader();
 		} catch (JumbuneException e) {
@@ -225,10 +227,11 @@ public class ProfilerUtil {
 		final Map<Integer, HprofData.StackTrace> idToStackTrace = reader.getIdToStackTrace();
 		final Map<Integer, HTFHeapAllocStackTraceBean> heapAllocStackTraceMap = new TreeMap<Integer, HTFHeapAllocStackTraceBean>();
 
-		YamlConfig config = loader.getYamlConfiguration();
+		Config config = loader.getYamlConfiguration();
 		String[] profilingPackages = null;
-		List<JobDefinition> jobList = config.getJobs();
-		if (!ValidateInput.isEnable(config.getIncludeClassJar())) {
+		YamlConfig yamlConfig = (YamlConfig)config;
+		List<JobDefinition> jobList = yamlConfig.getJobs();
+		if (!ValidateInput.isEnable(yamlConfig.getIncludeClassJar())) {
 			profilingPackages = getProfilingPackages(profilingPackages, jobList);
 		}
 		final int maxHeapSampleCount = loader.getProfilingMaxHeapSampleCount();
@@ -549,15 +552,15 @@ public class ProfilerUtil {
 	 * @param loader the loader
 	 * @return the dFS admin report command result
 	 */
-	public static String[] getDFSAdminReportCommandResult(YamlLoader loader) {
-		
+	public static String[] getDFSAdminReportCommandResult(Loader loader) {
+		YamlLoader yamlLoader = (YamlLoader)loader;
 		Remoter remoter = RemotingUtil.getRemoter(loader, "");
 		StringBuilder sbReport = new StringBuilder();
-		sbReport.append(loader.getHadoopHome(loader)).append("/bin/hadoop").append(" ").append("dfsadmin")
+		sbReport.append(yamlLoader.getHadoopHome(loader)).append("/bin/hadoop").append(" ").append("dfsadmin")
 				.append(" ").append("-report");
 		
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(sbReport.toString(), false, null).populate(loader.getYamlConfiguration(), null);
+		builder.addCommand(sbReport.toString(), false, null).populate(yamlLoader.getYamlConfiguration(), null);
 		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		remoter.close();
 		return response.split("\n");

@@ -2,6 +2,7 @@ package org.jumbune.debugger.instrumentation.adapter;
 
 import org.jumbune.common.utils.CollectionUtil;
 import org.jumbune.common.utils.ConfigurationUtil;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.debugger.instrumentation.utils.InstrumentConstants;
 import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
@@ -22,9 +23,9 @@ public class BaseAdapter extends ClassNode implements InstrumentConstants {
 	private boolean isMapperClazz = false;
 	private boolean isReducerClazz = false;
 	private boolean isOldApiClazz = false;
-	private final YamlLoader yLoader;
+	private final Loader yLoader;
 
-	protected YamlLoader getLoader() {
+	protected Loader getLoader() {
 		return yLoader;
 	}
 
@@ -38,7 +39,7 @@ public class BaseAdapter extends ClassNode implements InstrumentConstants {
 	 * @param api
 	 *            API version of ASM
 	 */
-	public BaseAdapter(YamlLoader loader, int api) {
+	public BaseAdapter(Loader loader, int api) {
 		super(api);
 		this.yLoader = loader;
 	}
@@ -50,7 +51,7 @@ public class BaseAdapter extends ClassNode implements InstrumentConstants {
 	 * 
 	 * @param cv
 	 */
-	public BaseAdapter(YamlLoader loader, ClassVisitor cv) {
+	public BaseAdapter(Loader loader, ClassVisitor cv) {
 		super(Opcodes.ASM4);
 		this.cv = cv;
 		this.yLoader = loader;
@@ -64,7 +65,7 @@ public class BaseAdapter extends ClassNode implements InstrumentConstants {
 	 * @param api
 	 * @param cv
 	 */
-	public BaseAdapter(YamlLoader loader, int api, ClassVisitor cv) {
+	public BaseAdapter(Loader loader, int api, ClassVisitor cv) {
 		super(api);
 		this.cv = cv;
 		this.yLoader = loader;
@@ -185,9 +186,10 @@ public class BaseAdapter extends ClassNode implements InstrumentConstants {
 		setOldApiClazz(superName, interfaces);
 
 		// User provided classes
-		if (yLoader.getMapperSuperClasses() != null && CollectionUtil.arrayContains(yLoader.getMapperSuperClasses(), superName)) {
+		YamlLoader yamlLoader = (YamlLoader)yLoader;
+		if (yamlLoader.getMapperSuperClasses() != null && CollectionUtil.arrayContains(yamlLoader.getMapperSuperClasses(), superName)) {
 			setMapperClass(true);
-		} else if (yLoader.getReducerSuperClasses() != null && CollectionUtil.arrayContains(yLoader.getReducerSuperClasses(), superName)) {
+		} else if (yamlLoader.getReducerSuperClasses() != null && CollectionUtil.arrayContains(yamlLoader.getReducerSuperClasses(), superName)) {
 			setReducerClass(true);
 		}
 

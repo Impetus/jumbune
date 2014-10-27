@@ -13,7 +13,9 @@ import org.jumbune.common.utils.ClasspathUtil;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.FileUtil;
 import org.jumbune.common.utils.RemoteFileUtil;
+import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.YamlConfig;
+import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.debugger.instrumentation.instrumenter.Instrumenter;
 import org.jumbune.debugger.instrumentation.instrumenter.JarInstrumenter;
 import org.jumbune.debugger.log.processing.LogAnalyzerUtil;
@@ -61,8 +63,9 @@ public class DebugProcessor extends BaseProcessor {
 			throws JumbuneException {
 		super.preExecute(params);
 
+		YamlLoader yamlLoader = (YamlLoader)super.getLoader();
 		// copying user lib files to master from slave
-		if (super.getLoader().getClasspath().getUserSupplied().getSource() == ClasspathUtil.SOURCE_TYPE_SLAVES) {
+		if (yamlLoader.getClasspath().getUserSupplied().getSource() == ClasspathUtil.SOURCE_TYPE_SLAVES) {
 			
 				try {
 					FileUtil.copyLibFilesToMaster(super.getLoader());
@@ -86,11 +89,12 @@ public class DebugProcessor extends BaseProcessor {
 
 		try {
 			LOGGER.info("Executing [Debug] Processor...");
-			YamlConfig config = super.getLoader().getYamlConfiguration();
-			config.getDebuggerConf().getLogLevel().put("ifblock", LogLevel.TRUE);
-			config.getDebuggerConf().setMaxIfBlockNestingLevel(2);
-			String instrumentedJarPath = super.getLoader().getInstrumentOutputFile();
-			String locationOfLogFiles = super.getLoader().getLogMaster().getLocation();
+			YamlLoader yamlLoader = (YamlLoader)super.getLoader();
+			YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+			yamlConfig.getDebuggerConf().getLogLevel().put("ifblock", LogLevel.TRUE);
+			yamlConfig.getDebuggerConf().setMaxIfBlockNestingLevel(2);
+			String instrumentedJarPath = yamlLoader.getInstrumentOutputFile();
+			String locationOfLogFiles = yamlLoader.getLogMaster().getLocation();
 			// Instrument the pure jar
 			Instrumenter instrumenter = new JarInstrumenter(super.getLoader());
 			instrumenter.instrumentJar();
@@ -98,17 +102,17 @@ public class DebugProcessor extends BaseProcessor {
 			// marking report as complete
 			// Copy logs from slaves only when there are slaves if there are no
 			// slaves then don't go for copying
-			if (super.getLoader().getLogDefinition().getSlaves() != null
-					&& super.getLoader().getLogDefinition().getSlaves().size() > 0) {
+			if (yamlConfig.getSlaves() != null
+					&& yamlConfig.getSlaves().size() > 0) {
 				RemoteFileUtil remoteFileUtil = new RemoteFileUtil();
-				remoteFileUtil.copyDBLogFilesToMaster(super.getLoader().getLogDefinition());
+				remoteFileUtil.copyDBLogFilesToMaster(yamlLoader.getLogDefinition());
 			}
 
 			LogAnalyzerUtil logUtil = new LogAnalyzerUtil(
-					super.getLoader().getLogProcessMaxThreads());
+					yamlLoader.getLogProcessMaxThreads());
 			LOGGER.debug("Consolidate logs files kept on master at ["+ locationOfLogFiles+"]");
 			debugAnalyserReport = logUtil.processLogs(locationOfLogFiles,
-					super.getLoader().isInstrumentEnabled("partitioner"));
+					yamlLoader.isInstrumentEnabled("partitioner"));
 
 		} catch (IOException e) {
 			debugAnalyserReport =  Constants.LOG_PROCESSOR_ERROR;
@@ -141,7 +145,8 @@ public class DebugProcessor extends BaseProcessor {
 			throws JumbuneException {
 
 		if (serviceInfo != null) {
-			serviceInfo.setInstrumentedJarCountersLocation(super.getLoader()
+			YamlLoader yamlLoader = (YamlLoader)super.getLoader();
+			serviceInfo.setInstrumentedJarCountersLocation(yamlLoader
 					.getLogDefinition().getLogSummaryLocation()
 					.getInstrumentedJarCountersLocation());
 		}

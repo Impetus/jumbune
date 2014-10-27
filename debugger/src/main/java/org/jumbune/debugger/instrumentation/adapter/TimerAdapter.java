@@ -2,7 +2,7 @@ package org.jumbune.debugger.instrumentation.adapter;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.debugger.instrumentation.utils.Environment;
 import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
 import org.objectweb.asm.ClassVisitor;
@@ -38,7 +38,7 @@ public class TimerAdapter extends BaseAdapter {
 	 *            Class Visitor
 	 */
 	//TODO: No ref found....
-	public TimerAdapter(YamlLoader loader, ClassVisitor cv) {
+	public TimerAdapter(Loader loader, ClassVisitor cv) {
 		super(loader, Opcodes.ASM4);
 		this.cv = cv;
 	}
@@ -51,7 +51,7 @@ public class TimerAdapter extends BaseAdapter {
 	 * @param cv
 	 * @param env
 	 */
-	public TimerAdapter(YamlLoader loader, ClassVisitor cv,Environment env) {
+	public TimerAdapter(Loader loader, ClassVisitor cv,Environment env) {
 		super(loader, Opcodes.ASM4);
 		this.cv = cv;
 		this.env = env;

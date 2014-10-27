@@ -7,7 +7,7 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.CollectionUtil;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.debugger.instrumentation.utils.Environment;
 import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
 import org.jumbune.debugger.instrumentation.utils.InstrumentationMessageLoader;
@@ -64,7 +64,7 @@ public class CaseAdapter extends BaseAdapter {
 	 * @param loader the loader
 	 * @param cv class visitor
 	 */
-	public CaseAdapter(YamlLoader loader, ClassVisitor cv) {
+	public CaseAdapter(Loader loader, ClassVisitor cv) {
 		super(loader, Opcodes.ASM4);
 		this.cv = cv;
 	}
@@ -76,7 +76,7 @@ public class CaseAdapter extends BaseAdapter {
 	 * @param cv the cv
 	 * @param env the env
 	 */
-	public CaseAdapter(YamlLoader loader, ClassVisitor cv,Environment env) {
+	public CaseAdapter(Loader loader, ClassVisitor cv,Environment env) {
 		super(loader, Opcodes.ASM4);
 		this.cv = cv;
 		this.env = env;

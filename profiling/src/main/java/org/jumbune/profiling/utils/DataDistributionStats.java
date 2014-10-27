@@ -11,6 +11,8 @@ import java.util.Map.Entry;
 
 import org.apache.hadoop.fs.BlockLocation;
 import org.jumbune.common.utils.RemotingUtil;
+import org.jumbune.common.yaml.config.Config;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.profiling.beans.ClusterInfo;
@@ -27,7 +29,7 @@ import com.google.gson.Gson;
  * 
  */
 public class DataDistributionStats {
-	private YamlLoader yamlLoader = null;
+	private Loader loader = null;
 	private int noOfBlocks = 0;
 	private static final String REGEXEXP = "\\:";
 	private static final String UNDERREPLICATEDBLCOK = "Under replicated blocks", CORRUPTREPLICATEDBLOCK = "Blocks with corrupt replicas",
@@ -40,8 +42,8 @@ public class DataDistributionStats {
 	 *
 	 * @param yamlLoader the yaml loader
 	 */
-	public DataDistributionStats(YamlLoader yamlLoader) {
-		this.yamlLoader = yamlLoader;
+	public DataDistributionStats(Loader loader) {
+		this.loader =  loader;
 	}
 
 	/***
@@ -51,19 +53,20 @@ public class DataDistributionStats {
 	 *            YamlConfig
 	 * @throws IOException
 	 */
-	public void calculateDistributedDataList(YamlLoader loader, ClusterInfo clusterInfo) throws IOException{
-		YamlConfig config = loader.getYamlConfiguration();
+	public void calculateDistributedDataList(Loader loader, ClusterInfo clusterInfo) throws IOException{
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
 		VirtualFileStatus fileStatus = null;
 
 		DistributedDataInfo distributedDataInfo = new DistributedDataInfo();
 		String pathOfFileInHadoop = null;
 		long lengthOfFile = 0l;
 		VirtualFileSystem fs = RemotingUtil.getVirtualFileSystem(yamlLoader);
-		pathOfFileInHadoop = config.getDistributedHDFSPath();
+		pathOfFileInHadoop = yamlConfig.getDistributedHDFSPath();
 		fileStatus = fs.getFileStatus(pathOfFileInHadoop);
 		lengthOfFile = fs.getLengthOfFile(pathOfFileInHadoop);
 		// setting replication factor here
-		calculateNodeStats(fs, fileStatus, config);
+		calculateNodeStats(fs, fileStatus, yamlConfig);
 		distributedDataInfo.setReplicationFactor(getReplicationFactor());
 		distributedDataInfo.setTotalBlocksInCluster(noOfBlocks);
 		distributedDataInfo.setTotalDataOnNode(changeLongDataToMB(fs.getSpaceConsumed(pathOfFileInHadoop)));
@@ -79,7 +82,7 @@ public class DataDistributionStats {
 	 */
 	private void parseBlockCheckInfo(DistributedDataInfo dataInfo) throws IOException {
 		int totalMissingBlock = 0, totalCorruptedBlock = 0, totalUnderReplicatedBlock = 0;
-		String[] commandResult = ProfilerUtil.getDFSAdminReportCommandResult(yamlLoader);
+		String[] commandResult = ProfilerUtil.getDFSAdminReportCommandResult(loader);
 		String tempValue = null;
 
 		for (String line : commandResult) {
@@ -150,7 +153,7 @@ public class DataDistributionStats {
 	 * @param config the config
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	private void calculateNodeStats(VirtualFileSystem fs, VirtualFileStatus fileStatus, YamlConfig config) throws IOException {
+	private void calculateNodeStats(VirtualFileSystem fs, VirtualFileStatus fileStatus, Config config) throws IOException {
 		long lengthOfFile = 0l;
 		String pathOfFileInHadoop = null;
 		long tempSize = 0l;
@@ -161,7 +164,8 @@ public class DataDistributionStats {
 		for (int i = 0; i < fileStatus.getReplication(); i++) {
 			fileCopyName.add("copy" + i);
 		}
-		pathOfFileInHadoop = config.getDistributedHDFSPath();
+		YamlConfig yamlConfig = (YamlConfig)config;
+		pathOfFileInHadoop = yamlConfig.getDistributedHDFSPath();
 		lengthOfFile = fs.getLengthOfFile(pathOfFileInHadoop);
 
 		for (BlockLocation bklocation : (BlockLocation[]) fs.getFileBlockLocations(fileStatus, 0, lengthOfFile)) {
@@ -214,10 +218,11 @@ public class DataDistributionStats {
 	 *            YamlConfig
 	 * @throws IOException
 	 */
-	public void calculateDistributedDataList(YamlConfig config) throws IOException {
+	public void calculateDistributedDataList(Config config) throws IOException {
 		VirtualFileStatus fileStatus = null;
-		VirtualFileSystem fs = RemotingUtil.getVirtualFileSystem(yamlLoader);
-		fileStatus = fs.getFileStatus(config.getDistributedHDFSPath());
+		YamlConfig yamlConfig = (YamlConfig)config;
+		VirtualFileSystem fs = RemotingUtil.getVirtualFileSystem(loader);
+		fileStatus = fs.getFileStatus(yamlConfig.getDistributedHDFSPath());
 		calculateNodeStats(fs, fileStatus, config);
 	}
 
@@ -235,7 +240,7 @@ public class DataDistributionStats {
 	 * @return
 	 * @throws IOException 
 	 */
-	public String getNodeStats(String nodeIP, YamlConfig config) throws IOException{
+	public String getNodeStats(String nodeIP, Config config) throws IOException{
 		calculateDistributedDataList(config);
 		convertNodeWeightBytesToMB(nodeWeight.get(nodeIP));
 		return new Gson().toJson(nodeWeight.get(nodeIP));
@@ -263,7 +268,7 @@ public class DataDistributionStats {
 	 *             if path is not exist
 	 */
 	boolean isHDFSFile(String path) throws IOException {
-		VirtualFileSystem fs = RemotingUtil.getVirtualFileSystem(yamlLoader);
+		VirtualFileSystem fs = RemotingUtil.getVirtualFileSystem(loader);
 		return fs.isFile(path);
 	}
 

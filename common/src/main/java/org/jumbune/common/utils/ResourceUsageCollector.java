@@ -33,6 +33,9 @@ import org.jumbune.common.beans.PhaseType;
 import org.jumbune.common.beans.Slave;
 import org.jumbune.common.beans.SupportedApacheHadoopVersions;
 import org.jumbune.common.beans.TaskOutputDetails;
+import org.jumbune.common.yaml.config.Config;
+import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.ApiInvokeHintsEnum;
@@ -89,7 +92,7 @@ public class ResourceUsageCollector {
 	private long intervalPeriod = Constants.FOUR;
 	
 	/** The loader. */
-	private YamlLoader loader;
+	private Loader loader;
 
 	/** The Constant LOGS **/
 	private static final String LOGS = "/logs/";
@@ -106,7 +109,7 @@ public class ResourceUsageCollector {
 	 *
 	 * @param loader the loader
 	 */
-	public ResourceUsageCollector(YamlLoader loader) {
+	public ResourceUsageCollector(Loader loader) {
 		this.loader = loader;
 	}
 
@@ -117,8 +120,9 @@ public class ResourceUsageCollector {
 	 */
 	public void fireTopCmdOnSlaves(String receiveDirectory) {
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		
-		String slaveTmpDir = loader.getYamlConfiguration().getSlaveJumbuneHomeWithPlaceHolder();
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		String slaveTmpDir = yamlConfig.getSlaveJumbuneHomeWithPlaceHolder();
 		List<String> params = new ArrayList<String>();
 		params.add(slaveTmpDir);
 		
@@ -126,9 +130,9 @@ public class ResourceUsageCollector {
 		command.append(TOP_CMD).append(REDIRECT_SYMBOL).append(slaveTmpDir).append(File.separator).append(TOP_DUMP_FILE)
 		.append(" &");
 		Remoter remoter = RemotingUtil.getRemoter(loader, receiveDirectory);
-		for (Slave slave : loader.getSlavesInfo()) {
+		for (Slave slave : yamlLoader.getSlavesInfo()) {
 			for (String host : slave.getHosts()) {
-				builder.addCommand(command.toString(), true, params).populate(loader.getYamlConfiguration(), host);
+				builder.addCommand(command.toString(), true, params).populate(yamlConfig, host);
 				remoter.fireAndForgetCommand(builder.getCommandWritable());
 				builder.getCommandBatch().clear();
 			}			
@@ -144,7 +148,9 @@ public class ResourceUsageCollector {
 	 * @param hosts the hosts
 	 */
 	public void processTopDumpFile(String receiveDirectory, List<String> hosts) {
-		String slaveTmpDir = loader.getYamlConfiguration().getsJumbuneHome();
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		String slaveTmpDir = yamlConfig.getsJumbuneHome();
 		String topDumpFile = slaveTmpDir + File.separator + TOP_DUMP_FILE;
 		String cpuDumpFile = slaveTmpDir + File.separator + CPU_DUMP_FILE;
 		String memDumpFile = slaveTmpDir + File.separator + MEM_DUMP_FILE;
@@ -161,7 +167,7 @@ public class ResourceUsageCollector {
 		Remoter remoter = RemotingUtil.getRemoter(loader, receiveDirectory);
 		for (String host : hosts) {
 			builder.addCommand(cpuCommand.toString(), true, params)
-			.addCommand(memCommand.toString(), true, params).populate(loader.getYamlConfiguration(), host);
+			.addCommand(memCommand.toString(), true, params).populate(yamlConfig, host);
 			remoter.fireAndForgetCommand(builder.getCommandWritable());
 			builder.getCommandBatch().clear();
 		}
@@ -175,7 +181,9 @@ public class ResourceUsageCollector {
 	 * @param receiveDirectory the receive directory
 	 */
 	public void shutTopCmdOnSlaves(String receiveDirectory) {
-		String slaveTmpDir = loader.getYamlConfiguration().getsJumbuneHome();
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		String slaveTmpDir = yamlConfig.getsJumbuneHome();
 		StringBuilder command = new StringBuilder();
 		command.append(CAT_CMD).append(SPACE).append(slaveTmpDir).append(File.separator).append(PID_FILE);
 		
@@ -183,9 +191,9 @@ public class ResourceUsageCollector {
 		List<String> params = new ArrayList<String>();
 		Remoter remoter = RemotingUtil.getRemoter(loader, receiveDirectory);
 		params.add(slaveTmpDir);
-		for (Slave slave : loader.getSlavesInfo()) {
+		for (Slave slave : yamlLoader.getSlavesInfo()) {
 			for (String host : slave.getHosts()) {
-				builder.addCommand(command.toString(), true, params).populate(loader.getYamlConfiguration(), host);
+				builder.addCommand(command.toString(), true, params).populate(yamlConfig, host);
 				remoter.fireAndForgetCommand(builder.getCommandWritable());
 				builder.getCommandBatch().clear();
 			}
@@ -426,12 +434,13 @@ public class ResourceUsageCollector {
 		int interval = 0;
 		Map<NodeSystemStats, Float> memStatsMap = new HashMap<NodeSystemStats, Float>();
 		int minStartPoint= -1, maxEndPoint=0; 
-		
-		Remoter remoter = RemotingUtil.getRemoter(loader, null);
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		Remoter remoter = RemotingUtil.getRemoter(yamlLoader, null);
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		String remoteHadoop = RemotingUtil.getHadoopHome(remoter, loader.getYamlConfiguration()) + File.separator;
-		String user = loader.getYamlConfiguration().getMaster().getUser();
-		SupportedApacheHadoopVersions hadoopVersion = RemotingUtil.getHadoopVersion(loader.getYamlConfiguration());
+		String remoteHadoop = RemotingUtil.getHadoopHome(remoter, yamlConfig) + File.separator;
+		String user = yamlConfig.getMaster().getUser();
+		SupportedApacheHadoopVersions hadoopVersion = RemotingUtil.getHadoopVersion(yamlConfig);
 		String logsHistory = changeLogHistoryPathAccToHadoopVersion(remoteHadoop,
 				hadoopVersion, user);
 		String command = jobID + RemotingConstants.SINGLE_SPACE + logsHistory;

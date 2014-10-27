@@ -42,6 +42,9 @@ import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.MessageLoader;
 import org.jumbune.common.utils.RemotingUtil;
+import org.jumbune.common.yaml.config.Config;
+import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.datavalidation.DataValidationConstants;
 import org.jumbune.execution.beans.JobProcessBean;
@@ -119,8 +122,9 @@ public class ProcessHelper {
 	 * @throws JumbuneException
 	 * @return void
 	 */
-	public Map<String, Map<String, String>> executeJar(String inputJarPath, boolean isCommandBasedAllowed, YamlLoader yamlLoader, boolean isDebugged)
+	public Map<String, Map<String, String>> executeJar(String inputJarPath, boolean isCommandBasedAllowed, Loader loader, boolean isDebugged)
 			throws IOException {
+		YamlLoader yamlLoader = (YamlLoader)loader;
 		List<JobDefinition> jobDefList = yamlLoader.getJobDefinitionList();
 
 		Map<String, Map<String, String>> jobsCounterMap = new LinkedHashMap<String, Map<String, String>>();
@@ -128,7 +132,8 @@ public class ProcessHelper {
 		String location = yamlLoader.getLogDefinition().getLogSummaryLocation().getProfilingFilesLocation();
 
 		Scanner scanner = new Scanner(System.in);
-		String jobName = yamlLoader.getYamlConfiguration().getFormattedJumbuneJobName();
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		String jobName = yamlConfig.getFormattedJumbuneJobName();
 		if (jobDefList.size() > 1) {
 			processMultipleJobDefRequest(inputJarPath, isCommandBasedAllowed,
 					yamlLoader, isDebugged, jobDefList, jobsCounterMap,
@@ -179,7 +184,7 @@ public class ProcessHelper {
 	}
 
 	private void processMultipleJobDefRequest(String inputJarPath,
-			boolean isCommandBasedAllowed, YamlLoader yamlLoader,
+			boolean isCommandBasedAllowed, Loader loader,
 			boolean isDebugged, List<JobDefinition> jobDefList,
 			Map<String, Map<String, String>> jobsCounterMap, String location,
 			Scanner scanner, String jobName) throws IOException {
@@ -191,62 +196,64 @@ public class ProcessHelper {
 		}
 
 		List<JobProcessBean> jobProcessList = poplulateJobProcessList(
-				inputJarPath, yamlLoader, jobDefList, jobName);
+				inputJarPath, loader, jobDefList, jobName);
 		LOGGER.debug("Execution type selected  " + executionType);
 		if (MESSAGES.get(EXECUTION_TYPE_CONCURRENT).equalsIgnoreCase(executionType)) {
-			processConcurrentRequest(yamlLoader, isDebugged,
+			processConcurrentRequest(loader, isDebugged,
 					jobsCounterMap, location, jobProcessList);
 		} else if (MESSAGES.get(EXECUTION_TYPE_SEQUENTIAL).equalsIgnoreCase(executionType)) {
-			processSequentialRequest(yamlLoader, isDebugged,
+			processSequentialRequest(loader, isDebugged,
 					jobsCounterMap, location, jobProcessList);
 		}
 	}
 
 	private void processSingleJobDefRequest(String inputJarPath,
-			YamlLoader yamlLoader, boolean isDebugged,
+			Loader loader, boolean isDebugged,
 			List<JobDefinition> jobDefList,
 			Map<String, Map<String, String>> jobsCounterMap, String location,
 			String jobName) throws IOException {
+		YamlLoader yamlLoader = (YamlLoader)loader;
 		JobProcessBean bean = new JobProcessBean(jobDefList.get(0).getName(), getJobExecutionParams(yamlLoader.getHadoopHome(yamlLoader),
 				jobDefList.get(0), inputJarPath, yamlLoader.isMainClassDefinedInJobJar(), jobName));
 		remoteLaunch(location, bean, yamlLoader);
 												
 
-		populateJobCounterMap(bean, jobsCounterMap, yamlLoader, isDebugged);
+		populateJobCounterMap(bean, jobsCounterMap, loader, isDebugged);
 	}
 
-	private void processSequentialRequest(YamlLoader yamlLoader,
+	private void processSequentialRequest(Loader loader,
 			boolean isDebugged,
 			Map<String, Map<String, String>> jobsCounterMap, String location,
 			List<JobProcessBean> jobProcessList) throws IOException {
 		for (JobProcessBean bean : jobProcessList) {
 			LOGGER.debug("Executing sequential MapReduce...");
 			synchronized (this) {
-				remoteLaunch(location, bean, yamlLoader); 
+				remoteLaunch(location, bean, loader); 
 															
 				
-				populateJobCounterMap(bean, jobsCounterMap, yamlLoader, isDebugged);
+				populateJobCounterMap(bean, jobsCounterMap, loader, isDebugged);
 			}
 		}
 	}
 
-	private void processConcurrentRequest(YamlLoader yamlLoader,
+	private void processConcurrentRequest(Loader loader,
 			boolean isDebugged,
 			Map<String, Map<String, String>> jobsCounterMap, String location,
 			List<JobProcessBean> jobProcessList) throws IOException {
 		for (JobProcessBean bean : jobProcessList) {
 			LOGGER.debug("Executing concurrent MapReduce...");
-			remoteLaunch(location, bean, yamlLoader);
+			remoteLaunch(location, bean, loader);
 		}
 
 		for (JobProcessBean bean : jobProcessList) {
-			populateJobCounterMap(bean, jobsCounterMap, yamlLoader, isDebugged);
+			populateJobCounterMap(bean, jobsCounterMap, loader, isDebugged);
 		}
 	}
 
 	private List<JobProcessBean> poplulateJobProcessList(String inputJarPath,
-			YamlLoader yamlLoader, List<JobDefinition> jobDefList,
+			Loader loader, List<JobDefinition> jobDefList,
 			String jobName) {
+		YamlLoader yamlLoader = (YamlLoader)loader;
 		List<JobProcessBean> jobProcessList = new ArrayList<JobProcessBean>();
 		for (JobDefinition jobDef : jobDefList) {
 			JobProcessBean bean = new JobProcessBean(jobDef.getName(), getJobExecutionParams(yamlLoader.getHadoopHome(yamlLoader), jobDef,
@@ -366,12 +373,13 @@ public class ProcessHelper {
 
 
 	// TODO: Remoting..
-	private String remoteLaunch(String location, JobProcessBean jobInfoBean, YamlLoader loader) throws IOException {
+	private String remoteLaunch(String location, JobProcessBean jobInfoBean, Loader loader) throws IOException {
 
 		String appHome = YamlLoader.getjHome() + "/";
 		String relativePath = location.substring(appHome.length() - 1, location.length());
 		Remoter remoter = RemotingUtil.getRemoter(loader, appHome);
-		String remoteHadoop = RemotingUtil.getHadoopHome(remoter, loader.getYamlConfiguration()) + "/bin/hadoop";
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		String remoteHadoop = RemotingUtil.getHadoopHome(remoter, yamlLoader.getYamlConfiguration()) + "/bin/hadoop";
 		StringBuilder params = new StringBuilder();
 		List<String> jobParams = jobInfoBean.getJobExecParam();
 		if (jobParams.isEmpty()){
@@ -441,7 +449,7 @@ public class ProcessHelper {
 	}
 
 
-	private static Map<String, Map<String, String>> getRemoteJobCounters(String processName, String response, YamlLoader loader, boolean isDebugged)
+	private static Map<String, Map<String, String>> getRemoteJobCounters(String processName, String response, Loader loader, boolean isDebugged)
 			throws IOException {
 
 		List<String> jobs = new LinkedList<String>();
@@ -472,8 +480,8 @@ public class ProcessHelper {
 			reader.close();
 		}
 		if (isDebugged && jobs.size() > 1) {
-			
-			String fileName = loader.getMasterConsolidatedLogLocation() + "jobChain-" + processName + "_instrumented.log";
+			YamlLoader yamlLoader = (YamlLoader)loader;
+			String fileName = yamlLoader.getMasterConsolidatedLogLocation() + "jobChain-" + processName + "_instrumented.log";
 
 				StringBuilder data = new StringBuilder();
 				for (String string : jobs) {
@@ -556,10 +564,10 @@ public class ProcessHelper {
 	 * @param isDebugged
 	 * @throws IOException
 	 */
-	private void populateJobCounterMap(JobProcessBean bean, Map<String, Map<String, String>> jobCounterMap, YamlLoader yamlLoader, Boolean isDebugged)
+	private void populateJobCounterMap(JobProcessBean bean, Map<String, Map<String, String>> jobCounterMap, Loader loader, Boolean isDebugged)
 			throws IOException {
 		
-		jobCounterMap.putAll(getRemoteJobCounters(bean.getJobName(), bean.getProcessResponse(), yamlLoader, isDebugged)); 
+		jobCounterMap.putAll(getRemoteJobCounters(bean.getJobName(), bean.getProcessResponse(), loader, isDebugged)); 
 																															
 																															
 	}
@@ -646,21 +654,22 @@ public class ProcessHelper {
 	 * @throws IOException
 	 * @throws JumbuneException
 	 */
-	public String remoteValidateData(YamlLoader loader, String inputPath, String dvFileDir, String dvBeanString) throws IOException, JumbuneException {
+	public String remoteValidateData(Loader loader, String inputPath, String dvFileDir, String dvBeanString) throws IOException, JumbuneException {
 
 		LOGGER.debug("Inside validateData method");
 		String jHome = YamlLoader.getjHome();
-		String hadoopHome=loader.getHadoopHome(loader);
-		LogConsolidationInfo info = loader.getDVDefinition();
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		String hadoopHome=yamlLoader.getHadoopHome(loader);
+		LogConsolidationInfo info = yamlLoader.getDVDefinition();
 		Master master = info.getMaster();
 		Remoter remoter = new Remoter(master.getHost(), Integer.valueOf(master.getAgentPort()));
 		sendDVJars(remoter, jHome);
-		
-		String jobName = loader.getYamlConfiguration().getFormattedJumbuneJobName();
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		String jobName = yamlConfig.getFormattedJumbuneJobName();
 		String userSuppliedJars = addUserSuppliedDependencyJars(jobName);
 		StringBuffer commandBuffer = new StringBuffer();
-		String relativePath="jobJars/"+loader.getJumbuneJobName()+"/dv/";
-		commandBuffer=commandBuffer.append("remoteJobLaunch|").append("jobJars/").append(loader.getJumbuneJobName()).append("|")
+		String relativePath="jobJars/"+yamlLoader.getJumbuneJobName()+"/dv/";
+		commandBuffer=commandBuffer.append("remoteJobLaunch|").append("jobJars/").append(yamlLoader.getJumbuneJobName()).append("|")
 				.append(relativePath.subSequence(0, relativePath.lastIndexOf('/')));
 		// building the command string
 		ArrayParamBuilder sb = buildCommandString(loader, inputPath, dvFileDir,
@@ -706,16 +715,17 @@ public class ProcessHelper {
 		return dvJson;
 	}
 
-	private ArrayParamBuilder buildCommandString(YamlLoader loader,
+	private ArrayParamBuilder buildCommandString(Loader loader,
 			String inputPath, String dvFileDir, String dvBeanString,
 			String hadoopHome, Master master, Remoter remoter,
 			String userSuppliedJars) {
+		YamlLoader yamlLoader = (YamlLoader)loader;
 		ArrayParamBuilder sb=new ArrayParamBuilder(Constants.NINE);
-		if(SupportedApacheHadoopVersions.Hadoop_1_0_4.equals(RemotingUtil.getHadoopVersion(loader.getYamlConfiguration()))|| SupportedApacheHadoopVersions.HADOOP_1_0_3.equals(RemotingUtil.getHadoopVersion(loader.getYamlConfiguration()))||
-				SupportedApacheHadoopVersions.HADOOP_0_20_2.equals(RemotingUtil.getHadoopVersion(loader.getYamlConfiguration()))){
+		if(SupportedApacheHadoopVersions.Hadoop_1_0_4.equals(RemotingUtil.getHadoopVersion(yamlLoader.getYamlConfiguration()))|| SupportedApacheHadoopVersions.HADOOP_1_0_3.equals(RemotingUtil.getHadoopVersion(yamlLoader.getYamlConfiguration()))||
+				SupportedApacheHadoopVersions.HADOOP_0_20_2.equals(RemotingUtil.getHadoopVersion(yamlLoader.getYamlConfiguration()))){
 			sb.append(hadoopHome+"/"+Constants.H_COMMAND);
 		}else{
-			String hadoopDir = RemotingUtil.fireWhereIsHadoopCommand(remoter, master, loader.getYamlConfiguration());
+			String hadoopDir = RemotingUtil.fireWhereIsHadoopCommand(remoter, master, yamlLoader.getYamlConfiguration());
 				sb.append(hadoopDir);
 		}
 		sb.append(Constants.H_COMMAND_TYPE).append(Constants.AGENT_ENV_VAR_NAME+Constants.DV_JAR_PATH)

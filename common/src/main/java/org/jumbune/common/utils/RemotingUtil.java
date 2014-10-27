@@ -15,6 +15,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Master;
 import org.jumbune.common.beans.SupportedApacheHadoopVersions;
+import org.jumbune.common.yaml.config.Config;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.remoting.client.Remoter;
@@ -61,9 +63,10 @@ public final class RemotingUtil {
 	 * @param receiveDirectory the receive directory
 	 * @return the remoter
 	 */
-	public static Remoter getRemoter(YamlLoader loader, final String receiveDirectory) {
+	public static Remoter getRemoter(Loader loader, final String receiveDirectory) {
+		YamlLoader yamlLoader = (YamlLoader)loader;
 		String receivedDirectory = receiveDirectory;
-		Master master = loader.getMasterInfo();
+		Master master = yamlLoader.getMasterInfo();
 		String masterHost = master.getHost();
 		int agentPort = Integer.valueOf(master.getAgentPort());
 		if (receivedDirectory == null || receivedDirectory.trim().equals("")){
@@ -78,8 +81,9 @@ public final class RemotingUtil {
 	 * @param receiveDirectory the receive directory
 	 * @return the remoter
 	 */
-	public static Remoter getRemoter(YamlConfig config, String receiveDirectory) {
-		Master master = config.getMaster();
+	public static Remoter getRemoter(Config config, String receiveDirectory) {
+		YamlConfig 	yamlConfig = (YamlConfig)config;
+		Master master = yamlConfig.getMaster();
 		return new Remoter(master.getHost(), Integer.valueOf(master.getAgentPort()));
 		
 	}
@@ -92,7 +96,7 @@ public final class RemotingUtil {
 	 * @return the hadoop home
 	 */
 	@Deprecated
-	public static String getHadoopHome(Remoter remoter, YamlConfig config) {
+	public static String getHadoopHome(Remoter remoter, Config config) {
 		String command = "echo $HADOOP_HOME  \n \n";
 		
 		CommandWritableBuilder builder = new CommandWritableBuilder();
@@ -107,7 +111,7 @@ public final class RemotingUtil {
 	 * @param config the config
 	 * @return the hadoop home
 	 */
-	public static String getHadoopHome(YamlConfig config) {
+	public static String getHadoopHome(Config config) {
 		Remoter remoter = getRemoter(config, "");
 		
 		String command = "echo $HADOOP_HOME  \n \n";
@@ -128,11 +132,13 @@ public final class RemotingUtil {
 	 *            the config
 	 * @return the agent home
 	 */
-	public static String getAgentHome(YamlConfig config) {
+	public static String getAgentHome(Config config) {
 
 		String agentHome = null;
 		if (config != null) {
-			Master master = config.getMaster();
+			YamlConfig 	yamlConfig = (YamlConfig)config;
+			Master master = yamlConfig.getMaster();
+			
 			Remoter remoter = new Remoter(master.getHost(), Integer.valueOf(master.getAgentPort()));
 			
 			CommandWritableBuilder builder = new CommandWritableBuilder();
@@ -155,11 +161,13 @@ public final class RemotingUtil {
 	 * @return the job client
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public static JobClient getJobClient(YamlLoader loader) throws IOException {
+	public static JobClient getJobClient(Loader loader) throws IOException {
 		String jobTrackerURI = RemotingUtil.getHadoopConfigurationValue(loader, "mapred-site.xml", "mapred.job.tracker");
 		JobClient client = null;
 		Configuration config = new Configuration();
-		config.set(loader.getYamlConfiguration().getMaster().getUser(), "");
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();		
+		config.set(yamlConfig.getMaster().getUser(), "");
 		try {
 			client = new JobClient(new InetSocketAddress(jobTrackerURI.split(":")[0], Integer.parseInt(jobTrackerURI.split(":")[1])), config);
 		} catch (Exception e) {
@@ -177,9 +185,11 @@ public final class RemotingUtil {
 	 * @return the string
 	 */
 	
-	public static String fireCommandOnSupporteHadoopVersionAndGetStringResponse(YamlConfig yamlConfig, String command) {
-		String hadoopHome = RemotingUtil.getHadoopHome(yamlConfig);
-		Remoter remoter = getRemoter(yamlConfig, " ");
+	public static String fireCommandOnSupporteHadoopVersionAndGetStringResponse(Config config, String command) {
+		String hadoopHome = RemotingUtil.getHadoopHome(config);
+		Remoter remoter = getRemoter(config, " ");
+		YamlConfig yamlConfig = (YamlConfig)config;
+		
 		Master master = yamlConfig.getMaster();
 
 		String hadoopDir = fireWhereIsHadoopCommand(remoter, master, yamlConfig);
@@ -207,11 +217,11 @@ public final class RemotingUtil {
 	 * @param yamlConfig
 	 * @return
 	 */
-	public static String fireWhereIsHadoopCommand(Remoter remoter, Master master, YamlConfig yamlConfig) {
+	public static String fireWhereIsHadoopCommand(Remoter remoter, Master master, Config config) {
 		String hadoopDir = null;
 		String command = "whereis hadoop  ";
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(command, false, null).populate(yamlConfig, null);
+		builder.addCommand(command, false, null).populate(config, null);
 		
 		String wherIsHadoopResponse=(String)remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		if(2<wherIsHadoopResponse.split(" ").length){
@@ -231,7 +241,7 @@ public final class RemotingUtil {
 	 * @param configurationToGet Hadoop configuration parameter.
 	 * @return configuration value.
 	 */
-	public static String getHadoopConfigurationValue(YamlLoader loader, String hadoopConfigurationFile, String configurationToGet) {
+	public static String getHadoopConfigurationValue(Loader loader, String hadoopConfigurationFile, String configurationToGet) {
 		String destinationReceiveDir = copyAndGetHadoopConfigurationFilePath(loader, hadoopConfigurationFile);
 		return parseConfiguration(destinationReceiveDir + "/" + hadoopConfigurationFile, configurationToGet);
 	}
@@ -260,22 +270,24 @@ public final class RemotingUtil {
 	 * @param hadoopConfigurationFile which we wants to receive the path of.
 	 * @return the string
 	 */
-	public static String copyAndGetHadoopConfigurationFilePath(YamlLoader loader, String hadoopConfigurationFile) {
+	public static String copyAndGetHadoopConfigurationFilePath(Loader loader, String hadoopConfigurationFile) {
 
-		String jumbuneHome = YamlLoader.getjHome();
-		String dirInJumbuneHome = jumbuneHome + File.separator + Constants.JOB_JARS_LOC + loader.getJumbuneJobName();
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		String jumbuneHome = yamlLoader.getjHome();
+		String dirInJumbuneHome = jumbuneHome + File.separator + Constants.JOB_JARS_LOC + yamlLoader.getJumbuneJobName();
+		
 		File dir = new File(dirInJumbuneHome);
 		if (!dir.exists()) {
 			dir.mkdirs();
 		}
 
-		String remoteHadoopHome = getHadoopHome(loader.getYamlConfiguration());
-		String jumbuneJobName = loader.getJumbuneJobName() + File.separator;
-		YamlConfig config = loader.getYamlConfiguration();
+		String remoteHadoopHome = getHadoopHome(yamlLoader.getYamlConfiguration());
+		String jumbuneJobName = yamlLoader.getJumbuneJobName() + File.separator;
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
 		jumbuneHome = new String(jumbuneHome+File.separator);
 		String destinationReceiveDir = jumbuneHome + Constants.JOB_JARS_LOC  + jumbuneJobName;
-		Remoter remoter = getRemoter(config, jumbuneHome);
-		String copyCommand = new StringBuilder().append("cp ").append(remoteHadoopHome).append("/conf/").append(hadoopConfigurationFile).append(" ").append(getAgentHome(config)).append("/jobJars/").append(jumbuneJobName).toString();
+		Remoter remoter = getRemoter(yamlConfig, jumbuneHome);
+		String copyCommand = new StringBuilder().append("cp ").append(remoteHadoopHome).append("/conf/").append(hadoopConfigurationFile).append(" ").append(getAgentHome(yamlConfig)).append("/jobJars/").append(jumbuneJobName).toString();
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand(MAKE_JOBJARS_DIR_ON_AGENT + jumbuneJobName, false, null)
 		.addCommand(copyCommand, false, null);
@@ -286,20 +298,22 @@ public final class RemotingUtil {
 		return destinationReceiveDir;
 	}
 	
-	public static String copyAndGetHadoopConfigurationFilePath(String remoteAbsolutePath, YamlLoader loader){
-		String jumbuneHome = YamlLoader.getjHome();
-		String dirInJumbuneHome = jumbuneHome + File.separator + Constants.JOB_JARS_LOC + loader.getJumbuneJobName();
+	public static String copyAndGetHadoopConfigurationFilePath(String remoteAbsolutePath, Loader loader){
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		String jumbuneHome = yamlLoader.getjHome();
+		String dirInJumbuneHome = jumbuneHome + File.separator + Constants.JOB_JARS_LOC + yamlLoader.getJumbuneJobName();
+
 		File dir = new File(dirInJumbuneHome);
 		if (!dir.exists()) {
 			dir.mkdirs();
 		}
-		String jumbuneJobName = loader.getJumbuneJobName() + File.separator;
-		YamlConfig config = loader.getYamlConfiguration();
+		String jumbuneJobName = yamlLoader.getJumbuneJobName() + File.separator;
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
 		jumbuneHome = new String(jumbuneHome+File.separator);
 		String destinationReceiveDir = jumbuneHome + Constants.JOB_JARS_LOC  + jumbuneJobName;
 		
-		Remoter remoter = getRemoter(config, "");
-		String copyCommand = new StringBuilder().append("cp ").append(remoteAbsolutePath).append(" ").append(getAgentHome(config)).append("/jobJars/").append(jumbuneJobName).toString();
+		Remoter remoter = getRemoter(yamlConfig, "");
+		String copyCommand = new StringBuilder().append("cp ").append(remoteAbsolutePath).append(" ").append(getAgentHome(yamlConfig)).append("/jobJars/").append(jumbuneJobName).toString();
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand(MAKE_JOBJARS_DIR_ON_AGENT + jumbuneJobName, false, null).addCommand(copyCommand, false, null);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
@@ -317,18 +331,19 @@ public final class RemotingUtil {
 	 * @param hadoopConfigurationFile file name to recieved from <AGENT_HOME>/<JOB_NAME> directory
 	 * @return the string
 	 */
-	public static String receiveLogFilesFromAgent(YamlLoader loader, String hadoopConfigurationFile) {
+	public static String receiveLogFilesFromAgent(Loader loader, String hadoopConfigurationFile) {
 
-		String jumbuneHome = YamlLoader.getjHome();
-		String dirInJumbuneHome = jumbuneHome + File.separator + Constants.JOB_JARS_LOC + loader.getJumbuneJobName();
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		String jumbuneHome = yamlLoader.getjHome();
+		String dirInJumbuneHome = jumbuneHome + File.separator + Constants.JOB_JARS_LOC + yamlLoader.getJumbuneJobName();
 		File dir = new File(dirInJumbuneHome);
 		if (!dir.exists()) {
 			dir.mkdirs();
 		}
-		String jumbuneJobName = loader.getJumbuneJobName() + File.separator;
-		YamlConfig config = loader.getYamlConfiguration();
+		String jumbuneJobName = yamlLoader.getJumbuneJobName() + File.separator;
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
 		String destinationReceiveDir = jumbuneHome + File.separator + Constants.JOB_JARS_LOC  + jumbuneJobName;
-		Remoter remoter = getRemoter(config, jumbuneHome + File.separator);
+		Remoter remoter = getRemoter(yamlConfig, jumbuneHome + File.separator);
 		remoter.receiveLogFiles(File.separator + Constants.JOB_JARS_LOC  + jumbuneJobName, File.separator + Constants.JOB_JARS_LOC + jumbuneJobName + hadoopConfigurationFile);
 		remoter.close();
 		return destinationReceiveDir;
@@ -341,12 +356,14 @@ public final class RemotingUtil {
 	 * @return the virtual file system
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public static VirtualFileSystem getVirtualFileSystem(YamlLoader loader) throws IOException {
+	public static VirtualFileSystem getVirtualFileSystem(Loader loader) throws IOException {
 		VirtualFileSystem fs = null;
 		HadoopFileSystemUtility utility = null;
 		utility = new HadoopFileSystemUtility(loader);
 		String nameNodeURI = RemotingUtil.getHadoopConfigurationValue(loader, "core-site.xml", "fs.default.name");
-		fs = utility.getVirtualFileSystem(nameNodeURI, loader.getYamlConfiguration().getMaster().getUser());
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		fs = utility.getVirtualFileSystem(nameNodeURI,yamlConfig.getMaster().getUser());
 		return fs;
 
 	}
@@ -358,12 +375,14 @@ public final class RemotingUtil {
 	 * @return the file system
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public static FileSystem getFileSystem(YamlLoader loader) throws IOException {
+	public static FileSystem getFileSystem(Loader loader) throws IOException {
 		FileSystem fs = null;
 		try {
+			YamlLoader yamlLoader = (YamlLoader)loader;
+			YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();			
 			org.apache.hadoop.conf.Configuration config = new org.apache.hadoop.conf.Configuration();
 			String nameNodeURI = RemotingUtil.getHadoopConfigurationValue(loader, "core-site.xml", "fs.default.name");
-			fs = FileSystem.get(URI.create(nameNodeURI), config, loader.getYamlConfiguration().getMaster().getUser());
+			fs = FileSystem.get(URI.create(nameNodeURI), config, yamlConfig.getMaster().getUser());
 		} catch (Exception e) {
 			LOGGER.error(e);
 		}
@@ -377,7 +396,7 @@ public final class RemotingUtil {
 	 * @param hostName the host name
 	 * @return the ip from host name
 	 */
-	public static String getIPfromHostName(YamlLoader loader, String hostName) {
+	public static String getIPfromHostName(Loader loader, String hostName) {
 		String jumbuneHome = System.getenv("JUMBUNE_HOME") + File.separator;
 		Remoter remoter = getRemoter(loader, jumbuneHome);
 		String command =  hostName;
@@ -393,7 +412,7 @@ public final class RemotingUtil {
 	 * @param loader
 	 * @param config
 	 */
-	public static void sendYamlInfoToAgent(YamlLoader loader, BasicYamlConfig config){
+	public static void sendYamlInfoToAgent(Loader loader, BasicYamlConfig config){
 		String jumbuneHome = System.getenv("JUMBUNE_HOME");
 		String yamlInfoPath = jumbuneHome + YAML_FILE;
 		Remoter remote = new Remoter(config.getHost(), Integer.parseInt(config.getPort()));
@@ -406,13 +425,13 @@ public final class RemotingUtil {
 	 *
 	 * @return the hadoop version
 	 */
-	public static SupportedApacheHadoopVersions getHadoopVersion(YamlConfig yamlConfig) {
+	public static SupportedApacheHadoopVersions getHadoopVersion(Config config) {
 
 		if (hadoopVersion != null) {
 			return hadoopVersion;
 		}
 		
-		String commandResponse = fireCommandOnSupporteHadoopVersionAndGetStringResponse(yamlConfig, "version");
+		String commandResponse = fireCommandOnSupporteHadoopVersionAndGetStringResponse(config, "version");
 		
 		for (String line : commandResponse.split("\\n")) {
 			if (line.matches(HADOOP_VERSION_REGEX)|| line.matches(CLOUDERA_HADOOP_REGEX)) {
