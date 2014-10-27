@@ -13,6 +13,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.Constants;
+import org.jumbune.common.yaml.config.Config;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
@@ -95,10 +97,10 @@ public class UploadServlet extends HttpServlet {
 			WebUtil util = new WebUtil();
 			List<File> uploadedFiles = util.uploadFiles(request, filePath);
 			// Only one yaml file could be uploaded at a time
-			YamlConfig conf = util.getYamlConfFromFile(uploadedFiles.get(0));
+			YamlConfig yamlConfig = (YamlConfig) util.getYamlConfFromFile(uploadedFiles.get(0));
 			Gson gson = new Gson();
-			JsonObject jsonObject = gson.toJsonTree(conf).getAsJsonObject();
-			if(conf.getClasspath()!=null && conf.getClasspath().getUserSupplied()!=null){
+			JsonObject jsonObject = gson.toJsonTree(yamlConfig).getAsJsonObject();
+			if(yamlConfig.getClasspath()!=null && yamlConfig.getClasspath().getUserSupplied()!=null){
 			
 			String[] resources = null;
 			}

@@ -14,6 +14,8 @@ import org.jumbune.common.beans.HttpReportsBean;
 import org.jumbune.common.beans.ReportsBean;
 import org.jumbune.common.beans.ServiceInfo;
 import org.jumbune.common.utils.ValidateInput;
+import org.jumbune.common.yaml.config.Config;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.execution.beans.Parameters;
@@ -21,6 +23,7 @@ import org.jumbune.execution.processor.Processor;
 import org.jumbune.execution.utils.ExecutionConstants;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
 import org.jumbune.utils.exception.JumbuneException;
+import org.yaml.snakeyaml.Yaml;
 
 
 /**
@@ -85,10 +88,11 @@ public class HttpExecutorService extends CoreExecutorService {
 	 * @return YamlLoader
 	 * @throws JumbuneException
 	 */
-	public YamlLoader runInSeperateThread(YamlConfig config,
+	public Loader runInSeperateThread(Config config,
 			HttpReportsBean reports) throws JumbuneException {
 		List<Processor> processors;
-		if (ValidateInput.isEnable(config.getEnableStaticJobProfiling()) && !checkProfilingState()) {
+		YamlConfig yamlConfig = (YamlConfig)config;
+		if (ValidateInput.isEnable(yamlConfig.getEnableStaticJobProfiling()) && !checkProfilingState()) {
 			throw new JumbuneException(ErrorCodesAndMessages.COULD_NOT_EXECUTE_PROGRAM);
 		}
 		this.reports = reports;
@@ -99,10 +103,10 @@ public class HttpExecutorService extends CoreExecutorService {
 		ServiceInfo serviceInfo = new ServiceInfo();
 		serviceInfo.setRootDirectory(loader.getRootDirectoryName());
 		serviceInfo.setJumbuneHome(loader.getjHome());
-		serviceInfo.setJumbuneJobName(loader.getYamlConfiguration()
+		serviceInfo.setJumbuneJobName(yamlConfig
 				.getFormattedJumbuneJobName());
-		if (loader.getYamlConfiguration().getsJumbuneHome() != null){
-			serviceInfo.setSlaveJumbuneHome(loader.getYamlConfiguration()
+		if (yamlConfig.getsJumbuneHome() != null){
+			serviceInfo.setSlaveJumbuneHome(yamlConfig
 					.getsJumbuneHome());
 		}
 		if (loader.getMasterInfo() != null){
@@ -149,7 +153,7 @@ public class HttpExecutorService extends CoreExecutorService {
 	private class Handler implements Runnable {
 
 		private Processor processor;
-		private YamlLoader loader;
+		private Loader loader;
 		private ReportsBean reports;
 		private String processName;
 		private Runnable processCompletionHandler;
@@ -161,7 +165,7 @@ public class HttpExecutorService extends CoreExecutorService {
 		 * @param reports
 		 * @param name
 		 */
-		public Handler(Processor processor, YamlLoader loader,
+		public Handler(Processor processor, Loader loader,
 				ReportsBean reports, String name) {
 			this.processor = processor;
 			this.loader = loader;

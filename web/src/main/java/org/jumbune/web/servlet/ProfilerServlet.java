@@ -17,6 +17,8 @@ import javax.servlet.http.HttpSession;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.yaml.config.Config;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.profiling.beans.ClusterInfo;
@@ -101,7 +103,7 @@ public class ProfilerServlet extends HttpServlet {
 		HttpServletResponse response) throws ServletException, IOException {
 		HttpSession session = request.getSession();
 		// Getting yaml loader stored in session.
-		YamlLoader loader = (YamlLoader) session.getAttribute("loader");
+		YamlLoader yamlLoader = (YamlLoader) session.getAttribute("loader");
 		String isNameNodeRequired = request.getParameter("NAME_NODE");
 		boolean addNameNodeIP = checkIfNameNodeIsRequired(isNameNodeRequired,
 				false);
@@ -109,10 +111,10 @@ public class ProfilerServlet extends HttpServlet {
 		viewName = setDefaultView(viewName);
 		Gson gson = new Gson();
 
-		YamlConfig config = loader.getYamlConfiguration();
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
 		
 		ProfilingViewService profilingViewService = new ClusterViewServiceImpl(
-				loader);
+				yamlLoader);
 		boolean isNodeView = false;
 		String json = null;
 		generalSettings = request.getParameter(GENERAL_SETTINGS);
@@ -121,7 +123,7 @@ public class ProfilerServlet extends HttpServlet {
 					|| (NETWORK_LATENCY_VIEW.equals(viewName))) {
 				generalSettings = setGeneralSettings();
 				json = getClusterAndNetWorkLatencyViewJson(addNameNodeIP,
-						viewName, gson, config, profilingViewService);
+						viewName, gson, yamlConfig, profilingViewService);
 			} else if (NODE_VIEW.equals(viewName)) {
 				isNodeView = true;
 				List<PerformanceStats> perfStats = null;
@@ -134,7 +136,7 @@ public class ProfilerServlet extends HttpServlet {
 				String nodeList = request.getParameter(NODE_LIST);
 				isNodeView = true;
 				ViewHelper viewHelper = new ViewHelper();
-				json = getNetworkLatencyJson(gson, config, nodeList, viewHelper);
+				json = getNetworkLatencyJson(gson, yamlConfig, nodeList, viewHelper);
 			} else if (DATALOAD_VIEW.equals(viewName)) {
 				json = createDataloadAndDistributionViewJson(viewName, gson,
 						profilingViewService);
@@ -144,15 +146,15 @@ public class ProfilerServlet extends HttpServlet {
 				if (nodeIP != null) {
 					viewName = DATA_DISTRIBUTION_VIEW + "_NODE";
 					DataDistributionStats dataDistributionStats = new DataDistributionStats(
-							loader);
+							yamlLoader);
 					try {
 						json = dataDistributionStats.getNodeStats(nodeIP,
-								config);
+								yamlConfig);
 					} catch (Exception e) {
 						LOGGER.error(e);
 					}
 				} else {
-					json = setDataDistributionView(viewName, gson, config,
+					json = setDataDistributionView(viewName, gson, yamlConfig,
 							profilingViewService, dataPath);
 				}
 			}
@@ -174,7 +176,7 @@ public class ProfilerServlet extends HttpServlet {
 	 * @return the network latency json
 	 * @throws HTFProfilingException the hTF profiling exception
 	 */
-	private String getNetworkLatencyJson(Gson gson, YamlConfig config,
+	private String getNetworkLatencyJson(Gson gson, Config config,
 			String nodeList, ViewHelper viewHelper)
 			throws HTFProfilingException {
 		Map<String, String> nodeDetails = convertJsontoMap(nodeList);
@@ -196,9 +198,10 @@ public class ProfilerServlet extends HttpServlet {
 	 * @throws HTFProfilingException the hTF profiling exception
 	 */
 	private String setDataDistributionView(String viewName, Gson gson,
-			YamlConfig config, ProfilingViewService profilingViewService,
+			Config config, ProfilingViewService profilingViewService,
 			String dataPath) throws HTFProfilingException {
-		config.setDistributedHDFSPath(dataPath);
+		YamlConfig yamlConfig = (YamlConfig)config;
+		yamlConfig.setDistributedHDFSPath(dataPath);
 		return createDataloadAndDistributionViewJson(viewName, gson,
 				profilingViewService);
 		
@@ -303,7 +306,7 @@ public class ProfilerServlet extends HttpServlet {
 	 * @throws HTFProfilingException the hTF profiling exception
 	 */
 	private String getClusterAndNetWorkLatencyViewJson(boolean addNameNodeIP,
-			String viewName, Gson gson, YamlConfig config,
+			String viewName, Gson gson, Config config,
 			ProfilingViewService profilingViewService)
 			throws HTFProfilingException {
 		String json;
@@ -311,8 +314,9 @@ public class ProfilerServlet extends HttpServlet {
 		ClusterInfo clusterInfo = profilingViewService.getMainView(
 				perfStats, viewName);
 		json = gson.toJson(clusterInfo);
+		YamlConfig yamlConfig = (YamlConfig)config;
 		if (addNameNodeIP) {
-			clusterInfo.setNameNodeIP(config.getMaster().getHost());
+			clusterInfo.setNameNodeIP(yamlConfig.getMaster().getHost());
 			json = gson.toJson(clusterInfo);
 		}
 		return json;

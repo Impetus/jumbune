@@ -17,6 +17,7 @@ import javax.servlet.http.HttpSession;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.Constants;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.utils.YamlUtil;
 import org.jumbune.web.utils.WebConstants;
@@ -79,7 +80,7 @@ public class DVReportServlet extends HttpServlet {
 		}
 		
 		StringBuilder stringBuilder = new StringBuilder();
-		stringBuilder.append(loader.getjHome()).append(JOB_JAR_LOCATION).append(loader.getJumbuneJobName()).append(DV_FOLDER_LOCATION);
+		stringBuilder.append(YamlLoader.getjHome()).append(JOB_JAR_LOCATION).append(loader.getJumbuneJobName()).append(DV_FOLDER_LOCATION);
 		String dir = stringBuilder.toString();
 		StringBuffer sb = new StringBuffer(YamlUtil.getAndReplaceHolders(dir));
 		LOGGER.debug("datavalidation folder path ----> [" + dir + "]");

@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.ClasspathUtil;
 import org.jumbune.common.utils.ConfigurationUtil;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.debugger.instrumentation.adapter.BlockLogAdapter;
 import org.jumbune.debugger.instrumentation.adapter.CaseAdapter;
@@ -70,7 +71,7 @@ public class JarInstrumenter extends Instrumenter {
 	 * Create a new instance of JarInstrumenter.
 	 * </p>
 	 */
-	public JarInstrumenter(YamlLoader loader) {
+	public JarInstrumenter(Loader loader) {
 		super(loader);
 		env = new Environment();
 	}
@@ -83,16 +84,18 @@ public class JarInstrumenter extends Instrumenter {
 	 * @see org.jumbune.debugger.instrumentation.instrumenter.Instrumenter#instrumentJar()
 	 */
 	public void instrumentJar() throws IOException {
-		File fin = new File(getLoader().getInputFile());
-		File fout = new File(getLoader().getInstrumentOutputFile());
+		YamlLoader yamlLoader = (YamlLoader)getLoader();
+		File fin = new File(yamlLoader.getInputFile());
+		File fout = new File(yamlLoader.getInstrumentOutputFile());
 		instrumentJar(fin, fout);
-		createSymbolTableFile(getLoader(),env);
+		createSymbolTableFile(yamlLoader,env);
 	}
 
-	private void createSymbolTableFile(YamlLoader loader , Environment env) throws IOException {
+	private void createSymbolTableFile(Loader loader , Environment env) throws IOException {
 		FileWriter fw = null;
 		try {
-			String absFilePath = loader.getJumbuneJobLoc()+"/logs/symbolTable.log";
+			YamlLoader yamlLoader = (YamlLoader)loader;
+			String absFilePath = yamlLoader.getJumbuneJobLoc()+"/logs/symbolTable.log";
 			fw = new FileWriter(absFilePath);
 			Map<String,String> map = env.getSymbolTable();
 			for (Map.Entry<String, String> entry : map.entrySet()) {
@@ -128,14 +131,15 @@ public class JarInstrumenter extends Instrumenter {
 	 */
 	public byte[] instrumentEntry(final byte[] bytes) throws IOException {
 		byte [] instrumentBytes=bytes;
-		boolean instrumentIfBlock = getLoader().isInstrumentEnabled("ifblock");
-		boolean instrumentSwitchCase = getLoader()
+		YamlLoader yamlLoader = (YamlLoader)getLoader();
+		boolean instrumentIfBlock = yamlLoader.isInstrumentEnabled("ifblock");
+		boolean instrumentSwitchCase = yamlLoader
 				.isInstrumentEnabled("switchcase");
-		boolean instrumentMapreduceRegex = getLoader()
+		boolean instrumentMapreduceRegex = yamlLoader
 				.isInstrumentEnabled("instrumentRegex");
-		boolean instrumentMapreduceUserDefinedValidation = getLoader()
+		boolean instrumentMapreduceUserDefinedValidation = yamlLoader
 				.isInstrumentEnabled("instrumentUserDefValidate");
-		boolean instrumentJobPartitioner = getLoader()
+		boolean instrumentJobPartitioner = yamlLoader
 				.isInstrumentEnabled("partitioner");
 
 		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
@@ -308,7 +312,7 @@ public class JarInstrumenter extends Instrumenter {
 		// adding util classes to the jar file
 		ZipEntry xmlFileEntry = new ZipEntry(LOG4J_CONF_FILE);
 		zos.putNextEntry(xmlFileEntry);
-		String filePath = getLoader().getjHome() + LOG4J_FILE_PATH;
+		String filePath = YamlLoader.getjHome() + LOG4J_FILE_PATH;
 		byte[] buffer = new byte[InstrumentConstants.FOUR_ZERO_NINE_SIX];
 		InputStream is = new FileInputStream(filePath);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -333,7 +337,7 @@ public class JarInstrumenter extends Instrumenter {
 	 * @throws IOException
 	 *             If any error occurred
 	 */
-	public static void addUtilClasses(YamlLoader loader, ZipOutputStream zos)
+	public static void addUtilClasses(Loader loader, ZipOutputStream zos)
 			throws IOException {
 		if (FileUtil.getJumbuneClassPathType(loader) == ClasspathUtil.CLASSPATH_TYPE_LIBJARS) {
 			String[] classes = new String[] { ClassLoaderUtil.class.getName(),

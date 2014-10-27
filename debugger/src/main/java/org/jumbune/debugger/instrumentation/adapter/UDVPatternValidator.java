@@ -7,6 +7,7 @@ import java.text.MessageFormat;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.debugger.instrumentation.utils.InstrumentConstants;
 import org.jumbune.debugger.instrumentation.utils.InstrumentationMessageLoader;
@@ -33,7 +34,7 @@ public class UDVPatternValidator extends BaseAdapter {
 	 * @param cv
 	 *            Class visitor
 	 */
-	public UDVPatternValidator(YamlLoader loader, ClassVisitor cv) {
+	public UDVPatternValidator(Loader loader, ClassVisitor cv) {
 		super(loader, cv);
 		this.cv = cv;
 	}
@@ -64,15 +65,15 @@ public class UDVPatternValidator extends BaseAdapter {
 	 */
 	public void visit(int version, int access, String name, String signature,
 			String superName, String[] interfaces) {
-		YamlLoader loader=getLoader();
+		Loader loader=getLoader();
 		setClassName(name);
 		super.visit(version, access, name, signature, superName, interfaces);
-
-		String keyValidationClass = loader
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		String keyValidationClass = yamlLoader
 				.getMapReduceKeyValidator(getClassName());
-		String valueValidationClass = loader
+		String valueValidationClass = yamlLoader
 				.getMapReduceValueValidator(getClassName());
-		boolean instrumentMapreduceUserdefinedValidation = loader
+		boolean instrumentMapreduceUserdefinedValidation = yamlLoader
 				.isInstrumentEnabled("instrumentUserDefValidate");
 
 		LOG.info(MessageFormat.format(InstrumentationMessageLoader

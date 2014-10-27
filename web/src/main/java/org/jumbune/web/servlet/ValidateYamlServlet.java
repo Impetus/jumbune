@@ -18,6 +18,7 @@ import org.jumbune.common.beans.ClasspathElement;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.ValidateInput;
 import org.jumbune.common.utils.YamlConfigUtil;
+import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.web.utils.WebConstants;
 import org.jumbune.web.utils.WebUtil;
@@ -65,7 +66,7 @@ public class ValidateYamlServlet extends HttpServlet {
 		Map<String, Map<String, Map<String, String>>> validatedData = null;
 		StringBuilder sBuilder = new StringBuilder();
 		String validateString = null;
-		YamlConfig config = null;
+		Config config = null;
 		Gson gsonDV = new Gson();
 		PrintWriter out = response.getWriter();
 		BufferedReader br = request.getReader();
@@ -75,7 +76,8 @@ public class ValidateYamlServlet extends HttpServlet {
 		}
 		try {
 			config = WebUtil.prepareYamlConfig(sBuilder.toString());
-			ClasspathElement classpathElement = config.getClasspath()
+			YamlConfig yamlConfig = (YamlConfig)config;
+			ClasspathElement classpathElement = yamlConfig.getClasspath()
 					.getUserSupplied();
 
 			setUserSuppliedJarsIntoClasspathElement(sBuilder, config,
@@ -123,7 +125,7 @@ public class ValidateYamlServlet extends HttpServlet {
 	 * @param classpathElement class is the bean for the classpath elements
 	 */
 	private void setUserSuppliedJarsIntoClasspathElement(
-			StringBuilder sBuilder, YamlConfig config,
+			StringBuilder sBuilder, Config config,
 			ClasspathElement classpathElement) {
 		if (classpathElement.getSource() == Constants.MASTER_MAC_PATH
 				&& WebUtil.isRequiredModuleEnable(config)) {

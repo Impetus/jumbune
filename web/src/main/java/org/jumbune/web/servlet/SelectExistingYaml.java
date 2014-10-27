@@ -16,6 +16,7 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.ClasspathElement;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.RemoteFileUtil;
+import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.web.utils.WebConstants;
@@ -104,10 +105,10 @@ public class SelectExistingYaml extends HttpServlet {
 			TypeDescription desc = new TypeDescription(YamlConfig.class);
 			constructor.addTypeDescription(desc);
 			Yaml yaml = new Yaml(new Loader(constructor));
-			YamlConfig conf = (YamlConfig) yaml.load(input);
-			ClasspathElement classpathElement = conf.getClasspath().getUserSupplied();
-			JsonObject jsonObject = gson.toJsonTree(conf).getAsJsonObject();
-			checkUserSuppliedJar(conf, classpathElement, jsonObject);
+			YamlConfig yamlConfig = (YamlConfig) yaml.load(input);
+			ClasspathElement classpathElement = yamlConfig.getClasspath().getUserSupplied();
+			JsonObject jsonObject = gson.toJsonTree(yamlConfig).getAsJsonObject();
+			checkUserSuppliedJar(yamlConfig, classpathElement, jsonObject);
 			String jsonString = new Gson().toJson(jsonObject);
 			
 			PrintWriter out = null;
@@ -137,6 +138,7 @@ public class SelectExistingYaml extends HttpServlet {
 	private void checkUserSuppliedJar(YamlConfig conf,
 			ClasspathElement classpathElement, JsonObject jsonObject) {
 		String[] resources;
+		
 		if (conf.getClasspath().getUserSupplied().getSource() == WebConstants.MASTER_MACHINE_PATH_OPTION) {
 			JsonObject tempObject = null;
 			tempObject = ((JsonObject) jsonObject.get("classpath")).get("userSupplied").getAsJsonObject();

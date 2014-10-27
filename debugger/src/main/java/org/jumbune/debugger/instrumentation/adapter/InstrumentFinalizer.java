@@ -5,7 +5,7 @@ import java.text.MessageFormat;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.CollectionUtil;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.debugger.instrumentation.utils.Environment;
 import org.jumbune.debugger.instrumentation.utils.InstrumentationMessageLoader;
 import org.jumbune.debugger.instrumentation.utils.MessageConstants;
@@ -35,7 +35,7 @@ public class InstrumentFinalizer extends BaseAdapter {
 	 * @param cv
 	 *            Class visitor
 	 */
-	public InstrumentFinalizer(YamlLoader loader, ClassVisitor cv) {
+	public InstrumentFinalizer(Loader loader, ClassVisitor cv) {
 		super(loader, Opcodes.ASM4);
 		this.cv = cv;
 	}
@@ -48,7 +48,7 @@ public class InstrumentFinalizer extends BaseAdapter {
 	 * @param cv
 	 * @param env
 	 */
-	public InstrumentFinalizer(YamlLoader loader, ClassVisitor cv,Environment env) {
+	public InstrumentFinalizer(Loader loader, ClassVisitor cv,Environment env) {
 		super(loader, Opcodes.ASM4);
 		this.cv = cv;
 		this.env = env;

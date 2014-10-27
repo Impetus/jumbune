@@ -32,6 +32,8 @@ import org.jumbune.common.beans.SupportedApacheHadoopVersions;
 import org.jumbune.common.beans.UnavailableHost;
 import org.jumbune.common.utils.RemoteFileUtil;
 import org.jumbune.common.utils.RemotingUtil;
+import org.jumbune.common.yaml.config.Config;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.profiling.beans.CategoryInfo;
@@ -67,7 +69,7 @@ import org.jumbune.profiling.utils.ProfilerConstants.Operator;
  * Service to prepare various cluster view.
  */
 public class ClusterViewServiceImpl implements ProfilingViewService {
-	private YamlLoader yamlLoader = null;
+	private Loader loader = null;
 	private SupportedApacheHadoopVersions hadoopVersions = null;
 
 	private static final Logger LOGGER = LogManager
@@ -79,8 +81,9 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 * @param yamlLoader
 	 *            the yaml loader
 	 */
-	public ClusterViewServiceImpl(YamlLoader yamlLoader) {
-		this.yamlLoader = yamlLoader;
+	public ClusterViewServiceImpl(Loader loader) {
+		this.loader = loader;
+		YamlLoader yamlLoader = (YamlLoader)loader;
 		this.hadoopVersions = RemotingUtil.getHadoopVersion(yamlLoader.getYamlConfiguration());
 	}
 
@@ -94,7 +97,8 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	@Override
 	public ClusterInfo getMainView(List<PerformanceStats> genSettings,
 			String viewName) throws HTFProfilingException {
-		YamlConfig config = yamlLoader.getYamlConfiguration();
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
 		ViewHelper viewHelper = new ViewHelper();
 		ClusterInfo clusterInfo = new ClusterInfo();
 		DataDistributionStats dataDistributionStats = null;
@@ -103,9 +107,9 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 		String clusterId = null;
 		HashMap<String, DataCenterInfo> dataCenters = new HashMap<String, DataCenterInfo>();
 		HashMap<String, RackInfo> racks = new HashMap<String, RackInfo>();
-		ProfilerStats pfStats = new ProfilerStats(config);
-		SlaveParam slaveParam = config.getSlaveParam();
-		Master master = config.getMaster();
+		ProfilerStats pfStats = new ProfilerStats(yamlConfig);
+		SlaveParam slaveParam = yamlConfig.getSlaveParam();
+		Master master = yamlConfig.getMaster();
 		String masterIp = master.getHost();
 		String dataNodePort = slaveParam.getDataNodeJmxPort();
 		String taskTrackerPort = slaveParam.getTaskTrackerJmxPort();
@@ -149,7 +153,7 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 			}
 		}
 	
-		for (Slave slave : config.getSlaves()) {
+		for (Slave slave : yamlConfig.getSlaves()) {
 			for (String slaveIp : slave.getHosts()) {
 				boolean isUnavailable = false;
 				if (!StringUtils.isBlank(slaveIp)) {
@@ -331,9 +335,10 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	@Override
 	public NodeStats getNodeView(NodeConfig nodeConfig,
 			List<PerformanceStats> clrSettings) throws HTFProfilingException {
-		YamlConfig config = yamlLoader.getYamlConfiguration();
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
 		String nodeIp = nodeConfig.getNodeIp();
-		ProfilerStats pfStats = new ProfilerStats(config, nodeIp,
+		ProfilerStats pfStats = new ProfilerStats(yamlConfig, nodeIp,
 				hadoopVersions);
 		CategoryInfo favourities = nodeConfig.getFavourities();
 		CategoryInfo trends = nodeConfig.getTrends();

@@ -7,6 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.InstructionsBean;
 import org.jumbune.common.utils.ConfigurationUtil;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.debugger.instrumentation.utils.ContextWriteParams;
 import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
@@ -42,7 +43,7 @@ public class PartitionerAdapter extends BaseAdapter {
 	 * @param loader
 	 * @param cv
 	 */
-	public PartitionerAdapter(YamlLoader loader, ClassVisitor cv) {
+	public PartitionerAdapter(Loader loader, ClassVisitor cv) {
 		super(loader, Opcodes.ASM4);
 		this.cv = cv;
 	}
@@ -163,7 +164,8 @@ public class PartitionerAdapter extends BaseAdapter {
 		il.add(new FieldInsnNode(Opcodes.GETFIELD, ConfigurationUtil
 				.convertQualifiedClassNameToInternalName(getClassName()),
 				MAP_REDUCE_COUNTER, Type.INT_TYPE.getDescriptor()));
-		il.add(new IntInsnNode(Opcodes.BIPUSH, getLoader()
+		YamlLoader yamlLoader = (YamlLoader)getLoader();
+		il.add(new IntInsnNode(Opcodes.BIPUSH, yamlLoader
 				.getPartitionerSampleInterval()));
 		il.add(new InsnNode(Opcodes.IREM));
 		il.add(new JumpInsnNode(Opcodes.IFNE, ifLabelNode));

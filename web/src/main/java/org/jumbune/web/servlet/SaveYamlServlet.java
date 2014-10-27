@@ -19,6 +19,7 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.ClasspathElement;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.YamlConfigUtil;
+import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.web.utils.WebConstants;
 import org.jumbune.web.utils.WebUtil;
@@ -78,18 +79,18 @@ public class SaveYamlServlet extends HttpServlet {
 		String json = (String) request.getParameter("saveYamlJsonData");
 		LOGGER.debug("Received JSON [" + json+"]");
 		Gson gson = new Gson();
-		YamlConfig config = gson.fromJson(json, YamlConfig.class);
-		ClasspathElement classpathElement = config.getClasspath()
+		YamlConfig yamlConfig = gson.fromJson(json, YamlConfig.class);
+		ClasspathElement classpathElement = yamlConfig.getClasspath()
 				.getUserSupplied();
 		addUserSuppliedJars(json, classpathElement);
-		Constructor constructor = new Constructor(YamlConfig.class);
+		Constructor constructor = new Constructor(Config.class);
 
-		TypeDescription desc = new TypeDescription(YamlConfig.class);
+		TypeDescription desc = new TypeDescription(Config.class);
 		constructor.addTypeDescription(desc);
 
 		Yaml yaml = new Yaml(constructor);
 
-		String yamlData = yaml.dump(config);
+		String yamlData = yaml.dump(yamlConfig);
 
 		File file = new File(yamlFolder + fileName);
 
@@ -97,7 +98,7 @@ public class SaveYamlServlet extends HttpServlet {
 		bw.write(yamlData);
 		bw.close();
 
-		String originalFilename = config.getJumbuneJobName()
+		String originalFilename = yamlConfig.getJumbuneJobName()
 				+ "_properties.yaml";
 
 		int length = 0;

@@ -9,7 +9,7 @@ import org.jumbune.common.beans.Module;
 import org.jumbune.common.beans.ReportsBean;
 import org.jumbune.common.beans.ServiceInfo;
 import org.jumbune.common.utils.MessageLoader;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.execution.beans.Parameters;
 import org.jumbune.execution.utils.ProcessHelper;
 import org.jumbune.utils.exception.JumbuneException;
@@ -31,7 +31,7 @@ public abstract class BaseProcessor implements Processor {
 	protected static final MessageLoader MESSAGES = MessageLoader.getInstance();
 
 	private Processor next;
-	private YamlLoader loader;
+	private Loader loader;
 	private ReportsBean reports;
 	protected ServiceInfo serviceInfo;
 	private boolean isCommandBased;
@@ -52,11 +52,11 @@ public abstract class BaseProcessor implements Processor {
 	}
 
 	
-	protected YamlLoader getLoader() {
+	protected Loader getLoader() {
 		return loader;
 	}
 
-	protected void setLoader(YamlLoader loader) {
+	protected void setLoader(Loader loader) {
 		this.loader = loader;
 	}
 
@@ -85,7 +85,7 @@ public abstract class BaseProcessor implements Processor {
 	}
 
 	@Override
-	public void process(YamlLoader loader, ReportsBean reports,
+	public void process(Loader loader, ReportsBean reports,
 			Map<Parameters, String> params) throws JumbuneException {
 		this.loader = loader;
 		this.reports = reports;

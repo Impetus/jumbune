@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.LogConsolidationInfo;
 import org.jumbune.common.beans.Master;
 import org.jumbune.common.beans.Slave;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.ApiInvokeHintsEnum;
@@ -309,11 +310,12 @@ public class RemoteFileUtil {
 	 * @throws InterruptedException
 	 *             the interrupted exception
 	 */
-	public void copyRemoteLibFilesToMaster(YamlLoader loader) throws IOException, InterruptedException {
-		String userLibLoc = loader.getUserLibLocatinAtMaster();
-		Master master = loader.getMasterInfo();
+	public void copyRemoteLibFilesToMaster(Loader loader) throws IOException, InterruptedException {
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		String userLibLoc = yamlLoader.getUserLibLocatinAtMaster();
+		Master master = yamlLoader.getMasterInfo();
 
-		String jobName = loader.getJumbuneJobName();
+		String jobName = yamlLoader.getJumbuneJobName();
 
 		Remoter remoter = new Remoter(master.getHost(), Integer.valueOf(master.getAgentPort()), jobName);
 		String mkdir = MKDIR_P_CMD + userLibLoc;
@@ -321,17 +323,17 @@ public class RemoteFileUtil {
 		builder.addCommand(mkdir, false, null);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 
-		Slave slave = loader.getSlavesInfo().get(0);
+		Slave slave = yamlLoader.getSlavesInfo().get(0);
 		String host = slave.getHosts()[0];
 
-		List<String> fileList = ConfigurationUtil.getAllClasspathFiles(loader.getClasspathFolders(ClasspathUtil.USER_SUPPLIED),
-				loader.getClasspathExcludes(ClasspathUtil.USER_SUPPLIED), loader.getClasspathFiles(ClasspathUtil.USER_SUPPLIED));
+		List<String> fileList = ConfigurationUtil.getAllClasspathFiles(yamlLoader.getClasspathFolders(ClasspathUtil.USER_SUPPLIED),
+				yamlLoader.getClasspathExcludes(ClasspathUtil.USER_SUPPLIED), yamlLoader.getClasspathFiles(ClasspathUtil.USER_SUPPLIED));
 
 		for (String file : fileList) {
 			String command = "scp " + slave.getUser() + "@" + host + ":" + file + " " + master.getUser() + "@" + master.getHost() + ":" + userLibLoc;
 			LOGGER.debug("Executing the cmd: " + command);
 			builder.getCommandBatch().clear();
-			builder.addCommand(command, false, null).populate(loader.getYamlConfiguration(), null);
+			builder.addCommand(command, false, null).populate(yamlLoader.getYamlConfiguration(), null);
 			remoter.fireAndForgetCommand(builder.getCommandWritable());
 		}
 		remoter.close();
@@ -399,18 +401,19 @@ public class RemoteFileUtil {
 	 * @throws JumbuneException
 	 *             the hTF exception
 	 */
-	public static int getRemoteThreadsOrCore(YamlLoader loader, String coreOrThread) throws JumbuneException {
+	public static int getRemoteThreadsOrCore(Loader loader, String coreOrThread) throws JumbuneException {
 
-		Master master = loader.getLogMaster();
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		Master master = yamlLoader.getLogMaster();
 		String host = master.getHost();
 		Integer agentPort = Integer.valueOf(master.getAgentPort());
 
-		String jobName = loader.getJumbuneJobName();
+		String jobName = yamlLoader.getJumbuneJobName();
 		String command = "lscpu | grep " + coreOrThread;
 		Remoter remoter = new Remoter(host, agentPort, jobName);
 
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(command, false, null).populate(loader.getYamlConfiguration(), null);
+		builder.addCommand(command, false, null).populate(yamlLoader.getYamlConfiguration(), null);
 		String line = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		remoter.close();
 		if (line == null || "".equals(line.trim())) {

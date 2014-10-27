@@ -41,7 +41,7 @@ import com.jcraft.jsch.JSchException;
 /**
  * This class loads the yaml.
  */
-public class YamlLoader {
+public class YamlLoader implements Loader{
 	
 	/** The Constant ECHO_HADOOP_HOME. */
 	private  static final  String ECHO_HADOOP_HOME = "echo $HADOOP_HOME \n \n";
@@ -83,7 +83,7 @@ public class YamlLoader {
 	/**
 	 * Instantiates a new yaml loader.
 	 */
-	private YamlLoader() {
+	protected YamlLoader() {
 		LOGGER.debug("JUMBUNE_HOME is set to : " + jHome);
 		if (!YamlUtil.validateFileSystemLocation(jHome)) {
 			LOGGER.error("Environment variable \'JUMBUNE_HOME\' is either not set or is in incorrect format");
@@ -96,9 +96,9 @@ public class YamlLoader {
 	 *
 	 * @param config the config
 	 */
-	public YamlLoader(YamlConfig config) {
+	public YamlLoader(Config config) {
 		this();
-		this.uConf = config;
+		this.uConf = (YamlConfig)config;
 	}
 
 	/**
@@ -116,7 +116,7 @@ public class YamlLoader {
 	 *
 	 * @return the yaml configuration
 	 */
-	public YamlConfig getYamlConfiguration() {
+	public Config getYamlConfiguration() {
 		return uConf;
 	}
 
@@ -295,14 +295,15 @@ public class YamlLoader {
 	 * @param receiveDiretory the receive diretory
 	 * @return the remoter
 	 */
-	private Remoter getRemoter(YamlLoader loader, final String receiveDiretory) {
+	private Remoter getRemoter(Loader loader, final String receiveDiretory) {
+		YamlLoader yamlLoader = (YamlLoader)loader;
 		String receiveDirectory = receiveDiretory;
-		Master master = loader.getMasterInfo();
+		Master master = yamlLoader.getMasterInfo();
 		String masterHost = master.getHost();
 		int agentPort = Integer.valueOf(master.getAgentPort());
 		if (receiveDirectory == null || receiveDirectory.trim().equals("")){
 			receiveDirectory = YamlLoader.getjHome();}
-		return new Remoter(masterHost, agentPort, loader.getJumbuneJobName());
+		return new Remoter(masterHost, agentPort, yamlLoader.getJumbuneJobName());
 
 	}
 
@@ -312,14 +313,15 @@ public class YamlLoader {
 	 * @param loader the loader
 	 * @return the hadoop home
 	 */
-	public String getHadoopHome(YamlLoader loader) {
+	public String getHadoopHome(Loader loader) {
 
 		Remoter remoter = getRemoter(loader, "");
 		
 		String hadoopHomeTemp;
 		
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(ECHO_HADOOP_HOME, false, null).populate(loader.getYamlConfiguration(), null);
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		builder.addCommand(ECHO_HADOOP_HOME, false, null).populate(yamlLoader.getYamlConfiguration(), null);
 		hadoopHomeTemp = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		remoter.close();
 		return hadoopHomeTemp;

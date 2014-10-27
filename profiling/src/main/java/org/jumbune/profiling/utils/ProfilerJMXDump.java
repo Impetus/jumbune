@@ -52,6 +52,8 @@ import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.RemoteFileUtil;
 import org.jumbune.common.utils.RemoteFileUtil.JumbuneUserInfo;
+import org.jumbune.common.yaml.config.Config;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.profiling.beans.JMXDeamons;
@@ -508,12 +510,13 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public Map<String, String> getMemoryUtilisation(YamlConfig config, String nodeIp) throws JSchException, IOException {
-
-		Slave slave = RemoteFileUtil.findSlave(nodeIp, config.getSlaves());
+	public Map<String, String> getMemoryUtilisation(Config config, String nodeIp) throws JSchException, IOException {
+		
+		YamlConfig yamlConfig = (YamlConfig)config;
+		Slave slave = RemoteFileUtil.findSlave(nodeIp, yamlConfig.getSlaves());
 		String user = slave.getUser();
-		String rsaFilePath = config.getMaster().getRsaFile();
-		String dsaFilePath = config.getMaster().getDsaFile();
+		String rsaFilePath = yamlConfig.getMaster().getRsaFile();
+		String dsaFilePath = yamlConfig.getMaster().getDsaFile();
 		Session session = null;
 		Map<String, String> vmStats = null;
 		try {
@@ -541,23 +544,24 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public Map<String, String> getRemoteMemoryUtilisation(YamlConfig config, String nodeIp) throws JSchException, IOException {
+	public Map<String, String> getRemoteMemoryUtilisation(Config config, String nodeIp) throws JSchException, IOException {
 
 		Slave slave;
 		String[] hosts;
+		YamlConfig yamlConfig = (YamlConfig)config;
 		if (nodeIp == null) {
-			slave = config.getSlaves().get(0);
+			slave = yamlConfig.getSlaves().get(0);
 			hosts = slave.getHosts();
 		} else {
-			slave = RemoteFileUtil.findSlave(nodeIp, config.getSlaves());
+			slave = RemoteFileUtil.findSlave(nodeIp, yamlConfig.getSlaves());
 			hosts = new String[1];
 			hosts[0] = nodeIp;
 		}
 		Map<String, String> vmStats = null;
 
 		Remoter remoter = null;
-		remoter = new Remoter(config.getMaster().getHost(), Integer.valueOf(config.getMaster().getAgentPort()),
-				config.getFormattedJumbuneJobName());
+		remoter = new Remoter(yamlConfig.getMaster().getHost(), Integer.valueOf(yamlConfig.getMaster().getAgentPort()),
+				yamlConfig.getFormattedJumbuneJobName());
 
 		for (String host : hosts) {
 			
@@ -591,21 +595,22 @@ public class ProfilerJMXDump {
 	 */
 	// TODO: Note used anywhere
 	@Deprecated
-	public List<ResultInfo> getPartitionEfficiency(YamlConfig config, String nodeIp) throws JSchException, IOException {
+	public List<ResultInfo> getPartitionEfficiency(Config config, String nodeIp) throws JSchException, IOException {
 
+		YamlConfig yamlConfig = (YamlConfig)config;
 		Slave slave;
 		String[] hosts;
 		if (nodeIp == null) {
-			slave = config.getSlaves().get(0);
+			slave = yamlConfig.getSlaves().get(0);
 			hosts = slave.getHosts();
 		} else {
-			slave = RemoteFileUtil.findSlave(nodeIp, config.getSlaves());
+			slave = RemoteFileUtil.findSlave(nodeIp, yamlConfig.getSlaves());
 			hosts = new String[1];
 			hosts[0] = nodeIp;
 		}
 		String user = slave.getUser();
-		String rsaFilePath = config.getMaster().getRsaFile();
-		String dsaFilePath = config.getMaster().getDsaFile();
+		String rsaFilePath = yamlConfig.getMaster().getRsaFile();
+		String dsaFilePath = yamlConfig.getMaster().getDsaFile();
 		Session session = null;
 		UserInfo ui;
 		NodeDiskPartitionsInfo ndpi = null;
@@ -647,15 +652,16 @@ public class ProfilerJMXDump {
 	 *             Signals that an I/O exception has occurred.
 	 */
 	@Deprecated
-	public List<ResultInfo> getRemotePartitionEfficiency(YamlConfig config, String nodeIp) throws JSchException, IOException {
+	public List<ResultInfo> getRemotePartitionEfficiency(Config config, String nodeIp) throws JSchException, IOException {
 
 		Slave slave;
 		String[] hosts;
+		YamlConfig yamlConfig = (YamlConfig)config;
 		if (nodeIp == null) {
-			slave = config.getSlaves().get(0);
+			slave = yamlConfig.getSlaves().get(0);
 			hosts = slave.getHosts();
 		} else {
-			slave = RemoteFileUtil.findSlave(nodeIp, config.getSlaves());
+			slave = RemoteFileUtil.findSlave(nodeIp, yamlConfig.getSlaves());
 			hosts = new String[1];
 			hosts[0] = nodeIp;
 		}
@@ -685,16 +691,17 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public List<ResultInfo> getNodeThroughput(YamlConfig config, SupportedApacheHadoopVersions version, String nodeIp) throws AttributeNotFoundException,
+	public List<ResultInfo> getNodeThroughput(Config config, SupportedApacheHadoopVersions version, String nodeIp) throws AttributeNotFoundException,
 			InstanceNotFoundException, IntrospectionException, MBeanException, ReflectionException, IOException {
 
+		YamlConfig yamlConfig = (YamlConfig)config;
 		Slave slave;
 		String[] hosts;
 		if (nodeIp == null) {
-			slave = config.getSlaves().get(0);
+			slave = yamlConfig.getSlaves().get(0);
 			hosts = slave.getHosts();
 		} else {
-			slave = RemoteFileUtil.findSlave(nodeIp, config.getSlaves());
+			slave = RemoteFileUtil.findSlave(nodeIp, yamlConfig.getSlaves());
 			hosts = new String[1];
 			hosts[0] = nodeIp;
 		}
@@ -704,10 +711,10 @@ public class ProfilerJMXDump {
 
 		for (String host : hosts) {
 			throughput = new NodeThroughputInfo();
-			allJmxStats = getAllJMXStats(JMXDeamons.DATA_NODE, version, host, config.getProfilingParams().getDataNodeJmxPort());
+			allJmxStats = getAllJMXStats(JMXDeamons.DATA_NODE, version, host, yamlConfig.getProfilingParams().getDataNodeJmxPort());
 			throughput.setReadThroughput(Integer.parseInt(allJmxStats.get(READ_BLOCK_OP_MAX_TIME)));
 			throughput.setWriteThroughput(Integer.parseInt(allJmxStats.get(WRITE_BLOCK_OP_MAX_TIME)));
-			allJmxStats = getAllJMXStats(JMXDeamons.TASK_TRACKER, version, host, config.getProfilingParams().getTaskTrackerJmxPort());
+			allJmxStats = getAllJMXStats(JMXDeamons.TASK_TRACKER, version, host, yamlConfig.getProfilingParams().getTaskTrackerJmxPort());
 			throughput.setProcessingThroughput(Integer.parseInt(allJmxStats.get(RPC_PROCESSING_MAX_TIME)));
 			nodesThroughput.add(throughput);
 		}
@@ -735,14 +742,15 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public double getLocalDataUsage(YamlConfig config, String nodeIp) throws AttributeNotFoundException, InstanceNotFoundException,
+	public double getLocalDataUsage(Config config, String nodeIp) throws AttributeNotFoundException, InstanceNotFoundException,
 			IntrospectionException, MBeanException, ReflectionException, IOException {
 
 		long localReads;
 		long remoteReads;
 		double localDataUsage;
 		Map<String, String> allJmxStats;
-		allJmxStats = getAllJmxStats(nodeIp, config.getProfilingParams().getDataNodeJmxPort(), DATANODE);
+		YamlConfig yamlConfig = (YamlConfig)config;
+		allJmxStats = getAllJmxStats(nodeIp, yamlConfig.getProfilingParams().getDataNodeJmxPort(), DATANODE);
 		localReads = Long.parseLong(allJmxStats.get(READS_FROM_LOCAL_CLIENT));
 		remoteReads = Long.parseLong(allJmxStats.get(READS_FROM_REMOTE_CLIENT));
 		if ((remoteReads == 0) && (localReads == 0)) {
@@ -777,9 +785,11 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public double getDataLoadonNodes(String nodeIp, NodeInfo node, YamlLoader yamlLoader) throws AttributeNotFoundException,
+	public double getDataLoadonNodes(String nodeIp, NodeInfo node, Loader loader) throws AttributeNotFoundException,
 			InstanceNotFoundException, IntrospectionException, MBeanException, ReflectionException, IOException {
-		YamlConfig config = yamlLoader.getYamlConfiguration();
+		
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
 		int length = 0;
 		long offsetData = 0;
 		long avgDfsUsedOnNode = 0;
@@ -788,11 +798,10 @@ public class ProfilerJMXDump {
 		long totalDfsUsed = 0;
 		long localDfsUsed = 0;
 		double dataLoad = 0;
-
-		Slave slave = config.getSlaves().get(0);
+		Slave slave = yamlConfig.getSlaves().get(0);
 		String[] hosts = slave.getHosts();
 		Map<String, String> allStats;
-		String[] commandResult = ProfilerUtil.getDFSAdminReportCommandResult(yamlLoader);
+		String[] commandResult = ProfilerUtil.getDFSAdminReportCommandResult(loader);
 
 		allStats = parseInformationFromNodes(nodeIp, commandResult);
 		totalDfsUsed = Long.parseLong(allStats.get("TotalDfsUsed"));
@@ -878,13 +887,14 @@ public class ProfilerJMXDump {
 	 * @throws JSchException
 	 *             the j sch exception
 	 */
-	public Map<String, String> getCPUStats(YamlConfig config, String nodeIp) throws AttributeNotFoundException, InstanceNotFoundException,
+	public Map<String, String> getCPUStats(Config config, String nodeIp) throws AttributeNotFoundException, InstanceNotFoundException,
 			IntrospectionException, MBeanException, ReflectionException, IOException, JSchException {
 
-		Slave slave = RemoteFileUtil.findSlave(nodeIp, config.getSlaves());
+		YamlConfig yamlConfig = (YamlConfig)config;
+		Slave slave = RemoteFileUtil.findSlave(nodeIp, yamlConfig.getSlaves());
 		String user = slave.getUser();
-		String rsaFilePath = config.getMaster().getRsaFile();
-		String dsaFilePath = config.getMaster().getDsaFile();
+		String rsaFilePath = yamlConfig.getMaster().getRsaFile();
+		String dsaFilePath = yamlConfig.getMaster().getDsaFile();
 		Session session = null;
 		Map<String, String> cpuStats = new HashMap<String, String>();
 		try {
@@ -928,16 +938,17 @@ public class ProfilerJMXDump {
 	 * @throws JSchException
 	 *             the j sch exception
 	 */
-	public Map<String, String> getRemoteCPUStats(YamlConfig config, String nodeIp) throws AttributeNotFoundException, InstanceNotFoundException,
+	public Map<String, String> getRemoteCPUStats(Config config, String nodeIp) throws AttributeNotFoundException, InstanceNotFoundException,
 			IntrospectionException, MBeanException, ReflectionException, IOException, JSchException {
 
 		Slave slave;
 		String[] hosts;
+		YamlConfig yamlConfig = (YamlConfig)config;
 		if (nodeIp == null) {
-			slave = config.getSlaves().get(0);
+			slave = yamlConfig.getSlaves().get(0);
 			hosts = slave.getHosts();
 		} else {
-			slave = RemoteFileUtil.findSlave(nodeIp, config.getSlaves());
+			slave = RemoteFileUtil.findSlave(nodeIp, yamlConfig.getSlaves());
 			hosts = new String[1];
 			hosts[0] = nodeIp;
 		}
@@ -947,8 +958,8 @@ public class ProfilerJMXDump {
 		Map<String, String> cpuStats = null;
 		Remoter remoter = null;
 		String response = null;
-		remoter = new Remoter(config.getMaster().getHost(), Integer.valueOf(config.getMaster().getAgentPort()),
-				config.getFormattedJumbuneJobName());
+		remoter = new Remoter(yamlConfig.getMaster().getHost(), Integer.valueOf(yamlConfig.getMaster().getAgentPort()),
+				yamlConfig.getFormattedJumbuneJobName());
 		
 		for (String host : hosts) {
 			
@@ -1049,12 +1060,13 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	private List<Integer> getRemoteCPUDetails(YamlConfig config, String host)
+	private List<Integer> getRemoteCPUDetails(Config config, String host)
 			throws JSchException, IOException {
 
 		List<Integer> cpuStats = null;
-		Remoter remoter = new Remoter(config.getMaster().getHost(), Integer.valueOf(config.getMaster().getAgentPort()),
-				config.getFormattedJumbuneJobName());
+		YamlConfig yamlConfig = (YamlConfig)config;
+		Remoter remoter = new Remoter(yamlConfig.getMaster().getHost(), Integer.valueOf(yamlConfig.getMaster().getAgentPort()),
+				yamlConfig.getFormattedJumbuneJobName());
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand("cat /proc/cpuinfo", false, null).populate(config, host);
 		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
@@ -1102,16 +1114,17 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public List<NetworkLatencyInfo> getNetworkLatencyForSelectedNodes(YamlConfig config, Map<String, String> selectedNodesWithPassword)
+	public List<NetworkLatencyInfo> getNetworkLatencyForSelectedNodes(Config config, Map<String, String> selectedNodesWithPassword)
 			throws JSchException, IOException {
 
 		// TODO: support for slaves with different user names
 		LOGGER.debug("inside getNetworkLatencyForSelectedNodes method");
-		Slave slave = config.getSlaves().get(0);
+		YamlConfig yamlConfig = (YamlConfig)config;
+		Slave slave = yamlConfig.getSlaves().get(0);
 		String user = slave.getUser();
 		LOGGER.debug("user is:" + user);
-		String rsaFilePath = config.getMaster().getRsaFile();
-		String dsaFilePath = config.getMaster().getDsaFile();
+		String rsaFilePath = yamlConfig.getMaster().getRsaFile();
+		String dsaFilePath = yamlConfig.getMaster().getDsaFile();
 		Session session = null;
 		UserInfo ui;
 
@@ -1241,7 +1254,7 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public List<NetworkLatencyInfo> getRemoteNetworkLatencyForSelectedNodes(YamlConfig config, Map<String, String> selectedNodesWithPassword)
+	public List<NetworkLatencyInfo> getRemoteNetworkLatencyForSelectedNodes(Config config, Map<String, String> selectedNodesWithPassword)
 			throws JSchException, IOException {
 
 		// TODO: support for slaves with different user names
@@ -1294,7 +1307,7 @@ public class ProfilerJMXDump {
 	 * @throws JSchException the j sch exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	private void calNWLatencyForGreaterInnerCounter(YamlConfig config,
+	private void calNWLatencyForGreaterInnerCounter(Config config,
 			List<NetworkLatencyInfo> networkLatencyList,
 			NetworkLatencyInfo networkLatencyInfo1, String node1,
 			int outerCounter, int innerCounter, String node2)
@@ -1400,12 +1413,13 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	private float getRemoteNetworkLatency(YamlConfig config,  String host, String node2)
+	private float getRemoteNetworkLatency(Config config,  String host, String node2)
 			throws JSchException, IOException {
 
 		float latency;
-		Remoter remoter = new Remoter(config.getMaster().getHost(), Integer.valueOf(config.getMaster().getAgentPort()),
-				config.getFormattedJumbuneJobName());
+		YamlConfig yamlConfig = (YamlConfig)config;
+		Remoter remoter = new Remoter(yamlConfig.getMaster().getHost(), Integer.valueOf(yamlConfig.getMaster().getAgentPort()),
+				yamlConfig.getFormattedJumbuneJobName());
 		StringBuilder sb = new StringBuilder();
 				sb.append(NETWORK_LATENCY_COMMAND).append(" ").append(node2);
 		CommandWritableBuilder builder = new CommandWritableBuilder();

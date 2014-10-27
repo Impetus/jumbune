@@ -25,6 +25,8 @@ import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.common.utils.ResourceUsageCollector;
+import org.jumbune.common.yaml.config.Config;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.execution.service.HttpExecutorService;
@@ -97,8 +99,8 @@ public class ResultServlet extends HttpServlet {
 								.append(WebConstants.JUMBUNE_STATE_FILE);
 						File file = new File(sb.toString());
 						yamlLoader =(YamlLoader) session.getAttribute("loader");
-						YamlConfig config=yamlLoader.getYamlConfiguration();
-						Remoter remoter = RemotingUtil.getRemoter(config, "");
+						YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+						Remoter remoter = RemotingUtil.getRemoter(yamlConfig, "");
 						String relativePath =  File.separator+Constants.JOB_JARS_LOC +yamlLoader.getJumbuneJobName();
 						remoter.receiveLogFiles(relativePath, relativePath+File.separator+EXECUTED_HADOOP_JOB_INFO);
 						File hadoopJobStateFile=new File(YamlLoader.getjHome()+File.separator+relativePath+File.separator+EXECUTED_HADOOP_JOB_INFO);
@@ -137,7 +139,7 @@ public class ResultServlet extends HttpServlet {
 			}
 		}
 
-	private void readHadoopJobIDAndKillJob(YamlLoader yamlLoader,
+	private void readHadoopJobIDAndKillJob(Loader loader,
 			File hadoopJobStateFile) throws IOException {
 		BufferedReader br=new BufferedReader(new InputStreamReader(new FileInputStream(hadoopJobStateFile)));
 		String line=null,jobName=null;
@@ -152,9 +154,10 @@ public class ResultServlet extends HttpServlet {
 		if(br!=null){
 			br.close();
 		}
-		Remoter remoter = RemotingUtil.getRemoter(yamlLoader, "");
+		Remoter remoter = RemotingUtil.getRemoter(loader, "");
+		YamlLoader yamlLoader = (YamlLoader)loader;
 		StringBuilder sbReport = new StringBuilder();
-		sbReport.append(yamlLoader.getHadoopHome(yamlLoader)).append(BIN_HADOOP).append(" ").append(JOB_KILL)
+		sbReport.append(yamlLoader.getHadoopHome(loader)).append(BIN_HADOOP).append(" ").append(JOB_KILL)
 				.append(" ").append(jobName);
 		
 		CommandWritableBuilder builder = new CommandWritableBuilder();

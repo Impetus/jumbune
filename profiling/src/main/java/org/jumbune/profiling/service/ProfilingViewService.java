@@ -33,7 +33,7 @@ public interface ProfilingViewService {
 	 * @param nodeIp
 	 *            the ip address of node
 	 * @param config
-	 *            {@link YamlConfig}
+	 *            {@link Config}
 	 * @return {@link NodeInfo}
 	 */
 	NodeStats getNodeView(NodeConfig nodeConfig, List<PerformanceStats> clrSettings) throws HTFProfilingException;

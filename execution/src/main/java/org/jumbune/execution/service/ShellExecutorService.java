@@ -25,6 +25,8 @@ import org.jumbune.common.utils.ConsoleLogUtil;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.MessageLoader;
 import org.jumbune.common.utils.RemotingUtil;
+import org.jumbune.common.yaml.config.Config;
+import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.execution.beans.Parameters;
@@ -139,27 +141,19 @@ public class ShellExecutorService extends CoreExecutorService {
 	 * @throws InterruptedException 
 	 * @throws JSchException 
 	 */
-	private YamlLoader run(InputStream is, ReportsBean reports) throws JumbuneException,IOException, JSchException, InterruptedException {
+	private Loader run(InputStream is, ReportsBean reports) throws JumbuneException,IOException, JSchException, InterruptedException {
 
 		YamlLoader loader = new YamlLoader(is);
-		YamlConfig yamlConfig = loader.getYamlConfiguration();
 		/***
 		 * Map<String, Map<String, List<String>>> validatedData = new ValidateInput().validateYaml(yamlConfig); if
 		 * (validatedData.get(Constants.FAILURE_KEY) != null && !validatedData.get(Constants.FAILURE_KEY).isEmpty()) {
 		 * ConsoleLogUtil.CONSOLELOGGER.debug(validatedData); throw new HTFException(ErrorCodesAndMessages.INVALID_YAML); }
 		 */
 		RemotingUtil.copyAndGetHadoopConfigurationFilePath(loader, "core-site.xml");
-		loadInitialSetup(yamlConfig);
+		loadInitialSetup(loader.getYamlConfiguration());
 		disableModules(loader);
 		loader.createJumbuneDirectories();
-
-		boolean isStartExecution = checkProfilingState();
-		if (isStartExecution) {
-
-			startExecution(reports, loader);
-			
-			 
-		} 
+		startExecution(reports, loader);
 		try {
 			LOGGER.debug("clean up process slave tmp + agent home shell case ");
 			cleanUpJumbuneAgentCurrentJobFolder(loader);
@@ -172,17 +166,19 @@ public class ShellExecutorService extends CoreExecutorService {
 		return loader;
 	}
 
-	private void startExecution(ReportsBean reports, YamlLoader loader) throws IOException, JumbuneException {
-		String reportFolderPath = new StringBuilder().append(loader.getShellUserReportLocation()).append(Constants.DIR_SEPARATOR)
-				.append(loader.getYamlConfiguration().getJumbuneJobName().split(FORWARD_SLASH)[0]).append(Constants.JUMBUNE_REPORT_EXTENTION).toString();
-		List<Processor> processors = getProcessorChain(loader.getYamlConfiguration(), CONSOLE_BASED);
+	private void startExecution(ReportsBean reports, Loader loader) throws IOException, JumbuneException {
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		String reportFolderPath = new StringBuilder().append(yamlLoader.getShellUserReportLocation()).append(Constants.DIR_SEPARATOR)
+				.append(yamlConfig.getJumbuneJobName().split(FORWARD_SLASH)[0]).append(Constants.JUMBUNE_REPORT_EXTENTION).toString();
+		List<Processor> processors = getProcessorChain(yamlConfig, CONSOLE_BASED);
 		ServiceInfo serviceInfo = new ServiceInfo();
-		serviceInfo.setRootDirectory(loader.getRootDirectoryName());
+		serviceInfo.setRootDirectory(yamlLoader.getRootDirectoryName());
 		serviceInfo.setJumbuneHome(YamlLoader.getjHome());
-		serviceInfo.setSlaveJumbuneHome(loader.getYamlConfiguration().getsJumbuneHome());
-		serviceInfo.setJumbuneJobName(loader.getYamlConfiguration().getFormattedJumbuneJobName());
-		serviceInfo.setMaster(loader.getMasterInfo());
-		serviceInfo.setSlaves(loader.getSlavesInfo());
+		serviceInfo.setSlaveJumbuneHome(yamlConfig.getsJumbuneHome());
+		serviceInfo.setJumbuneJobName(yamlConfig.getFormattedJumbuneJobName());
+		serviceInfo.setMaster(yamlLoader.getMasterInfo());
+		serviceInfo.setSlaves(yamlLoader.getSlavesInfo());
 		// pre-processing
 		HELPER.writetoServiceFile(serviceInfo);
 		int index = 0;
@@ -201,17 +197,18 @@ public class ShellExecutorService extends CoreExecutorService {
 			}
 		}
 		
-		persistReportsInExcelFormat(reports, reportFolderPath, loader);
+		persistReportsInExcelFormat(reports, reportFolderPath, yamlLoader);
 		
 
 		ConsoleLogUtil.CONSOLELOGGER.info("!!! Jumbune Job Processing completed Successfully !!!\n ");
 		ConsoleLogUtil.CONSOLELOGGER.info("Persisted summary reports at location: " + reportFolderPath);
 	}
 
-	private void disableModules(YamlLoader loader) {
-		YamlConfig config = loader.getYamlConfiguration();
-		config.setEnableStaticJobProfiling(Enable.FALSE);
-		config.setHadoopJobProfile(Enable.FALSE);
+	private void disableModules(Loader loader) {
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		yamlConfig.setEnableStaticJobProfiling(Enable.FALSE);
+		yamlConfig.setHadoopJobProfile(Enable.FALSE);
 
 	}
 
@@ -221,10 +218,11 @@ public class ShellExecutorService extends CoreExecutorService {
 	 * @param yamlConfig
 	 * @throws JumbuneException
 	 */
-	private void loadInitialSetup(YamlConfig yamlConfig) throws JumbuneException {
+	private void loadInitialSetup(Config config) throws JumbuneException {
 		String agentHome = RemotingUtil.getAgentHome(yamlConfig);
 		ClasspathElement cse = ConfigurationUtil.loadJumbuneSuppliedJarList();
 		processClassPathElement(cse, agentHome);
+		YamlConfig yamlConfig = (YamlConfig)config;
 		yamlConfig.getClasspath().setJumbuneSupplied(cse);
 		if (!org.jumbune.common.utils.YamlConfigUtil.isJumbuneSuppliedJarPresent(yamlConfig)){
 			org.jumbune.common.utils.YamlConfigUtil.sendJumbuneSuppliedJarOnAgent(yamlConfig, cse, agentHome);
@@ -249,13 +247,14 @@ public class ShellExecutorService extends CoreExecutorService {
 	 * @throws IOException
 	 * @throws FileNotFoundException
 	 */
-	private void persistReportsInExcelFormat(ReportsBean reports, String reportFolderPath, YamlLoader loader) throws
+	private void persistReportsInExcelFormat(ReportsBean reports, String reportFolderPath, Loader loader) throws
 			IOException, JumbuneException {
+		YamlLoader yamlLoader = (YamlLoader)loader;
 		Map<ReportName, String> map = reports.getAllReports();
 		@SuppressWarnings("unchecked")
 		Map<ReportName, String> reportsJson = (Map<ReportName, String>) ((HashMap<ReportName, String>) reports.getAllReports()).clone();
-		if (map.containsKey(ReportName.DATA_VALIDATION) && loader != null) {
-			map.put(ReportName.DATA_VALIDATION, loader.getJumbuneJobLoc());
+		if (map.containsKey(ReportName.DATA_VALIDATION) && yamlLoader != null) {
+			map.put(ReportName.DATA_VALIDATION, yamlLoader.getJumbuneJobLoc());
 		}
 		ExportUtil.writesToExcelFile(map, reportFolderPath, reportsJson);
 	}

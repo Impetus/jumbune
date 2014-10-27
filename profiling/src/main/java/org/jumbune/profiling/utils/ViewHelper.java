@@ -8,7 +8,7 @@ import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.yaml.config.YamlConfig;
+import org.jumbune.common.yaml.config.Config;
 import org.jumbune.profiling.beans.DataCenterInfo;
 import org.jumbune.profiling.beans.NodeInfo;
 import org.jumbune.profiling.beans.RackInfo;
@@ -108,7 +108,7 @@ public class ViewHelper {
 	 * @throws IOException
 	 * @throws JSchException
 	 */
-	public List<NetworkLatencyInfo> getNetworkLatency(YamlConfig config,
+	public List<NetworkLatencyInfo> getNetworkLatency(Config config,
 			Map<String, String> selectedNodesWithPassword)
 			throws HTFProfilingException {
 		List<NetworkLatencyInfo> networkLatencyInfoList;
