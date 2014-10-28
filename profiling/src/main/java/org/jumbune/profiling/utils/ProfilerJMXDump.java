@@ -221,7 +221,31 @@ public class ProfilerJMXDump {
 		return serviceStats;
 
 	}
-
+	
+	/***
+	 * Gets JMX parameter for Operating system service attributes
+	 *  
+	 * @param jmxDaemon
+	 * 			Enum representation of Operating system and Hadoop daemons
+	 * @param host
+	 * 			the host name
+	 * @param port
+	 * 			identify the running port of the service
+	 * @return 
+	 * 			the map containing all the JMX stats for a particular service
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 * @throws AttributeNotFoundException
+	 *             the attribute not found exception
+	 * @throws InstanceNotFoundException
+	 *             the instance not found exception
+	 * @throws MBeanException
+	 *             the m bean exception
+	 * @throws ReflectionException
+	 *             the reflection exception
+	 * @throws IntrospectionException
+	 *             the introspection exception
+	 */
 	public Map<String, String> getOSJMXStats(JMXDeamons jmxDaemon, String host, String port) throws IOException,
 	AttributeNotFoundException, InstanceNotFoundException, MBeanException, ReflectionException, IntrospectionException {
 	List<String> jmxAttributeList = new ArrayList<String>();
