@@ -62,6 +62,7 @@ import org.jumbune.profiling.beans.ClusterWideInfo;
 import org.jumbune.profiling.beans.JMXDeamons;
 import org.jumbune.profiling.beans.SystemStats;
 import org.jumbune.profiling.beans.WorkerJMXInfo;
+import org.jumbune.profiling.utils.JMXConnectorCache;
 import org.jumbune.profiling.utils.ProfilerConstants;
 import org.jumbune.profiling.utils.ProfilerJMXDump;
 import org.jumbune.utils.beans.LogLevel;
@@ -108,6 +109,8 @@ public class ExecutionServlet extends HttpServlet {
 	
 	/** The Constant REPORTS_BEAN. */
 	private final String REPORTS_BEAN = "ReportsBean";
+	
+	private final String JMX_CACHE="jmxCache";
 
 	
 	/** The json string. */

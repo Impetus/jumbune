@@ -2,7 +2,6 @@ package org.jumbune.profiling.utils;
 
 import static org.jumbune.profiling.utils.ProfilerConstants.CPU_DETAILS_COMMAND;
 import static org.jumbune.profiling.utils.ProfilerConstants.CPU_USAGE_COMMAND;
-import static org.jumbune.profiling.utils.ProfilerConstants.CPU_USAGE_COMMAND_WITHOUT_CARET;
 import static org.jumbune.profiling.utils.ProfilerConstants.DATANODE;
 import static org.jumbune.profiling.utils.ProfilerConstants.EXECUTION_MODE;
 import static org.jumbune.profiling.utils.ProfilerConstants.JMX_URL_POSTFIX;
@@ -76,7 +75,7 @@ import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
 
 /**
- * This class is used to fetch the JMX stats based on the pre-defined intervals through MXBean. >>>>>>> Stashed changes
+ * This class is used to fetch the JMX stats based on the pre-defined intervals through MXBean.
  * 
  */
 
@@ -93,16 +92,7 @@ public class ProfilerJMXDump {
 	
 	private static final String TAGSESSIONID = "tag.sessionId";
 
-	/** The cache. */
-	private JMXConnectorCache cache = null;
-
 	private static String weight = "weight";
-	/**
-	 * Instantiates a new profiler jmx dump.
-	 */
-	public ProfilerJMXDump() {
-		cache = new JMXConnectorCache(ProfilerConstants.FIFTEEN);
-	}
 
 	/**
 	 * Getting JMX parameters for different services are DATANODE,NAMENODE,TASKTRACKER. >>>>>>> Stashed changes
@@ -136,7 +126,7 @@ public class ProfilerJMXDump {
 		Map<String, String> serviceStats = null;
 		JMXServiceURL url = new JMXServiceURL(JMX_URL_PREFIX + host + ":" + port + JMX_URL_POSTFIX);
 		// cache is used here
-		connector = JMXConnectorInstance.getJMXConnectorInstance(url, cache);
+		connector = JMXConnectorInstance.getJMXConnectorInstance(url);
 		connection = connector.getMBeanServerConnection();
 		String serviceUrl = SERVICE_URL + service;
 		Set<ObjectName> names = connection.queryNames(null, null);
@@ -198,8 +188,7 @@ public class ProfilerJMXDump {
 		Map<String, String> serviceStats = null;
 		JMXServiceURL url = new JMXServiceURL(JMX_URL_PREFIX + host + ":" + port + JMX_URL_POSTFIX);
 		String serviceUrl = ProfilerUtil.getHadoopJMXURLPrefix(hadoopVersion, jmxDaemon) + ProfilerConstants.HADOOP_SERVICE_URL + jmxDaemon;
-		connector = JMXConnectorInstance.getJMXConnectorInstance(url, cache);
-
+		connector = JMXConnectorInstance.getJMXConnectorInstance(url);
 		connection = connector.getMBeanServerConnection();
 		Set<ObjectName> names = connection.queryNames(null, null);
 		String objectName;
@@ -229,12 +218,51 @@ public class ProfilerJMXDump {
 				}
 			}
 		}
-		JMXConnectorInstance.closeJMXConnection(connector);
 		return serviceStats;
 
 	}
 
-
+	public Map<String, String> getOSJMXStats(JMXDeamons jmxDaemon, String host, String port) throws IOException,
+	AttributeNotFoundException, InstanceNotFoundException, MBeanException, ReflectionException, IntrospectionException {
+	List<String> jmxAttributeList = new ArrayList<String>();
+	JMXConnector connector = null;
+	MBeanServerConnection connection = null;
+	Map<String, String> serviceStats = null;
+	JMXServiceURL url = new JMXServiceURL(JMX_URL_PREFIX + host + ":" + port + JMX_URL_POSTFIX);
+	String serviceUrl = ProfilerConstants.OS_URL;
+	connector = JMXConnectorInstance.getJMXConnectorInstance(url);
+	connection = connector.getMBeanServerConnection();
+	Set<ObjectName> names = connection.queryNames(null, null);
+	String objectName;
+	MBeanInfo info;
+	MBeanAttributeInfo[] mbi;
+	
+	for (ObjectName objName : names) {
+		objectName = objName.toString();
+		if(objectName.indexOf(serviceUrl) > -1) {
+			if (serviceStats == null) {
+				serviceStats = new HashMap<String, String>();
+			}
+			info = connection.getMBeanInfo(objName);
+			mbi = info.getAttributes();
+			String name = null;
+			for (int i = 0; i < info.getAttributes().length; i++) {
+				name = mbi[i].getName();
+				jmxAttributeList.add(name);
+				Object attributeValue = connection.getAttribute(objName, name);
+				if (attributeValue != null) {
+					serviceStats.put(name, String.valueOf(attributeValue));
+				}
+				if("".equals(attributeValue) || "[]".equals(attributeValue)){
+					serviceStats.put(name, "-");
+				}
+	
+			}
+		}
+	}
+	return serviceStats;
+	
+	}
 	/***
 	 * This method calculate list of JMX attribute exposed by a given hadoop cluster.
 	 * 
@@ -261,7 +289,7 @@ public class ProfilerJMXDump {
 
 		JMXServiceURL url = new JMXServiceURL(JMX_URL_PREFIX + host + ":" + port + JMX_URL_POSTFIX);
 		String serviceUrl = ProfilerUtil.getHadoopJMXURLPrefix(hadoopVersion, jmxDaemon) + ProfilerConstants.HADOOP_SERVICE_URL + jmxDaemon;
-		connector = JMXConnectorInstance.getJMXConnectorInstance(url, cache);
+		connector = JMXConnectorInstance.getJMXConnectorInstance(url);
 		connection = connector.getMBeanServerConnection();
 		Set<ObjectName> names = connection.queryNames(null, null);
 		for (ObjectName objName : names) {
@@ -276,7 +304,6 @@ public class ProfilerJMXDump {
 				}
 			}
 		}
-		JMXConnectorInstance.closeJMXConnection(connector);
 		return suppressMultipleOccurrenceAttributes(jmxAttributeList);
 		
 
@@ -953,36 +980,24 @@ public class ProfilerJMXDump {
 			hosts[0] = nodeIp;
 		}
 		
-		
+		String datanodePort = yamlConfig.getSlaveParam().getDataNodeJmxPort();
 		List<Integer> cpuDetails;
 		Map<String, String> cpuStats = null;
 		Remoter remoter = null;
-		String response = null;
+		Map<String,String> operatingSystemAttributes = null;
 		remoter = new Remoter(yamlConfig.getMaster().getHost(), Integer.valueOf(yamlConfig.getMaster().getAgentPort()),
 				yamlConfig.getFormattedJumbuneJobName());
-		
 		for (String host : hosts) {
-			
-			
-			CommandWritableBuilder builder = new CommandWritableBuilder();
-			builder.addCommand(CPU_USAGE_COMMAND, false, null).populate(config, host);
-			response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
-			if (response == null || "".equals(response.trim())) {
-				LOGGER.warn("No response from remote machine on command " + CPU_USAGE_COMMAND);
-				CommandWritableBuilder builderWoCaret = new CommandWritableBuilder();
-				builderWoCaret.addCommand(CPU_USAGE_COMMAND_WITHOUT_CARET, false, null).populate(config, host);
-				
-				response = (String) remoter.fireCommandAndGetObjectResponse(builderWoCaret.getCommandWritable());
-
-			}
+			operatingSystemAttributes = getOSJMXStats(JMXDeamons.OPERATING_SYSTEM, host, datanodePort);
+			float usage=Float.parseFloat(operatingSystemAttributes.get("SystemCpuLoad").trim());
+			usage =usage*100; 
 			cpuStats = new HashMap<String, String>();
-			ResultParser resultParser = new ResultParser();
-			float usage = resultParser.parseRemoteCPUUSageResult(response);
 			cpuStats.put("cpuUsage", String.valueOf(usage));
 			cpuDetails = getRemoteCPUDetails(config, host);
 			cpuStats.put("numberOfCores", String.valueOf(cpuDetails.get(1)));
 			cpuStats.put("threadsPerCore", String.valueOf(cpuDetails.get(0)));
 		}
+		
 		remoter.close();
 		return cpuStats;
 
