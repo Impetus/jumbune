@@ -18,7 +18,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.yaml.config.Config;
-import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.profiling.beans.ClusterInfo;

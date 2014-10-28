@@ -5,7 +5,6 @@ import java.io.IOException;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -40,33 +39,21 @@ public final class JMXConnectorInstance {
 	 *            is object of {@link JMXConnectorCache}
 	 * @return
 	 */
-	public static JMXConnector getJMXConnectorInstance(JMXServiceURL url,
-			JMXConnectorCache cache) {
+	public synchronized static JMXConnector getJMXConnectorInstance(JMXServiceURL url) throws IOException {
+		JMXConnectorCache cache = JMXConnectorCache.getJMXCacheInstance();
 		connector = cache.get(url.toString());
-		if (connector == null) {
+		if (connector != null) {
 			try {
-				connector = JMXConnectorFactory.connect(url, null);
-				cache.put(url.toString(), connector);
-			} catch (IOException e) {
-				LOGGER.error(e);
+				if (connector.getConnectionId() != null) {
+					return connector;
+				}
+			} catch (IOException ioe) {
+				LOGGER.warn("Found connector not null with no connectionId, now attempting to create new connector");
 			}
 		}
+		connector = JMXConnectorFactory.connect(url, null);
+		cache.put(url.toString(), connector);
 		return connector;
-
-	}
-	
-	/**
-	 * This method is used to close JMX connections after use.
-	 * @param instance
-	 */
-	public static void closeJMXConnection(JMXConnector instance){
-		try{
-			if(instance!= null){
-				instance.close();
-			}
-		}catch (IOException e) {
-			LOGGER.error(e);
-		}
 	}
 
 }

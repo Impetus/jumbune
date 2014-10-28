@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.management.remote.JMXConnector;
-import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 
 import org.apache.commons.lang.StringUtils;
@@ -32,7 +31,6 @@ import org.jumbune.common.beans.SupportedApacheHadoopVersions;
 import org.jumbune.common.beans.UnavailableHost;
 import org.jumbune.common.utils.RemoteFileUtil;
 import org.jumbune.common.utils.RemotingUtil;
-import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
@@ -56,12 +54,13 @@ import org.jumbune.profiling.beans.WorkerJMXInfo;
 import org.jumbune.profiling.hprof.NodePerformance;
 import org.jumbune.profiling.utils.DataDistributionStats;
 import org.jumbune.profiling.utils.HTFProfilingException;
+import org.jumbune.profiling.utils.JMXConnectorCache;
 import org.jumbune.profiling.utils.JMXConnectorInstance;
 import org.jumbune.profiling.utils.ProfilerConstants;
-import org.jumbune.profiling.utils.ProfilerStats;
-import org.jumbune.profiling.utils.ViewHelper;
 import org.jumbune.profiling.utils.ProfilerConstants.HADOOP_JMX_CAT;
 import org.jumbune.profiling.utils.ProfilerConstants.Operator;
+import org.jumbune.profiling.utils.ProfilerStats;
+import org.jumbune.profiling.utils.ViewHelper;
 
 ;
 
@@ -71,7 +70,6 @@ import org.jumbune.profiling.utils.ProfilerConstants.Operator;
 public class ClusterViewServiceImpl implements ProfilingViewService {
 	private Loader loader = null;
 	private SupportedApacheHadoopVersions hadoopVersions = null;
-
 	private static final Logger LOGGER = LogManager
 			.getLogger(ClusterViewServiceImpl.class);
 
@@ -96,7 +94,7 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 */
 	@Override
 	public ClusterInfo getMainView(List<PerformanceStats> genSettings,
-			String viewName) throws HTFProfilingException {
+			String viewName) throws HTFProfilingException{
 		YamlLoader yamlLoader = (YamlLoader)loader;
 		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
 		ViewHelper viewHelper = new ViewHelper();
@@ -121,7 +119,6 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 		JMXConnector jobTrackerInstance = null;
 		JMXConnector taskTrackerInstance = null;
 		UnavailableHost unavailableHost;
-
 		if (viewName.equals("DATA_DISTRIBUTION_VIEW")) {
 			dataDistributionStats = new DataDistributionStats(yamlLoader);
 			try {
@@ -215,14 +212,6 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 				UnavailableHost[] unAvailableHostsArray = new UnavailableHost[unavailableHosts.size()];
 				unavailableHosts.toArray(unAvailableHostsArray);
 				slave.setUnavailableHosts(Arrays.asList(unAvailableHostsArray));
-				
-				//terminating JMX instances for slave after use
-				if(taskTrackerInstance!=null){
-					terminateJMXConnection(taskTrackerInstance);
-				}
-				if(dataNodeInstance!=null){
-					terminateJMXConnection(dataNodeInstance);
-				}
 			}
 			List<UnavailableHost> unavailableHostsAll = slave
 					.getUnavailableHosts();
@@ -233,14 +222,6 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 		}
 		clusterInfo.setClusterId(clusterId);
 		clusterInfo.setDataCenters(dataCenters.values());
-		
-		//terminating JMX instances for master after use
-		if(nameNodeInstance!=null){
-			terminateJMXConnection(nameNodeInstance);
-		}
-		if(jobTrackerInstance!=null){
-			terminateJMXConnection(jobTrackerInstance);
-		}
 		
 		return clusterInfo;
 	}
@@ -312,19 +293,16 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 
 	private JMXConnector getJMXConnectorInstance(String masterNode,
 			String dataNodePort) throws IOException {
-
+		
 		JMXServiceURL url = new JMXServiceURL(ProfilerConstants.JMX_URL_PREFIX
 				+ masterNode + ":" + dataNodePort
 				+ ProfilerConstants.JMX_URL_POSTFIX);
-		return JMXConnectorFactory.connect(url, null);
+		return JMXConnectorInstance.getJMXConnectorInstance(url);
+		
 
 	}
 	
-	private void terminateJMXConnection(JMXConnector instance){
-
-		JMXConnectorInstance.closeJMXConnection(instance);
-	}
-
+	
 	/*
 	 * (non-Javadoc)
 	 * 

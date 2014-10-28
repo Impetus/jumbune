@@ -34,6 +34,7 @@ public interface ProfilerConstants {
 	String JMX_URL_POSTFIX = "/jmxrmi";
 	String SERVICE_URL = "Hadoop:service=";
 	String HADOOP_SERVICE_URL = ":service=";
+	String OS_URL ="java.lang:type=OperatingSystem";
 	String JUMBUNE_CONTEXT_URL = "org.jumbune.context:type=ExposedJumbuneMetrics";
 	String PARTITION_LIST_COMMAND = "df -h";
 	String NO_PARTITION = "none";
