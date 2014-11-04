@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,13 +28,27 @@ import com.jcraft.jsch.UserInfo;
  *
  */
 public final class SessionEstablisher {
-	private SessionEstablisher(){}
+
 	static final String ECHO_HADOOP_HOME = "echo $HADOOP_HOME \n";
 	private static final String SCP_COMMAND = "scp -f ";
 	private static final Logger LOGGER = LogManager.getLogger("EventLogger");
 	public static final String WHERE_IS_HADOOP = "whereis hadoop";
 	private static byte[] bufs;
-	private static final String NEW_LINE = "\n";
+	public static final String LS_PREFIX_PART = "ls ";
+	public static final String LS_POSTFIX_PART = " -Rl | grep :";
+	private static final String HADOOP_VERSION_YARN_COMMAND = "bin/yarn version";
+	private static final String HADOOP_VERSION_NON_YARN_COMMAND = "bin/hadoop version";
+	public static final String LL_COMMAND = "ll /usr/bin/hadoop \n";
+	private Deployer deployerInstance;
+	private static List<String> jars = new ArrayList<String>(2);
+	
+	static {
+		jars.add("/lib/log4j-api-2.0.jar");
+		jars.add("/lib/log4j-core-2.0.jar");
+	}
+	public SessionEstablisher(Deployer deployer){
+		this.deployerInstance = deployer;
+	}
 	
 	/**
 	 * method for establishing connection while authentication
@@ -85,15 +101,42 @@ public final class SessionEstablisher {
 	 * @throws JSchException
 	 * @throws IOException
 	 */
-	public static void fetchHadoopJarsFromNamenode(Session session, String username, String namenodeIP, String hadoopHome, String destinationAbsolutePath, String... listOfFiles)
+	public static void fetchHadoopJarsFromNamenode(Session session, String username, String namenodeIP, String hadoopHome, String destinationAbsolutePath, Deployer deployer,String distributionType, String... files)
 			throws JSchException, IOException {
-
 		new File(destinationAbsolutePath).mkdirs();
+		String versionCommand = null ;
+		String versionNumber = null ;
+		if(!distributionType.equalsIgnoreCase("MAPR")){
+		if (distributionType.equalsIgnoreCase("CDH")
+				|| distributionType.equalsIgnoreCase("HDP")) {
+			versionCommand = File.separator + "usr" + File.separator + HADOOP_VERSION_YARN_COMMAND;
+		}else if(distributionType.equalsIgnoreCase("APACHE-NY")){
+			versionCommand = hadoopHome + File.separator + HADOOP_VERSION_NON_YARN_COMMAND;
+		} else {
+			versionCommand = hadoopHome + File.separator
+					+ HADOOP_VERSION_YARN_COMMAND;
+		}
+		String versionResponse = executeCommand(session, versionCommand);
+		 versionNumber = getVersionNumber(versionResponse);
+		}
+		String[] listOfFiles = deployer.getRelativePaths(versionNumber);
 		for (String fileName : listOfFiles) {
-			String command = SCP_COMMAND + hadoopHome + "/" + fileName;
+			String command = SCP_COMMAND + hadoopHome + fileName;
+			LOGGER.info("Fetching Jar:" + hadoopHome + fileName);
 			copyRemoteFile(session, command, destinationAbsolutePath);
 		}
+	}
 
+	/**
+	 * Gets the version number after parsing the response from the hadoop version commands.
+	 *
+	 * @param versionResponse the version response
+	 * @return the version number
+	 */
+	private static String getVersionNumber(String versionResponse) {
+		String[] versionNumber = versionResponse.split("Subversion");
+		versionNumber = versionNumber[0].split(" ");
+		return versionNumber[1].trim();
 	}
 
 	private static void copyRemoteFile(Session session, String command, String fileLocation) throws JSchException, IOException {
@@ -331,7 +374,7 @@ public final class SessionEstablisher {
 		}
 	}
 	
-	public static String executeCommandUsingShell(Session session, String simpleCommand, String lineBreaker) throws JSchException, IOException {
+	public static String executeCommandUsingShell(Session session, String simpleCommand,String lineBreaker) throws JSchException, IOException {
 		String response = null;
 		ChannelShell channelShell = null;
 		BufferedReader brIn = null;
@@ -339,25 +382,23 @@ public final class SessionEstablisher {
 
 		try {
 			channelShell = (ChannelShell) session.openChannel("shell");
-			channelShell.connect();
-			brIn = new BufferedReader(new InputStreamReader(channelShell.getInputStream()));
+			InputStream is = channelShell.getInputStream();
+			brIn = new BufferedReader(new InputStreamReader(is));
 			dataOut = new DataOutputStream(channelShell.getOutputStream());
+			channelShell.setPty(true);
+			channelShell.connect();
 			dataOut.writeBytes(simpleCommand);
 			dataOut.flush();
 			String line = null;
-			StringBuilder stringBuilder = new StringBuilder();
+			StringBuilder stringBuilder = null;
 			while ((line = brIn.readLine()) != null) {
-				stringBuilder.append(line + NEW_LINE);
 				if (line.contains(lineBreaker)) {
-					if (lineBreaker.contains("echo")) {
-						stringBuilder.setLength(0);
-						stringBuilder = new StringBuilder(brIn.readLine());
-					}
+					stringBuilder = new StringBuilder();
+					stringBuilder.append(line);
+					response = stringBuilder.toString();
 					break;
 				}
-
 			}
-			response = stringBuilder.toString();
 		} finally {
 			if (brIn != null) {
 				brIn.close();
@@ -371,5 +412,5 @@ public final class SessionEstablisher {
 		}
 		return response;
 	}
-	
+
 }

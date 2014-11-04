@@ -3,8 +3,7 @@ package org.jumbune.common.yaml.config;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,17 +22,13 @@ import org.jumbune.common.beans.Master;
 import org.jumbune.common.beans.ProfilingParam;
 import org.jumbune.common.beans.Slave;
 import org.jumbune.common.beans.Validation;
-import org.jumbune.common.beans.ReportsBean.ReportName;
 import org.jumbune.common.utils.ClasspathUtil;
 import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.utils.YamlUtil;
 import org.jumbune.utils.beans.LogLevel;
-import org.yaml.snakeyaml.TypeDescription;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
-
+import com.google.gson.Gson;
 import com.jcraft.jsch.JSchException;
 
 
@@ -107,8 +102,9 @@ public class YamlLoader implements Loader{
 	 * @param is the is
 	 */
 	public YamlLoader(InputStream is) {
-		this();
-		this.uConf = (YamlConfig) loadYAML(is, Constants.DEFAULT_USER_CONFIGURATION, YamlConfig.class);
+	    this();
+	    Gson gson = new Gson();
+	    this.uConf = (YamlConfig) gson.fromJson(new InputStreamReader(is), YamlConfig.class);
 	}
 
 	/**
@@ -120,69 +116,6 @@ public class YamlLoader implements Loader{
 		return uConf;
 	}
 
-	/**
-	 * Gets the url.
-	 *
-	 * @param config the config
-	 * @return the url
-	 * @throws JumbuneYamlException the hTF yaml exception
-	 */
-	private URL getURL(String config) {
-		URL url;
-		try {
-			url = new URL(config);
-		} catch (MalformedURLException e) {
-			ClassLoader loader = YamlLoader.class.getClassLoader();
-			url = loader.getResource(config);
-			if (url == null) {
-				throw new IllegalArgumentException("Yaml file is not found.");
-			}
-		}
-		return url;
-	}
-
-	/**
-	 * Load yaml.
-	 *
-	 * @param input the input
-	 * @param config the config
-	 * @param configClass the config class
-	 * @return the object
-	 */
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private Object loadYAML(final InputStream input, String config, Class configClass) {
-		try {
-			// Loading YAML from default location this will help developers when
-			// using YAMLLoader from command prompt
-			InputStream inputStream = input;
-			if (inputStream == null) {
-				URL url = getURL(config);
-				LOGGER.debug(" InputStream is null. Loading file using config : " + config);
-				LOGGER.debug(" loading yaml  " + url);
-				inputStream = url.openStream();
-			}
-			LOGGER.debug("Loading settings from " + inputStream.available());
-			Constructor constructor = new Constructor(configClass);
-
-			TypeDescription desc = new TypeDescription(configClass);
-			constructor.addTypeDescription(desc);
-			Yaml yaml = new Yaml(constructor);
-			return yaml.load(inputStream);
-		} catch (IllegalArgumentException e) {
-			LOGGER.error(e.getMessage());
-			System.exit(1);
-		} catch (IOException e) {
-			LOGGER.error(e.getMessage());
-			System.exit(1);
-		} catch (Exception e) {
-			LOGGER.error(e.getMessage());
-		}
-
-		return null;
-
-	}
-
-	
 
 	/**
 	 * Sets the job definition list.
@@ -972,7 +905,7 @@ public class YamlLoader implements Loader{
 	 * @return the pure jar counter location
 	 */
 	public String getPureJarCounterLocation() {
-		return getJobJarLoc() + uConf.getFormattedJumbuneJobName() + Constants.SUMMARY_FILE_LOC + ReportName.PURE_JAR_COUNTER;
+		return getJobJarLoc() + uConf.getFormattedJumbuneJobName() + Constants.SUMMARY_FILE_LOC + Constants.PURE_JAR_COUNTER;
 	}
 
 	/**
@@ -981,7 +914,7 @@ public class YamlLoader implements Loader{
 	 * @return the pure jar profiling counters location
 	 */
 	public String getPureJarProfilingCountersLocation() {
-		return getJobJarLoc() + uConf.getFormattedJumbuneJobName() + Constants.SUMMARY_FILE_LOC + ReportName.PURE_PROFILING;
+		return getJobJarLoc() + uConf.getFormattedJumbuneJobName() + Constants.SUMMARY_FILE_LOC + Constants.PURE_PROFILING;
 	}
 
 	/**
@@ -991,7 +924,7 @@ public class YamlLoader implements Loader{
 	 */
 	public String getInstrumentedJarCountersLocation() {
 
-		return getJobJarLoc() + uConf.getFormattedJumbuneJobName() + Constants.SUMMARY_FILE_LOC + ReportName.INSTRUMENTED_JAR_COUNTER;
+		return getJobJarLoc() + uConf.getFormattedJumbuneJobName() + Constants.SUMMARY_FILE_LOC + Constants.INSTRUMENTED_JAR_COUNTER;
 
 	}
 

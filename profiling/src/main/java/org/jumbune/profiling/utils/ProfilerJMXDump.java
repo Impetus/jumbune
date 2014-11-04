@@ -1,6 +1,7 @@
 package org.jumbune.profiling.utils;
 
 import static org.jumbune.profiling.utils.ProfilerConstants.CPU_DETAILS_COMMAND;
+import static org.jumbune.profiling.utils.ProfilerConstants.CPU_USAGE_COMMAND_WITHOUT_CARET;
 import static org.jumbune.profiling.utils.ProfilerConstants.CPU_USAGE_COMMAND;
 import static org.jumbune.profiling.utils.ProfilerConstants.DATANODE;
 import static org.jumbune.profiling.utils.ProfilerConstants.EXECUTION_MODE;
@@ -994,7 +995,8 @@ public class ProfilerJMXDump {
 
 		Slave slave;
 		String[] hosts;
-		YamlConfig yamlConfig = (YamlConfig)config;
+		YamlConfig yamlConfig = (YamlConfig) config;
+		
 		if (nodeIp == null) {
 			slave = yamlConfig.getSlaves().get(0);
 			hosts = slave.getHosts();
@@ -1004,24 +1006,36 @@ public class ProfilerJMXDump {
 			hosts[0] = nodeIp;
 		}
 		
-		String datanodePort = yamlConfig.getSlaveParam().getDataNodeJmxPort();
+		
 		List<Integer> cpuDetails;
 		Map<String, String> cpuStats = null;
 		Remoter remoter = null;
-		Map<String,String> operatingSystemAttributes = null;
+		String response = null;
 		remoter = new Remoter(yamlConfig.getMaster().getHost(), Integer.valueOf(yamlConfig.getMaster().getAgentPort()),
 				yamlConfig.getFormattedJumbuneJobName());
+		
 		for (String host : hosts) {
-			operatingSystemAttributes = getOSJMXStats(JMXDeamons.OPERATING_SYSTEM, host, datanodePort);
-			float usage=Float.parseFloat(operatingSystemAttributes.get("SystemCpuLoad").trim());
-			usage =usage*100; 
+			
+			
+			CommandWritableBuilder builder = new CommandWritableBuilder();
+			builder.addCommand(CPU_USAGE_COMMAND, false, null).populate(config, host);
+			response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+			if (response == null || "".equals(response.trim())) {
+				LOGGER.warn("No response from remote machine on command " + CPU_USAGE_COMMAND);
+				CommandWritableBuilder builderWoCaret = new CommandWritableBuilder();
+				builderWoCaret.addCommand(CPU_USAGE_COMMAND_WITHOUT_CARET, false, null).populate(config, host);
+				
+				response = (String) remoter.fireCommandAndGetObjectResponse(builderWoCaret.getCommandWritable());
+
+			}
 			cpuStats = new HashMap<String, String>();
+			ResultParser resultParser = new ResultParser();
+			float usage = resultParser.parseRemoteCPUUSageResult(response);
 			cpuStats.put("cpuUsage", String.valueOf(usage));
 			cpuDetails = getRemoteCPUDetails(config, host);
 			cpuStats.put("numberOfCores", String.valueOf(cpuDetails.get(1)));
 			cpuStats.put("threadsPerCore", String.valueOf(cpuDetails.get(0)));
 		}
-		
 		remoter.close();
 		return cpuStats;
 

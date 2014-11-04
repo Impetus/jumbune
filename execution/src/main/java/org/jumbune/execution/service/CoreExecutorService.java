@@ -8,7 +8,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +23,6 @@ import org.jumbune.common.beans.Master;
 import org.jumbune.common.beans.Module;
 import org.jumbune.common.beans.ReportsBean;
 import org.jumbune.common.beans.Slave;
-import org.jumbune.common.beans.ReportsBean.ReportName;
 import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
@@ -33,6 +31,7 @@ import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.execution.beans.CommunityModule;
 import org.jumbune.execution.processor.DataValidationProcessor;
 import org.jumbune.execution.processor.DebugProcessor;
 import org.jumbune.execution.processor.Processor;
@@ -41,7 +40,6 @@ import org.jumbune.execution.utils.ExecutionConstants;
 import org.jumbune.execution.utils.ExecutionUtil;
 import org.jumbune.execution.utils.ProcessHelper;
 import org.jumbune.remoting.client.Remoter;
-import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.BasicYamlConfig;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.utils.exception.JumbuneException;
@@ -62,7 +60,8 @@ public abstract class CoreExecutorService {
 	protected static final boolean CONSOLE_BASED = true;
 	protected static final ProcessHelper HELPER = new ProcessHelper();
 	private static final String YAML_FILE = "/yamlInfo.ser";
-
+	/** The Constant MAKE_JOBJARS_DIR_ON_AGENT. */
+	private static final String MAKE_JOBJARS_DIR_ON_AGENT = "mkdir -p AGENT_HOME/jobJars/";
 	/**
 	 * Method that performs the desired chaining of the processors.
 	 * 
@@ -100,9 +99,10 @@ public abstract class CoreExecutorService {
 	private List<Module> addModules(Config config) {
 		List<Module> modules = new ArrayList<Module>();
 		boolean isAddProfiling = false;
+
 		YamlConfig yamlConfig = (YamlConfig)config;
 		if (yamlConfig.getEnableDataValidation().equals(Enable.TRUE)) {
-			modules.add(Module.DATA_VALIDATION);
+			modules.add(CommunityModule.DATA_VALIDATION);
 		}
 
 		if (yamlConfig.getEnableStaticJobProfiling().equals(Enable.TRUE)) {
@@ -110,13 +110,13 @@ public abstract class CoreExecutorService {
 		}
 
 		if (yamlConfig.getDebugAnalysis().equals(Enable.TRUE)) {
-			modules.add(Module.DEBUG_ANALYSER);
+			modules.add(CommunityModule.DEBUG_ANALYSER);
 		}
 
 		if (isAddProfiling) {
-			modules.add(Module.PROFILING);
+			modules.add(CommunityModule.PROFILING);
 		}
-		Collections.sort(modules);
+		//Collections.sort(modules);
 		LOGGER.debug("Executable Modules [" + modules + "]");
 		return modules;
 	}
@@ -165,21 +165,21 @@ public abstract class CoreExecutorService {
 	private Processor getProcessor(Module module, boolean isCommand) {
 
 		Processor processor = null;
-		switch (module) {
-
-		case DATA_VALIDATION:
+		
+		
+		if(module.getEnumValue()==CommunityModule.DATA_VALIDATION.getEnumValue()){
 			processor = new DataValidationProcessor(isCommand);
-			break;
-
-		case PROFILING:
-			processor = new ProfilingProcessor(isCommand);
-			break;
-
-		case DEBUG_ANALYSER:
-			processor = new DebugProcessor(isCommand);
-			break;
-
 		}
+
+		if(module.getEnumValue()==CommunityModule.PROFILING.getEnumValue()){
+			processor = new ProfilingProcessor(isCommand);
+		}
+
+		if(module.getEnumValue()==CommunityModule.DEBUG_ANALYSER.getEnumValue()){
+			processor = new DebugProcessor(isCommand);
+		}
+
+		
 
 		return processor;
 	}
@@ -190,10 +190,10 @@ public abstract class CoreExecutorService {
 
 		for (Module reportType : completedReports) {
 
-			Map<ReportName, String> report = reports.getReport(reportType);
+			Map<String, String> report = reports.getReport(reportType);
 
 			if (report != null) {
-				for (ReportName key : report.keySet()) {
+				for (String key : report.keySet()) {
 					String filepath = reportFolderPath + key.toString();
 					String value = report.get(key);
 					ConfigurationUtil.writeToFile(filepath, value, true);
@@ -249,7 +249,7 @@ public abstract class CoreExecutorService {
 	 */
 	protected void cleanUpSlavesTempFldr(Loader loader)
 			throws JumbuneException, IOException, InterruptedException {
-		
+
 		YamlLoader yamlLoader = (YamlLoader)loader;
 		ExecutorService cleanUpSlavesservice = null;
 		List<Slave> listSlave = yamlLoader.getLogDefinition().getSlaves();
@@ -260,7 +260,7 @@ public abstract class CoreExecutorService {
 				cleanUpSlavesservice = Executors.newFixedThreadPool(listSlave
 						.size());
 				for (String hostNode : hostsNode) {
-					CleanUpSlaves cleanUpSlaves = new CleanUpSlaves(yamlLoader,
+					CleanUpSlaves cleanUpSlaves = new CleanUpSlaves(loader,
 							hostNode);
 					cleanUpSlavesservice.execute(cleanUpSlaves);
 				}
@@ -334,11 +334,11 @@ public abstract class CoreExecutorService {
 
 			Master master = loader.getLogDefinition().getMaster();
 			String hostMaster = master.getHost();
+			
 			YamlConfig yamlConfig = (YamlConfig) loader.getYamlConfiguration();
-			String jumbuneHome = yamlConfig.getsJumbuneHome();
 			Remoter remoter = new Remoter(hostMaster, Integer.valueOf(master
 					.getAgentPort()));
-			
+			String jumbuneHome = yamlConfig.getsJumbuneHome();
 			//In "working directory in worker node/jobjars", remove the currently ran job name folder
 			StringBuilder cleanLocationStrBuilder = new StringBuilder()
 					.append(RemotingConstants.REMOVE_FOLDER)
@@ -370,11 +370,12 @@ public abstract class CoreExecutorService {
 
 	}
 	
-	protected void persistYamlInfoForShutdownHook(YamlLoader loader, String agentHome) throws IOException{
+	protected void persistYamlInfoForShutdownHook(Loader loader, String agentHome) throws IOException{
 		ObjectOutputStream oos = null;
 		FileOutputStream fout = null;
 		YamlLoader yamlLoader = (YamlLoader)loader;
 		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		
 		
 		List<String> hosts = new ArrayList<String>();
 		String[] slaveAgentList = null;
@@ -410,5 +411,18 @@ public abstract class CoreExecutorService {
 		//sends the file to Agent_Home
 		RemotingUtil.sendYamlInfoToAgent(loader, agentConfig);
 }
+	
+	protected void createJobJarFolderOnAgent(YamlLoader yamlLoader){
+		
+		Master master = yamlLoader.getLogDefinition().getMaster();
+		String hostMaster = master.getHost();
+		Remoter remoter = new Remoter(hostMaster, Integer.valueOf(master
+				.getAgentPort()));
+		CommandWritableBuilder builder = new CommandWritableBuilder();
+		String agentJobJarPath = MAKE_JOBJARS_DIR_ON_AGENT + yamlLoader.getJumbuneJobName();
+		builder.addCommand(agentJobJarPath, false, null);
+		remoter.fireAndForgetCommand(builder.getCommandWritable());
+		
+	}
 
 }

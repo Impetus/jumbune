@@ -1,4 +1,7 @@
 package org.jumbune.utils.exception;
+
+import org.jumbune.utils.ErrorCodesMessageInterface;
+
 /**
  * The Class JumbuneException is a wrapper for handling exception in various modules.
  */
@@ -40,6 +43,10 @@ public class JumbuneException extends Exception {
 		errorCode = errorCodeAndMessage.getCode();
 		errorMessage = errorCodeAndMessage.getDescription();
 	}
+	
+	public JumbuneException(ErrorCodesMessageInterface errorCodesMessageInterface){
+	
+			}
 
 	/**
 	 * Gets the error code.

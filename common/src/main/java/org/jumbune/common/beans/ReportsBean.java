@@ -37,7 +37,7 @@ public class ReportsBean {
 	private AtomicBoolean stopExectution = new AtomicBoolean(false);
 	
 	/** The reports. */
-	private List<Map<ReportName, String>> reports = new ArrayList<Map<ReportName, String>>();
+	private List<Map<String, String>> reports = new ArrayList<Map<String, String>>();
 	
 	/** The completed. */
 	private Set<Module> completed = new ConcurrentSkipListSet<Module>();
@@ -50,25 +50,36 @@ public class ReportsBean {
 	 *
 	 * @return the all reports
 	 */
-	public Map<ReportName, String> getAllReports() {
-		Map<ReportName, String> returnExcelMap = new HashMap<ReportsBean.ReportName, String>();
-		for (Map<ReportName, String> map : reports) {
+	public Map<String, String> getAllReports() {
+		Map<String, String> returnExcelMap = new HashMap<String, String>();
+		for (Map<String, String> map : reports) {
 			returnExcelMap.putAll(map);
 		}
 		return returnExcelMap;
+	}
+	
+	
+	@SuppressWarnings("unchecked")
+	public Map<String, String> clone(){
+		try {
+			return (Map<String, String>) super.clone();
+		} catch (CloneNotSupportedException e) {
+			LOGGER.error(e);
+		}
+		return null;
 	}
 
 	/**
 	 * Instantiates a new reports bean.
 	 */
 	public ReportsBean() {
-		reports.add(new ConcurrentHashMap<ReportName, String>());
-		reports.add(new ConcurrentHashMap<ReportName, String>());
-		reports.add(new ConcurrentHashMap<ReportName, String>());
-		reports.add(new ConcurrentHashMap<ReportName, String>());
-		reports.add(new ConcurrentHashMap<ReportName, String>());
-		reports.add(new ConcurrentHashMap<ReportName, String>());
-		reports.add(new ConcurrentHashMap<ReportName, String>());
+		reports.add(new ConcurrentHashMap<String, String>());
+		reports.add(new ConcurrentHashMap<String, String>());
+		reports.add(new ConcurrentHashMap<String, String>());
+		reports.add(new ConcurrentHashMap<String, String>());
+		reports.add(new ConcurrentHashMap<String, String>());
+		reports.add(new ConcurrentHashMap<String, String>());
+		reports.add(new ConcurrentHashMap<String, String>());
 	}
 
 	/**
@@ -161,8 +172,8 @@ public class ReportsBean {
 	 * @return the all completed reports
 	 */
 	@SuppressWarnings("unchecked")
-	public Map<ReportName, String> getAllCompletedReports() {
-		Map<ReportName, String> returnMap = new HashMap<ReportName, String>();
+	public Map<String, String> getAllCompletedReports() {
+		Map<String, String> returnMap = new HashMap<String, String>();
 
 		// code to show completed reports
 		if (completed.size() > 0) {
@@ -195,7 +206,7 @@ public class ReportsBean {
 	 * @param type the type
 	 * @return the report
 	 */
-	public Map<ReportName, String> getReport(Module type) {
+	public Map<String, String> getReport(Module type) {
 		return reports.get(type.getEnumValue());
 	}
 
@@ -325,24 +336,6 @@ public class ReportsBean {
 		}
 	}
 
-	/**
-	 * Enum for mentioning report name.
-	 */
-	public enum ReportName {
-		
-		/** The data validation. */
-		DATA_VALIDATION, 
- /** The profiling. */
- PROFILING, 
- /** The pure jar counter. */
- PURE_JAR_COUNTER, 
- /** The instrumented jar counter. */
- INSTRUMENTED_JAR_COUNTER, 
- /** The pure profiling. */
- PURE_PROFILING, 
- /** The debug analyzer. */
- DEBUG_ANALYZER, 
-
-	}
+	
 
 }

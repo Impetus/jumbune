@@ -15,6 +15,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Master;
 import org.jumbune.common.beans.SupportedApacheHadoopVersions;
+import org.jumbune.common.utils.locators.ApacheNonYarnLocator;
+import org.jumbune.common.utils.locators.ApacheYarnLocator;
+import org.jumbune.common.utils.locators.HadoopDistributionLocator;
+import org.jumbune.common.utils.locators.MapRLocator;
 import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
@@ -22,8 +26,6 @@ import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.BasicYamlConfig;
-import org.jumbune.utils.beans.VirtualFileSystem;
-
 
 
 /***
@@ -136,9 +138,8 @@ public final class RemotingUtil {
 
 		String agentHome = null;
 		if (config != null) {
-			YamlConfig 	yamlConfig = (YamlConfig)config;
+			YamlConfig yamlConfig = (YamlConfig)config;
 			Master master = yamlConfig.getMaster();
-			
 			Remoter remoter = new Remoter(master.getHost(), Integer.valueOf(master.getAgentPort()));
 			
 			CommandWritableBuilder builder = new CommandWritableBuilder();
@@ -166,7 +167,7 @@ public final class RemotingUtil {
 		JobClient client = null;
 		Configuration config = new Configuration();
 		YamlLoader yamlLoader = (YamlLoader)loader;
-		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();		
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
 		config.set(yamlConfig.getMaster().getUser(), "");
 		try {
 			client = new JobClient(new InetSocketAddress(jobTrackerURI.split(":")[0], Integer.parseInt(jobTrackerURI.split(":")[1])), config);
@@ -175,6 +176,20 @@ public final class RemotingUtil {
 		}
 		return client;
 	}
+	
+	/**
+	 * Abstraction to FireCommandAndGetObjectResponse to simplify usage
+	 * @param config, the Yaml Config
+	 * @param command, the command to be executed using remoting
+	 * @return, the command response as String
+	 */
+	public static String executeCommand(YamlConfig config, String command) {
+		Remoter remoter = getRemoter(config, "");
+		CommandWritableBuilder builder = new CommandWritableBuilder();
+		builder.addCommand(command, false, null).populate(config, null);
+		return (String) remoter.fireCommandAndGetObjectResponse(builder
+				.getCommandWritable());
+	}		
 
 	/**
 	 * *
@@ -189,10 +204,9 @@ public final class RemotingUtil {
 		String hadoopHome = RemotingUtil.getHadoopHome(config);
 		Remoter remoter = getRemoter(config, " ");
 		YamlConfig yamlConfig = (YamlConfig)config;
-		
 		Master master = yamlConfig.getMaster();
 
-		String hadoopDir = fireWhereIsHadoopCommand(remoter, master, yamlConfig);
+		String hadoopDir = fireWhereIsHadoopCommand(remoter, master, config);
 		List<String> host = new ArrayList<String>();
 		host.add(master.getHost());
 		String commandToExecute = null;
@@ -203,7 +217,7 @@ public final class RemotingUtil {
 		}
 			
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(commandToExecute, false, null).populate(yamlConfig, null);
+		builder.addCommand(commandToExecute, false, null).populate(config, null);
 		
 		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		remoter.close();
@@ -224,8 +238,11 @@ public final class RemotingUtil {
 		builder.addCommand(command, false, null).populate(config, null);
 		
 		String wherIsHadoopResponse=(String)remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
-		if(2<wherIsHadoopResponse.split(" ").length){
+		if(wherIsHadoopResponse!=null && 2<wherIsHadoopResponse.split(" ").length){
 			hadoopDir = wherIsHadoopResponse.split(" ")[1];
+		}
+		if(hadoopDir!= null && hadoopDir.trim().length()==0){
+			return null;
 		}
 		return hadoopDir;
 	}
@@ -275,34 +292,33 @@ public final class RemotingUtil {
 		YamlLoader yamlLoader = (YamlLoader)loader;
 		String jumbuneHome = yamlLoader.getjHome();
 		String dirInJumbuneHome = jumbuneHome + File.separator + Constants.JOB_JARS_LOC + yamlLoader.getJumbuneJobName();
-		
 		File dir = new File(dirInJumbuneHome);
 		if (!dir.exists()) {
 			dir.mkdirs();
 		}
-
-		String remoteHadoopHome = getHadoopHome(yamlLoader.getYamlConfiguration());
+		YamlConfig yamlConfig= (YamlConfig)yamlLoader.getYamlConfiguration();
+		HadoopDistributionLocator hadoopUtility = getDistributionLocator(getHadoopVersion(yamlConfig));
+		String hadoopConfDir = hadoopUtility.getHadoopConfDirPath(yamlConfig);
 		String jumbuneJobName = yamlLoader.getJumbuneJobName() + File.separator;
-		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		
 		jumbuneHome = new String(jumbuneHome+File.separator);
 		String destinationReceiveDir = jumbuneHome + Constants.JOB_JARS_LOC  + jumbuneJobName;
 		Remoter remoter = getRemoter(yamlConfig, jumbuneHome);
-		String copyCommand = new StringBuilder().append("cp ").append(remoteHadoopHome).append("/conf/").append(hadoopConfigurationFile).append(" ").append(getAgentHome(yamlConfig)).append("/jobJars/").append(jumbuneJobName).toString();
+		String copyCommand = new StringBuilder().append("cp ").append(hadoopConfDir).append(hadoopConfigurationFile).append(" ").append(getAgentHome(yamlConfig)).append("/jobJars/").append(jumbuneJobName).toString();
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand(MAKE_JOBJARS_DIR_ON_AGENT + jumbuneJobName, false, null)
 		.addCommand(copyCommand, false, null);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 		//If execution happended to fast, we won't be able to get a directory to find files for next command
 		remoter.receiveLogFiles(File.separator + Constants.JOB_JARS_LOC  + jumbuneJobName, File.separator + Constants.JOB_JARS_LOC + jumbuneJobName + hadoopConfigurationFile);
-		remoter.close();
 		return destinationReceiveDir;
 	}
 	
 	public static String copyAndGetHadoopConfigurationFilePath(String remoteAbsolutePath, Loader loader){
+		
 		YamlLoader yamlLoader = (YamlLoader)loader;
 		String jumbuneHome = yamlLoader.getjHome();
 		String dirInJumbuneHome = jumbuneHome + File.separator + Constants.JOB_JARS_LOC + yamlLoader.getJumbuneJobName();
-
 		File dir = new File(dirInJumbuneHome);
 		if (!dir.exists()) {
 			dir.mkdirs();
@@ -350,25 +366,6 @@ public final class RemotingUtil {
 	}
 	
 	/**
-	 * Gets the virtual file system.
-	 *
-	 * @param loader the loader
-	 * @return the virtual file system
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	public static VirtualFileSystem getVirtualFileSystem(Loader loader) throws IOException {
-		VirtualFileSystem fs = null;
-		HadoopFileSystemUtility utility = null;
-		utility = new HadoopFileSystemUtility(loader);
-		String nameNodeURI = RemotingUtil.getHadoopConfigurationValue(loader, "core-site.xml", "fs.default.name");
-		YamlLoader yamlLoader = (YamlLoader)loader;
-		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
-		fs = utility.getVirtualFileSystem(nameNodeURI,yamlConfig.getMaster().getUser());
-		return fs;
-
-	}
-
-	/**
 	 * Gets the file system.
 	 *
 	 * @param loader the loader
@@ -379,10 +376,10 @@ public final class RemotingUtil {
 		FileSystem fs = null;
 		try {
 			YamlLoader yamlLoader = (YamlLoader)loader;
-			YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();			
+			YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
 			org.apache.hadoop.conf.Configuration config = new org.apache.hadoop.conf.Configuration();
 			String nameNodeURI = RemotingUtil.getHadoopConfigurationValue(loader, "core-site.xml", "fs.default.name");
-			fs = FileSystem.get(URI.create(nameNodeURI), config, yamlConfig.getMaster().getUser());
+			fs = FileSystem.get(URI.create(nameNodeURI), config);
 		} catch (Exception e) {
 			LOGGER.error(e);
 		}
@@ -441,5 +438,30 @@ public final class RemotingUtil {
 		return hadoopVersion;
 
 	}
+	
+	/***
+	 * Return hadoop locator instance based on hadoop version. 
+	 * @param version
+	 * @return
+	 */
+	public static HadoopDistributionLocator getDistributionLocator(SupportedApacheHadoopVersions version) {
+		HadoopDistributionLocator hadoopLocator = null;
+	    switch (version) {
+	      case HADOOP_NON_YARN:
+	    	  hadoopLocator = new ApacheNonYarnLocator();
+	        break;
+	      case HADOOP_MAPR:
+	    	  hadoopLocator = new MapRLocator();
+	        break;
+	      case HADOOP_YARN:
+	    	  hadoopLocator = new ApacheYarnLocator();
+	        break;
+	      default:
+	    	  hadoopLocator =  new ApacheNonYarnLocator();
+	      break;
+	    }
+	    return hadoopLocator;
+	  }
+	
 
 }

@@ -9,6 +9,7 @@ import java.util.Map;
 public class HadoopJMXResponse {
 	private Map<String, String> dataNode;
 	private Map<String, String> taskTracker;
+	private Map<String, String> nodeManager;
 
 
 	/**
@@ -51,9 +52,28 @@ public class HadoopJMXResponse {
 				stringBuilder.append(entry.getKey()).append(":").append(entry.getValue()).append(", ");
 			}
 		}
+		if(nodeManager!=null && !nodeManager.isEmpty()){
+          for (Map.Entry<String, String> entry : nodeManager.entrySet()) {
+              stringBuilder.append(entry.getKey()).append(":").append(entry.getValue()).append(", ");
+          }
+        }
 		stringBuilder.substring(0,stringBuilder.length()-1);
 		
 		return stringBuilder.toString();
 	}
+
+  /**
+   * @return the nodeManager
+   */
+  public Map<String, String> getNodeManager() {
+    return nodeManager;
+  }
+
+  /**
+   * @param nodeManager the nodeManager to set
+   */
+  public void setNodeManager(Map<String, String> nodeManager) {
+    this.nodeManager = nodeManager;
+  }
 
 }

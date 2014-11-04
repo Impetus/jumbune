@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Set;
 
 
+
+
 /**
  * This bean can be used for capturing data of all reports to be shown on HTTP request.
  */
@@ -24,9 +26,9 @@ public class HttpReportsBean extends ReportsBean {
 		if (completed.size() > 0) {
 			synchronized (completed) {
 				for (Module type : completed) {
-					Map<ReportName, String> report = getReport(type);
-					Set<ReportName> names = report.keySet();
-					for (ReportName reportName : names) {
+					Map<String, String> report = getReport(type);
+					Set<String> names = report.keySet();
+					for (String reportName : names) {
 						returnMap.put(reportName.toString(), report.get(reportName));
 					}
 					shown.add(type);

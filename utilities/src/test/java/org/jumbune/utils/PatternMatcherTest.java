@@ -20,7 +20,7 @@ public class PatternMatcherTest {
 
 	@Test
 	public void matchWithNullValue() {
-		boolean check = PatternMatcher.match(null, UtilitiesConstantsTest.REGEX);
+		boolean check = PatternMatcher.match(null, UtilitiesConstantsTestInterface.REGEX);
 		assertFalse(check);
 	}
 
@@ -28,7 +28,7 @@ public class PatternMatcherTest {
 	public void matchRegexTest() {
 		Text value = new Text();
 		value.set("09/03/1989");
-		boolean check = PatternMatcher.match(value, UtilitiesConstantsTest.REGEX);
+		boolean check = PatternMatcher.match(value, UtilitiesConstantsTestInterface.REGEX);
 		assertTrue(check);
 	}
 
@@ -36,7 +36,7 @@ public class PatternMatcherTest {
 	public void matchRegexZeroLengthTest() {
 		Text value = new Text();
 		value.set("");
-		boolean check = PatternMatcher.match(value, UtilitiesConstantsTest.REGEX);
+		boolean check = PatternMatcher.match(value, UtilitiesConstantsTestInterface.REGEX);
 		assertFalse(check);
 	}
 
@@ -44,7 +44,7 @@ public class PatternMatcherTest {
 	public void matchPatternTest() {
 		Text value = new Text();
 		value.set("09/03/1989");
-		Pattern pattern = Pattern.compile(UtilitiesConstantsTest.REGEX);
+		Pattern pattern = Pattern.compile(UtilitiesConstantsTestInterface.REGEX);
 		boolean check = PatternMatcher.match(value, pattern);
 		assertTrue(check);
 	}
@@ -54,14 +54,14 @@ public class PatternMatcherTest {
 
 		Text value = new Text();
 		value.set("");
-		Pattern pattern = Pattern.compile(UtilitiesConstantsTest.REGEX);
+		Pattern pattern = Pattern.compile(UtilitiesConstantsTestInterface.REGEX);
 		boolean check = PatternMatcher.match(value, pattern);
 		assertFalse(check);
 	}
 
 	@Test
 	public void matchPatternNullTest() {
-		Pattern pattern = Pattern.compile(UtilitiesConstantsTest.REGEX);
+		Pattern pattern = Pattern.compile(UtilitiesConstantsTestInterface.REGEX);
 		boolean check = PatternMatcher.match(null, pattern);
 		assertFalse(check);
 	}

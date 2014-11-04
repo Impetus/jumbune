@@ -69,13 +69,13 @@ public class ClearLogsServlet extends HttpServlet {
 		response.setContentType("application/json");
 		response.setCharacterEncoding("UTF-8");
 		PrintWriter out = null;
+		Gson gson = new Gson();
 
 		try {
 			out = response.getWriter();
 
-			final String logLocationYaml = org.jumbune.common.utils.YamlConfigUtil.getServiceYamlPath();
-			LogConsolidationInfo logCollection = (LogConsolidationInfo) YamlUtil
-					.loadYaml(logLocationYaml);
+			final String logLocationJson = org.jumbune.common.utils.YamlConfigUtil.getServiceJsonPath();
+			LogConsolidationInfo logCollection = gson.fromJson(logLocationJson, LogConsolidationInfo.class);
 			RemoteFileUtil remoteFileUtil = new RemoteFileUtil();
 			remoteFileUtil.clearAllLogFiles(logCollection);
 			data.put("success", true);

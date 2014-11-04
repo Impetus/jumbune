@@ -23,12 +23,12 @@ public interface WebConstants {
 	
 	/** The ajax stop. */
 	String AJAX_STOP = "STOP";
-
-	/** The yaml extension. */
-	String YAML_EXTENSION = ".yaml";
 	
-	/** The saved yaml dir name. */
-	String SAVED_YAML_DIR_NAME = "/SavedYaml";
+	/** The Json File **/
+	String JSON_EXTENTION = ".json";
+	
+	/** The saved json dir name. */
+	String SAVED_JSON_DIR_NAME = "/SavedJson";
 	
 	/** The tmp dir path. */
 	String TMP_DIR_PATH = "/tmp";

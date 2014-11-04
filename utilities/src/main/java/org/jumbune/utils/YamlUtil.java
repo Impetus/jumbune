@@ -1,31 +1,21 @@
 package org.jumbune.utils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.yaml.snakeyaml.Yaml;
 
 /**
  * This class provides api to validate yaml entries and other util methods
  * 
  */
 public final class YamlUtil {
-	private static final Logger LOGGER = LogManager.getLogger(YamlUtil.class);
-
+  
 	private static final String IPADDRESS_PATTERN = "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
 			+ "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
 			+ "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
 			+ "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
 
-	private static final String FILESYSTEM_LOC_PATTERN = "(/[a-zA-Z0-9_ -]+\\s*)+(/)?(\\*)?(\\*\\.(log)?\\*)?(\\.\\*)?(\\.yaml)?";
+	private static final String FILESYSTEM_LOC_PATTERN = "(/[a-zA-Z0-9_ -]+\\s*)+(/)?(\\*)?(\\*\\.(log)?\\*)?(\\.\\*)?(\\.json)?";
 
 	private static final char STARTER = '<';
 	private static final char CLOSER = '>';
@@ -174,41 +164,5 @@ public final class YamlUtil {
 	public static boolean validateFileSystemLocation(String address) {
 		Matcher matcher = filePattern.matcher(address);
 		return matcher.matches();
-	}
-
-	/**
-	 * This method is used to serialize object to yaml.
-	 *
-	 * @param dataObject the data object
-	 * @return the string
-	 */
-	public static String serializeObjectToYaml(Object dataObject) {
-		Yaml yaml = new Yaml();
-		return yaml.dump(dataObject);
-	}
-
-	/**
-	 * This method is used to load yaml according to the file path.
-	 *
-	 * @param filePath the file path
-	 * @return the object
-	 * @throws FileNotFoundException the file not found exception
-	 */
-	public static Object loadYaml(String filePath) throws FileNotFoundException {
-		InputStream inputStream = null;
-		try {
-			File file = new File(filePath);
-			inputStream = new FileInputStream(file);
-			Yaml yaml = new Yaml();
-			return yaml.load(inputStream);
-		} finally {
-			if(inputStream!=null){
-				try{
-					inputStream.close();
-				}catch(IOException ioe){
-					LOGGER.error("Failed to close input stream of yaml file");
-				}
-			}
-		}
 	}
 }

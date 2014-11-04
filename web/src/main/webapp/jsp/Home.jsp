@@ -76,7 +76,7 @@
 			  <li>
 				<div class="icon_block"><a id="uploadfiles" href="javascript:void(0)"><span class="icon"><img src="skins/images/upload_icon.png" /></span></a></div>
 				<h3>Open</h3>
-				<p>Browse filesystem to import a job yaml</p>
+				<p>Browse filesystem to import a job json</p>
 				<div id="displayFileUpload"  class="uploadfilewrap">
 					<input type="text" readonly="readonly" value="Click here to browse" id="pickfiles" style="z-index:1 !important;display:none"  />								
 				</div>
@@ -84,7 +84,7 @@
 			  <li>
 				<div class="icon_block"><a id="yamlRepositry" href="javascript:void(0)"><span class="icon"><img src="skins/images/select_icon.png" /></span></a></div>
 				<h3>Select</h3>
-				<p>Select a job yaml from recent ones</p>
+				<p>Select a job json from recent ones</p>
 			  </li>
 			</ul>
 			<div class="clear"></div>
@@ -165,7 +165,7 @@
 				$.ajax({
 				  type: "POST",
 				  cache: false,			  
-				  url: 'SelectExistingYaml?selectYamlList=TRUE'
+				  url: 'JumbuneHistoryJobPickerServlet?selectJsonList=TRUE'
 				  }).done(function( resp ) {
 				  if(resp != null || $.trim(resp)!='')
 					{
@@ -226,7 +226,7 @@
 			$.ajax({
 				  type: "POST",
 				  cache: false,			  
-				  url: 'SelectExistingYaml?selectYamlList=FALSE&selectedYamlFileName='+$(this).attr('rel')
+				  url: 'JumbuneHistoryJobPickerServlet?selectJsonList=FALSE&selectedJsonFileName='+$(this).attr('rel')
 				  }).done(function( resp ) {
 					// Called when a file has finished uploading
 					$("#yamlFormModel").load('jsp/YamlForm.jsp', {"populateData" : resp}).dialog({
@@ -266,8 +266,8 @@
 				title : "Jar files",
 				extensions : "jar"
 			}, {
-				title : "YAML files",
-				extensions : "yaml"
+				title : "JSON files",
+				extensions : "json"
 			} ],
 			// Post init events, bound after the internal events
 			init : { 
@@ -322,7 +322,7 @@
 // 									+ file.percent + "%</span>";
 						});
 		uploader.bind('Error', function(up, err) {			
-			alert("Please select YAML file");	
+			alert("Please select JSON file");	
 			up.refresh(); // Reposition Flash/Silverlight
 		});
 		document.getElementById('uploadfiles').onclick = function() { 
@@ -331,9 +331,9 @@
 			/*setTimeout(function()	 {
 				var fileName = $('#pickfiles').val();
 				console.log(fileName);
-				if(fileName.indexOf(".yaml") <= 0 ){
+				if(fileName.indexOf(".json") <= 0 ){
 					$('#displayFileUpload').css('border','1px solid #FF0000');
-					alert('Please select YAML file');
+					alert('Please select JSON file');
 					return false;
 				}
 			},1000);

@@ -37,14 +37,14 @@ import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.yarn.beans.YarnMaster;
+import org.jumbune.common.yarn.beans.YarnSlaveParam;
 import org.jumbune.common.beans.ClasspathElement;
 import org.jumbune.common.beans.DebuggerConf;
 import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.HttpReportsBean;
-import org.jumbune.common.beans.Master;
 import org.jumbune.common.beans.ProfilingParam;
 import org.jumbune.common.beans.Slave;
-import org.jumbune.common.beans.SlaveParam;
 import org.jumbune.common.beans.SupportedApacheHadoopVersions;
 import org.jumbune.common.beans.UnavailableHost;
 import org.jumbune.common.utils.ConfigurationUtil;
@@ -60,20 +60,21 @@ import org.jumbune.execution.service.HttpExecutorService;
 import org.jumbune.profiling.beans.CategoryInfo;
 import org.jumbune.profiling.beans.ClusterWideInfo;
 import org.jumbune.profiling.beans.JMXDeamons;
+import org.jumbune.profiling.beans.NonYarnCategoryInfo;
 import org.jumbune.profiling.beans.SystemStats;
 import org.jumbune.profiling.beans.WorkerJMXInfo;
 import org.jumbune.profiling.utils.JMXConnectorCache;
 import org.jumbune.profiling.utils.ProfilerConstants;
 import org.jumbune.profiling.utils.ProfilerJMXDump;
+import org.jumbune.profiling.yarn.beans.YarnCategoryInfo;
+import org.jumbune.profiling.yarn.beans.YarnClusterWideInfo;
+import org.jumbune.profiling.yarn.beans.YarnWorkerJMXInfo;
 import org.jumbune.utils.beans.LogLevel;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
 import org.jumbune.web.utils.WebConstants;
 import org.jumbune.web.utils.WebUtil;
-import org.yaml.snakeyaml.TypeDescription;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -99,6 +100,8 @@ public class ExecutionServlet extends HttpServlet {
 	private final String TABS = "tabs";
 
 	private final String LOADER = "loader";
+	
+	private boolean isYarnEnable = false;	
 
 	/** The Constant LOG. */
 	private static final Logger LOG = LogManager.getLogger(ExecutionServlet.class);
@@ -138,7 +141,7 @@ public class ExecutionServlet extends HttpServlet {
 	protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		super.service(request, response);
 		Config config = null;
-	
+		
 		HttpReportsBean reports = new HttpReportsBean();
 		HttpSession session = request.getSession();
 		LOG.info("\n\n *************************** NEW REQUEST ************************* \n\n");
@@ -147,8 +150,9 @@ public class ExecutionServlet extends HttpServlet {
 
 			if (ServletFileUpload.isMultipartContent(request)) {
 				config = saveUsersResources(request);
-				saveYamlToJumbuneHome();
-				String agentHome = RemotingUtil.getAgentHome(config);
+				YamlConfig yamlConfig = (YamlConfig)config;
+				saveJsonToJumbuneHome(yamlConfig);
+				String agentHome = RemotingUtil.getAgentHome(yamlConfig);
 
 				WebUtil util = new WebUtil();
 				ClasspathElement cse = ConfigurationUtil.loadJumbuneSuppliedJarList();
@@ -156,25 +160,24 @@ public class ExecutionServlet extends HttpServlet {
 
 				// place where list of dependent jars' path for instrumented job
 				// jar are getting created.
-				YamlConfig yamlConfig = (YamlConfig)config;
 				yamlConfig.getClasspath().setJumbuneSupplied(cse);
 				// sends user uploaded MR job jars on agent
 				String jarFilePath = YamlLoader.getjHome() + "/" + Constants.JOB_JARS_LOC + yamlConfig.getFormattedJumbuneJobName()
 						+ Constants.MR_RESOURCES;
 
-				checkAndSendMrJobJarOnAgent(config, jarFilePath);
-				LOG.debug("Configuration received ["+config+"]");
-				modifyDebugParameters(config);
-				modifyProfilingParameters(config);
-				setInputFileInConfig(config);
+				checkAndSendMrJobJarOnAgent(yamlConfig, jarFilePath);
+				LOG.debug("Configuration received ["+yamlConfig+"]");
+				modifyDebugParameters(yamlConfig);
+				modifyProfilingParameters(yamlConfig);
+				setInputFileInConfig(yamlConfig);
 				
 				session.setAttribute(REPORTS_BEAN, reports);
 				request.setAttribute(STATS_INTERVAL, Constants.TEN_THOUSAND);
-				String tabs = util.getTabsInformation(config);
+				String tabs = util.getTabsInformation(yamlConfig);
 				request.setAttribute(JOB_NAME, yamlConfig.getJumbuneJobName());
-				Loader loader = service.runInSeperateThread(config, reports);
+				Loader loader = service.runInSeperateThread(yamlConfig, reports);
 				session.setAttribute("ExecutorServReference",service);
-				setClusterProfilingAttributes(request, config, loader);
+				setClusterProfilingAttributes(request, yamlConfig, loader);
 				session.setAttribute(LOADER, loader);
 				request.setAttribute(JOB_JSON, this.jsonString);
 				request.setAttribute(TABS, tabs);
@@ -214,6 +217,7 @@ public class ExecutionServlet extends HttpServlet {
 			IOException {
 		YamlConfig yamlConfig = (YamlConfig)config;
 		if (yamlConfig.getHadoopJobProfile().equals(Enable.TRUE)) {
+		    isYarnEnable= yamlConfig.getEnableYarn().equals(Enable.TRUE)?true:false;
 			request.setAttribute("clusterProfilerCategoriesJson", getProfilerCategoryJson(loader));
 			request.setAttribute(STATS_INTERVAL, Constants.FIVE_THOUNSAND);
 
@@ -275,59 +279,116 @@ public class ExecutionServlet extends HttpServlet {
 		}
 	}
 
-	/***
-	 * This method return all categories of hadoop jmx exposed by hadoop cluster in form of json string.
-	 * 
-	 * @param loader
-	 *            YamlLoader instance
-	 * @return hadoop jmx categories in form of json String .
-	 * 
-	 * @throws AttributeNotFoundException
-	 * @throws InstanceNotFoundException
-	 * @throws IntrospectionException
-	 * @throws MBeanException
-	 * @throws ReflectionException
-	 * @throws IOException
-	 */
-	private String getProfilerCategoryJson(Loader loader) throws AttributeNotFoundException, InstanceNotFoundException, IntrospectionException,
-			MBeanException, ReflectionException, IOException {
-		Gson gson = new Gson();
-		YamlLoader yamlLoader = (YamlLoader)loader;
-		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
-		Master master = yamlConfig.getMaster();
-		SlaveParam slave = yamlConfig.getSlaveParam();
-		CategoryInfo categoryInfo = new CategoryInfo();
-		ClusterWideInfo clusterWideInfo = new ClusterWideInfo();
-		SupportedApacheHadoopVersions hadoopVersion = RemotingUtil.getHadoopVersion(yamlConfig);
-		ProfilerJMXDump dump = new ProfilerJMXDump();
-		WorkerJMXInfo levelJMXInfo = new WorkerJMXInfo();
 
-		clusterWideInfo
-				.setJobTracker(dump.getAllJMXAttribute(JMXDeamons.JOB_TRACKER, hadoopVersion, master.getHost(), master.getJobTrackerJmxPort()));
-		clusterWideInfo.setNameNode(dump.getAllJMXAttribute(JMXDeamons.NAME_NODE, hadoopVersion, master.getHost(), master.getNameNodeJmxPort()));
-		for (Slave slaves : yamlConfig.getSlaves()) {
-			for (String slaveIp : slaves.getHosts()) {
-				if(master.getHost().equalsIgnoreCase(slaveIp)){
-						
-					levelJMXInfo.setDataNode(dump.getAllJMXAttribute(JMXDeamons.DATA_NODE, hadoopVersion, master.getHost(), slave.getDataNodeJmxPort()));
-					levelJMXInfo.setTaskTracker(dump.getAllJMXAttribute(JMXDeamons.TASK_TRACKER, hadoopVersion, master.getHost(), slave.getTaskTrackerJmxPort()));
-				}else{
-					
-					levelJMXInfo.setDataNode(dump.getAllJMXAttribute(JMXDeamons.DATA_NODE, hadoopVersion, slaveIp, slave.getDataNodeJmxPort()));
-					levelJMXInfo.setTaskTracker(dump.getAllJMXAttribute(JMXDeamons.TASK_TRACKER, hadoopVersion, slaveIp, slave.getTaskTrackerJmxPort()));
-						
-				}
-			}	
+    /***
+     * This method return all categories of hadoop jmx exposed by hadoop cluster in form of json
+     * string.
+     * 
+     * @param loader YamlLoader instance
+     * @return hadoop jmx categories in form of json String .
+     * 
+     * @throws AttributeNotFoundException
+     * @throws InstanceNotFoundException
+     * @throws IntrospectionException
+     * @throws MBeanException
+     * @throws ReflectionException
+     * @throws IOException
+     */
+    private String getProfilerCategoryJson(Loader loader) throws AttributeNotFoundException,
+        InstanceNotFoundException, IntrospectionException, MBeanException, ReflectionException,
+        IOException {
+      Gson gson = new Gson();
+      YamlLoader yamlLoader = (YamlLoader) loader;
+      YamlConfig yamlConfig = (YamlConfig) ((YamlLoader)loader).getYamlConfiguration();
+      YarnSlaveParam slave =  yamlConfig.getSlaveParam();
+      YarnMaster master = yamlConfig.getMaster();
+      CategoryInfo categoryInfo = null;
+      if(isYarnEnable){
+        categoryInfo = new YarnCategoryInfo();
+      }else {
+        categoryInfo = new NonYarnCategoryInfo();
+      }
+      SupportedApacheHadoopVersions hadoopVersion =
+          RemotingUtil.getHadoopVersion(yamlLoader.getYamlConfiguration());
+      WorkerJMXInfo levelJMXInfo =null;
+      ClusterWideInfo clusterWideInfo = new ClusterWideInfo();
+      if(isYarnEnable){
+        clusterWideInfo = new YarnClusterWideInfo();
+        levelJMXInfo = new YarnWorkerJMXInfo();
+      }else{
+        clusterWideInfo = new ClusterWideInfo();
+        levelJMXInfo = new WorkerJMXInfo();
+      }
+      ProfilerJMXDump dump = new ProfilerJMXDump();
+      
+      setClusterLevelDaemons(master, clusterWideInfo, hadoopVersion, dump);
+      setNodeLevelDaemons(yamlLoader, master, slave, hadoopVersion, dump, levelJMXInfo);
+      String systemStatsJson =
+          WebUtil.getPropertyFromResource(WebConstants.PROFILING_PROPERTY_FILE,
+              WebConstants.PROFILING_SYSTEM_JSON);
+      SystemStats stats = gson.fromJson(systemStatsJson, SystemStats.class);
+      
+      categoryInfo.setClusterWide(clusterWideInfo);
+      categoryInfo.setWorkerJMXInfo(levelJMXInfo);
+      categoryInfo.setSystemStats(stats);
+      return gson.toJson(categoryInfo);
+    }
+
+
+    private void setNodeLevelDaemons(YamlLoader loader, YarnMaster master, YarnSlaveParam slave,
+        SupportedApacheHadoopVersions hadoopVersion, ProfilerJMXDump dump, WorkerJMXInfo levelJMXInfo)
+        throws IOException, AttributeNotFoundException, InstanceNotFoundException, MBeanException,
+        ReflectionException, IntrospectionException {
+    	YamlConfig yamlConfig = (YamlConfig) ((YamlLoader)loader).getYamlConfiguration();
+      for (Slave slaves : yamlConfig.getSlaves()) {
+        for (String slaveIp : slaves.getHosts()) {
+          if (master.getHost().equalsIgnoreCase(slaveIp)) {
+            setYarnAndNonYarnDaemons(master.getHost(), slave, hadoopVersion, dump, levelJMXInfo);
+          } else {
+            setYarnAndNonYarnDaemons(slaveIp, slave, hadoopVersion, dump, levelJMXInfo);
+          }
+        }
+      }
+    }
+    
+    private void setYarnAndNonYarnDaemons(String host, YarnSlaveParam slave,
+            SupportedApacheHadoopVersions hadoopVersion, ProfilerJMXDump dump,
+            WorkerJMXInfo levelJMXInfo) throws IOException,
+            AttributeNotFoundException, InstanceNotFoundException, MBeanException, ReflectionException,
+            IntrospectionException {
+          levelJMXInfo.setDataNode(dump.getAllJMXAttribute(JMXDeamons.DATA_NODE, hadoopVersion, host,
+              slave.getDataNodeJmxPort()));
+          if(isYarnEnable){
+            YarnWorkerJMXInfo ywji = (YarnWorkerJMXInfo) levelJMXInfo;
+            ywji.setNodeManager(dump.getAllJMXAttribute(JMXDeamons.NODE_MANAGER,
+                hadoopVersion, host, slave.getNodeManagerJmxPort()));
+          }else{
+            levelJMXInfo.setTaskTracker(dump.getAllJMXAttribute(JMXDeamons.TASK_TRACKER, hadoopVersion, host,
+                  slave.getTaskTrackerJmxPort()));
+          }
+        }
+
+	private void setClusterLevelDaemons(YarnMaster master,
+			ClusterWideInfo clusterWideInfo,
+			SupportedApacheHadoopVersions hadoopVersion, ProfilerJMXDump dump)
+			throws IOException, AttributeNotFoundException,
+			InstanceNotFoundException, MBeanException, ReflectionException,
+			IntrospectionException {
+		clusterWideInfo.setNameNode(dump.getAllJMXAttribute(
+				JMXDeamons.NAME_NODE, hadoopVersion, master.getHost(),
+				master.getNameNodeJmxPort()));
+		if (isYarnEnable) {
+			YarnClusterWideInfo ycwi = (YarnClusterWideInfo) clusterWideInfo;
+			ycwi.setResourceManager(dump.getAllJMXAttribute(
+					JMXDeamons.RESOURCE_MANAGER, hadoopVersion,
+					master.getHost(), master.getResourceManagerJmxPort()));
+		} else {
+			clusterWideInfo.setJobTracker(dump.getAllJMXAttribute(
+					JMXDeamons.JOB_TRACKER, hadoopVersion, master.getHost(),
+					master.getJobTrackerJmxPort()));
 		}
-		String systemStatsJson = WebUtil.getPropertyFromResource(WebConstants.PROFILING_PROPERTY_FILE, WebConstants.PROFILING_SYSTEM_JSON);
-		SystemStats stats = gson.fromJson(systemStatsJson, SystemStats.class);
-
-		categoryInfo.setClusterWide(clusterWideInfo);
-		categoryInfo.setWorkerJMXInfo(levelJMXInfo);
-		categoryInfo.setSystemStats(stats);
-		return gson.toJson(categoryInfo);
 	}
-
+    
 	/**
 	 * Process class path element.
 	 * 
@@ -351,16 +412,16 @@ public class ExecutionServlet extends HttpServlet {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	private void saveYamlToJumbuneHome() throws IOException {
-		YamlConfig yamlConfig = new Gson().fromJson(this.jsonString, YamlConfig.class);
-		String yamlFolder = System.getenv("JUMBUNE_HOME") + "/yamlrepo/";
-		String fileName = yamlConfig.getJumbuneJobName() + ".yaml";
-		File yamlDirectory = new File(yamlFolder);
+	private void saveJsonToJumbuneHome(YamlConfig config) throws IOException {
+		Gson gson = new Gson();
+		String jsonDir = System.getenv("JUMBUNE_HOME") + "/jsonrepo/";
+		String fileName = config.getJumbuneJobName() + ".json";
+		File yamlDirectory = new File(jsonDir);
 		if (!yamlDirectory.exists()) {
 			yamlDirectory.mkdir();
 		}
 		String json = this.jsonString;
-		ClasspathElement classpathElement = yamlConfig.getClasspath().getUserSupplied();
+		ClasspathElement classpathElement = config.getClasspath().getUserSupplied();
 		if (WebConstants.MASTER_MACHINE_PATH_OPTION == classpathElement.getSource()) {
 			String[] resources = null;
 			JsonObject jsonObject = (JsonObject) new JsonParser().parse(json);
@@ -380,18 +441,14 @@ public class ExecutionServlet extends HttpServlet {
 				classpathElement.setExcludes(path);
 			}
 		}
-		Constructor constructor = new Constructor(Config.class);
-		TypeDescription desc = new TypeDescription(Config.class);
-		constructor.addTypeDescription(desc);
-		Yaml yaml = new Yaml(constructor);
-		String yamlData = yaml.dump(yamlConfig);
-		yamlFolder = yamlFolder + fileName;
-		File file = new File(yamlFolder);
+		String jsonData = gson.toJson(config,YamlConfig.class);
+		jsonDir = jsonDir + fileName;
+		File file = new File(jsonDir);
 		BufferedWriter bw = new BufferedWriter(new FileWriter(file));
-		bw.write(yamlData);
+		bw.write(jsonData);
 		bw.flush();
 		bw.close();
-		LOG.debug("Persisted YamlWizard configuration [" + yamlData + "]");
+		LOG.debug("Persisted YamlWizard configuration [" + jsonData + "]");
 
 	}
 
@@ -427,7 +484,7 @@ public class ExecutionServlet extends HttpServlet {
 			FileItem jarFileItem = null;
 
 			for (FileItem fileItem : uploadedItems) {
-				if (fileItem.getFieldName().equals("yamlJsonData")) {
+				if (fileItem.getFieldName().equals("jsonData")) {
 					StringWriter writer = new StringWriter();
 					IOUtils.copy(fileItem.getInputStream(), writer);
 					yamlData = writer.toString();
@@ -436,6 +493,8 @@ public class ExecutionServlet extends HttpServlet {
 					if (config == null) {
 						return null;
 					}
+					YamlConfig yamlConfig = (YamlConfig) config;
+					isYarnEnable= yamlConfig.getEnableYarn().equals(Enable.TRUE);
 					YamlConfigUtil.checkIfJumbuneHomeEndsWithSlash(config);
 
 				}
@@ -566,24 +625,25 @@ public class ExecutionServlet extends HttpServlet {
 	 * @throws MessagingException
 	 *             the messaging exception
 	 */
-		boolean isDNAvailable;
 		public void checkAvailableNodes(Config conf) throws IOException, MessagingException {
-		boolean isTTAvailable;
+		boolean isDNAvailable;
+		boolean isWorkerDaemonAvailable;
 		String dataNodePort = null;
-		String taskTrackerPort = null;
+		String workerDaemonPort = null;
 		boolean isNodeAvailable = true;
 		int dnPort = ProfilerConstants.DEFAULT_DN_PORT;
-		int ttPort = ProfilerConstants.DEFAULT_TT_PORT;
+		int wdPort = ProfilerConstants.DEFAULT_TT_PORT;
 		String nodeIp;
 		String message = null;
 		ValidateInput validate = new ValidateInput();
 		YamlConfig yamlConfig = (YamlConfig)conf;
 		boolean isProfilingEnabled = yamlConfig.getHadoopJobProfile().getEnumValue();
+		YarnSlaveParam ysp = yamlConfig.getSlaveParam();
 		if (isProfilingEnabled) {
 			dataNodePort = yamlConfig.getSlaveParam().getDataNodeJmxPort();
-			taskTrackerPort = yamlConfig.getSlaveParam().getTaskTrackerJmxPort();
+			workerDaemonPort = isYarnEnable? ysp.getNodeManagerJmxPort():ysp.getTaskTrackerJmxPort();
 			dnPort = Integer.parseInt(dataNodePort);
-			ttPort = Integer.parseInt(taskTrackerPort);
+			wdPort = Integer.parseInt(workerDaemonPort);
 		}
 		for (Slave slave : yamlConfig.getSlaves()) {
 			List<UnavailableHost> unavailableHosts = null;
@@ -607,17 +667,16 @@ public class ExecutionServlet extends HttpServlet {
 					// check the availability of Datanode
 					isDNAvailable = validate.isPortAvailable(dnPort, nodeIp);
 					// check the availability of Datanode
-					isTTAvailable = validate.isPortAvailable(ttPort, nodeIp);
+					isWorkerDaemonAvailable = validate.isPortAvailable(wdPort, nodeIp);
 
 					if (isDNAvailable) {
-						if (!isTTAvailable) {
-							message = ProfilerConstants.TT_NOT_REACHABLE;
+						if (!isWorkerDaemonAvailable) {
+							message = isYarnEnable? ProfilerConstants.NM_NOT_REACHABLE : ProfilerConstants.TT_NOT_REACHABLE;
 							isNodeAvailable = false;
 						}
 					} else {
-						if (!isTTAvailable) {
-							message = ProfilerConstants.DN_TT_NOT_REACHABLE;
-						} else {
+						if (!isWorkerDaemonAvailable) {
+							message = isYarnEnable? ProfilerConstants.DN_NM_NOT_REACHABLE : ProfilerConstants.DN_TT_NOT_REACHABLE;} else {
 							message = ProfilerConstants.DN_NOT_REACHABLE;
 						}
 						isNodeAvailable = false;

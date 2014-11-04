@@ -4,21 +4,20 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.hadoop.fs.BlockLocation;
 import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
-import org.jumbune.profiling.beans.ClusterInfo;
+import org.jumbune.profiling.beans.BlockInfo;
 import org.jumbune.profiling.beans.DistributedDataInfo;
 import org.jumbune.profiling.beans.NodeBlockStats;
-import org.jumbune.utils.beans.VirtualFileStatus;
 import org.jumbune.utils.beans.VirtualFileSystem;
 
 import com.google.gson.Gson;
@@ -29,13 +28,15 @@ import com.google.gson.Gson;
  * 
  */
 public class DataDistributionStats {
+	private static final String COPY = "copy";
 	private Loader loader = null;
 	private int noOfBlocks = 0;
-	private static final String REGEXEXP = "\\:";
-	private static final String UNDERREPLICATEDBLCOK = "Under replicated blocks", CORRUPTREPLICATEDBLOCK = "Blocks with corrupt replicas",
-			MISSINGBLOCK = "Missing blocks";
+	private int underReplicatedBlocks = 0;
+	private int corruptedBlocks = 0;
+	private int misReplicatedBlock = 0;
 	private short replicationFactor;
 	private Map<String, NodeBlockStats> nodeWeight = null;
+	private long lengthOfFile = 0l;
 
 	/**
 	 * Instantiates a new data distribution stats.
@@ -46,90 +47,168 @@ public class DataDistributionStats {
 		this.loader =  loader;
 	}
 
-	/***
-	 * This method calculate data across distributed nodes and also calculate no of copies of file a node contains and other block usefull information
-	 * 
-	 * @param config
-	 *            YamlConfig
-	 * @throws IOException
-	 */
-	public void calculateDistributedDataList(Loader loader, ClusterInfo clusterInfo) throws IOException{
+	public DistributedDataInfo calculateBlockReport() {
 		YamlLoader yamlLoader = (YamlLoader)loader;
 		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
-		VirtualFileStatus fileStatus = null;
 
 		DistributedDataInfo distributedDataInfo = new DistributedDataInfo();
 		String pathOfFileInHadoop = null;
-		long lengthOfFile = 0l;
-		VirtualFileSystem fs = RemotingUtil.getVirtualFileSystem(yamlLoader);
 		pathOfFileInHadoop = yamlConfig.getDistributedHDFSPath();
-		fileStatus = fs.getFileStatus(pathOfFileInHadoop);
-		lengthOfFile = fs.getLengthOfFile(pathOfFileInHadoop);
-		// setting replication factor here
-		calculateNodeStats(fs, fileStatus, yamlConfig);
+		String commadResult = ProfilerUtil.getBlockStatusCommandResult(yamlLoader,
+				pathOfFileInHadoop);
+		populateBlockInformationReport(yamlConfig, commadResult, distributedDataInfo);
+		return distributedDataInfo;
+	}
+	
+	private void populateBlockInformationReport(YamlConfig config,
+			String response, DistributedDataInfo distributedDataInfo) {
+		Long totlaDataOnNode = 0l;
+		nodeWeight = new HashMap<String, NodeBlockStats>();
+		List<BlockInfo> blockInfoList = extractBlockInfofromFileStatusReport(response);
+		totlaDataOnNode = calculateNodeWiseBlockInformation(blockInfoList,
+				totlaDataOnNode);
+		distributedDataInfo.setCorruptedBlocksInCluster(String
+				.valueOf(corruptedBlocks));
+		distributedDataInfo
+				.setMissingBlocks(String.valueOf(misReplicatedBlock));
+		distributedDataInfo.setUnderReplicatedBlocks(String
+				.valueOf(underReplicatedBlocks));
 		distributedDataInfo.setReplicationFactor(getReplicationFactor());
 		distributedDataInfo.setTotalBlocksInCluster(noOfBlocks);
-		distributedDataInfo.setTotalDataOnNode(changeLongDataToMB(fs.getSpaceConsumed(pathOfFileInHadoop)));
+		distributedDataInfo
+				.setTotalDataOnNode(changeLongDataToMB(totlaDataOnNode));
 		distributedDataInfo.setFileSize(changeLongDataToMB(lengthOfFile));
-		clusterInfo.setDistributedDataInfo(distributedDataInfo);
-		parseBlockCheckInfo(distributedDataInfo);
+		addSuggestionsToProfiler(distributedDataInfo, misReplicatedBlock,
+				corruptedBlocks, underReplicatedBlocks);
 	}
-
-	/***
-	 * Parses the distributed data info and sets block information
-	 * @param dataInfo
-	 * @throws IOException
-	 */
-	private void parseBlockCheckInfo(DistributedDataInfo dataInfo) throws IOException {
-		int totalMissingBlock = 0, totalCorruptedBlock = 0, totalUnderReplicatedBlock = 0;
-		String[] commandResult = ProfilerUtil.getDFSAdminReportCommandResult(loader);
-		String tempValue = null;
-
-		for (String line : commandResult) {
-			if (line.contains(MISSINGBLOCK)) {
-				tempValue = line.split(REGEXEXP)[1].trim().toString();
-				if (tempValue != null) {
-					totalMissingBlock = Integer.parseInt(tempValue);
-					dataInfo.setMissingBlocks(tempValue);
-				}
-			}
-			if (line.contains(CORRUPTREPLICATEDBLOCK)) {
-				tempValue = line.split(REGEXEXP)[1].trim().toString();
-				if (tempValue != null) {
-					totalCorruptedBlock = Integer.parseInt(tempValue);
-					dataInfo.setCorruptedBlocksInCluster(tempValue);
-				}
-			}
-			if (line.contains(UNDERREPLICATEDBLCOK)) {
-				tempValue = line.split(REGEXEXP)[1].trim().toString();
-				if (tempValue != null) {
-					totalUnderReplicatedBlock = Integer.parseInt(tempValue);
-					dataInfo.setUnderReplicatedBlocks(tempValue);
+	
+	private Long calculateNodeWiseBlockInformation(
+			List<BlockInfo> blockInfoList, Long totalDataOnNode) {
+		String nodeIp;
+		long tempSize;
+		for (BlockInfo parseInformation : blockInfoList) {
+			noOfBlocks++;
+			List<String> nodeList = parseInformation.getNodeList();
+			for (int nodeIndex = 0; nodeIndex < nodeList.size(); nodeIndex++) {
+				totalDataOnNode = totalDataOnNode
+						+ parseInformation.getLengthOfBlock();
+				nodeIp = nodeList.get(nodeIndex);
+				Map<String, String> fileWeight = null;
+				Map<String, Integer> blockCopyInfo = null;
+				NodeBlockStats nodeBlockStats = null;
+				if (nodeWeight.containsKey(nodeIp)) {
+					nodeBlockStats = nodeWeight.get(nodeIp);
+					fileWeight = nodeBlockStats.getFileWeight();
+					blockCopyInfo = nodeBlockStats.getBlockCopyInfo();
+					if (fileWeight.containsKey(COPY + nodeIndex)) {
+						blockCopyInfo.put(COPY + nodeIndex,
+								blockCopyInfo.get(COPY + nodeIndex) + 1);
+						tempSize = Long.parseLong(fileWeight.get(COPY
+								+ nodeIndex));
+						tempSize = tempSize
+								+ parseInformation.getLengthOfBlock();
+						fileWeight.put(COPY + nodeIndex,
+								String.valueOf(tempSize));
+					} else {
+						fileWeight.put(COPY + nodeIndex, String
+								.valueOf(parseInformation.getLengthOfBlock()));
+						blockCopyInfo.put(COPY + nodeIndex, 1);
+					}
+					nodeBlockStats.setTotalBlocksOfFile(nodeBlockStats
+							.getTotalBlocksOfFile() + 1);
+				} else {
+					nodeBlockStats = new NodeBlockStats();
+					blockCopyInfo = new HashMap<String, Integer>();
+					fileWeight = new HashMap<String, String>();
+					blockCopyInfo.put(COPY + nodeIndex, 1);
+					fileWeight
+							.put(COPY + nodeIndex, String
+									.valueOf(parseInformation
+											.getLengthOfBlock()));
+					nodeBlockStats.setTotalBlocksOfFile(1);
+					nodeBlockStats.setFileWeight(fileWeight);
+					nodeBlockStats.setBlockCopyInfo(blockCopyInfo);
+					nodeBlockStats.setNodeIP(nodeIp);
+					nodeWeight.put(nodeIp, nodeBlockStats);
 				}
 			}
 		}
-		addSuggestionsToProfiler(dataInfo, totalMissingBlock, totalCorruptedBlock, totalUnderReplicatedBlock);
-
+		return totalDataOnNode;
 	}
-
+	
+	private List<BlockInfo> extractBlockInfofromFileStatusReport(String response) {
+		String[] commandResult = response.split("\n");
+		List<BlockInfo> blockInfoList = new ArrayList<BlockInfo>();
+		List<String> nodeInfo;
+		BlockInfo bInfo;
+		for (String line : commandResult) {
+			if (line.contains("blk") && line.contains("repl")) {
+				nodeInfo = new ArrayList<String>();
+				bInfo = new BlockInfo();
+				String splittedArrayBasedOnReplication[] = line.split("repl=");
+				bInfo.setLengthOfBlock(Long
+						.parseLong(splittedArrayBasedOnReplication[0]
+								.split("len=")[1].trim()));
+				String[] splitsBasedOnNodePrefix = splittedArrayBasedOnReplication[1]
+						.split("\\[");
+				bInfo.setReplicationFactor(Short
+						.parseShort(splitsBasedOnNodePrefix[0].trim()));
+				String nodelistSequence = splitsBasedOnNodePrefix[1].substring(
+						0, splitsBasedOnNodePrefix[1].indexOf("]"));
+				String[] nodeArray = nodelistSequence.split(",");
+				for (String node : nodeArray) {
+					node = node.trim();
+					node = node.contains(":") ? node.split(":")[0].trim()
+							: node;
+					nodeInfo.add(node);
+				}
+				bInfo.setNodeList(nodeInfo);
+				blockInfoList.add(bInfo);
+			}
+			if (line.contains("Total size")) {
+				lengthOfFile = Long.parseLong(line.substring(
+						line.indexOf(":") + 1, line.indexOf("B")).trim());
+			}
+			if (line.contains("Under-replicated")) {
+				underReplicatedBlocks = Integer.parseInt(line.substring(
+						line.indexOf(":") + 1, line.indexOf("(")).trim());
+			}
+			if (line.contains("Mis-replicated")) {
+				misReplicatedBlock = Integer.parseInt(line.substring(
+						line.indexOf(":") + 1, line.indexOf("(")).trim());
+			}
+			if (line.contains("Corrupt")) {
+				corruptedBlocks = Integer.parseInt(line.substring(
+						line.indexOf(":") + 1, line.length()).trim());
+			}
+			if (line.contains("replication factor")) {
+				replicationFactor = Short.parseShort(line.substring(
+						line.indexOf(":") + 1, line.length()).trim());
+			}
+		}
+		return blockInfoList;
+	}
+	
 	/***
-	 * This method add suggestion to the profiler based on the result contains any missingblock,corrupted block,under replicated block
-	 * 
-	 * @param dataInfo
+	 * This method add suggestion to the profiler based on the result contains
+	 * any missingblock,corrupted block,under replicated block
+ 	 * 	 @param dataInfo
 	 * @param inconsistentBlockArray
 	 */
-	private void addSuggestionsToProfiler(DistributedDataInfo dataInfo, Integer... inconsistentBlockArray) {
-		// new suggestion can be added later.for now we added only one suggestion for all inconsistency in cluster
+	private void addSuggestionsToProfiler(DistributedDataInfo dataInfo,
+			Integer... inconsistentBlockArray) {
+		// new suggestion can be added later.for now we added only one
+		// suggestion for all inconsistency in cluster
 		List<String> suggestionList = new ArrayList<String>();
 		for (Integer inconsistentBlock : inconsistentBlockArray) {
 			if (0 < inconsistentBlock && suggestionList.isEmpty()) {
-				suggestionList.add("It seems your cluster is inconsistent,Please run fsck command ");
+				suggestionList
+					.add("It seems the cluster is in inconsistent state, Please run fsck command to get further details");
 			}
 		}
 		if (!suggestionList.isEmpty()) {
 			dataInfo.setSuggestionList(suggestionList);
 		}
-
 	}
 
 	/***
@@ -145,87 +224,7 @@ public class DataDistributionStats {
 
 	}
 
-	/**
-	 * This method Calculates node stats.
-	 *
-	 * @param fs the fs
-	 * @param fileStatus the file status
-	 * @param config the config
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	private void calculateNodeStats(VirtualFileSystem fs, VirtualFileStatus fileStatus, Config config) throws IOException {
-		long lengthOfFile = 0l;
-		String pathOfFileInHadoop = null;
-		long tempSize = 0l;
-		long lengthOfBlock = 0l;
-		nodeWeight = new HashMap<String, NodeBlockStats>();
-		List<String> fileCopyName = new ArrayList<String>();
-		this.replicationFactor = fileStatus.getReplication();
-		for (int i = 0; i < fileStatus.getReplication(); i++) {
-			fileCopyName.add("copy" + i);
-		}
-		YamlConfig yamlConfig = (YamlConfig)config;
-		pathOfFileInHadoop = yamlConfig.getDistributedHDFSPath();
-		lengthOfFile = fs.getLengthOfFile(pathOfFileInHadoop);
-
-		for (BlockLocation bklocation : (BlockLocation[]) fs.getFileBlockLocations(fileStatus, 0, lengthOfFile)) {
-			noOfBlocks++;
-			lengthOfBlock = bklocation.getLength();
-			int count = 0;
-			String nodeIP;
-			for (String names : bklocation.getNames()) {
-				nodeIP = names.split("\\:")[0];
-				Map<String, String> fileWeight = null;
-				Map<String, Integer> blockCopyInfo = null;
-				NodeBlockStats nodeBlockStats = null;
-				if (nodeWeight.containsKey(nodeIP)) {
-					nodeBlockStats = nodeWeight.get(nodeIP);
-					fileWeight = nodeBlockStats.getFileWeight();
-					blockCopyInfo = nodeBlockStats.getBlockCopyInfo();
-					// old code
-					if (fileWeight.containsKey(fileCopyName.get(count))) {
-						blockCopyInfo.put(fileCopyName.get(count), blockCopyInfo.get(fileCopyName.get(count)) + 1);
-						tempSize = Long.parseLong(fileWeight.get(fileCopyName.get(count)));
-						tempSize = tempSize + lengthOfBlock;
-						fileWeight.put(fileCopyName.get(count), String.valueOf(tempSize));
-					} else {
-						fileWeight.put(fileCopyName.get(count), String.valueOf(lengthOfBlock));
-						blockCopyInfo.put(fileCopyName.get(count), 1);
-					}
-					nodeBlockStats.setTotalBlocksOfFile(nodeBlockStats.getTotalBlocksOfFile() + 1);
-					// old code
-				} else {
-					nodeBlockStats = new NodeBlockStats();
-					blockCopyInfo = new HashMap<String, Integer>();
-					fileWeight = new HashMap<String, String>();
-					blockCopyInfo.put(fileCopyName.get(count), 1);
-					fileWeight.put(fileCopyName.get(count), String.valueOf(lengthOfBlock));
-					nodeBlockStats.setTotalBlocksOfFile(1);
-					nodeBlockStats.setFileWeight(fileWeight);
-					nodeBlockStats.setBlockCopyInfo(blockCopyInfo);
-					nodeBlockStats.setNodeIP(nodeIP);
-					nodeWeight.put(nodeIP, nodeBlockStats);
-				}
-				count++;
-			}
-		}
-	}
-
-	/***
-	 * This method calculate data across distributed nodes and also calculate no of copies of file a node contains and other block usefull information
-	 * 
-	 * @param config
-	 *            YamlConfig
-	 * @throws IOException
-	 */
-	public void calculateDistributedDataList(Config config) throws IOException {
-		VirtualFileStatus fileStatus = null;
-		YamlConfig yamlConfig = (YamlConfig)config;
-		VirtualFileSystem fs = RemotingUtil.getVirtualFileSystem(loader);
-		fileStatus = fs.getFileStatus(yamlConfig.getDistributedHDFSPath());
-		calculateNodeStats(fs, fileStatus, config);
-	}
-
+	
 	/**
 	 * @return the noOfBlocks
 	 */
@@ -238,10 +237,12 @@ public class DataDistributionStats {
 	 * 
 	 * @param nodeIP
 	 * @return
-	 * @throws IOException 
+	 * @throws IOException
+	 * @throws InterruptedException  
 	 */
-	public String getNodeStats(String nodeIP, Config config) throws IOException{
-		calculateDistributedDataList(config);
+	public String getNodeStats(String nodeIP)
+			throws IOException, InterruptedException {
+		calculateBlockReport();
 		convertNodeWeightBytesToMB(nodeWeight.get(nodeIP));
 		return new Gson().toJson(nodeWeight.get(nodeIP));
 
@@ -255,21 +256,9 @@ public class DataDistributionStats {
 	private void convertNodeWeightBytesToMB(NodeBlockStats blockStats) {
 		Map<String, String> fileWeight = blockStats.getFileWeight();
 		for (Entry<String, String> tempFileWeight : fileWeight.entrySet()) {
-			tempFileWeight.setValue(changeLongDataToMB(Long.parseLong(tempFileWeight.getValue())));
+			tempFileWeight.setValue(changeLongDataToMB(Long
+				.parseLong(tempFileWeight.getValue())));
 		}
-	}
-
-	/***
-	 * This method checks whether a givne path is a file or not
-	 * 
-	 * @param path
-	 * @return
-	 * @throws IOException
-	 *             if path is not exist
-	 */
-	boolean isHDFSFile(String path) throws IOException {
-		VirtualFileSystem fs = RemotingUtil.getVirtualFileSystem(loader);
-		return fs.isFile(path);
 	}
 
 	/***

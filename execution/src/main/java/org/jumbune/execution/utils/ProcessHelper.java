@@ -15,7 +15,9 @@ import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -31,6 +33,7 @@ import java.util.Scanner;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.beans.LogConsolidationInfo;
 import org.jumbune.common.beans.Master;
@@ -42,6 +45,7 @@ import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.MessageLoader;
 import org.jumbune.common.utils.RemotingUtil;
+import org.jumbune.common.utils.YamlConfigUtil;
 import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
@@ -50,9 +54,10 @@ import org.jumbune.datavalidation.DataValidationConstants;
 import org.jumbune.execution.beans.JobProcessBean;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.RemotingConstants;
-import org.jumbune.utils.YamlUtil;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
 import org.jumbune.utils.exception.JumbuneException;
+
+import com.google.gson.Gson;
 
 /**
  * Helper class for all processors
@@ -64,20 +69,19 @@ public class ProcessHelper {
 	private static final Logger LOGGER = LogManager.getLogger(ProcessHelper.class);
 	private static final MessageLoader MESSAGES = MessageLoader.getInstance();
 	private static final String LIBDIR = "lib/";
+	private static boolean isYarnJob = false;	
 	/**
 	 * Method for writing service yaml file
 	 * 
 	 * @param info
 	 */
 	public boolean writetoServiceFile(ServiceInfo info) {
-
-		String serviceYamlPath = org.jumbune.common.utils.YamlConfigUtil.getServiceYamlPath();
-
+	    Gson gson = new Gson();
+		String serviceYamlPath = org.jumbune.common.utils.YamlConfigUtil.getServiceJsonPath();
 		try {
-
-			String yamlString = YamlUtil.serializeObjectToYaml(info);
-			ConfigurationUtil.writeToFile(serviceYamlPath, yamlString, true);
-			LOGGER.debug("Persisted service yaml configuration[" + yamlString+"]");
+			String jsonString = gson.toJson(info,ServiceInfo.class);
+			ConfigurationUtil.writeToFile(serviceYamlPath, jsonString, true);
+			LOGGER.debug("Persisted service yaml configuration[" + jsonString+"]");
 			return true;
 
 		} catch (IOException io) {
@@ -93,19 +97,29 @@ public class ProcessHelper {
 	 * @return
 	 */
 	public ServiceInfo readServiceInfo() {
-
-		String serviceYamlPath = org.jumbune.common.utils.YamlConfigUtil.getServiceYamlPath();
-		File serviceFile = new File(serviceYamlPath);
+	    Gson gson = new Gson();
+		String serviceJsonPath = YamlConfigUtil.getServiceJsonPath();
+		File serviceFile = new File(serviceJsonPath);
 		ServiceInfo serviceInfo = null;
 		if (serviceFile.exists()) {
+			FileReader fReader = null;
 			try {
-				serviceInfo = (ServiceInfo) YamlUtil.loadYaml(serviceYamlPath);
+				fReader = new FileReader(serviceFile);
+				serviceInfo = gson.fromJson(fReader,ServiceInfo.class);
 			} catch (FileNotFoundException e) {
-				LOGGER.warn("Not able to find services.yaml at :" + serviceYamlPath);
+				LOGGER.warn("Not able to find services.json at :" + serviceJsonPath);
+			}finally{
+				if(fReader!=null){
+					try{
+						fReader.close();
+					}catch(IOException ioe){
+						LOGGER.error("Failed to close the File Reader instance", ioe);
+					}
+				}
 			}
 		} else {
 			serviceInfo = new ServiceInfo();
-			LOGGER.warn("services.yaml does not exist at :" + serviceYamlPath);
+			LOGGER.warn("services.yaml does not exist at :" + serviceJsonPath);
 		}
 
 		return serviceInfo;
@@ -125,8 +139,8 @@ public class ProcessHelper {
 	public Map<String, Map<String, String>> executeJar(String inputJarPath, boolean isCommandBasedAllowed, Loader loader, boolean isDebugged)
 			throws IOException {
 		YamlLoader yamlLoader = (YamlLoader)loader;
-		List<JobDefinition> jobDefList = yamlLoader.getJobDefinitionList();
-
+	    isYarnJob=((YamlConfig)yamlLoader.getYamlConfiguration()).getEnableYarn().equals(Enable.TRUE);
+	    List<JobDefinition> jobDefList = yamlLoader.getJobDefinitionList();
 		Map<String, Map<String, String>> jobsCounterMap = new LinkedHashMap<String, Map<String, String>>();
 
 		String location = yamlLoader.getLogDefinition().getLogSummaryLocation().getProfilingFilesLocation();
@@ -145,36 +159,7 @@ public class ProcessHelper {
 		} else {
 			LOGGER.debug(MESSAGES.get(MESSAGE_COULD_NOT_EXECUTE_JOB));
 		}
-		LOGGER.info("Completed jobjar execution, source path [+" + inputJarPath+"]");
-
-		/**
-		 * Collecting error information, group them, removing from original collection and putting back with new group id.
-		 */
-		if (jobsCounterMap.size() > 0) {
-			Iterator<String> it1 = jobsCounterMap.keySet().iterator();
-
-			Map<String, String> errorMap = null;
-
-			while (it1.hasNext()) {
-				String key = it1.next();
-				Map<String, String> map = jobsCounterMap.get(key);
-				if (map.containsKey(ERRORANDEXCEPTION)) {
-					if (errorMap == null) {
-						errorMap = new LinkedHashMap<String, String>();
-					}
-					errorMap.put(key, map.get(ERRORANDEXCEPTION));
-				}
-			}
-			if (errorMap != null) {
-				Iterator<String> it2 = errorMap.keySet().iterator();
-				while (it2.hasNext()) {
-					jobsCounterMap.remove(it2.next());
-				}
-
-				jobsCounterMap.put(ERRORANDEXCEPTION, errorMap);
-			}
-		}
-
+		LOGGER.info("Completed job jar execution, source path [+" + inputJarPath+"]");
 		if (jobsCounterMap.size() > 0) {
 			return jobsCounterMap;
 		} else {
@@ -216,8 +201,6 @@ public class ProcessHelper {
 		JobProcessBean bean = new JobProcessBean(jobDefList.get(0).getName(), getJobExecutionParams(yamlLoader.getHadoopHome(yamlLoader),
 				jobDefList.get(0), inputJarPath, yamlLoader.isMainClassDefinedInJobJar(), jobName));
 		remoteLaunch(location, bean, yamlLoader);
-												
-
 		populateJobCounterMap(bean, jobsCounterMap, loader, isDebugged);
 	}
 
@@ -358,8 +341,6 @@ public class ProcessHelper {
 		if (jarJobList == null) {
 			return false;
 		}
-
-		
 		for (JobDefinition jobDef : yamlJobDefList) {
 			String yamlJobName = jobDef.getJobClass();
 
@@ -370,11 +351,7 @@ public class ProcessHelper {
 		return true;
 	}
 
-
-
-	// TODO: Remoting..
 	private String remoteLaunch(String location, JobProcessBean jobInfoBean, Loader loader) throws IOException {
-
 		String appHome = YamlLoader.getjHome() + "/";
 		String relativePath = location.substring(appHome.length() - 1, location.length());
 		Remoter remoter = RemotingUtil.getRemoter(loader, appHome);
@@ -435,23 +412,22 @@ public class ProcessHelper {
 	 * @throws JumbuneException
 	 */
 	public void writeLogLocationToFile(LogConsolidationInfo logSummaryLoc) {
-		LOGGER.debug("writing logs information to file for services  ");
-		String serviceYamlPath = org.jumbune.common.utils.YamlConfigUtil.getServiceYamlPath();
+	    LOGGER.debug("writing logs information to file for services  ");
+	    Gson gson = new Gson();
+		String serviceJsonPath = org.jumbune.common.utils.YamlConfigUtil.getServiceJsonPath();
 		try {
-
-			String yamlString = YamlUtil.serializeObjectToYaml(logSummaryLoc);
-			ConfigurationUtil.writeToFile(serviceYamlPath, yamlString, true);
+			String jsonString = gson.toJson(logSummaryLoc, LogConsolidationInfo.class);
+			ConfigurationUtil.writeToFile(serviceJsonPath, jsonString, true);
 
 		} catch (IOException io) {
 			// Don't terminate operation if unable to copy logSummary location
-			LOGGER.error("Could not copy logSummaryLocation to a services.yaml  " + io.getMessage());
+			LOGGER.error("Could not copy logSummaryLocation to a services json  " + io.getMessage());
 		}
 	}
 
 
 	private static Map<String, Map<String, String>> getRemoteJobCounters(String processName, String response, Loader loader, boolean isDebugged)
 			throws IOException {
-
 		List<String> jobs = new LinkedList<String>();
 		Map<String, String> map = null;
 		Map<String, Map<String, String>> jobCounterMap = new LinkedHashMap<String, Map<String, String>>();
@@ -459,25 +435,27 @@ public class ProcessHelper {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(response.getBytes())));
 
 		String jobName = null;
-		while (true) {
-			String line = reader.readLine();
-			if (line == null) {
-				break;
+		try{
+			while (true) {
+				String line = reader.readLine();
+				if (line == null) {
+					break;
+				}
+				map = new HashMap<String, String>();
+				if (line.contains(RUNNING_JOB)) {
+					jobName = processJobName(jobs, line);
+				} else if (line.contains(COUNTERS)) {
+					jobName = processCounters(processName, map, jobCounterMap,
+							reader, jobName, line);
+				} else if (line.contains("Exception") || line.contains("Error")) {
+					processExceptionCondition(processName, map, jobCounterMap,
+							reader, jobName, line);
+				}
 			}
-
-			map = new HashMap<String, String>();
-			if (line.contains(RUNNING_JOB)) {
-				jobName = processJobName(jobs, line);
-			} else if (line.contains(COUNTERS)) {
-				jobName = processCounters(processName, map, jobCounterMap,
-						reader, jobName, line);
-			} else if (line.contains("Exception") || line.contains("Error")) {
-				processExceptionCondition(processName, map, jobCounterMap,
-						reader, jobName, line);
+		}finally{
+			if(reader!=null){
+				reader.close();
 			}
-		}
-		if(reader!=null){
-			reader.close();
 		}
 		if (isDebugged && jobs.size() > 1) {
 			YamlLoader yamlLoader = (YamlLoader)loader;
@@ -523,7 +501,7 @@ public class ProcessHelper {
 			Map<String, Map<String, String>> jobCounterMap,
 			BufferedReader reader, String jobName, String line)
 			throws IOException {
-		int count = Integer.valueOf((line.split(COUNTERS)[1]));
+		int count = Integer.valueOf((line.split(COUNTERS)[1].trim()));
 		while (count > 0) {
 			String lineTmp = line;
 			lineTmp = reader.readLine();
@@ -566,12 +544,50 @@ public class ProcessHelper {
 	 */
 	private void populateJobCounterMap(JobProcessBean bean, Map<String, Map<String, String>> jobCounterMap, Loader loader, Boolean isDebugged)
 			throws IOException {
-		
-		jobCounterMap.putAll(getRemoteJobCounters(bean.getJobName(), bean.getProcessResponse(), loader, isDebugged)); 
-																															
-																															
+	    if(isYarnJob){
+	      jobCounterMap.putAll(getRemoteYarnJobCounters(bean.getJobName(), bean.getProcessResponse(), loader, isDebugged));
+	    }else{
+	      jobCounterMap.putAll(getRemoteJobCounters(bean.getJobName(), bean.getProcessResponse(), loader, isDebugged)); 
+	    }
 	}
-
+	
+	private Map<? extends String, ? extends Map<String, String>> getRemoteYarnJobCounters(
+			String processName, String response, Loader loader,
+			Boolean isDebugged) throws IOException {
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		List<String> jobs = new LinkedList<String>();
+		Map<String, String> map = null;
+		Map<String, Map<String, String>> jobCounterMap = new LinkedHashMap<String, Map<String, String>>();
+		BufferedReader reader = new BufferedReader(new InputStreamReader(
+				new ByteArrayInputStream(response.getBytes())));
+		String line = null;
+		String jobName = null;
+		while ((line = reader.readLine()) != null) {
+			map = new HashMap<String, String>();
+			if (line.contains(ExecutionConstants.RUNNING_JOB)) {
+				jobName = line.split(ExecutionConstants.RUNNING_JOB)[1].trim();
+				jobCounterMap.put(processName + "_" + jobName, map);
+			} else if (line.contains(COUNTERS)) {
+				break;
+			} else if (line.contains("Exception") || line.contains("Error")) {
+				processExceptionCondition(processName, map, jobCounterMap,
+						reader, jobName, line);
+			}
+		}
+		if (reader != null) {
+			reader.close();
+		}
+		if (isDebugged && jobs.size() > 1) {
+			String fileName = yamlLoader.getMasterConsolidatedLogLocation()
+					+ "jobChain-" + processName + "_instrumented.log";
+			StringBuilder data = new StringBuilder();
+			for (String string : jobs) {
+				data.append(string).append("\n");
+			}
+			ConfigurationUtil.writeToFile(fileName, data.toString(), true);
+		}
+		return jobCounterMap;
+	}
 	/**
 	 * <p>
 	 * This method is used to apply data validation to the records fetched
@@ -685,8 +701,10 @@ public class ProcessHelper {
 		}
 		LOGGER.debug("Command executed [" + sb.toString()+"] and commandStrgot back response ["+response+"]");
 		BufferedReader reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(response.getBytes())));
-		String line = null;
-		String dvJson = null;
+		String line = null, dvJson = null;
+		boolean errorFound = false;
+		StringBuilder errorString = new StringBuilder();
+		//ToDO
 		while ((line = reader.readLine()) != null) {
 			String dvReport = DataValidationConstants.DV_REPORT;
 			// checks the input stream for dvReport
@@ -696,18 +714,13 @@ public class ProcessHelper {
 				dvJson = line.substring(index, line.length());
 			}
 			// checking for any exception or error
-			else if (line.contains(Constants.EXCEPTION) || line.contains(Constants.ERROR)) {
-				StringBuilder errorString = new StringBuilder(line);
-				while (true) {
-					line = reader.readLine();
-					if (line == null) {
-						LOGGER.error("Error string is: " + errorString.toString());
-						throw new JumbuneException(ErrorCodesAndMessages.ERROR_EXECUTING_DV);
-					}
-					errorString.append("\n");
-					errorString.append(line);
-				}
+			else if (errorFound || (errorFound =(line.contains(Constants.EXCEPTION))) || (errorFound =(line.contains(Constants.ERROR)))) {
+				sb.append(line).append("\n");
 			}
+		}
+		if(dvJson == null || dvJson.isEmpty()){
+		  LOGGER.error("Error string is: " + errorString.toString());
+	        throw new JumbuneException(ErrorCodesAndMessages.ERROR_EXECUTING_DV);
 		}
 		if(reader!=null){
 			reader.close();
@@ -721,8 +734,8 @@ public class ProcessHelper {
 			String userSuppliedJars) {
 		YamlLoader yamlLoader = (YamlLoader)loader;
 		ArrayParamBuilder sb=new ArrayParamBuilder(Constants.NINE);
-		if(SupportedApacheHadoopVersions.Hadoop_1_0_4.equals(RemotingUtil.getHadoopVersion(yamlLoader.getYamlConfiguration()))|| SupportedApacheHadoopVersions.HADOOP_1_0_3.equals(RemotingUtil.getHadoopVersion(yamlLoader.getYamlConfiguration()))||
-				SupportedApacheHadoopVersions.HADOOP_0_20_2.equals(RemotingUtil.getHadoopVersion(yamlLoader.getYamlConfiguration()))){
+		if(SupportedApacheHadoopVersions.HADOOP_NON_YARN.equals(RemotingUtil.getHadoopVersion(yamlLoader.getYamlConfiguration()))|| SupportedApacheHadoopVersions.HADOOP_YARN.equals(RemotingUtil.getHadoopVersion(yamlLoader.getYamlConfiguration()))||
+								SupportedApacheHadoopVersions.HADOOP_MAPR.equals(RemotingUtil.getHadoopVersion(yamlLoader.getYamlConfiguration()))){
 			sb.append(hadoopHome+"/"+Constants.H_COMMAND);
 		}else{
 			String hadoopDir = RemotingUtil.fireWhereIsHadoopCommand(remoter, master, yamlLoader.getYamlConfiguration());

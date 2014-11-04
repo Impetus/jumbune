@@ -33,11 +33,6 @@ import org.jumbune.common.beans.ClasspathElement;
 import org.jumbune.utils.exception.JumbuneException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-import org.yaml.snakeyaml.TypeDescription;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
-
-
 
 /**
  * This class implements utility methods being used in the framework.
@@ -64,7 +59,7 @@ public final class ConfigurationUtil {
 	/**
 	 * Instantiates a new configuration util.
 	 */
-	private ConfigurationUtil()
+	protected ConfigurationUtil()
 	{
 		
 	}
@@ -379,24 +374,17 @@ public final class ConfigurationUtil {
 	}
 
 	/**
-	 * This method reads a file Jumbune.yaml to load all the Classpath information related to jumbune supplied jars
+	 * This method is to load all the Classpath information related to jumbune supplied jars
 	 *
 	 * @return - Classpath element for JumbuneSupplied jars
-	 * @throws JumbuneException the hTF exception
+	 * @throws JumbuneException, the Jumbune exception
 	 */
 	public static ClasspathElement loadJumbuneSuppliedJarList() throws JumbuneException {
-		InputStream input = null;
-		ClasspathElement classpathEle;
-		input = ConfigurationUtil.class.getResourceAsStream("/InstrumentationDependency.yaml");
-
-		Constructor constructor = new Constructor(ClasspathElement.class);
-
-		TypeDescription desc = new TypeDescription(ClasspathElement.class);
-		constructor.addTypeDescription(desc);
-		Yaml yaml = new Yaml(constructor);
-		classpathEle = (ClasspathElement) yaml.load(input);
-
-		return classpathEle;
+		ClasspathElement classpathElement = new ClasspathElement();
+		String[] files = {"AGENT_HOMElib/jumbune-utils-1.2.2-SNAPSHOT.jar"};
+		classpathElement.setFiles(files);
+		classpathElement.setSource(-1);
+		return classpathElement;
 	}
 
 	/**

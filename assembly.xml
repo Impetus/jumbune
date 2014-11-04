@@ -72,7 +72,6 @@
 				<include>org.ow2.asm:asm:jar:4.0</include>
 				<include>org.ow2.asm:asm-tree:jar:4.0</include>
 				<include>com.jcraft:jsch:jar:0.1.51</include>
-				<include>org.yaml:snakeyaml:jar:1.13</include>
 				<include>com.google.code.gson:gson:jar:2.2.4</include>
 				<include>org.mortbay.jetty:jetty-runner:jar:8.1.3.v20120416</include>
 				<include>org.mortbay.jetty:jetty-runner:jar:8.1.3.v20120416</include>

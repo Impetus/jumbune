@@ -1,7 +1,6 @@
 package org.jumbune.common.beans;
 
 import org.jumbune.utils.YamlUtil;
-import org.yaml.snakeyaml.error.YAMLException;
 
 
 
@@ -37,8 +36,8 @@ public class Master {
 	/** The job tracker jmx port. */
 	private String jobTrackerJmxPort;
 	
-	
-	private boolean isAvailable;
+	/** The availability of node */
+	private boolean isNodeAvailable;
 	
 
 	/**
@@ -132,7 +131,7 @@ public class Master {
 		if (locationTemp != null) {
 			locationTemp = YamlUtil.getAndReplaceHolders(locationTemp);
 			if (!YamlUtil.validateFileSystemLocation(locationTemp)) {
-				throw new YAMLException("Location provided in Master is not in correct format!!");
+				throw new IllegalArgumentException("Location provided in Master is not in correct format!!");
 			}
 			this.location = locationTemp;
 		}
@@ -217,7 +216,6 @@ public class Master {
 
 	/**
 	 * Sets the name node jmx port.
-	 *
 	 * @param nameNodeJmxPort the new name node jmx port
 	 */
 	public void setNameNodeJmxPort(String nameNodeJmxPort) {
@@ -233,11 +231,19 @@ public class Master {
 		return nameNodeJmxPort;
 	}
 
-	public void setIsAvailable(boolean isAvailable) {
-		this.isAvailable = isAvailable;
+	/**
+	 * Sets the node available property
+	 * @param isNodeAvailable
+	 */
+	public void setIsNodeAvailable(boolean isNodeAvailable) {
+		this.isNodeAvailable = isNodeAvailable;
 	}
 
+	/**
+	 * Gets the node availability
+	 * @return boolean for node availability
+	 */
 	public boolean isAvailable() {
-		return isAvailable;
+		return isNodeAvailable;
 	}
 }

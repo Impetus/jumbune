@@ -6,7 +6,6 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.ClasspathElement;
 import org.jumbune.common.beans.Master;
 import org.jumbune.common.yaml.config.Config;
-import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.remoting.client.Remoter;
@@ -33,7 +32,7 @@ public final class YamlConfigUtil {
 	 *
 	 * @return the service yaml path
 	 */
-	public static String getServiceYamlPath() {
+	public static String getServiceJsonPath() {
 	
 		String serviceYamlLoc = YamlLoader.getjHome();
 		File currentDir = new File(serviceYamlLoc);
@@ -42,7 +41,7 @@ public final class YamlConfigUtil {
 		currentDirPath = currentDirPath.substring(0, currentDirPath.length());
 	
 		StringBuilder sb = new StringBuilder(currentDirPath).append(System.getProperty("file.separator")).append("resources")
-				.append(System.getProperty("file.separator")).append("services.yaml");
+				.append(System.getProperty("file.separator")).append("services.json");
 		return sb.toString();
 	}
 

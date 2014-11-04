@@ -1,60 +1,17 @@
 package org.jumbune.profiling.beans;
 
-/**
- * Pojo to store the various profiling stats in corresponding category lists
- * 
-*/
-public class CategoryInfo {
+public interface CategoryInfo {
 
-	private ClusterWideInfo clusterWide;
-	private SystemStats systemStats;
-	private WorkerJMXInfo workerJMXInfo;
+  ClusterWideInfo getClusterWide();
 
-	/**
-	 * @return the clusterWide
-	 */
-	public ClusterWideInfo getClusterWide() {
-		return clusterWide;
-	}
+  WorkerJMXInfo getWorkerJMXInfo();
 
-	/**
-	 * @param clusterWide
-	 *            the clusterWide to set
-	 */
-	public void setClusterWide(ClusterWideInfo clusterWide) {
-		this.clusterWide = clusterWide;
-	}
+  SystemStats getSystemStats();
 
-	
-	/**
-	 * @return the systemStats
-	 */
-	public SystemStats getSystemStats() {
-		return systemStats;
-	}
+  void setClusterWide(ClusterWideInfo clusterWideInfo);
 
-	/**
-	 * @param systemStats
-	 *            the systemStats to set
-	 */
-	public void setSystemStats(SystemStats systemStats) {
-		this.systemStats = systemStats;
-	}
+  void setWorkerJMXInfo(WorkerJMXInfo levelJMXInfo);
 
-	/**
-	 * @param workerJMXInfo the workerJMXInfo to set
-	 */
-	public void setWorkerJMXInfo(WorkerJMXInfo workerJMXInfo) {
-		this.workerJMXInfo = workerJMXInfo;
-	}
-
-	/**
-	 * @return the workerJMXInfo
-	 */
-	public WorkerJMXInfo getWorkerJMXInfo() {
-		return workerJMXInfo;
-	}
-
-	
+  void setSystemStats(SystemStats stats);
 
 }

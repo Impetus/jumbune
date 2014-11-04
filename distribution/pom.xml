@@ -6,7 +6,7 @@
 	<parent>
 		<artifactId>jumbune</artifactId>
 		<groupId>org.jumbune</groupId>
-		<version>${build.number}</version>
+		<version>1.3.0</version>
 	</parent>
 	<groupId>org.jumbune</groupId>
 	<artifactId>jumbune-dist</artifactId>
@@ -150,14 +150,6 @@
 				<artifactId>jackson-core-asl</artifactId>
 				<version>1.8.8</version>
 			</dependency>
-
-			<!-- Snake yaml dependencies -->
-			<dependency>
-				<groupId>org.yaml</groupId>
-				<artifactId>snakeyaml</artifactId>
-				<version>1.13</version>
-			</dependency>
-
 			<!-- Module dependencies -->
 			<dependency>
 				<groupId>org.jumbune</groupId>
@@ -247,28 +239,6 @@
 				<artifactId>jumbune-rumen</artifactId>
 				<version>${project.version}</version>
 			</dependency> 
-			<dependency>
-				<groupId>org.jumbune</groupId>
-				<artifactId>jumbune-contrib</artifactId>
-				<version>${project.version}</version>
-				<type>pom</type>
-			</dependency>
-			<dependency>
-			<groupId>org.jumbune</groupId>
-				<artifactId>contrib-apache-0.20.2</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-			<groupId>org.jumbune</groupId>
-				<artifactId>contrib-apache-1.0.3.15</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.jumbune</groupId>
-				<artifactId>contrib-apache-1.0.4</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-
 			<!-- jetty runner dependencies -->
 			<dependency>
 				<groupId>org.mortbay.jetty</groupId>

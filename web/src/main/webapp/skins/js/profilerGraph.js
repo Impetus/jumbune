@@ -171,7 +171,6 @@
 				.text(yTipCnt*10);
 			yTipCnt++;
 		}
-	
 		xAxis.append("line")
 				.attr("x1", 0).attr("y1", 0).attr("x2", jvmConfig.svgW).attr("y2", 0)
 				.style("stroke", "#888").style("stroke-width", "0.5");
@@ -239,12 +238,14 @@
 	};
 	jvmGraph.createJVMCPULines = function(cpuObj, data) {
 		var yPoints = [];
+		var xPoints = [];
 		var tipCnt=0;
 		$.each(data.graphData.cpuUsage, function(tipKey, tipVal) {
 			yPoints.push(tipVal);
+			xPoints.push(parseFloat(tipKey));
 			tipCnt++;
 		});
-		createJVMLines(cpuObj, yPoints, tipCnt, jvmConfig.lineColors[0]);
+		createJVMLines(cpuObj, yPoints, tipCnt, jvmConfig.lineColors[0], xPoints, true);
 	};
 	
 	jvmGraph.createJVMMemoryLines = function(memoryObj, data) {
@@ -256,7 +257,7 @@
 		*/		
 		$.each(data.graphData.memUsage, function(tipKey, tipVal) {
 			yPoints.push(tipVal);
-			xPoints.push(tipKey);
+			xPoints.push(parseFloat(tipKey));
 			tipCnt++;
 		});
 		createJVMLines(memoryObj, yPoints, tipCnt, jvmConfig.lineColors[1], xPoints, true);

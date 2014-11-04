@@ -11,11 +11,13 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.net.URISyntaxException;
 import java.security.CodeSource;
@@ -51,7 +53,7 @@ public final class JumbuneAgent {
 	/** The Constant LOGGER. */
 	public static final Logger CONSOLE_LOGGER = LogManager.getLogger("EventLogger");
 	public static final Logger LOGGER = LogManager.getLogger(JumbuneAgent.class);
-
+	private static final String HADOOP_VERSION_NON_YARN_COMMAND = "bin/hadoop version";
 
 	/** The Constant CAT_CMD. */
 	private static final String CAT_CMD = "cat";
@@ -203,22 +205,54 @@ public final class JumbuneAgent {
 	 * This method copies specified jars from Agent's lib to hadoop's lib directory.
 	 *
 	 * @param jars the jars
-	 * @param storageDir the storage dir
+	 * @param agentLibDir the storage dir
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws InterruptedException the interrupted exception
 	 */
-	private static void copyAgentLibJarsToHadoopLib(List<String> jars, String storageDir) throws IOException, InterruptedException {
+	private static void copyAgentLibJarsToHadoopLib(List<String> jars, String agentLibDir) throws IOException, InterruptedException {
 		String hadoopHomeDir = getHadoopHome();
 		LOGGER.debug("Hadoop Home ["+hadoopHomeDir+"]");
+		String command = "."+File.separator + HADOOP_VERSION_NON_YARN_COMMAND;
+		String versionResponse = executeProcessBuilderCommand(command.split(" "), hadoopHomeDir);
+		String versionNumber = getVersionNumber(versionResponse);
+		StringBuilder destinationPath = new StringBuilder().append(hadoopHomeDir).append(File.separator).append("share")
+		.append(File.separator).append("hadoop").append(File.separator).append("yarn").append(File.separator).append("lib").append(File.separator);
 		if (hadoopHomeDir != null) {
-			for (String libjar : jars) {
-				StringBuilder copyToHadoopJar = new StringBuilder().append("cp ").append(storageDir).append(libjar).append(" ").append(hadoopHomeDir)
-						.append("/lib/");
-				executeCommand(copyToHadoopJar.toString());
-			}
-		}
-
+			String pathToHadoopLib = pathBuilder(versionNumber, hadoopHomeDir);
+						for (String jar : jars) {
+						StringBuilder copyToHadoopJar = new StringBuilder()
+								.append("cp ").append(agentLibDir).append(jar)
+								.append(" ").append(pathToHadoopLib).append("/lib/");
+						executeCommand(copyToHadoopJar.toString());
+					}
+			}		
 	}
+	
+	private static String pathBuilder(String versionNumber, String hadoopHomeDir){
+		StringBuilder path;
+		if(versionNumber.contains("cdh")){
+			path = new StringBuilder().append(hadoopHomeDir).append("-yarn").append(File.separator);
+			return path.toString() ;
+		}else if(versionNumber.startsWith("2.") || versionNumber.startsWith("0.")){
+			path = new StringBuilder().append(hadoopHomeDir).append(File.separator).append("share")
+			.append(File.separator).append("hadoop").append(File.separator).append("yarn").append(File.separator);
+			return path.toString();
+		}else {
+				return hadoopHomeDir;
+		}
+	}
+	
+	/**
+	 * Gets the version number after parsing the response from the hadoop version commands.
+	 *
+	 * @param versionResponse the version response
+	 * @return the version number
+	 */
+	private static String getVersionNumber(String versionResponse) {
+		String[] versionNumber = versionResponse.split("Subversion");
+		versionNumber = versionNumber[0].split(" ");
+		return versionNumber[1].trim();
+	}	
 
 	/**
 	 * *
@@ -333,5 +367,51 @@ public final class JumbuneAgent {
 			LOGGER.error(e);
 		}
 	}
+	
+	/**
+	 * Execute the given command.
+	 *
+	 * @param commands
+	 *            the commands
+	 * @param directory
+	 *            the directory
+	 */
+	private static String executeProcessBuilderCommand(String[] commands, String directory) {
+		StringBuffer response = new StringBuffer();
+		ProcessBuilder pb = new ProcessBuilder(commands);
+		if (directory == null || directory.isEmpty()) {
+			throw new IllegalArgumentException("Directory: "+ directory +" is either null or empty");
+		} else {
+			pb.directory(new File(directory));
+		}
+		Process p = null;
+		InputStream is = null;
+		BufferedReader br = null;
+		try {
+			p = pb.start();
+			is = p.getInputStream();
+			if (is != null) {
+				br = new BufferedReader(new InputStreamReader(is));
+				String line; 
+				while ((line = br.readLine())!= null) {
+					response.append(line+"\n");
+				}
+			}
+		} catch (IOException e) {
+			LOGGER.error(e);
+		} finally {
+			try {
+				if (br != null) {
+					br.close();
+				}
+				if(is != null){
+					is.close();
+				}
+			} catch (IOException e) {
+				LOGGER.error(e);
+			}
+		}
+		return response.toString();
+	}	
 
 }

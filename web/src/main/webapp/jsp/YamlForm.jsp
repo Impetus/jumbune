@@ -130,6 +130,15 @@ var uploader_mr;
 										id="master.jobTrackerJmxPort" value="5680" class="inputbox smallInput"/>
 								</div>
 							</div>
+							<div class="fixWidthBox">
+								<div class="lbl">
+									<label>Jmx port on ResourceManager</label><span class="asterix"> </span>
+								</div>
+								<div class="fld">
+									<input type="text" name="master.resourceManagerJmxPort"
+										id="master.resourceManagerJmxPort" value="5680" class="inputbox smallInput"/>
+								</div>
+							</div>
 						
 					</fieldset>
 				</div>
@@ -163,6 +172,15 @@ var uploader_mr;
 								<div class="fld">
 									<input type="text" name="slaveParam.taskTrackerJmxPort"
 										id="slaveParam.taskTrackerJmxPort" value="5678" class="inputbox smallInput"/>
+								</div>
+							</div>
+							<div class="fixWidthBox">
+								<div class="lbl">
+									<label>Jmx port on NodeManager</label><span class="asterix"> </span>
+								</div>
+								<div class="fld">
+									<input type="text" name="slaveParam.nodeManagerJmxPort"
+										id="slaveParam.nodeManagerJmxPort" value="5678" class="inputbox smallInput"/>
 								</div>
 							</div>
 						<div class="fixWidthBox clear" style="width:650px !important;">
@@ -290,7 +308,15 @@ var uploader_mr;
 					<span>Note: </span>Tab collects mapreduce job jar and dependent
 					jar information.
 				</div>
-
+				<div class="commonBox previewInfo">
+							<div class="fld chk">
+								<input type="checkbox" name="enableYarn" id="enableYarn"
+									value="TRUE" />
+							</div>
+							<div class="">
+								<label>Execution On Yarn</label>
+							</div>							
+				</div>
 				<div class="fieldsetBox innerFieldsetBox">
 					<div class="paddBott">Specify job jar information</div>
 					<fieldset>
@@ -540,7 +566,7 @@ var uploader_mr;
 								<div class="fieldsetBox clear">
 									<div class="paddBott">
 										<a style="margin-top: -1px;" href="javascript:void(0);"
-											onclick="javascript:instrumentUserDefValidateRemoveField(0);"
+							asdfasdfsdf				onclick="javascript:instrumentUserDefValidateRemoveField(0);"
 											class="removeSign">Remove</a>User Validation 1
 									</div>
 									<fieldset>
@@ -692,15 +718,15 @@ var uploader_mr;
 			</div>
 
 
-			<input type="hidden" name="yamlJsonData" id="yamlJsonData" value="" />
+			<input type="hidden" name="jsonData" id="jsonData" value="" />
 		</div>
 
 	</form>
 
 	<div style="display: none;">
-		<form action="SaveYamlServlet" name="saveYamlForm" id="saveYamlForm"
+		<form action="SaveJSONServlet" name="saveJSONForm" id="saveJSONForm"
 			method="POST">
-			<input type="hidden" name="saveYamlJsonData" id="saveYamlJsonData"
+			<input type="hidden" name="saveJsonData" id="saveJsonData"
 				value="" />
 		</form>
 	</div>
@@ -801,10 +827,30 @@ var uploader_mr;
 			obj.value = '&nbsp;';
 	}
 	
-	function validateInputBoxes() {							
-		var isEmpty = false;						
+	function validateInputBoxes() {						
+		var isEmpty = false;
+		var jtId = "master.jobTrackerJmxPort";
+		var rmId = "master.resourceManagerJmxPort";
+		var dnId = "slaveParam.taskTrackerJmxPort";		
+		var nmId = "slaveParam.nodeManagerJmxPort";				
 		$("#step-1 input[type='text']:visible").each(function() {						
-			if($(this).val() == "") {										
+			if($(this).attr('id')==jtId || $(this).attr('id')==rmId )
+			{
+				if( ($(this).attr('id')==jtId) && ($(this).val()=="") && document.getElementById(rmId).value == ""){
+					isEmpty = true;
+				}
+				if($(this).attr('id')==rmId && $(this).val()=="" && document.getElementById(jtId).value == ""){
+					isEmpty = true;
+				}
+			}else	if($(this).attr('id')==dnId || $(this).attr('id')==nmId )
+			{
+				if( ($(this).attr('id')==dnId) && ($(this).val()=="") && document.getElementById(nmId).value == ""){
+					isEmpty = true;
+				}
+				if($(this).attr('id')==nmId && $(this).val()=="" && document.getElementById(dnId).value == ""){
+					isEmpty = true;
+				}
+			}else if($(this).val() == "") {										
 				isEmpty = true;
 			}												
 		});	
@@ -1572,8 +1618,8 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 								$("#step9LoaderWrap").show();
 								$('#previewTab').show();
 								$('#previewTab a').trigger('click');
-								$('#yamlJsonData').val('');
-								$('#saveYamlJsonData').val('');
+								$('#jsonData').val('');
+								$('#saveJsonData').val('');
 								$('#validateMsgBox').html('');
 
 								var formData = form2js(
@@ -1617,12 +1663,12 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 								//data preview function
 								previewData(obj);
 												
-								$('#yamlJsonData').val(finalJson);
-								$('#saveYamlJsonData').val(finalJson);
-								var jsonData = $('#yamlJsonData').val();											
+								$('#jsonData').val(finalJson);
+								$('#saveJsonData').val(finalJson);
+								var jsonData = $('#jsonData').val();											
 								$.ajax({
 									type : "POST",
-									url : "ValidateYamlServlet",
+									url : "ValidateJSONServlet",
 									data : jsonData
 								})
 								.done(function(jsonData) {
@@ -1817,7 +1863,7 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 							//$('#validateWizardBtn').click();
 							if ( !$(this).hasClass("disableNextStep") ) {
 								uploader.start();
-								$('#saveYamlForm').submit();
+								$('#saveJSONForm').submit();
 							}
 						});
 
@@ -1893,8 +1939,8 @@ $(".msgBox").css("display","none");
 						// validate step 1 function
 						function validateStep1() {
 							var isValid = false;
-							$('#step-1 .fieldsetBox input[type="text"]').each(function () {																
-								if($(this).val() == "") {									
+							$('#step-1 .fieldsetBox input[type="text"]').each(function () {								if($(this).val() == "") {	
+									console.log("empty value in first step :"+ $(this).attr);	
 									return isValid;
 								}
 							});
@@ -1903,7 +1949,7 @@ $(".msgBox").css("display","none");
 								console.log("check invalid");
 								return isValid;
 							}*/							
-							if ($("#yamlForm").validationEngine('validate') == true /*&& ($("#jobName").val() != "" && $("#user").val() != "" && $("#host").val() != "" && $("#rsaFile").val() != "" && $("#agentPort").val() != "" && $("#master.nameNodeJmxPort").val() != "" && $("#master.jobTrackerJmxPort").val() != "" || $("#sJumbuneHome").val() != "" && $("#slaveParam.dataNodeJmxPort").val() != "" && $("#slaveParam.taskTrackerJmxPort").val() != "" && $("#noOfSlaves").val() != "")*/ ) {																
+							if ($("#yamlForm").validationEngine('validate') == true /*&& ($("#jobName").val() != "" && $("#user").val() != "" && $("#host").val() != "" && $("#rsaFile").val() != "" && $("#agentPort").val() != "" && $("#master.nameNodeJmxPort").val() != "" && ($("#master.jobTrackerJmxPort").val() != "" || $("#master.resourceManagerJmxPort").val() != "")  || $("#sJumbuneHome").val() != "" && $("#slaveParam.dataNodeJmxPort").val() != "" && $("#slaveParam.taskTrackerJmxPort").val() != "" && $("#noOfSlaves").val() != "")*/ ) {																
 								isValid = true;
 							}
 							return isValid;

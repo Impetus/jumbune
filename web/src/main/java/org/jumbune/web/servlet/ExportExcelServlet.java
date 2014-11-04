@@ -16,7 +16,7 @@ import javax.servlet.http.HttpSession;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.HttpReportsBean;
-import org.jumbune.common.beans.ReportsBean.ReportName;
+import org.jumbune.common.utils.Constants;
 import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.execution.utils.ExportUtil;
@@ -61,8 +61,8 @@ public class ExportExcelServlet extends HttpServlet {
 
 		PrintWriter out = response.getWriter();
 		HttpReportsBean reports;
-		Map<ReportName, String> map = null;
-		Map<ReportName, String> reportsJson = null;
+		Map<String, String> map = null;
+		Map<String, String> reportsJson = null;
 		Loader loader = null;
 		String jumbuneJobName = null;
 		try {
@@ -72,9 +72,7 @@ public class ExportExcelServlet extends HttpServlet {
 					reports = (HttpReportsBean) session.getAttribute(WebConstants.REPORTS_BEAN);
 					loader = (Loader) session.getAttribute("loader");
 					map = reports.getAllReports();
-					reportsJson = (Map<ReportName, String>) ((HashMap<ReportName, String>) reports.getAllReports()).clone();
-
-				
+					reportsJson = (Map<String, String>) ((HashMap<String, String>) reports.getAllReports()).clone();
 				callTowriteToExcelFile(request, out, map, reportsJson, loader,
 						jumbuneJobName);
 
@@ -93,8 +91,8 @@ public class ExportExcelServlet extends HttpServlet {
 			out.println(e.getMessage() + " Export Utility failure");
 			LOG.error(e.getMessage());
 		} finally {
-			out.close();
 			out.flush();
+			out.close();
 		}
 	}
 
@@ -112,8 +110,8 @@ public class ExportExcelServlet extends HttpServlet {
 	 * @throws JumbuneException the Jumbune exception
 	 */
 	private void callTowriteToExcelFile(HttpServletRequest request,
-			PrintWriter out, Map<ReportName, String> map,
-			Map<ReportName, String> reportsJson, Loader loader,
+			PrintWriter out, Map<String, String> map,
+			Map<String, String> reportsJson, Loader loader,
 			final String jumbuneJobName) throws FileNotFoundException, IOException,
 			JumbuneException {
 		String jobName = jumbuneJobName;
@@ -126,7 +124,7 @@ public class ExportExcelServlet extends HttpServlet {
 
 		File xlsDirectory = new File(contextRealPath + xlsFolder);
 		checkAndMakeExcelDirectory(xlsDirectory);
-		addDataValidationReportToMap(map, yamlLoader);
+		addDataValidationReportToMap(map, loader);
 
 		ExportUtil.writesToExcelFile(map, contextRealPath + xlsFolder + fileName, reportsJson);
 		LOG.info("Exported to Excel Successfully....");
@@ -151,11 +149,11 @@ public class ExportExcelServlet extends HttpServlet {
 	 * @param map the map
 	 * @param loader loads the yaml
 	 */
-	private void addDataValidationReportToMap(Map<ReportName, String> map,
+	private void addDataValidationReportToMap(Map<String, String> map,
 			Loader loader) {
 		YamlLoader yamlLoader = (YamlLoader)loader;
-		if (map.containsKey(ReportName.DATA_VALIDATION) && yamlLoader != null) {
-			map.put(ReportName.DATA_VALIDATION, yamlLoader.getJumbuneJobLoc());
+		if (map.containsKey(Constants.DATA_VALIDATION) && loader != null) {
+			map.put(Constants.DATA_VALIDATION, yamlLoader.getJumbuneJobLoc());
 		}
 	}
 
