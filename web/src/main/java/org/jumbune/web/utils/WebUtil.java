@@ -8,6 +8,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 import java.util.List;
@@ -30,10 +31,6 @@ import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
-import org.yaml.snakeyaml.Loader;
-import org.yaml.snakeyaml.TypeDescription;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -117,24 +114,28 @@ public class WebUtil {
 	 * @throws FileNotFoundException the file not found exception
 	 */
 	public Config getYamlConfFromFile(File file) throws FileNotFoundException {
+		Gson gson = new Gson();
+		InputStreamReader isr = null;
 		try {
-			InputStream input = new FileInputStream(file);
-			Constructor constructor = new Constructor(YamlConfig.class);
-			TypeDescription desc = new TypeDescription(YamlConfig.class);
-			constructor.addTypeDescription(desc);
-			Yaml yaml = new Yaml(new Loader(constructor));
-
-			YamlConfig yamlConfig = (YamlConfig) yaml.load(input);
-
-			LOG.info("YAML loaded successfully from " + file.getAbsolutePath() + " conf " + yamlConfig);
-			return yamlConfig;
+			isr = new InputStreamReader(new FileInputStream(file));
+			YamlConfig conf = gson.fromJson(isr, YamlConfig.class);
+			LOG.info("JSON loaded successfully from " + file.getAbsolutePath()
+					+ " conf " + conf);
+			return conf;
 
 		} catch (FileNotFoundException fne) {
 			LOG.error("Could not find YAML file : " + file.getAbsolutePath());
 			throw fne;
+		} finally {
+			if (isr != null) {
+				try {
+					isr.close();
+				} catch (IOException ioe) {
+					LOG.error("Failed to close the File Reader instance", ioe);
+				}				
+			}
 		}
 	}
-
 	
 	/**
 	 * Gets the tabs information.

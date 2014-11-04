@@ -91,7 +91,7 @@ public class UploadServlet extends HttpServlet {
 
 			response.setContentType("text/html");
 
-			String filePath = YamlLoader.getjHome() + Constants.USER_YAML_LOC;
+			String filePath = YamlLoader.getjHome() + Constants.USER_JSON_LOC;
 
 			LOG.debug("File path for uploding yaml file :: " + filePath);
 			WebUtil util = new WebUtil();
@@ -104,12 +104,10 @@ public class UploadServlet extends HttpServlet {
 			
 			String[] resources = null;
 			}
-			String yamlString = gson.toJson(jsonObject);
-
-			out.println(yamlString);
-
+			String jsonString = gson.toJson(jsonObject);
+			out.println(jsonString);
 			LOG.debug("Created yaml object successfully and written it to writer "
-					+ yamlString + "\n");
+					+ jsonString + "\n");
 
 		} catch (IOException ie) {
 			LOG.error(ErrorCodesAndMessages.UNABLE_TO_LOAD_YAML, ie);

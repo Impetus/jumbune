@@ -9,10 +9,10 @@
 		<servlet-class>org.jumbune.web.servlet.ResultServlet</servlet-class>
 	</servlet>
 	<servlet>
-		<servlet-name>SelectExistingYaml</servlet-name>
-		<servlet-class>org.jumbune.web.servlet.SelectExistingYaml</servlet-class>
+		<servlet-name>JumbuneHistoryJobPickerServlet</servlet-name>
+		<servlet-class>org.jumbune.web.servlet.JumbuneHistoryJobPickerServlet</servlet-class>
 	</servlet>
-
+	
 	<servlet>
 		<servlet-name>ExportExcelServlet</servlet-name>
 		<servlet-class>org.jumbune.web.servlet.ExportExcelServlet</servlet-class>
@@ -39,14 +39,14 @@
 	</servlet>
 
 	<servlet>
-		<servlet-name>ValidateYamlServlet</servlet-name>
-		<servlet-class>org.jumbune.web.servlet.ValidateYamlServlet</servlet-class>
+		<servlet-name>ValidateJSONServlet</servlet-name>
+		<servlet-class>org.jumbune.web.servlet.ValidateServlet</servlet-class>
 	</servlet>
 
 
 	<servlet>
-		<servlet-name>SaveYamlServlet</servlet-name>
-		<servlet-class>org.jumbune.web.servlet.SaveYamlServlet</servlet-class>
+		<servlet-name>SaveJSONServlet</servlet-name>
+		<servlet-class>org.jumbune.web.servlet.SaveJSONServlet</servlet-class>
 	</servlet>
 
 	<servlet>
@@ -64,8 +64,8 @@
 	</servlet>
 
 	<servlet-mapping>
-		<servlet-name>SelectExistingYaml</servlet-name>
-		<url-pattern>/SelectExistingYaml</url-pattern>
+		<servlet-name>JumbuneHistoryJobPickerServlet</servlet-name>
+		<url-pattern>/JumbuneHistoryJobPickerServlet</url-pattern>
 	</servlet-mapping>
 	<servlet-mapping>
 		<servlet-name>UploadServlet</servlet-name>
@@ -98,14 +98,14 @@
 	</servlet-mapping>
 
 	<servlet-mapping>
-		<servlet-name>ValidateYamlServlet</servlet-name>
-		<url-pattern>/ValidateYamlServlet</url-pattern>
+		<servlet-name>ValidateJSONServlet</servlet-name>
+		<url-pattern>/ValidateJSONServlet</url-pattern>
 	</servlet-mapping>
 
 
 	<servlet-mapping>
-		<servlet-name>SaveYamlServlet</servlet-name>
-		<url-pattern>/SaveYamlServlet</url-pattern>
+		<servlet-name>SaveJSONServlet</servlet-name>
+		<url-pattern>/SaveJSONServlet</url-pattern>
 	</servlet-mapping>
 
 	

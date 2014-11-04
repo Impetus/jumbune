@@ -27,7 +27,7 @@ public abstract class BaseProcessor implements Processor {
 
 	private static final Logger LOGGER = LogManager
 			.getLogger(BaseProcessor.class);
-	protected static final ProcessHelper HELPER = new ProcessHelper();
+	protected static final ProcessHelper processHelper = new ProcessHelper();
 	protected static final MessageLoader MESSAGES = MessageLoader.getInstance();
 
 	private Processor next;
@@ -143,7 +143,7 @@ public abstract class BaseProcessor implements Processor {
 			throws JumbuneException {
 
 		log(params, "Pre-Execution phase of processors");
-		serviceInfo = HELPER.readServiceInfo();
+		serviceInfo = processHelper.readServiceInfo();
 		log(params, serviceInfo.toString());
 	}
 
@@ -193,7 +193,7 @@ public abstract class BaseProcessor implements Processor {
 		log(params, "Post Execution phase of processors");
 
 		if (serviceInfo != null) {
-			boolean status = HELPER.writetoServiceFile(serviceInfo);
+			boolean status = processHelper.writetoServiceFile(serviceInfo);
 
 			if (status){
 				log(params, "Service Info written successfully");

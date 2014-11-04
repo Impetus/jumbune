@@ -8,7 +8,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Module;
 import org.jumbune.common.beans.ServiceInfo;
-import org.jumbune.common.beans.ReportsBean.ReportName;
 import org.jumbune.common.utils.ClasspathUtil;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.FileUtil;
@@ -19,6 +18,7 @@ import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.debugger.instrumentation.instrumenter.Instrumenter;
 import org.jumbune.debugger.instrumentation.instrumenter.JarInstrumenter;
 import org.jumbune.debugger.log.processing.LogAnalyzerUtil;
+import org.jumbune.execution.beans.CommunityModule;
 import org.jumbune.execution.beans.Parameters;
 import org.jumbune.utils.beans.LogLevel;
 import org.jumbune.utils.exception.JumbuneException;
@@ -84,7 +84,7 @@ public class DebugProcessor extends BaseProcessor {
 
 		String debugAnalyserReport = null;
 		// populating pure and instrumented report
-		Map<ReportName, String> report = null;
+		Map<String, String> report = null;
 		
 
 		try {
@@ -98,7 +98,7 @@ public class DebugProcessor extends BaseProcessor {
 			// Instrument the pure jar
 			Instrumenter instrumenter = new JarInstrumenter(super.getLoader());
 			instrumenter.instrumentJar();
-			HELPER.executeJar(instrumentedJarPath, super.isCommandBased(), super.getLoader(), true);
+			processHelper.executeJar(instrumentedJarPath, super.isCommandBased(), super.getLoader(), true);
 			// marking report as complete
 			// Copy logs from slaves only when there are slaves if there are no
 			// slaves then don't go for copying
@@ -131,10 +131,10 @@ public class DebugProcessor extends BaseProcessor {
 			LOGGER.error("LogAnalyser Failed !!!", e);
 			throw JumbuneRuntimeException.throwDebugAnalysisFailedException(e.getStackTrace());
 		} finally {
-			report = super.getReports().getReport(Module.DEBUG_ANALYSER);
-			report.put(ReportName.DEBUG_ANALYZER, debugAnalyserReport);
+			report = super.getReports().getReport(CommunityModule.DEBUG_ANALYSER);
+			report.put(Constants.DEBUG_ANALYZER, debugAnalyserReport);
 			// setting the debug analyser report as complete
-			super.getReports().setCompleted(Module.DEBUG_ANALYSER);
+			super.getReports().setCompleted(CommunityModule.DEBUG_ANALYSER);
 			LOGGER.info("Exited from [Debug] Processor...");
 			return true;
 		}
@@ -154,7 +154,7 @@ public class DebugProcessor extends BaseProcessor {
 
 	@Override
 	protected Module getModuleName() {
-		return Module.DEBUG_ANALYSER;
+		return CommunityModule.DEBUG_ANALYSER;
 	}
 
 	

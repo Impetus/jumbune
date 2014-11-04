@@ -5,7 +5,7 @@
 
 	<groupId>org.jumbune</groupId>
 	<artifactId>jumbune</artifactId>
-	<version>${build.number}</version>
+	<version>1.3.0</version>
 	<packaging>pom</packaging>
 
 	<name>Jumbune</name>
@@ -13,7 +13,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<build.number>1.2.1-SNAPSHOT</build.number>
+		
 	</properties>
 	<repositories>
 		<repository>
@@ -34,6 +34,14 @@
 			</releases>
 		</repository>
 	</repositories>
+	<!-- distribution to maven repo -->	
+	<distributionManagement>
+	  <snapshotRepository>
+	    <id>ossrh</id>
+	    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+	  </snapshotRepository>
+	</distributionManagement>
+
 	<dependencyManagement>
 		<dependencies>
 
@@ -138,66 +146,65 @@
 			</dependency>
 
 			<!-- Snake yaml dependencies -->
-			<dependency>
+			<!--dependency>
 				<groupId>org.yaml</groupId>
 				<artifactId>snakeyaml</artifactId>
 				<version>1.13</version>
-			</dependency>
+			</dependency-->
 
 				
 			<!-- Module dependencies -->
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-common</artifactId>
-				<version>${project.version}</version>
+				<version>1.3.0</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-exec</artifactId>
-				<version>${project.version}</version>
+				<version>1.3.0</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-datavalidation</artifactId>
-				<version>${project.version}</version>
+				<version>1.3.0</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-utils</artifactId>
-				<version>${project.version}</version>
+				<version>1.3.0</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-debugger</artifactId>
-				<version>${project.version}</version>
+				<version>1.3.0</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-profiling</artifactId>
-				<version>${project.version}</version>
+				<version>1.3.0</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-deploy</artifactId>
-				<version>${project.version}</version>
+				<version>1.3.0</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-remoting</artifactId>
-				<version>${project.version}</version>
+				<version>1.3.0</version>
 
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-web</artifactId>
-				<version>${project.version}</version>
+				<version>1.3.0</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-rumen</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-		
+				<version>1.3.0</version>
+			</dependency>		
 			<!-- jetty runner dependencies -->
 			<dependency>
 				<groupId>org.mortbay.jetty</groupId>
@@ -261,13 +268,11 @@
 				<activeByDefault>true</activeByDefault>
 			</activation>
 			<dependencies>
-			<!-- hadoop dependencies -->
 			<dependency>
 				<groupId>org.apache.hadoop</groupId>
 				<artifactId>hadoop-core</artifactId>
-				<version>1.0.4</version>
-				<scope>system</scope>
-				<systemPath>${user.dir}/lib/hadoop-core-1.0.4.jar</systemPath>
+				<version>1.2.1</version>
+				<scope>provided</scope>
 			</dependency>
 	      </dependencies>
 			<properties>
@@ -276,39 +281,134 @@
 			</properties>
 
 		</profile>
-		
-	       <profile>
-		<id>cdh</id>
-	        <dependencies>
-		<!-- hadoop dependencies -->
-			<dependency>
-				<groupId>org.apache.hadoop</groupId>
-				<artifactId>hadoop-core</artifactId>
-				<version>2.0.0-cdh4.3.0</version>
-				<scope>system</scope>
-				<systemPath>${user.dir}/lib/hadoop-core-2.0.0-mr1-cdh4.3.0.jar</systemPath>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.hadoop</groupId>
-				<artifactId>hadoop-common</artifactId>
-				<version>2.0.0-cdh4.3.0</version>
-				<scope>system</scope>
-				<systemPath>${user.dir}/lib/hadoop-common-2.0.0-cdh4.3.0.jar</systemPath>
-			</dependency>	
+		<profile>
+			<id>yarn</id>
+			<dependencies>
+			<!-- hadoop dependencies -->
 			<dependency>
 				<groupId>org.apache.hadoop</groupId>
 				<artifactId>hadoop-mapreduce-client-core</artifactId>
-				<version>2.0.0-cdh4.3.0</version>
-				<scope>system</scope>
-				<systemPath>${user.dir}/lib/hadoop-mapreduce-client-core-2.0.0-cdh4.3.0.jar</systemPath>
+				<version>2.4.1</version>
+				<scope>provided</scope>
 			</dependency>	
-              </dependencies>
-		<properties>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-common</artifactId>
+				<version>2.4.1</version>
+				<scope>provided</scope>
+			</dependency>	
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-mapreduce-client-hs</artifactId>
+				<version>2.4.1</version>
+				<scope>provided</scope>
+			</dependency>
+	      <dependency>
+				<groupId>com.google.guava</groupId>
+				<artifactId>guava</artifactId>
+				<version>11.0.2</version>
+				 <exclusions>
+					<exclusion>
+						<groupId>*</groupId>
+						<artifactId>*</artifactId>
+					</exclusion>
+				</exclusions>
+				</dependency>
+		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-auth</artifactId>
+			<version>2.4.1</version>
+				 <exclusions>
+					<exclusion>
+						<groupId>*</groupId>
+						<artifactId>*</artifactId>
+					</exclusion>
+				</exclusions>			
+			</dependency>
+		<dependency>
+		<groupId>org.slf4j</groupId>
+		<artifactId>slf4j-api</artifactId>
+		<version>1.7.5</version>
+				 <exclusions>
+					<exclusion>
+						<groupId>*</groupId>
+						<artifactId>*</artifactId>
+					</exclusion>
+				</exclusions>		
+		</dependency>
+		<dependency>
+		<groupId>org.apache.hadoop</groupId>
+		<artifactId>hadoop-yarn-api</artifactId>
+		<version>2.4.1</version>
+				 <exclusions>
+					<exclusion>
+						<groupId>*</groupId>
+						<artifactId>*</artifactId>
+					</exclusion>
+				</exclusions>		
+		</dependency>
+		<dependency>
+		<groupId>org.apache.hadoop</groupId>
+		<artifactId>hadoop-yarn-common</artifactId>
+		<version>2.4.1</version>
+				 <exclusions>
+					<exclusion>
+						<groupId>*</groupId>
+						<artifactId>*</artifactId>
+					</exclusion>
+				</exclusions>		
+		</dependency>
+		<dependency>
+		<groupId>com.google.protobuf</groupId>
+		<artifactId>protobuf-java</artifactId>
+		<version>2.5.0</version>
+				 <exclusions>
+					<exclusion>
+						<groupId>*</groupId>
+						<artifactId>*</artifactId>
+					</exclusion>
+				</exclusions>		
+		</dependency>
+		<dependency>
+		<groupId>commons-collections</groupId>
+		<artifactId>commons-collections</artifactId>
+		<version>3.2.1</version>
+				 <exclusions>
+					<exclusion>
+						<groupId>*</groupId>
+						<artifactId>*</artifactId>
+					</exclusion>
+				</exclusions>		
+		</dependency>
+		<dependency>
+	<groupId>org.apache.avro</groupId>
+	<artifactId>avro</artifactId>
+	<version>1.7.4</version>
+				 <exclusions>
+					<exclusion>
+						<groupId>*</groupId>
+						<artifactId>*</artifactId>
+					</exclusion>
+				</exclusions>	
+	</dependency>
+	<dependency>
+		<groupId>log4j</groupId>
+		<artifactId>log4j</artifactId>
+		<version>1.2.17</version>
+				 <exclusions>
+					<exclusion>
+						<groupId>*</groupId>
+						<artifactId>*</artifactId>
+					</exclusion>
+				</exclusions>		
+		</dependency>
+		</dependencies>
+			<properties>
 				<env>default</env>
-				<outputDir>${HOME}/Desktop/jumbune/cdh</outputDir>
+				<outputDir>${HOME}/Desktop/jumbune</outputDir>
 			</properties>
-	      </profile>
-	</profiles>
+		</profile>
+ </profiles>
 
 	<build>
 		<defaultGoal>install</defaultGoal>
@@ -416,23 +516,35 @@
 					<useProjectReferences>false</useProjectReferences>
 				</configuration>
 			</plugin>
+			    <plugin>
+			      <groupId>org.sonatype.plugins</groupId>
+			      <artifactId>nexus-staging-maven-plugin</artifactId>
+			      <version>1.6.2</version>
+			      <extensions>true</extensions>
+			      <configuration>
+			        <serverId>ossrh</serverId>
+			        <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+			        <autoReleaseAfterClose>false</autoReleaseAfterClose>
+				<keepStagingRepositoryOnCloseRuleFailure>true</keepStagingRepositoryOnCloseRuleFailure>
+				<stagingProgressTimeoutMinutes>15</stagingProgressTimeoutMinutes>
+			      </configuration>
+			    </plugin>
+
 		</plugins>
 	</build>
 
 	<modules>
 		<module>utilities</module>
-		<module>contrib</module>
 		<module>common</module>
 		<module>debugger</module>
 		<module>profiling</module>
+		<module>examples</module>
 		<module>datavalidation</module>
 		<module>remoting</module>
 		<module>execution</module>
 		<module>web</module>
 		<module>deploy</module>
 		<module>distribution</module>
-		<module>examples</module>
 		<module>rumen</module>
-
 	</modules>
 </project>

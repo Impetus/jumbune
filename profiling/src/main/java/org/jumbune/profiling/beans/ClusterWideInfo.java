@@ -9,8 +9,11 @@ import java.util.List;
 public class ClusterWideInfo {
 
 	private List<String> jobTracker;
-	private List<String> nameNode;
-
+	/**
+	 * The list holder for namenode
+	 */
+	protected List<String> nameNode;
+ 
 
 	/**
 	 * @return the jobTracker
@@ -41,5 +44,6 @@ public class ClusterWideInfo {
 	public void setNameNode(List<String> nameNode) {
 		this.nameNode = nameNode;
 	}
+
 
 }

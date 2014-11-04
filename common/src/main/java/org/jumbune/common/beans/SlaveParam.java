@@ -7,7 +7,7 @@ package org.jumbune.common.beans;
 public class SlaveParam {
 	
 	/** The data node jmx port. */
-	private String dataNodeJmxPort;
+	protected String dataNodeJmxPort;
 	
 	/** The task tracker jmx port. */
 	private String taskTrackerJmxPort;

@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +32,6 @@ import org.jumbune.common.beans.PhaseType;
 import org.jumbune.common.beans.Slave;
 import org.jumbune.common.beans.SupportedApacheHadoopVersions;
 import org.jumbune.common.beans.TaskOutputDetails;
-import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
@@ -47,7 +45,9 @@ import org.jumbune.remoting.common.RemotingConstants;
  */
 public class ResourceUsageCollector {
 
-	/** The Constant LOGGER. */
+	private static final int DEFAULT_INTERVAL = 1;
+
+  /** The Constant LOGGER. */
 	private static final Logger LOGGER = LogManager.getLogger(ResourceUsageCollector.class);
 	
 	/** The Constant DELAY_INTERVAL. */
@@ -63,7 +63,7 @@ public class ResourceUsageCollector {
 	private static final String PID_FILE = "pid.txt";
 	
 	/** The Constant TOP_CMD. */
-	private static final String TOP_CMD = "top -b -d "+DELAY_INTERVAL+"| egrep 'Cpu|Mem:'|awk '{print $1\" \"$2\" \"$4}'" ;
+	private static final String TOP_CMD = "top -b -d "+DELAY_INTERVAL+" | egrep 'Cpu|Mem:'|awk '{print $1\" \"$2\" \"$3\" \"$4\" \"$5}'" ;
 
 	/** The Constant CAT_CMD. */
 	private static final String CAT_CMD = "cat";
@@ -74,7 +74,7 @@ public class ResourceUsageCollector {
 	private static final String GREP_CPU_CMD = "|grep Cpu|awk '{print$2}'";
 	
 	/** The Constant GREP_MEM_CMD. */
-	private static final String GREP_MEM_CMD = "|grep Mem|awk '{print $2\" \"$3}'";
+	private static final String GREP_MEM_CMD = " |grep Mem|awk '{print $2\" \"$3\" \"$4\" \"$5}'";
 	
 	/** The Constant REDIRECT_SYMBOL. */
 	private static final String REDIRECT_SYMBOL = ">";
@@ -210,7 +210,7 @@ public class ResourceUsageCollector {
 	 */
 	public void addPhaseResourceUsage(JobOutput jobOutput) throws IOException {
 		long totalTime = jobOutput.getTotalTime();
-		intervalPeriod = totalTime / NUM_OF_INTERVALS;
+		intervalPeriod = totalTime < NUM_OF_INTERVALS ? DEFAULT_INTERVAL :totalTime / NUM_OF_INTERVALS ;
 		Map<String, NodeSystemStats> nodeStats = getNodeStats();
 		Map<Long, IntervalStats> statsMap = new HashMap<Long, IntervalStats>();
 		PhaseOutput po = jobOutput.getPhaseOutput();
@@ -392,7 +392,7 @@ public class ResourceUsageCollector {
 			long interval = 0;
 			while ((line = br.readLine()) != null) {
 				line = line.trim();
-				line = line.substring(0, line.indexOf("%"));
+				line=line.endsWith("%us,")?line.substring(0,line.indexOf("%")):line;
 				interval += DELAY_INTERVAL;
 				cpuUsage.put(interval, Float.parseFloat(line));
 			}
@@ -404,17 +404,13 @@ public class ResourceUsageCollector {
 			float memPer;
 			String usedMem;
 			String totalMem;
-			String[] strArr;
 			while ((line = br.readLine()) != null) {
 				interval += DELAY_INTERVAL;
 				line = line.trim();
-				strArr = line.split(MEM_SUFFIX);
-				totalMem = strArr[0];
-				totalMem = totalMem.trim();
-				totalMem = totalMem.substring(0, totalMem.indexOf("k"));
-				usedMem = strArr[1];
-				usedMem = usedMem.trim();
-				usedMem = usedMem.substring(0, usedMem.indexOf("k"));
+				String memCpuClubbedStat=line.startsWith("Mem")?line.split("Mem:")[1]:line;
+				String [] memCpuClubbedArray= memCpuClubbedStat.split("total,");
+				totalMem = extractMemUsage("k", memCpuClubbedArray[0].trim());
+				usedMem = extractMemUsage("used,",memCpuClubbedArray[1].trim());
 				memPer = Float.parseFloat(usedMem) / Float.parseFloat(totalMem) * Constants.HUNDRED;
 				memUsage.put(interval, memPer);
 			}
@@ -423,6 +419,10 @@ public class ResourceUsageCollector {
 		}
 	}
 	
+	private String extractMemUsage(String truncateToken, String string) {
+		return string.endsWith(truncateToken)? string.substring(0,string.indexOf('k')):string;
+	}
+
 	private void setMemPhaseResourceUsage(
 			List<TaskOutputDetails> taskDetails,
 			Map<Long, IntervalStats> statsMap, JobOutput jobOutput, String jobID, PhaseType phase) throws UnknownHostException{
@@ -699,9 +699,9 @@ public class ResourceUsageCollector {
 	private String changeLogHistoryPathAccToHadoopVersion(String remoteHadoop,
 			SupportedApacheHadoopVersions hadoopVersion, String user) {
 		String logsHistory;
-		if(SupportedApacheHadoopVersions.Hadoop_1_0_4.equals(hadoopVersion)|| SupportedApacheHadoopVersions.HADOOP_1_0_3.equals(hadoopVersion)) {
+		if(SupportedApacheHadoopVersions.HADOOP_NON_YARN.equals(hadoopVersion)|| SupportedApacheHadoopVersions.HADOOP_NON_YARN.equals(hadoopVersion)) {
 			logsHistory = remoteHadoop + LOGS + HISTORY_DIR_SUFFIX;
-		}else if(SupportedApacheHadoopVersions.HADOOP_0_20_2.equals(hadoopVersion)){
+		}else if(SupportedApacheHadoopVersions.HADOOP_NON_YARN.equals(hadoopVersion)){
 			logsHistory = remoteHadoop + LOGS + HISTORY_DIR_SUFFIX_OLD;
 		}else{
 			logsHistory = remoteHadoop + LOGS + user + HISTORY_DIR_SUFFIX;

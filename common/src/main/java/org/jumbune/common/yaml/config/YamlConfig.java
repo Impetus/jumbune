@@ -10,11 +10,11 @@ import org.jumbune.common.beans.DebuggerConf;
 import org.jumbune.common.beans.DoNotInstrument;
 import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.JobDefinition;
-import org.jumbune.common.beans.Master;
 import org.jumbune.common.beans.ProfilingParam;
 import org.jumbune.common.beans.Slave;
-import org.jumbune.common.beans.SlaveParam;
 import org.jumbune.common.beans.Validation;
+import org.jumbune.common.yarn.beans.YarnMaster;
+import org.jumbune.common.yarn.beans.YarnSlaveParam;
 import org.jumbune.utils.YamlUtil;
 
 /**
@@ -29,13 +29,15 @@ public class YamlConfig implements Config {
 	private String distributedHDFSPath;
 	/* Hadoop configurations */
 	/** The master. */
-	private Master master;
-
+	private YarnMaster master;
+	
 	/** The slaves. */
 	private List<Slave> slaves;
 	/* Jumbune Modules */
 	/** The hadoop job profile. */
 	private Enable hadoopJobProfile = Enable.FALSE;
+	
+	private Enable enableYarn = Enable.FALSE;	
 
 	/** The enable data validation. */
 	private Enable enableDataValidation = Enable.FALSE;
@@ -98,7 +100,7 @@ public class YamlConfig implements Config {
 	private String jumbuneJobName;
 
 	/** The slave param. */
-	private SlaveParam slaveParam;
+	private YarnSlaveParam slaveParam;
 
 	/** Launches a new job from Jumbune if set to TRUE **/
 	private Enable runJobFromJumbune = Enable.FALSE;
@@ -384,7 +386,7 @@ public class YamlConfig implements Config {
 	 * 
 	 * @return the master
 	 */
-	public Master getMaster() {
+	public YarnMaster getMaster() {
 		return master;
 	}
 
@@ -394,7 +396,7 @@ public class YamlConfig implements Config {
 	 * @param master
 	 *            the new master
 	 */
-	public void setMaster(Master master) {
+	public void setMaster(YarnMaster master) {
 		this.master = master;
 	}
 
@@ -612,33 +614,6 @@ public class YamlConfig implements Config {
 		this.existingJobName = existingJobName;
 	}
 
-	/**
-	 * To string.
-	 * 
-	 * @return the string
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		return "YamlConfig [master=" + master + ", slaves=" + slaves
-				+ ", hadoopJobProfile=" + hadoopJobProfile
-				+ ", enableDataValidation=" + enableDataValidation
-				+ ", debugAnalysis=" + debugAnalysis + ", profilingParams="
-				+ profilingParams + ", jobs=" + jobs + ", includeClassJar="
-				+ includeClassJar + ", inputFile=" + inputFile
-				+ ", doNotInstrument=" + doNotInstrument
-				+ ", mapperSuperClasses=" + Arrays.toString(mapperSuperClasses)
-				+ ", reducerSuperClasses="
-				+ Arrays.toString(reducerSuperClasses) + ", debuggerConf="
-				+ debuggerConf + ", classpath=" + classpath
-				+ ", regexValidations=" + regexValidations
-				+ ", userValidations=" + userValidations
-				+ ", partitionerSampleInterval=" + partitionerSampleInterval
-				+ ", sJumbuneHome=" + sJumbuneHome + ", hdfsInputPath="
-				+ hdfsInputPath + ", dataValidation=" + dataValidation
-				+ ", jumbuneJobName=" + jumbuneJobName + ", runJobFromJumbune="
-				+ runJobFromJumbune + "]";
-	}
 
 	/**
 	 * Sets the distributed hdfs path.
@@ -684,7 +659,7 @@ public class YamlConfig implements Config {
 	 * @param slaveParam
 	 *            the new slave param
 	 */
-	public void setSlaveParam(SlaveParam slaveParam) {
+	public void setSlaveParam(YarnSlaveParam slaveParam) {
 		this.slaveParam = slaveParam;
 	}
 
@@ -693,8 +668,48 @@ public class YamlConfig implements Config {
 	 * 
 	 * @return the slave param
 	 */
-	public SlaveParam getSlaveParam() {
+	public YarnSlaveParam getSlaveParam() {
 		return slaveParam;
+	}
+	
+	/**
+	 * @return the enableYarn
+	 */
+	public Enable getEnableYarn() {
+		return enableYarn;
+	}
+
+	/**
+	 * @param enableYarn
+	 *            the enableYarn to set
+	 */
+	public void setEnableYarn(Enable enableYarn) {
+		this.enableYarn = enableYarn;
+	}
+
+	@Override
+	public String toString() {
+		return "YamlConfig [distributedHDFSPath=" + distributedHDFSPath
+				+ ", master=" + master + ", slaves=" + slaves
+				+ ", hadoopJobProfile=" + hadoopJobProfile + ", enableYarn="
+				+ enableYarn + ", enableDataValidation=" + enableDataValidation
+				+ ", debugAnalysis=" + debugAnalysis
+				+ ", enableStaticJobProfiling=" + enableStaticJobProfiling
+				+ ", profilingParams=" + profilingParams + ", jobs=" + jobs
+				+ ", includeClassJar=" + includeClassJar + ", inputFile="
+				+ inputFile + ", doNotInstrument=" + doNotInstrument
+				+ ", mapperSuperClasses=" + Arrays.toString(mapperSuperClasses)
+				+ ", reducerSuperClasses="
+				+ Arrays.toString(reducerSuperClasses) + ", debuggerConf="
+				+ debuggerConf + ", classpath=" + classpath
+				+ ", regexValidations=" + regexValidations
+				+ ", userValidations=" + userValidations
+				+ ", partitionerSampleInterval=" + partitionerSampleInterval
+				+ ", sJumbuneHome=" + sJumbuneHome + ", hdfsInputPath="
+				+ hdfsInputPath + ", dataValidation=" + dataValidation
+				+ ", jumbuneJobName=" + jumbuneJobName + ", slaveParam="
+				+ slaveParam + ", runJobFromJumbune=" + runJobFromJumbune
+				+ ", existingJobName=" + existingJobName + "]";
 	}
 }
 

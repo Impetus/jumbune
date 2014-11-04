@@ -10,5 +10,8 @@ public enum NodeType {
 	SecondaryNameNode,
 	DataNode,
 	JobTracker,
-	TaskTracker
+	TaskTracker,
+	ResourceManager,
+	NodeManager
+	
 }

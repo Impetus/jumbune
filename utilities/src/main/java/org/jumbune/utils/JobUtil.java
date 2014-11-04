@@ -162,7 +162,7 @@ public final class JobUtil {
 	 * @param job
 	 *            Job whose output path need to be changed
 	 */
-	public static void modifyOutputPath(Job job) {
+	public static void modifyOutputPath(Job job) throws Exception {
 		Path path = FileOutputFormat.getOutputPath(job);
 		if (path == null) {
 			throw new IllegalArgumentException("Job Output path is null, expecting not null path value");

@@ -6,7 +6,10 @@ import java.util.List;
  * The Class WorkerJMXInfo is a bean class for setting the datanode and task tracker jmx info.
  */
 public class WorkerJMXInfo {
-	private List<String> dataNode;
+	/**
+	 * The list holder for data nodes
+	 */
+	protected List<String> dataNode;
 	private List<String> taskTracker;
 	
 	/**

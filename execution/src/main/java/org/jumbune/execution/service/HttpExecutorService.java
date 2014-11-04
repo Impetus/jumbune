@@ -23,7 +23,6 @@ import org.jumbune.execution.processor.Processor;
 import org.jumbune.execution.utils.ExecutionConstants;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
 import org.jumbune.utils.exception.JumbuneException;
-import org.yaml.snakeyaml.Yaml;
 
 
 /**
@@ -99,7 +98,7 @@ public class HttpExecutorService extends CoreExecutorService {
 
 		YamlLoader loader = new YamlLoader(config);
 		processors = getProcessorChain(config, reports, HTTP_BASED);
-		
+		createJobJarFolderOnAgent(loader);
 		ServiceInfo serviceInfo = new ServiceInfo();
 		serviceInfo.setRootDirectory(loader.getRootDirectoryName());
 		serviceInfo.setJumbuneHome(loader.getjHome());

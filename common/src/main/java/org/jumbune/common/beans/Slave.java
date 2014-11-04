@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.jumbune.utils.YamlUtil;
-import org.yaml.snakeyaml.error.YAMLException;
 
 
 
@@ -93,7 +92,7 @@ public class Slave {
 		if (locationTemp != null) {
 			locationTemp = YamlUtil.getAndReplaceHolders(locationTemp);
 			if (!YamlUtil.validateFileSystemLocation(locationTemp)) {
-				throw new YAMLException(
+				throw new IllegalArgumentException(
 						"Location provided in Slave is not in correct format!!");
 			}
 			this.location = locationTemp;

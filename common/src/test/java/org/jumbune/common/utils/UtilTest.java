@@ -126,7 +126,7 @@ public class UtilTest {
 
 	//@Test
 	public void testgetServiceYamlPath() {
-		Assert.assertNotNull(YamlConfigUtil.getServiceYamlPath());
+		Assert.assertNotNull(YamlConfigUtil.getServiceJsonPath());
 	}
 
 	@Test

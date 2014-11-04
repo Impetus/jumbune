@@ -17,12 +17,14 @@ import javax.servlet.http.HttpSession;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.Enable;
 import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.profiling.beans.ClusterInfo;
 import org.jumbune.profiling.beans.NodeConfig;
 import org.jumbune.profiling.beans.NodeStats;
+import org.jumbune.profiling.beans.NonYarnNodeConfig;
 import org.jumbune.profiling.beans.PerformanceStats;
 import org.jumbune.profiling.healthview.NetworkLatencyInfo;
 import org.jumbune.profiling.service.ClusterViewServiceImpl;
@@ -30,6 +32,7 @@ import org.jumbune.profiling.service.ProfilingViewService;
 import org.jumbune.profiling.utils.DataDistributionStats;
 import org.jumbune.profiling.utils.HTFProfilingException;
 import org.jumbune.profiling.utils.ViewHelper;
+import org.jumbune.profiling.yarn.beans.YarnNodeConfig;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -89,10 +92,11 @@ public class ProfilerServlet extends HttpServlet {
 	
 	/** The Constant HDFS_PATH. */
 	private final String HDFS_PATH = "HDFS_PATH";
-
 	
 	/** The general settings. */
 	private String generalSettings;
+	
+	private boolean isYarnEnable = false;	
 
 	/* (non-Javadoc)
 	 * @see javax.servlet.http.HttpServlet#service(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
@@ -110,7 +114,11 @@ public class ProfilerServlet extends HttpServlet {
 		viewName = setDefaultView(viewName);
 		Gson gson = new Gson();
 
-		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();		
+		if(Enable.TRUE.equals(yamlConfig.getEnableYarn())){
+		  isYarnEnable = true;
+		}
+		
 		
 		ProfilingViewService profilingViewService = new ClusterViewServiceImpl(
 				yamlLoader);
@@ -144,11 +152,9 @@ public class ProfilerServlet extends HttpServlet {
 				String nodeIP = request.getParameter("NODE_IP");
 				if (nodeIP != null) {
 					viewName = DATA_DISTRIBUTION_VIEW + "_NODE";
-					DataDistributionStats dataDistributionStats = new DataDistributionStats(
-							yamlLoader);
+					DataDistributionStats dataDistributionStats = new DataDistributionStats(yamlLoader);
 					try {
-						json = dataDistributionStats.getNodeStats(nodeIP,
-								yamlConfig);
+						json = dataDistributionStats.getNodeStats(nodeIP);
 					} catch (Exception e) {
 						LOGGER.error(e);
 					}
@@ -277,14 +283,15 @@ public class ProfilerServlet extends HttpServlet {
 			String colorConfigJson, String nodeIp) throws HTFProfilingException {
 		List<PerformanceStats> performanceStats = perfStats;
 		String jsonString = json;
+		NodeConfig nodeConfig = null;		
 		if (nodeConfigJson == null) {
 			LOGGER.warn("Node configuration is not configured");
 		} else {
 			if (colorConfigJson != null) {
 				performanceStats = getPerfStatsFromJson(colorConfigJson);
 			}
-			NodeConfig nodeConfig = gson.fromJson(nodeConfigJson,
-					NodeConfig.class);
+			nodeConfig = isYarnEnable ? gson.fromJson(nodeConfigJson, YarnNodeConfig.class):
+			  gson.fromJson(nodeConfigJson, NonYarnNodeConfig.class);
 			nodeConfig.setNodeIp(nodeIp);
 			NodeStats nodeStats = profilingViewService.getNodeView(
 					nodeConfig, performanceStats);

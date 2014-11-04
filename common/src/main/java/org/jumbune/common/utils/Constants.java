@@ -8,7 +8,7 @@ package org.jumbune.common.utils;
 public interface Constants {
 
 	/** The data validation. */
-	String DATA_VALIDATION = "HDFS-Validation";
+	String DATA_VALIDATION = "DATA_VALIDATION";
 
 	/** The h command. */
 	String H_COMMAND = "bin/hadoop";
@@ -103,6 +103,9 @@ public interface Constants {
 	/** The user yaml loc. */
 	String USER_YAML_LOC = "/yaml";
 	
+	/** The user yaml loc. */
+    String USER_JSON_LOC = "/json";
+    
 	/** The jar. */
 	String JAR = ".jar";
 
@@ -350,7 +353,34 @@ public interface Constants {
 	/** The space separator. */
 	String SPACE_SEPARATOR = "SPACE_SEPARATOR";
 	
+	/**
+	 * String for ls command
+	 */
 	String LS_COMMAND = "ls";
+	
+	/**
+	 * The Pure Jar Counter String
+	 */
+	String PURE_JAR_COUNTER = "PURE_JAR_COUNTER";
+	
+	/**
+	 * The Pure Profiling String
+	 */
+	String PURE_PROFILING = "PURE_PROFILING";
+	
+	/**
+	 * The Instrumented jar Counter String
+	 */
+	String INSTRUMENTED_JAR_COUNTER = "INSTRUMENTED_JAR_COUNTER";
+	
+	/**
+	 * The Debug Analyzer String
+	 */
+	String DEBUG_ANALYZER = "DEBUG_ANALYZER";	
+	
+	/*
+	 * Following are Number literals used in different classes, to avoid usage of magic numbers
+	 */
 	
 	int ONE_ZERO_TWO_FOUR = 1024;	
 	
@@ -385,4 +415,7 @@ public interface Constants {
 	int FOUR_HUNDERED_FIFTY_SEVEN = 457;
 	
 	int FOUR_HUNDERED_SIXTY_ONE = 461;
+	
+	int ONE_THREE_THREE = 133;	
+	
 }

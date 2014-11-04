@@ -278,10 +278,6 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 		}
 		String jobJarAbsolutePath = agentHome + jarLocation;
 		File fileLoc = new File(jobJarAbsolutePath);
-		if (fileLoc.list().length == 0) {
-			LOGGER.error("No job jar found at " + jobJarAbsolutePath);
-			throw new IllegalArgumentException("No job jar found at " + jobJarAbsolutePath);
-		}
 		if(!commands[2].contains(RemotingConstants.DATA_VALIDATION_JAR)){
 			String[] fileList = fileLoc.list();
 			String jarName = null;

@@ -15,6 +15,8 @@ public interface ProfilerConstants {
 	String NAMENODE = "NameNode";
 	String TASKTRACKER = "TaskTracker";
 	String JOBTRACKER = "JobTracker";
+	String RESOURCEMANAGER = "ResourceManager";
+	String NODEMANAGER = "NodeManager";
 	String READS_FROM_LOCAL_CLIENT = "reads_from_local_client";
 	String READS_FROM_REMOTE_CLIENT = "reads_from_remote_client";
 	String WRITEBLOCKOPAVGTIME = "writeBlockOpAvgTime";
@@ -75,8 +77,10 @@ public interface ProfilerConstants {
 	String DOT_SEPARATOR = ".";
 	String NODE_NOT_REACHABLE = "Node is not reachable";
 	String TT_NOT_REACHABLE = "Tasktracker is not reachable";
+	String NM_NOT_REACHABLE = "NodeManager is not reachable";
 	String DN_NOT_REACHABLE = "Datanode is not reachable";
 	String DN_TT_NOT_REACHABLE = "Datanode and Tasktracker are not reachable";
+	String DN_NM_NOT_REACHABLE = "Datanode and NodeManager are not reachable";
 	String SUBCAT_MEMORY = "memory";
 	String SUBCAT_CPU = "cpu";
 	String SUBCAT_OS = "os";

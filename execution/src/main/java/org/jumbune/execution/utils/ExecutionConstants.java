@@ -71,8 +71,10 @@ public interface ExecutionConstants {
 	String CAMELCASE_REDUCE_INPUT_RECORDS = "Reduce Input Records";
 
 	String RUNNING_JOB = "Running job: ";
-	String COUNTERS = "Counters: ";
+	String YARN_RUNNING_JOB = "mapreduce.Job:";
+	String COUNTERS = "Counters:";
 	String MAPRED_JOBCLIENT = "mapred.JobClient:";
+	String MAPRED_YARN_JOBCLIENT = "mapred.job:";
 	String DV_DOUBLE_HASH = "DV##";
 	int TEN = 10;
 	int THREE = 3 ;

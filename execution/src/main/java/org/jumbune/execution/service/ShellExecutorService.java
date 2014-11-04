@@ -19,7 +19,6 @@ import org.jumbune.common.beans.ClasspathElement;
 import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.ReportsBean;
 import org.jumbune.common.beans.ServiceInfo;
-import org.jumbune.common.beans.ReportsBean.ReportName;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.ConsoleLogUtil;
 import org.jumbune.common.utils.Constants;
@@ -103,11 +102,11 @@ public class ShellExecutorService extends CoreExecutorService {
 	public static void main(String[] args) throws JumbuneException, InterruptedException {
 		// wait for execution of Signature validation
 		ShellExecutorService service = new ShellExecutorService();
-		InputStream yamlFileStream = null;
+		InputStream jsonFileStream = null;
 		try {
 			ReportsBean reports = new ReportsBean();
-			yamlFileStream = service.readFilePath();
-			service.run(yamlFileStream, reports);
+			jsonFileStream = service.readFilePath();
+			service.run(jsonFileStream, reports);
 		} catch (IOException e) {
 			LOGGER.error(e);
 		} catch (JumbuneException e) {
@@ -116,8 +115,8 @@ public class ShellExecutorService extends CoreExecutorService {
 			LOGGER.error(e);
 		}finally{
 			try {
-				if(yamlFileStream != null){
-					yamlFileStream.close();
+				if(jsonFileStream != null){
+					jsonFileStream.close();
 				}
 			}catch (IOException io) {
 				LOGGER.error("Unable to close stream" + io.getMessage());
@@ -153,7 +152,10 @@ public class ShellExecutorService extends CoreExecutorService {
 		loadInitialSetup(loader.getYamlConfiguration());
 		disableModules(loader);
 		loader.createJumbuneDirectories();
+		createJobJarFolderOnAgent(loader);		
 		startExecution(reports, loader);
+	 
+		 
 		try {
 			LOGGER.debug("clean up process slave tmp + agent home shell case ");
 			cleanUpJumbuneAgentCurrentJobFolder(loader);
@@ -168,13 +170,13 @@ public class ShellExecutorService extends CoreExecutorService {
 
 	private void startExecution(ReportsBean reports, Loader loader) throws IOException, JumbuneException {
 		YamlLoader yamlLoader = (YamlLoader)loader;
-		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
 		String reportFolderPath = new StringBuilder().append(yamlLoader.getShellUserReportLocation()).append(Constants.DIR_SEPARATOR)
-				.append(yamlConfig.getJumbuneJobName().split(FORWARD_SLASH)[0]).append(Constants.JUMBUNE_REPORT_EXTENTION).toString();
-		List<Processor> processors = getProcessorChain(yamlConfig, CONSOLE_BASED);
+				.append(yamlLoader.getJumbuneJobName().split(FORWARD_SLASH)[0]).append(Constants.JUMBUNE_REPORT_EXTENTION).toString();
+		List<Processor> processors = getProcessorChain(yamlLoader.getYamlConfiguration(), CONSOLE_BASED);
 		ServiceInfo serviceInfo = new ServiceInfo();
 		serviceInfo.setRootDirectory(yamlLoader.getRootDirectoryName());
 		serviceInfo.setJumbuneHome(YamlLoader.getjHome());
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
 		serviceInfo.setSlaveJumbuneHome(yamlConfig.getsJumbuneHome());
 		serviceInfo.setJumbuneJobName(yamlConfig.getFormattedJumbuneJobName());
 		serviceInfo.setMaster(yamlLoader.getMasterInfo());
@@ -196,8 +198,7 @@ public class ShellExecutorService extends CoreExecutorService {
 				reports.markProcessAsComplete(processName);
 			}
 		}
-		
-		persistReportsInExcelFormat(reports, reportFolderPath, yamlLoader);
+		persistReportsInExcelFormat(reports, reportFolderPath, loader);
 		
 
 		ConsoleLogUtil.CONSOLELOGGER.info("!!! Jumbune Job Processing completed Successfully !!!\n ");
@@ -224,13 +225,12 @@ public class ShellExecutorService extends CoreExecutorService {
 		processClassPathElement(cse, agentHome);
 		YamlConfig yamlConfig = (YamlConfig)config;
 		yamlConfig.getClasspath().setJumbuneSupplied(cse);
-		if (!org.jumbune.common.utils.YamlConfigUtil.isJumbuneSuppliedJarPresent(yamlConfig)){
-			org.jumbune.common.utils.YamlConfigUtil.sendJumbuneSuppliedJarOnAgent(yamlConfig, cse, agentHome);
+		if (!org.jumbune.common.utils.YamlConfigUtil.isJumbuneSuppliedJarPresent(config)){
+			org.jumbune.common.utils.YamlConfigUtil.sendJumbuneSuppliedJarOnAgent(config, cse, agentHome);
 		}
 	}
 
 	private void processClassPathElement(ClasspathElement cse, String agentHome) {
-
 		String[] files = cse.getFiles();
 		for (int iIndex = 0; iIndex < files.length; iIndex++) {
 			files[iIndex] = files[iIndex].replace(Constants.AGENT_ENV_VAR_NAME, agentHome);
@@ -250,13 +250,14 @@ public class ShellExecutorService extends CoreExecutorService {
 	private void persistReportsInExcelFormat(ReportsBean reports, String reportFolderPath, Loader loader) throws
 			IOException, JumbuneException {
 		YamlLoader yamlLoader = (YamlLoader)loader;
-		Map<ReportName, String> map = reports.getAllReports();
+		Map<String, String> map = reports.getAllReports();
 		@SuppressWarnings("unchecked")
-		Map<ReportName, String> reportsJson = (Map<ReportName, String>) ((HashMap<ReportName, String>) reports.getAllReports()).clone();
-		if (map.containsKey(ReportName.DATA_VALIDATION) && yamlLoader != null) {
-			map.put(ReportName.DATA_VALIDATION, yamlLoader.getJumbuneJobLoc());
+		Map<String, String> reportsJson = (Map<String, String>) ((HashMap<String, String>) reports.getAllReports()).clone();
+		if (map.containsKey(Constants.DATA_VALIDATION) && yamlLoader != null) {
+			map.put(Constants.DATA_VALIDATION, yamlLoader.getJumbuneJobLoc());
 		}
 		ExportUtil.writesToExcelFile(map, reportFolderPath, reportsJson);
 	}
+	
 
 }

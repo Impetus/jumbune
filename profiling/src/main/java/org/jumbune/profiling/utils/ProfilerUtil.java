@@ -16,6 +16,7 @@ import java.util.TreeMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.beans.JobOutput;
 import org.jumbune.common.beans.SupportedApacheHadoopVersions;
@@ -39,7 +40,6 @@ import org.jumbune.utils.exception.JumbuneException;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 /**
@@ -566,6 +566,34 @@ public class ProfilerUtil {
 		return response.split("\n");
 	}
 
+	/**
+	 * This method gets the block status command result.
+	 *
+	 * @param loader
+	 *            the loader
+	 * @return the block status command result
+	 */
+	public static String getBlockStatusCommandResult(Loader loader,
+			String hdfsFilePath) {
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		YamlConfig yamlConfig = (YamlConfig)yamlLoader.getYamlConfiguration();
+		Remoter remoter = RemotingUtil.getRemoter(yamlLoader, "");
+		StringBuilder sbReport = new StringBuilder();
+		if (Enable.TRUE.equals(yamlConfig.getEnableYarn())) {
+			sbReport.append(yamlLoader.getHadoopHome(loader))
+					.append("/bin/hdfs fsck ").append(hdfsFilePath).append(" ")
+					.append("-files -blocks -locations ");
+		} else {
+			sbReport.append(yamlLoader.getHadoopHome(loader))
+					.append("/bin/hadoop fsck ").append(hdfsFilePath)
+					.append(" ").append("-files -blocks -locations ");
+		}
+		CommandWritableBuilder builder = new CommandWritableBuilder();
+		builder.addCommand(sbReport.toString(), false, null).populate(
+				yamlConfig, null);
+		return (String) remoter.fireCommandAndGetObjectResponse(builder
+				.getCommandWritable());
+	}	
 	/***
 	 * This method finds out the Hadoop URL which is used while monitoring remote hadoop jmx based on the hadoop version.
 	 * 
@@ -576,22 +604,9 @@ public class ProfilerUtil {
 	public static String getHadoopJMXURLPrefix(SupportedApacheHadoopVersions hadoopVersion, JMXDeamons jmxDaemon) {
 		String hadoopJMXURL = null;
 		switch (hadoopVersion) {
-		case HADOOP_0_20_2:
+		/*case HADOOP_0_20_2:
 			hadoopJMXURL = "hadoop";
-			break;
-		case HADOOP_1_0_3:
-			hadoopJMXURL = HADOOP;
-			break;
-		case Hadoop_1_0_4:
-			hadoopJMXURL = HADOOP;
-			break;
-		case HADOOP_2_0_CDH:
-			if(JMXDeamons.TASK_TRACKER.equals(jmxDaemon)||JMXDeamons.JOB_TRACKER.equals(jmxDaemon)){
-				hadoopJMXURL = "hadoop";	
-			}else{
-				hadoopJMXURL = HADOOP;	
-			}
-			break;
+			break;*/
 		default:
 			hadoopJMXURL = HADOOP;
 			break;

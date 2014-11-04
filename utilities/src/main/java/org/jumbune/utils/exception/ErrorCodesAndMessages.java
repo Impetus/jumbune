@@ -1,9 +1,11 @@
 package org.jumbune.utils.exception;
 
+import org.jumbune.utils.ErrorCodesMessageInterface;
+
 /**
  * The Enum ErrorCodesAndMessages is used to provide the error messages.
  */
-public enum ErrorCodesAndMessages {
+public enum ErrorCodesAndMessages implements ErrorCodesMessageInterface{
 	YAML_NOT_FOUND(0, "Yaml file is not found."), YAMLPROPERTY_NOT_CREATED(1, "Yaml property can not be created."), EXECUTIONMESSAGEF_FILE_NOT_FOUND(
 			2, "Execution message file is not found"), INPUTJAR_FILE_NOT_FOUND(3, "Input Jar file is not found"), YAMLPROPERTY_INTRUMENTATION_NOT_FOUND(
 			4, "Yaml property instrumentaion is not defined in given FrameworkProperty file."), YAMLPROPERTY_LOGLEVEL_NOT_FOUND(5,
@@ -77,4 +79,11 @@ public enum ErrorCodesAndMessages {
 		return code + ": " + description;
 	}
 
+
+
+	
+	
+	
+
+	
 }

@@ -85,20 +85,20 @@ public class ValidateInput {
 	 */
 	public Map<String, Map<String, Map<String, String>>> validateYaml(Config config) {
 		Map<String, Map<String, Map<String,String>>> validateInput = new HashMap<String, Map<String, Map<String,String>>>();
-
+		
 		YamlConfig yamlConfig = (YamlConfig)config;
-		if (intialSettingsValidation(yamlConfig)) {
-			validateBasicField(yamlConfig);
+		if (intialSettingsValidation(config)) {
+			validateBasicField(config);
 
 			if (isEnable(yamlConfig.getEnableDataValidation())) {
-				validateDataValidation(yamlConfig);
+				validateDataValidation(config);
 			}
 
 			if (isEnable(yamlConfig.getDebugAnalysis())) {
-				validateDebugField(yamlConfig);
+				validateDebugField(config);
 			}
 			if(isEnable(yamlConfig.getEnableStaticJobProfiling())){
-				validateProfilingField(yamlConfig);
+				validateProfilingField(config);
 			}
 
 		}
@@ -147,7 +147,7 @@ public class ValidateInput {
 	 *            the config
 	 * @return true if all case passes successfully
 	 */
-	private boolean intialSettingsValidation(Config config) {
+	protected boolean intialSettingsValidation(Config config) {
 		Map<String, String> listOfErrors = new HashMap<String, String>();
 		boolean result = false;
 		if (config != null) {
@@ -211,7 +211,7 @@ public class ValidateInput {
 	 *
 	 * @param config the config
 	 */
-	private void validateDebugField(YamlConfig config) {
+	private void validateDebugField(Config config) {
 		YamlLoader yamlLoader = new YamlLoader(config);
 		Map<String,String> failedDebug = new HashMap<String,String>();
 		Map<String,String> suggestionDebug = new HashMap<String,String>();
@@ -229,7 +229,7 @@ public class ValidateInput {
 		YamlConfig yamlConfig = (YamlConfig)config;
 		if (yamlLoader.isInstrumentEnabled(Constants.DEBUG_INSTR_REGEX_KEY)) {
 			if (!yamlConfig.getRegexValidations().isEmpty()) {
-				checkFieldsValue(config.getRegexValidations(), ErrorMessages.DEBUG_REGEX_CLASS_INVALID, ErrorMessages.DEBUG_REGEX_KEY_INVALID,
+				checkFieldsValue(yamlConfig.getRegexValidations(), ErrorMessages.DEBUG_REGEX_CLASS_INVALID, ErrorMessages.DEBUG_REGEX_KEY_INVALID,
 						failedDebug,"regexValidations[");
 			} else {
 				failedDebug.put("debuggerConf.regexValidations",errorMessages.get(ErrorMessages.DEBUG_REGEX_VALIDATION_EMPTY));
@@ -283,11 +283,10 @@ public class ValidateInput {
 	private void validateDataValidation(Config config) {
 		Map<String,String> failedDataValidation = new HashMap<String,String>();
 		Map<String,String> listOfSuggestions = new HashMap<String,String>();
-
 		YamlConfig yamlConfig = (YamlConfig)config;
 		if (yamlConfig.getDataValidation() != null) {
 			DataValidationBean dataValidationBean = checkAndValidateHdfsPath(
-					yamlConfig, failedDataValidation);
+					config, failedDataValidation);
 
 			
 			checkIfFieldAndRecordSeparatorAreNull(failedDataValidation,
@@ -355,10 +354,10 @@ public class ValidateInput {
 	 * @return all validation checks to be applied by the user
 	 */
 	private DataValidationBean checkAndValidateHdfsPath(Config config,
-			Map<String,String> listOfFailedValidation) {		
+			Map<String,String> listOfFailedValidation) {
 		YamlConfig yamlConfig = (YamlConfig)config;
 		DataValidationBean dataValidationBean = yamlConfig.getDataValidation();
-		String hadoopInputPath = yamlConfig.getHdfsInputPath();		
+		String hadoopInputPath = yamlConfig.getHdfsInputPath();
 		if (!checkNullEmptyAndMessage(listOfFailedValidation, hadoopInputPath, ErrorMessages.HDFS_FIELD_INVALID,"hdfsInputPath")) {
 			try {
 				if (!isHadoopInputPath(hadoopInputPath, config)) {
@@ -378,7 +377,7 @@ public class ValidateInput {
 	 *
 	 * @param config the config
 	 */
-	private void validateJobs(Config config,Map<String,String> failedCases,Map<String,String> suggestion) {
+	protected void validateJobs(Config config,Map<String,String> failedCases,Map<String,String> suggestion) {
 
 		int countForJobJar = 0;
 		YamlConfig yamlConfig = (YamlConfig)config;
@@ -407,13 +406,12 @@ public class ValidateInput {
 	 *
 	 * @param config the config
 	 */
-	private void validateBasicField(Config config) {
+	protected void validateBasicField(Config config) {
 		Map<String,String> failedCases = new HashMap<String,String>();
 		Map<String,String> suggestionList = new HashMap<String,String>();
+		
+		checkIfJumbuneJobEmptyOrNot(config, failedCases,"jumbuneJobName");
 		YamlConfig yamlConfig = (YamlConfig)config;
-		
-		checkIfJumbuneJobEmptyOrNot(yamlConfig, failedCases,"jumbuneJobName");
-		
 		if (isEnable(yamlConfig.getDebugAnalysis()) || isEnable(yamlConfig.getEnableStaticJobProfiling())) {
 			/**
 			 * check if slave jumbune home is empty
@@ -426,7 +424,7 @@ public class ValidateInput {
 			Master master = yamlConfig.getMaster();
 			checkMasterNodeValidation(failedCases, master);
 			if (!yamlConfig.getSlaves().isEmpty() && !failedCases.containsValue(errorMessages.get(ErrorMessages.RSA_DSA_INVALID))) {
-				validateSlaveField(failedCases, yamlConfig);
+				validateSlaveField(failedCases, config);
 			}
 			checkMrJobField(config);
 
@@ -463,13 +461,13 @@ public class ValidateInput {
 	 * @param config object of yamlConfig class
 	 * @param failedCasesList error list
 	 */
-	private void checkMrJobField(Config config) {
+	protected void checkMrJobField(Config config) {
 		Map<String,String> failedCases=new HashMap<String, String>();
 		Map<String,String> suggetion=new HashMap<String, String>();
 		YamlConfig yamlConfig = (YamlConfig)config;
 		if (isEnable(yamlConfig.getEnableStaticJobProfiling()) || yamlConfig.getDebugAnalysis().getEnumValue()) {
 			checkNullEmptyAndMessage(failedCases, yamlConfig.getInputFile(), ErrorMessages.BASIC_INPUT_PATH_EMPTY,"inputFile");
-			validateJobs(yamlConfig,failedCases,suggetion);
+			validateJobs(config,failedCases,suggetion);
 		}
 		addToValidationList(Constants.JOBS_VALIDATION,failedCases,suggetion );
 	}
@@ -539,7 +537,7 @@ public class ValidateInput {
 		List<String> listOfValidDataNode = new ArrayList<String>();
 		YamlConfig yamlConfig = (YamlConfig)config;
 		List<Slave> slaves = yamlConfig.getSlaves();
-		String commandResponse = RemotingUtil.fireCommandOnSupporteHadoopVersionAndGetStringResponse(yamlConfig, REPORT_FROM_CLUSTER);
+		String commandResponse = RemotingUtil.fireCommandOnSupporteHadoopVersionAndGetStringResponse(config, REPORT_FROM_CLUSTER);
 		String[] splitArray = commandResponse.split(NEW_LINE);
 		for (String line : splitArray) {
 			listOfValidDataNode.add(line.split(":")[1].trim());
@@ -594,7 +592,7 @@ public class ValidateInput {
 	 * @param failureList the failure list
 	 * @param suggestionList the suggestion list
 	 */
-	private void addToValidationList(String key, Map<String,String> failureList, Map<String,String> suggestionList) {
+	protected void addToValidationList(String key, Map<String,String> failureList, Map<String,String> suggestionList) {
 		if (!failureList.isEmpty()) {
 			failedValidation.put(key, failureList);
 		}
@@ -614,7 +612,7 @@ public class ValidateInput {
 	 * @param fieldName for field 
 	 * @return true, if successful
 	 */
-	private boolean checkNullEmptyAndMessage(Map<String,String> errorList, String value, int errorCode,String fieldName) {
+	protected boolean checkNullEmptyAndMessage(Map<String,String> errorList, String value, int errorCode,String fieldName) {
 		if (isNullOrEmpty(value)) {
 			errorList.put(fieldName,errorMessages.get(errorCode));
 			return true;
@@ -693,34 +691,13 @@ public class ValidateInput {
 	 * @throws JumbuneException the hTF exception
 	 */
 	public boolean isHadoopInputPath(String path, Config config) throws JumbuneException {
-		YamlLoader loader = new YamlLoader(config);
-		boolean isExists = false;
-		VirtualFileSystem fs = null;
-		try {
-			if(!SupportedApacheHadoopVersions.HADOOP_2_0_CDH.equals(RemotingUtil.getHadoopVersion(config))){
-				fs = RemotingUtil.getVirtualFileSystem(loader);
-				isExists = fs.exists(path);
-			}else{
-				LOGGER.debug("Processing for CDH..firing command: "+HDFS_FILE_EXISTS+path);
-				String commandResponse = RemotingUtil.fireCommandOnSupporteHadoopVersionAndGetStringResponse(config, HDFS_FILE_EXISTS + path);
-				LOGGER.debug("command response is:  "+commandResponse);
-				if(!"".equals(commandResponse)){
-					return true;
-				}
-				return false;
-			}
-		} catch (IOException e) {
-			LOGGER.error("An input output error has been occured while validate hdfs input path");
-		} finally {
-			try {
-				if(fs!=null){
-				fs.close();
-				}
-			} catch (IOException e) {
-				LOGGER.error("An input output error has been occured while closing Hadoop IO channel");
-			}
-		}
-		return isExists;
+		LOGGER.debug("Valdating HDFS Path :"+HDFS_FILE_EXISTS+path);
+		String commandResponse = RemotingUtil.fireCommandOnSupporteHadoopVersionAndGetStringResponse(config, HDFS_FILE_EXISTS + path);
+		LOGGER.debug("HDFS Path ["+path+"] exist? Response :"+commandResponse);
+		if(commandResponse!=null && !"".equals(commandResponse)){
+			return true;
+ 		}
+		return false;		
 	}
 
 	/**
@@ -732,7 +709,7 @@ public class ValidateInput {
 	private boolean isAtleastOneModuleEnabled(Config config) {
 		boolean result = false;
 		YamlConfig yamlConfig = (YamlConfig)config;
-		boolean isProfiling = isProfilingModuleEnabled(yamlConfig);
+		boolean isProfiling = isProfilingModuleEnabled(config);
 		if (isEnable(yamlConfig.getEnableDataValidation()) || isEnable(yamlConfig.getHadoopJobProfile()) || isEnable(yamlConfig.getDebugAnalysis())
 				|| isProfiling) {
 			result = true;

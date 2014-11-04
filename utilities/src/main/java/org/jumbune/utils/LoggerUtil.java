@@ -5,24 +5,25 @@ import static org.jumbune.utils.UtilitiesConstants.SEPARATOR_UNDERSCORE;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.FileAppender;
+import org.apache.logging.log4j.core.config.AppenderRef;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.apache.logging.log4j.core.util.Charsets;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 /**
@@ -36,21 +37,6 @@ public final class LoggerUtil {
 	private static final String LOG_APPENDER_NAME = "JumbuneAppender";
 	private static final String LOG_PATTERN = "%m%n";
 	private static final String LOG_FILE_EXT = ".log";
-	private static final String LOG_ELEMENT = "logger";
-	private static final String NAME = "name";
-	private static final String LOG_LEVEL = "level";
-	private static final String LOG_LEVEL_INFO = "info";
-	private static final String ADDITIVITY = "additivity";
-	private static final String FALSE = "false";
-	private static final String APPENDER_REF_ELEMENT = "appender-ref";
-	private static final String REFERENCE = "ref";
-	private static final String LOGGERS_ELEMENT = "loggers";
-	private static final String FILE = "File";
-	private static final String FILE_NAME = "fileName";
-	private static final String PATTERN_LAYOUT = "PatternLayout";
-	private static final String PATTERN = "pattern";
-	private static final String APPENDERS_ELEMENT = "appenders";
-
 	private static final String LOG_CATEGORY_CHAIN = "chain.jumbune.instrument";
 	private static final String LOG_APPENDER_NAME_CHAIN = "ChainJumbuneAppender";
 	private static final String FILENAME_PREFIX_CHAIN_LOGGER = "mrChain";
@@ -58,9 +44,6 @@ public final class LoggerUtil {
 	// loggers
 	private static List<Logger> mapReduceLoggers;
 	private static Logger chainLogger;
-
-	private static final String LOG4J_PROPERTY_RESOURCE = "/log4j2.xml";
-
 	/**
 	 * Instantiates a new logger util.
 	 */
@@ -87,81 +70,22 @@ public final class LoggerUtil {
 	 */
 	public static void loadLogger(String logFileDir, String taskAttemptID) throws IOException, URISyntaxException, ParserConfigurationException,
 			SAXException, TransformerException {
+	    LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        Configuration config = ctx.getConfiguration();
+        FileAppender fileAppender = createFileAppender(config, LOG_APPENDER_NAME + taskAttemptID, logFileDir, taskAttemptID, 0);
+        fileAppender.start();
+	    AppenderRef[] ar = new AppenderRef [1];
+        ar[0] = AppenderRef.createAppenderRef(LOG_APPENDER_NAME + taskAttemptID , Level.INFO, null);
+        LoggerConfig lgf = LoggerConfig.createLogger("false",Level.INFO , LOG_CATEGORY + taskAttemptID , null, ar, null, config, null);
+        config.addLogger(LOG_CATEGORY + taskAttemptID, lgf);
+        ctx.getLogger(LOG_CATEGORY + taskAttemptID).addAppender(fileAppender);
 
-		// getting the xml file from resource
-		URL resourceUrl = LoggerUtil.class.getResource(LOG4J_PROPERTY_RESOURCE);
-		File file = new File(resourceUrl.toURI());
-		Document doc = getXmlDocumentFromFile(file);
-
-		// adding a logger and setting appender ref
-		Element loggerElement = doc.createElement(LOG_ELEMENT);
-		loggerElement.setAttribute(NAME, LOG_CATEGORY + taskAttemptID);
-		loggerElement.setAttribute(LOG_LEVEL, LOG_LEVEL_INFO);
-		loggerElement.setAttribute(ADDITIVITY, FALSE);
-		Element appenderRefElement = doc.createElement(APPENDER_REF_ELEMENT);
-		appenderRefElement.setAttribute(REFERENCE, LOG_APPENDER_NAME + taskAttemptID);
-		loggerElement.appendChild(appenderRefElement);
-		Element loggersElement = (Element) doc.getElementsByTagName(LOGGERS_ELEMENT).item(0);
-		loggersElement.appendChild(loggerElement);
-
-		// loading appender
-		loadAppender(doc, LOG_APPENDER_NAME + taskAttemptID, logFileDir, taskAttemptID, 0);
-
-		// reloading the log4j configuration
-		updateXmlDocumentOnFile(doc, file);
-		reloadLoggingProperties();
-
-		// assigning the loggers
+        ctx.updateLoggers();
+        ctx.start();
 		mapReduceLoggers = new ArrayList<Logger>(1);
-
 		mapReduceLoggers.add(LogManager.getLogger(LOG_CATEGORY + taskAttemptID));
 		LOG.debug("Finished loading logger");
 
-	}
-
-	/**
-	 * Loads an appender to log4j
-	 * 
-	 * @param props
-	 *            existing log4j properties
-	 * @param appenderName
-	 *            Appender name
-	 * @param logFileDir
-	 *            Log file directory
-	 * @param taskAttemptID
-	 *            The task attempt id
-	 */
-	private static void loadAppender(Document doc, String appenderName, String logFileDir, String taskAttemptID, Object loggerNumber)
-			throws IOException {
-		StringBuilder logFileName = new StringBuilder(YamlUtil.getAndReplaceHolders(logFileDir));
-		if (!(loggerNumber instanceof Integer && (Integer) loggerNumber == 0)) {
-			logFileName.append(loggerNumber).append("-");
-		}
-		logFileName.append(IPRetriever.getCurrentIP()).append(SEPARATOR_UNDERSCORE).append(taskAttemptID).append(LOG_FILE_EXT);
-
-		Element fileAppenderElement = doc.createElement(FILE);
-		fileAppenderElement.setAttribute(NAME, appenderName);
-		fileAppenderElement.setAttribute(FILE_NAME, logFileName.toString());
-		Element patternLayoutElement = doc.createElement(PATTERN_LAYOUT);
-		Element patternElement = doc.createElement(PATTERN);
-		patternElement.setTextContent(LOG_PATTERN);
-		patternLayoutElement.appendChild(patternElement);
-		fileAppenderElement.appendChild(patternLayoutElement);
-
-		Element appendersElement = (Element) doc.getElementsByTagName(APPENDERS_ELEMENT).item(0);
-		appendersElement.appendChild(fileAppenderElement);
-
-	}
-
-	/**
-	 * Reloads the log4j configuration properties
-	 * 
-	 * @param props
-	 *            Modified properties
-	 */
-	private static void reloadLoggingProperties() {
-		LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-		ctx.reconfigure();
 	}
 
 	/**
@@ -202,61 +126,68 @@ public final class LoggerUtil {
 	 */
 	public static void loadChainLogger(String logFileDir, String taskAttemptID, int numberOfLoggers) throws IOException,
 			ParserConfigurationException, SAXException, TransformerException, URISyntaxException {
-		// getting the properties from the configuration
-		URL resourceUrl = LoggerUtil.class.getResource(LOG4J_PROPERTY_RESOURCE);
-		File file = new File(resourceUrl.toURI());
-		Document doc = getXmlDocumentFromFile(file);
-
-		Element loggersElement = (Element) doc.getElementsByTagName(LOGGERS_ELEMENT).item(0);
-		Element logElement;
-		Element appenderRefElement;
-
-		for (int k = 0; k < numberOfLoggers; k++) {
-
-			logElement = doc.createElement(LOG_ELEMENT);
-			logElement.setAttribute(NAME, LOG_CATEGORY + taskAttemptID + k);
-			logElement.setAttribute(LOG_LEVEL, LOG_LEVEL_INFO);
-			logElement.setAttribute(ADDITIVITY, FALSE);
-			appenderRefElement = doc.createElement(APPENDER_REF_ELEMENT);
-			appenderRefElement.setAttribute(REFERENCE, LOG_APPENDER_NAME + taskAttemptID + k);
-			logElement.appendChild(appenderRefElement);
-			loggersElement.appendChild(logElement);
-
-			loadAppender(doc, LOG_APPENDER_NAME + taskAttemptID + k, logFileDir, taskAttemptID, k + 1);
-			LOG.debug("Finished loading logger: " + k);
-		}
-
-		// load chain logger only if number of loggers is > 1
-		if (numberOfLoggers > 1) {
-
-			logElement = doc.createElement(LOG_ELEMENT);
-			logElement.setAttribute(NAME, LOG_CATEGORY_CHAIN + taskAttemptID);
-			logElement.setAttribute(LOG_LEVEL, LOG_LEVEL_INFO);
-			logElement.setAttribute(ADDITIVITY, FALSE);
-			appenderRefElement = doc.createElement(APPENDER_REF_ELEMENT);
-			appenderRefElement.setAttribute(REFERENCE, LOG_APPENDER_NAME_CHAIN + taskAttemptID);
-			logElement.appendChild(appenderRefElement);
-			loggersElement.appendChild(logElement);
-
-			loadAppender(doc, LOG_APPENDER_NAME_CHAIN + taskAttemptID, logFileDir, taskAttemptID, FILENAME_PREFIX_CHAIN_LOGGER);
-		}
-
-		// reloading the log4j properties
-		updateXmlDocumentOnFile(doc, file);
-		reloadLoggingProperties();
-
-		// assigning the loggers
+	  
+	    LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        Configuration config = ctx.getConfiguration();
+        for (int k = 0; k < numberOfLoggers; k++) {
+          FileAppender fileAppender = createFileAppender(config, LOG_APPENDER_NAME+taskAttemptID+k,logFileDir,taskAttemptID,k+1);
+          fileAppender.start();
+          AppenderRef[] ar = new AppenderRef [1];
+          ar[0] = AppenderRef.createAppenderRef(LOG_APPENDER_NAME + taskAttemptID + k, Level.INFO, null);
+          LoggerConfig lgf = LoggerConfig.createLogger("false",Level.INFO , LOG_CATEGORY + taskAttemptID + k, "includeLocation", ar, null, config, null);
+          config.addLogger(LOG_CATEGORY + taskAttemptID + k, lgf);
+          ctx.getLogger(LOG_CATEGORY + taskAttemptID + k).addAppender(fileAppender);
+          LOG.debug("Finished loading logger: " + k);
+          }
+        if (numberOfLoggers > 1) {
+          FileAppender fileAppender = createFileAppender(config, LOG_APPENDER_NAME_CHAIN + taskAttemptID, logFileDir, taskAttemptID, FILENAME_PREFIX_CHAIN_LOGGER);
+          fileAppender.start();
+          AppenderRef[] ar = new AppenderRef [1];
+          ar[0] = AppenderRef.createAppenderRef(LOG_APPENDER_NAME_CHAIN + taskAttemptID, Level.INFO, null);
+          LoggerConfig lgf = LoggerConfig.createLogger("false",Level.INFO , LOG_CATEGORY_CHAIN + taskAttemptID, "includeLocation", ar, null, config, null);
+          config.addLogger(LOG_CATEGORY_CHAIN + taskAttemptID, lgf);
+          ctx.getLogger(LOG_CATEGORY_CHAIN + taskAttemptID).addAppender(fileAppender);
+                    LOG.debug("Finished loading logger: ");
+        }
+        ctx.updateLoggers();
+        ctx.start();
+		
 		mapReduceLoggers = new ArrayList<Logger>(numberOfLoggers);
 		for (int k = 0; k < numberOfLoggers; k++) {
 			mapReduceLoggers.add(LogManager.getLogger(LOG_CATEGORY + taskAttemptID + k));
 		}
 		if (numberOfLoggers > 1) {
 			chainLogger = LogManager.getLogger(LOG_CATEGORY_CHAIN + taskAttemptID);
-
 		}
 	}
-
 	/**
+     * Creates a File appender to log4j
+     * 
+     * @param props
+     *            existing log4j properties
+     * @param appenderName
+     *            Appender name
+     * @param logFileDir
+     *            Log file directory
+     * @param taskAttemptID
+     *            The task attempt id
+     */
+	private static FileAppender createFileAppender(Configuration config, String appenderName, String logFileDir,
+      String taskAttemptID, Object loggerNumber) {
+	  StringBuilder logFileName = new StringBuilder(YamlUtil.getAndReplaceHolders(logFileDir));
+      
+      if (!(loggerNumber instanceof Integer && (Integer) loggerNumber == 0)) {
+          logFileName.append(loggerNumber).append("-");
+      }
+      logFileName.append(IPRetriever.getCurrentIP()).append(SEPARATOR_UNDERSCORE).append(taskAttemptID).append(LOG_FILE_EXT);
+      
+      // pattern layout
+      PatternLayout pl = PatternLayout.createLayout(LOG_PATTERN, config, null,Charsets.UTF_8 ,false, false, null, null);
+      return FileAppender.createAppender(logFileName.toString(), "append", null, appenderName, "true", null, null, null, pl, null, null, null, config);
+          
+  }
+
+  /**
 	 * This method gets the chain loggger.
 	 *
 	 * @return the chain loggger
@@ -281,21 +212,4 @@ public final class LoggerUtil {
 		doc.getDocumentElement().normalize();
 		return doc;
 	}
-
-	/**
-	 * This method is used to update xml document on file.
-	 *
-	 * @param doc the doc
-	 * @param file the file
-	 * @throws TransformerException the transformer exception
-	 */
-	private static void updateXmlDocumentOnFile(Document doc, File file) throws TransformerException {
-		TransformerFactory transformerFactory = TransformerFactory.newInstance();
-		Transformer transformer = transformerFactory.newTransformer();
-		DOMSource source = new DOMSource(doc);
-		StreamResult result = new StreamResult(file);
-		transformer.transform(source, result);
-	}
-
-	
 }

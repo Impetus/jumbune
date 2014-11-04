@@ -3,22 +3,18 @@ package org.jumbune.common.beans;
 
 /***
  * constants for hadoop specific versions.
- * 
- * 
- * 
  */
 public enum SupportedApacheHadoopVersions {
 	
-	/** The Hadoop_1_0_4. */
-	Hadoop_1_0_4("Hadoop 1.0.4"),
- /** The HADOO p_0_20_2. */
- HADOOP_0_20_2("Hadoop 0.20.2"), 
- /** The HADOO p_1_0_3. */
- HADOOP_1_0_3("Hadoop 1.0.3.15"),
-/** Hadoop version for cloudera */
- HADOOP_2_0_CDH("Hadoop 2.0.0-cdh4.3.0"),
-/** default Hadoop version **/
-HADOOP_DEFAULT	("Hadoop 1.0.4");
+	/** The default hadoop version for apache non-yarn */
+	HADOOP_NON_YARN("Hadoop 1.2.1"),
+	
+	/** The HADOOP 0_23_11 */
+	HADOOP_MAPR("Hadoop 0.23.11"),
+	
+	/** The HADOOP 2.4.1 */
+	HADOOP_YARN("Hadoop 2.4.1");
+	
 	/** The version. */
 	private String version;
 	
@@ -57,7 +53,7 @@ HADOOP_DEFAULT	("Hadoop 1.0.4");
 				return name;
 			}
 		}
-		return SupportedApacheHadoopVersions.HADOOP_DEFAULT;
+		return SupportedApacheHadoopVersions.HADOOP_NON_YARN;
 
 	}
 }

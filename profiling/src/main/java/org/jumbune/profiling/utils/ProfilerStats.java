@@ -7,6 +7,8 @@ import org.jumbune.common.beans.Slave;
 import org.jumbune.common.beans.SupportedApacheHadoopVersions;
 import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.common.yarn.beans.YarnMaster;
+import org.jumbune.common.yarn.beans.YarnSlaveParam;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.profiling.beans.JMXDeamons;
 import org.jumbune.profiling.beans.JumbuneInferredStats;
@@ -32,6 +34,13 @@ public class ProfilerStats {
 
 	/** The jt port. */
 	private String jtPort;
+	
+	/** The nm port. */
+	private String nmPort;
+	
+	/** The rm port. */
+	private String rmPort;
+	
 
 	/** The dn stats. */
 	private Map<String, String> dnStats;
@@ -56,6 +65,12 @@ public class ProfilerStats {
 
 	/** The cpu stats. */
 	private Map<String, String> cpuStats;
+	
+	/** The node manager stats. */
+	private Map<String, String> nmStats;
+
+	/** The resource manager stats **/
+	private Map<String, String> rmStats;	 	
 
 	/** The config. */
 	private YamlConfig config;
@@ -552,6 +567,107 @@ public class ProfilerStats {
 	public void setNodeIp(String nodeIp) {
 		this.nodeIp = nodeIp;
 		reset = true;
+	}
+	
+	/**
+	 * @return the nmStats
+	 * @throws HTFProfilingException
+	 */
+	public String getNmStats(String attribute) throws HTFProfilingException {
+		if ((nmStats == null) || reset) {
+			try {
+				nmStats = profilerJMXDump.getAllJMXStats(
+						JMXDeamons.NODE_MANAGER, version, nodeIp, getNmPort());
+			} catch (Exception e) {
+				/*
+				 * Catching generic exception as
+				 * profilerJMXDump.getAllJmxStats(...) throwing lots of
+				 * exceptions.
+				 */
+				throw new HTFProfilingException(COLLECTJMXSTATSFAILED + nodeIp
+						+ ", " + NodeType.NodeManager.toString() + ", "
+						+ getNmPort(), e);
+			}
+		}
+		return nmStats.get(attribute);
+	}
+
+	/**
+	 * @param nmStats
+	 *            the nmStats to set
+	 */
+	public void setNmStats(Map<String, String> nmStats) {
+		this.nmStats = nmStats;
+	}
+
+	/**
+	 * @return the rmStats
+	 * @throws HTFProfilingException
+	 */
+	public String getRmStats(String attribute) throws HTFProfilingException {
+		if ((rmStats == null) || reset) {
+			try {
+				rmStats = profilerJMXDump.getAllJMXStats(
+						JMXDeamons.RESOURCE_MANAGER, version, nodeIp,
+						getRmPort());
+			} catch (Exception e) {
+				/*
+				 * Catching generic exception as
+				 * profilerJMXDump.getAllJmxStats(...) throwing lots of
+				 * exceptions.
+				 */
+				throw new HTFProfilingException(COLLECTJMXSTATSFAILED + nodeIp
+						+ ", " + NodeType.ResourceManager.toString() + ", "
+						+ getRmPort(), e);
+			}
+		}
+		return rmStats.get(attribute);
+	}
+
+	/**
+	 * @param rmStats
+	 *            the rmStats to set
+	 */
+	public void setRmStats(Map<String, String> rmStats) {
+		this.rmStats = rmStats;
+	}
+
+	/**
+	 * @return the nmPort
+	 */
+	public String getNmPort() {
+		if (nmPort == null) {
+			YarnSlaveParam ySlaveParam = config.getSlaveParam();
+			nmPort = ySlaveParam.getNodeManagerJmxPort();
+		}
+		return nmPort;
+	}
+
+	/**
+	 * @param nmPort
+	 *            the nmPort to set
+	 */
+	public void setNmPort(String nmPort) {
+		this.nmPort = nmPort;
+	}
+
+	/**
+	 * @return the rmPort
+	 */
+	public String getRmPort() {
+		if (rmPort == null) {
+			YarnMaster yMaster = config.getMaster();
+			rmPort = yMaster.getResourceManagerJmxPort();
+		}
+		return rmPort;
+	}
+
+	/**
+	 * @param rmPort
+	 *            the rmPort to set
+	 */
+	public void setRmPort(String rmPort) {
+		this.rmPort = rmPort;
 	}
 
 }

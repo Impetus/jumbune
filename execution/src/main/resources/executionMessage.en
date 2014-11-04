@@ -2,7 +2,7 @@
 1001=c
 1004=Would you like to change {0} information provided in your base yaml file?
 1005=Log level for {0} is {1}. Would you like to change it?  
-1007=Please provide your basic yaml file path.
+1007=Please provide your json file path.
 1008=Would you like to make any changes to your basic yaml through command prompt.
 1009=Allowed logs levels are: INFO,DEBUG,VERBOSE,WARN,ERROR.
 1011=Please enter the type of execution to be done. 'S' for  sequential or 'C' for concurrent.

@@ -10,11 +10,11 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.DataValidationBean;
 import org.jumbune.common.beans.Module;
 import org.jumbune.common.beans.ServiceInfo;
-import org.jumbune.common.beans.ReportsBean.ReportName;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.RemoteFileUtil;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.datavalidation.report.DVReportGenerator;
+import org.jumbune.execution.beans.CommunityModule;
 import org.jumbune.execution.beans.Parameters;
 import org.jumbune.utils.exception.JumbuneException;
 
@@ -45,7 +45,7 @@ public class DataValidationProcessor extends BaseProcessor {
 		String dvReport = null;
 
 		// populating data validation report
-		Map<ReportName, String> report = super.getReports().getReport(Module.DATA_VALIDATION);
+		Map<String, String> report = super.getReports().getReport(CommunityModule.DATA_VALIDATION);
 		try {
 			final Gson gsonDV = new Gson();
 			// getting params path
@@ -59,7 +59,7 @@ public class DataValidationProcessor extends BaseProcessor {
 			final String dvBeanString = gsonDV.toJson(dataValidationBean);
 			String dvFileDir = yamlLoader.getSlaveDVLocationWithPlaceHolder().substring(0,
 					yamlLoader.getSlaveDVLocationWithPlaceHolder().lastIndexOf('/') + 1);
-			dvReport = HELPER.remoteValidateData(super.getLoader(), inputPath, dvFileDir, dvBeanString);
+			dvReport = processHelper.remoteValidateData(super.getLoader(), inputPath, dvFileDir, dvBeanString);
 			dvReport = new DVReportGenerator().generateDataValidationReport(dvReport);
 
 			// Copy logs from slaves only when there are slaves if there are no
@@ -84,10 +84,10 @@ public class DataValidationProcessor extends BaseProcessor {
 			log(params, "Exception occured during Data Validation", e);
 			throw new JumbuneException("HTFException: "+e);
 		} finally {
-			report.put(ReportName.DATA_VALIDATION, dvReport);
+			report.put(Constants.DATA_VALIDATION, dvReport);
 		
 		
-			super.getReports().setCompleted(Module.DATA_VALIDATION);
+			super.getReports().setCompleted(CommunityModule.DATA_VALIDATION);
 		}
 
 	}
@@ -102,7 +102,7 @@ public class DataValidationProcessor extends BaseProcessor {
 
 	@Override
 	protected Module getModuleName() {
-		return Module.DATA_VALIDATION;
+		return CommunityModule.DATA_VALIDATION;
 	}
 
 }

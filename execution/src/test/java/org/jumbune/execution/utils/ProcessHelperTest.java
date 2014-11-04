@@ -8,31 +8,30 @@ import junit.framework.Assert;
 
 import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.beans.ServiceInfo;
-import org.jumbune.common.utils.YamlConfigUtil;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.execution.YamlLoaderProviderTest;
 import org.jumbune.execution.utils.ProcessHelper;
+import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.execution.YamlLoaderProviderTest;
 import org.junit.Before;
 import org.junit.Test;
 
 
 public class ProcessHelperTest {
 	ProcessHelper pHelper;
-	Loader testYamlLoader;
+	YamlLoader testYamlLoader;
 
 	@Before
 	public void setup() {
 		pHelper = new ProcessHelper();
-		testYamlLoader = YamlLoaderProviderTest.getYamlLoader();
+		testYamlLoader = (YamlLoader)YamlLoaderProviderTest.getYamlLoader();
 	}
 
-	//@Test
+	@Test
 	public void testWritetoServiceFile() {
 		ServiceInfo sInfo = new ServiceInfo();
 		Assert.assertTrue(pHelper.writetoServiceFile(sInfo));
 	}
 
-	
+
 
 	@Test
 	public void testValidateJobs() throws IOException {

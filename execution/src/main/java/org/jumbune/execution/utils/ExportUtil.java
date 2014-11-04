@@ -17,7 +17,7 @@ import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.IndexedColors;
-import org.jumbune.common.beans.ReportsBean.ReportName;
+import org.jumbune.common.utils.Constants;
 import org.jumbune.debugger.log.processing.DebugAnalysisBean;
 import org.jumbune.debugger.log.processing.ExpressionCounterBean;
 import org.jumbune.debugger.log.processing.JobBean;
@@ -56,22 +56,22 @@ public final class ExportUtil {
 	 * @throws IOException
 	 * @throws JumbuneException
 	 */
-	public static boolean writesToExcelFile(Map<ReportName, String> reportsJson, String exportFile, Map<ReportName, String> reports)
+	public static boolean writesToExcelFile(Map<String, String> reportsJson, String exportFile, Map<String, String> reports)
 			throws IOException, JumbuneException {
 		FileOutputStream out = null;
 		try {
 			HSSFWorkbook wb = new HSSFWorkbook();
 			HSSFCellStyle cellStyle = ExportUtil.setHeaderStyle(wb);
 
-			for (Map.Entry<ReportName, String> json : reportsJson.entrySet()) {
-				ReportName i = json.getKey();
+			for (Map.Entry<String, String> json : reportsJson.entrySet()) {
+				String reportName = json.getKey();
 
-				switch (i) {
-				case DATA_VALIDATION:
-					String jsonReport = reports.get(ReportName.DATA_VALIDATION);
+				switch (reportName) {
+				case Constants.DATA_VALIDATION:
+					String jsonReport = reports.get(Constants.DATA_VALIDATION);
 					ExportUtil.createDataValidation(wb, cellStyle, jsonReport);
 					break;
-				case DEBUG_ANALYZER:
+				case Constants.DEBUG_ANALYZER:
 					ExportUtil.createDebugAnalyzer(wb, json.getValue(), "DebugAnalyzer", cellStyle);
 					break;
 

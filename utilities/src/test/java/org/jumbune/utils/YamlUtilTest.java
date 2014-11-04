@@ -14,34 +14,34 @@ public class YamlUtilTest {
 
 	@Test
 	public void testGetPlaceHolder() throws IOException {
-		int[] value = YamlUtil.getPlaceHolder(UtilitiesConstantsTest.STR, 0);
+		int[] value = YamlUtil.getPlaceHolder(UtilitiesConstantsTestInterface.STR, 0);
 		boolean check = value != null;
 		assertTrue(check);
 	}
 
 	@Test
 	public void testGetPlaceHolderNull() throws IOException {
-		int[] value = YamlUtil.getPlaceHolder(UtilitiesConstantsTest.STRING, 0);
+		int[] value = YamlUtil.getPlaceHolder(UtilitiesConstantsTestInterface.STRING, 0);
 		assertEquals(value, null);
 	}
 
 	@Test
 	public void testGetPlaceHolders() {
-		String[] array = YamlUtil.getPlaceHolders(UtilitiesConstantsTest.STR);
+		String[] array = YamlUtil.getPlaceHolders(UtilitiesConstantsTestInterface.STR);
 		boolean check = array != null;
 		assertTrue(check);
 	}
 
 	@Test
 	public void testGetPlaceHoldersNull() {
-		String[] array = YamlUtil.getPlaceHolders(UtilitiesConstantsTest.STRING);
+		String[] array = YamlUtil.getPlaceHolders(UtilitiesConstantsTestInterface.STRING);
 		boolean check = array == null;
 		assertTrue(check);
 	}
 
 	@Test
 	public void testGetAndReplacereplaceHolder() {
-		String[] strArray = new String[] { UtilitiesConstantsTest.REGEX, UtilitiesConstantsTest.REG };
+		String[] strArray = new String[] { UtilitiesConstantsTestInterface.REGEX, UtilitiesConstantsTestInterface.REG };
 		String[] array = YamlUtil.getAndReplaceHolders(strArray);
 
 		assertTrue(array != null);
@@ -50,17 +50,7 @@ public class YamlUtilTest {
 
 	@Test
 	public void testValidateIPAddress() {
-		assertTrue(YamlUtil.validateIPAddress(UtilitiesConstantsTest.VALIDIPADDRRESS));
+		assertTrue(YamlUtil.validateIPAddress(UtilitiesConstantsTestInterface.VALIDIPADDRRESS));
 	}
 
-	@Test
-	public void testValidateFileSystemLocation() {
-		assertTrue(YamlUtil.validateFileSystemLocation(UtilitiesConstantsTest.VALID_FILE_LOCATION));
-	}
-
-	@Test
-	public void testSerializeObjectToYaml() {
-		String str = YamlUtil.serializeObjectToYaml(obj);
-		assertTrue(str != null);
-	}
 }

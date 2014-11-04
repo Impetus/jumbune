@@ -19,7 +19,6 @@ import org.jumbune.common.beans.JobOutput;
 import org.jumbune.common.beans.LogConsolidationInfo;
 import org.jumbune.common.beans.Module;
 import org.jumbune.common.beans.ServiceInfo;
-import org.jumbune.common.beans.ReportsBean.ReportName;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.HadoopLogParser;
 import org.jumbune.common.utils.RemoteFileUtil;
@@ -28,15 +27,13 @@ import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
-import org.jumbune.debugger.instrumentation.instrumenter.Instrumenter;
-import org.jumbune.debugger.instrumentation.instrumenter.PureJarInstrumenter;
+import org.jumbune.execution.beans.CommunityModule;
 import org.jumbune.execution.beans.Parameters;
 import org.jumbune.execution.traverse.JarTraversal;
 import org.jumbune.execution.utils.ExecutionConstants;
 import org.jumbune.execution.utils.ExecutionUtil;
 import org.jumbune.execution.utils.UserInputUtil;
 import org.jumbune.profiling.utils.HeapAllocStackTraceExclStrat;
-import org.jumbune.profiling.utils.ProfilerBean;
 import org.jumbune.profiling.utils.ProfilerUtil;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
 import org.jumbune.utils.exception.JumbuneException;
@@ -64,7 +61,8 @@ public class ProfilingProcessor extends BaseProcessor {
 	}
 
 	@Override
-	protected boolean execute(Map<Parameters, String> params) throws JumbuneException {
+	protected boolean execute(Map<Parameters, String> params)
+			throws JumbuneException {
 		LOGGER.info("Executing [Profilng] Processor..");
 		Scanner scanner = new Scanner(System.in);
 		JarTraversal tra = new JarTraversal();
@@ -72,8 +70,8 @@ public class ProfilingProcessor extends BaseProcessor {
 		List<String> jarJobList = null;
 		// if main class is not defined in jar manifest, then only traverse the
 		// jar for main classes
-		YamlLoader yamlLoader = (YamlLoader)super.getLoader();
-		if (yamlLoader.isMainClassDefinedInJobJar()) {
+		YamlLoader yamlLoader = (YamlLoader) super.getLoader();
+		if (!yamlLoader.isMainClassDefinedInJobJar()) {
 			try {
 				jarJobList = tra.getAlljobs(yamlLoader.getInputFile());
 			} catch (IOException ioe) {
@@ -90,52 +88,67 @@ public class ProfilingProcessor extends BaseProcessor {
 
 		String pureJarPath = yamlLoader.getInputFile();
 		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		boolean isYarn = yamlConfig.getEnableYarn().equals(Enable.TRUE);
+
 		Enable runFromJumbune = yamlConfig.getRunJobFromJumbune();
 		LOGGER.debug("Pure MapReduce jar path :" + pureJarPath);
-		String pureJarCounterJson = null;
 		JobOutput jobOutput = null;
+		String jobID = null;
 		try {
-			
-			String jobID = null;
-			ResourceUsageCollector collector = new ResourceUsageCollector(super.getLoader());
-			if(runFromJumbune.getEnumValue()){
-				LOGGER.debug("Fired top command on Workers");
-				String receiveDir = fireTopOnSlaves(collector);
-				
-				Map<String, Map<String, String>> jobsCounterMap = HELPER.executeJar(pureJarPath, super.isCommandBased(), super.getLoader(), false);
-				pureJarCounterJson = json.toJson(jobsCounterMap);
-				jobID = getJobIdfromJobCountersMap(jobsCounterMap);
-				
-				collector.shutTopCmdOnSlaves(receiveDir);
-				LOGGER.debug("Stopped top command on Workers");
-				
-				jobOutput = getJobOutput(jobID);
-				List<String> selectedHosts = collector.getNodesForJob(jobOutput);
-				collector.processTopDumpFile(receiveDir, selectedHosts);
-				calcStatsFromLogConsolidationInfo(jobOutput, collector);
-				// populating data validation report
-				populateReport(pureJarCounterJson);
-				LOGGER.debug("Profiling final JSON ["+jobOutput+"]");
-			}else{
-				jobID = yamlConfig.getExistingJobName();
-				//rumen processing
-				jobOutput = getJobOutput(jobID);
-				collector.addPhaseResourceUsageFromRumen(jobOutput, jobID);
+			if (!isYarn) {
+				ResourceUsageCollector collector = new ResourceUsageCollector(
+						super.getLoader());
+				if (runFromJumbune.getEnumValue()) {
+					LOGGER.debug("Fired top command on Workers");
+					String receiveDir = fireTopOnSlaves(collector);
+
+					Map<String, Map<String, String>> jobsCounterMap = processHelper
+							.executeJar(pureJarPath, super.isCommandBased(),
+									super.getLoader(), false);
+					jobID = getJobIdfromJobCountersMap(jobsCounterMap);
+
+					collector.shutTopCmdOnSlaves(receiveDir);
+					LOGGER.debug("Stopped top command on Workers");
+
+					jobOutput = getJobOutput(jobID);
+					List<String> selectedHosts = collector
+							.getNodesForJob(jobOutput);
+					collector.processTopDumpFile(receiveDir, selectedHosts);
+					calcStatsFromLogConsolidationInfo(jobOutput, collector);
+					LOGGER.debug("Profiling final JSON [" + jobOutput + "]");
+				} else {
+					jobID = yamlConfig.getExistingJobName();
+					// rumen processing
+					jobOutput = getJobOutput(jobID);
+					collector.addPhaseResourceUsageFromRumen(jobOutput, jobID);
+				}
+			} else {
+				if (runFromJumbune.getEnumValue()) {
+					Map<String, Map<String, String>> jobsCounterMap = processHelper
+							.executeJar(pureJarPath, super.isCommandBased(),
+									super.getLoader(), false);
+					jobID = getJobIdfromJobCountersMap(jobsCounterMap);
+					jobOutput = getJobOutput(jobID);
+				} else {
+					YamlConfig yConfig = (YamlConfig) ((YamlLoader) super
+							.getLoader()).getYamlConfiguration();
+					jobID = yConfig.getExistingJobName();
+					jobOutput = getJobOutput(jobID);
+				}
 			}
-			
-			
+
 		} catch (IOException e) {
 			LOGGER.error("Error while executing pure jar.", e);
 			return false;
 		} catch (Exception ex) {
-			LOGGER.error("Error while processing per phase stats.",ex);
+			LOGGER.error("Error while processing per phase stats.", ex);
 			return false;
 		} finally {
 			LOGGER.info("Pure Job Execution Completed");
 		}
 
 		if (yamlLoader.isHadoopJobProfileEnabled()) {
-			populateProfilingAnalysisReport(jobOutput, pureJarCounterJson);
+			populateProfilingAnalysisReport(jobOutput);
 		}
 		LOGGER.info("Exited from [Profiling] processor...");
 		return true;
@@ -171,15 +184,11 @@ public class ProfilingProcessor extends BaseProcessor {
 		collector.addPhaseResourceUsage(jobOutput);
 	}
 
-	private void populateReport(String pureJarCounterJson) {
-		Map<ReportName, String> pureJarReport = super.getReports().getReport(Module.PURE_AND_INSTRUMENTED);
-		pureJarReport.put(ReportName.PURE_JAR_COUNTER, pureJarCounterJson);
-	}
 
 	private void checkJobClassesInJar(List<String> jarJobList)
 			throws JumbuneException {
 		YamlLoader yamlLoader = (YamlLoader)super.getLoader();
-		if (!yamlLoader.isMainClassDefinedInJobJar() && (jarJobList != null && !HELPER.validateJobs(yamlLoader.getJobDefinitionList(), jarJobList))) {
+		if (!yamlLoader.isMainClassDefinedInJobJar() && (jarJobList != null && !processHelper.validateJobs(yamlLoader.getJobDefinitionList(), jarJobList))) {
 		
 				throw new JumbuneException(ErrorCodesAndMessages.MESSAGE_JOBS_NOT_MATCH);
 		
@@ -195,39 +204,31 @@ public class ProfilingProcessor extends BaseProcessor {
 			MESSAGES.get(MESSAGE_EXECUTION_YAML_COMMAND));
 
 			if (yamlModification) {
-				UserInputUtil cbe = new UserInputUtil(yamlLoader, scanner);
+				UserInputUtil cbe = new UserInputUtil(super.getLoader(), scanner);
 				cbe.getInfo();
 			}
 		}
 	}
 
-	private void populateProfilingAnalysisReport(JobOutput jobOutput,
-			String pureJarCounterJson) {
-		Map<ReportName, String> report = super.getReports().getReport(Module.PROFILING);
-		if (pureJarCounterJson!=null && pureJarCounterJson.contains(ERRORANDEXCEPTION)) {
-			report.put(ReportName.PURE_PROFILING, pureJarCounterJson);
+	private void populateProfilingAnalysisReport(JobOutput jobOutput) {
+		Map<String, String> report = super.getReports().getReport(CommunityModule.PROFILING);
+		ProfilerUtil profileUtil = new ProfilerUtil(super.getLoader());
+		try {
+			String profilingData = profileUtil.convertProfilingReportToJson(jobOutput);
+			// populating profiling analysis report
+			report.put(Constants.PURE_PROFILING, profilingData);
+		} catch (Exception htfe) {
+			Map<String, HashMap<String, String>> errorInfo = new HashMap<String, HashMap<String, String>>();
+			Map<String, String> errordetail = new HashMap<String, String>();
+			errordetail.put(PURE_PROFILING_EXCEPTION_DETAIL, htfe.toString());
+			errorInfo.put(ERRORANDEXCEPTION, (HashMap<String, String>) errordetail);
+			Gson gson = new GsonBuilder().setExclusionStrategies(new HeapAllocStackTraceExclStrat()).setPrettyPrinting().create();
+			String jsonformat = gson.toJson(errorInfo);
+			super.getReports().getReport(CommunityModule.PROFILING).put(Constants.PURE_PROFILING, jsonformat);
+			LOGGER.error("Could not parse profiling information  !!! " + htfe.getMessage());
+		} finally {
 			// setting the profiling analyser report as complete
-			super.getReports().setCompleted(Module.PROFILING);
-		} else {
-			ProfilerUtil profileUtil = new ProfilerUtil(super.getLoader());
-			try {
-				String profilingData = profileUtil.convertProfilingReportToJson(jobOutput);
-				// populating profiling analysis report
-				report.put(ReportName.PURE_PROFILING, profilingData);
-			} catch (Exception htfe) {
-				Map<String, HashMap<String, String>> errorInfo = new HashMap<String, HashMap<String, String>>();
-				Map<String, String> errordetail = new HashMap<String, String>();
-				errordetail.put(PURE_PROFILING_EXCEPTION_DETAIL, htfe.toString());
-				errorInfo.put(ERRORANDEXCEPTION, (HashMap<String, String>) errordetail);
-
-				Gson gson = new GsonBuilder().setExclusionStrategies(new HeapAllocStackTraceExclStrat()).setPrettyPrinting().create();
-				String jsonformat = gson.toJson(errorInfo);
-				super.getReports().getReport(Module.PROFILING).put(ReportName.PURE_PROFILING, jsonformat);
-				LOGGER.error("Could not parse profiling information  !!! " + htfe.getMessage());
-			} finally {
-				// setting the profiling analyser report as complete
-				super.getReports().setCompleted(Module.PROFILING);
-			}
+			super.getReports().setCompleted(CommunityModule.PROFILING);
 		}
 	}
 
@@ -247,7 +248,10 @@ public class ProfilingProcessor extends BaseProcessor {
 	@Override
 	protected Module getModuleName() {
 		YamlLoader yamlLoader = (YamlLoader)super.getLoader();
-		return (yamlLoader.isHadoopJobProfileEnabled()) ? Module.PROFILING : Module.PURE_AND_INSTRUMENTED;
+		if (yamlLoader.isHadoopJobProfileEnabled()){
+			return CommunityModule.PROFILING;
+		}
+		return null;
 	}
 
 	/**
@@ -272,7 +276,7 @@ public class ProfilingProcessor extends BaseProcessor {
 		log(params, "Post Execution phase of processors");
 
 		if (serviceInfo != null) {
-			boolean status = HELPER.writetoServiceFile(serviceInfo);
+			boolean status = processHelper.writetoServiceFile(serviceInfo);
 
 			if (status) {
 				log(params, "Service Info written successfully");
