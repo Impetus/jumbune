@@ -272,7 +272,7 @@ public class ProcessHelper {
 		jobExeParaList.add(Constants.LIB_JARS);
 		
 		String jarNames = addUserSuppliedDependencyJars(jobName);
-		jobExeParaList.add(hadoopHome + Constants.LOG4J2_API_JAR + "," + hadoopHome + Constants.LOG4J2_CORE_JAR + jarNames);
+		jobExeParaList.add("AGENT_HOME" + Constants.LOG4J2_API_JAR + ",AGENT_HOME" + Constants.LOG4J2_CORE_JAR + jarNames);
 
 		if (jobDef.getParameters() != null) {
 			populateJobExecParamList(jobDef, jobExeParaList);
