@@ -30,7 +30,7 @@ existingJobName: null
 hadoopJobProfile: 'TRUE'
 hdfsInputPath: /Jumbune/Demo/input/PREPROCESSED/data1
 includeClassJar: 'TRUE'
-inputFile: user.home.directory/Desktop/Jumbune_Home/examples/example-distribution/examples-usregionportouts-1.2.1-SNAPSHOT.jar
+inputFile: user.home.directory/Desktop/Jumbune_Home/examples/example-distribution/examples-usregionportouts-1.3.1-SNAPSHOT.jar
 jobs:
 - {jobClass: null, name: job1, parameters: '''2'''}
 jumbuneJobName: USRegionPortOutSample
