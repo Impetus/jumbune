@@ -15,6 +15,12 @@ http://jumbune.org/jira/browse/JUM
 
 Jumbune can be build with maven
 
+- To build for a Yarn Hadoop cluster
+
+ `mvn clean install -P yarn`
+
+- To build for a non Yarn Hadoop cluster
+
  `mvn clean install`
 
 ## Installation
