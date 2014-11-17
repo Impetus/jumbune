@@ -64,8 +64,7 @@ public final class DeployUtil {
 	private static final String JAVA_ENV_VAR = "JAVA_HOME";
 	private static String namenodeIP = null;
 	private static String username = null;
-
-	
+	private static int MAX_RETRY_ATTEMPTS = 3;
 	private static final Scanner SCANNER = new Scanner(System.in);
 
 	static {
@@ -348,6 +347,7 @@ public final class DeployUtil {
 		char[] password;
 		String privateKeyPath;
 		Session tempSession;
+		int retryAttempts=0;
 		do {
 			String masterNode = InetAddress.getLocalHost().getHostAddress();
 			LOGGER.info("Please provide IP address of the machine designed to run hadoop namenode daemon ["+ masterNode + "]");
@@ -382,7 +382,11 @@ public final class DeployUtil {
 				privateKeyFile = new File(privateKeyPath);
 			}
 				tempSession = SessionEstablisher.establishConnection(username,
-						namenodeIP, new String(password), privateKeyPath); 
+						namenodeIP, new String(password), privateKeyPath);
+			if (++retryAttempts == MAX_RETRY_ATTEMPTS) {
+				LOGGER.error("Exiting Installation as maximum number of authentication attempts are exhaused!");
+				System.exit(1);
+			}
 		} while (tempSession == null || !tempSession.isConnected());
 		return tempSession;
 	}
