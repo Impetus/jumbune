@@ -88,7 +88,6 @@ public final class JschUtil {
 		session.setUserInfo(info);
 		conf.put(STRICT_HOST_KEY_CHECKING, "no");
 		session.setConfig(conf);
-		session.setPassword("jumbunecluster\n");
 		LOGGER.debug("Session Established, RSA/DSA file Path ["+rsaFile+"]");
 		return session;
 	}
