@@ -118,35 +118,28 @@ Product includes Other 3rd party software as indicated below
     Linking                : Dynamic
     Modified By Impetus    : No
 
-13. Name                   : Snakeyaml
-    Source                 : http://code.google.com/p/snakeyaml/
-    License                : Apache License Version 2.0
-    License Source         : http://www.apache.org/licenses/LICENSE-2.0.txt
-    Linking		   : Dynamic
-    Modified By Impetus    : No
-
-14. Name                  : Apache Hadoop Core
+13. Name                  : Apache Hadoop Core
     Source                : http://hadoop.apache.org/index.html
     License               : Apache License Version 2.0
     License Source        : http://www.apache.org/licenses/LICENSE-2.0.txt
     Linking		  : Dynamic
     Modified By Impetus   : No
 
-15. Name                  : Jetty
+14. Name                  : Jetty
     Source                : http://www.eclipse.org/jetty/
     License               : Apache License Version 2.0, Eclipse Public License - v 1.0
     License Source        : http://www.apache.org/licenses/LICENSE-2.0.txt,http://www.eclipse.org/legal/epl-v10.html
     Linking               : Dynamic
     Modified By Impetus   : No
 
-16. Name                  : Log4j2
+15. Name                  : Log4j2
     Source                : http://logging.apache.org/log4j/2.x/
     License               : Apache License Version 2.0
     License Source        : http://logging.apache.org/log4j/2.x/license.html
     Linking               : Dynamic
     Modified By Impetus   : No
 
-17. Name                  : Jsch
+16. Name                  : Jsch
     Source                : http://www.jcraft.com/jsch/
     License               : BSD-style license
     License Source        : http://www.jcraft.com/jsch/LICENSE.txt
@@ -154,7 +147,7 @@ Product includes Other 3rd party software as indicated below
     Modified By Impetus   : No
 
 
- 18. Name                 : Netty
+17. Name                 : Netty
     Source                : http://netty.io/index.html
     License               : Apache License Version 2.0
     License Source        : http://www.apache.org/licenses/LICENSE-2.0.txt

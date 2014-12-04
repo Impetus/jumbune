@@ -32,9 +32,6 @@
 			<div id="catTabLink" class="catCenterTab profilerTab">
 				<img src="../skins/images/categories.png" alt="Categories" />
 			</div>
-			<div id="networkTabLink" class="networkCenterTab profilerTab">
-				<img src="../skins/images/netlanc.png" alt="Network Latency" />
-			</div>
 			<div id="dataLoadTabLink" class="dataLoadCenterTab profilerTab">
 				<img src="../skins/images/data_load.png" alt="Data Load" />
 			</div>
@@ -77,13 +74,6 @@
 
 				</ul>
 			</form>
-		</div>
-
-		<div id="networkContainer" class="dataCenterBox"
-			style="display: none; min-height: 514px;">
-			<ul id="networkNodeList" class="accordianList">
-
-			</ul>
 		</div>
 
 		<div id="dataLoadContainer" class="dataCenterBox"
@@ -136,14 +126,6 @@
 			<div id="trendInnerBox"></div>
 		</div>
 
-		<div class="profilingWidget" id="hypertreeNodeBox"
-			style="display: none;">
-			<div class="favHeader" id="f1">Network Latency Graph</div>
-			<div id="hypertreeNodeBodyBox" class="fleft" style="width: 500px;">
-
-			</div>
-		</div>
-
 		<div class="profilingWidget" id="hdfsDataBox" style="display: none;">
 			<div class="favHeader" id="nodeRelationTitleBox">Cluster-wide HDFS Block Health</div>
 
@@ -180,6 +162,7 @@
 <script type="text/JavaScript">
 
 //For todays date;
+	
 	Date.prototype.today = function(){ 
     	return ((this.getDate() < 10)?"0":"") + this.getDate() +"/"+(((this.getMonth()+1) < 10)?"0":"") + (this.getMonth()+1) +"/"+ this.getFullYear() 
 	};
@@ -195,9 +178,10 @@
 
 	<!--var categoriesJson = '{"clusterWide":{"jobTracker":["Hostname","jobs_running","map_slots","reduce_slots","occupied_map_slots","occupied_reduce_slots","memHeapUsedM","gcCount","gcTimeMillis","trackers","trackers_graylisted","trackers_blacklisted"], "nameNode":["HostName","snapshot_avg_time","BlockCapacity","CapacityRemainingGB","CapacityTotalGB","CapacityUsedGB","PercentUsed","Safemode","SafemodeTime","TotalBlocks","UnderReplicatedBlocks","CorruptBlocks","MissingBlocks","gcCount","gcTimeMillis","TotalFiles"]},"hadoopJMX": {"dfs": ["DfsUsed", "StorageInfo", "Capacity", "Remaining"],"rpc":{"dataNode":["RpcPort","RpcProcessingTime_num_ops","RpcProcessingTime_avg_time","RpcQueueTime_num_ops","RpcQueueTime_avg_time","rpcAuthorizationSuccesses","rpcAuthorizationFailures","rpcAuthenticationSuccesses","rpcAuthenticationFailures"], "taskTracker":["RpcPort","RpcProcessingTime_num_ops","RpcProcessingTime_avg_time","RpcQueueTime_num_ops","RpcQueueTime_avg_time","rpcAuthorizationSuccesses","rpcAuthorizationFailures","rpcAuthenticationSuccesses","rpcAuthenticationFailures"]},"io": ["bytes_read", "reads_from_local_client", "writes_from_local_client", "writes_from_remote_client", "reads_from_remote_client", "bytes_written", "blocks_read", "blocks_written", "blocks_verified", "blocks_removed", "blocks_replicated"],"dataNodeMisc":["ReceivedBytes", "block_verification_failures", "gcCount", "blockChecksumOp_num_ops", "snapshot_num_ops", "publish_stdev_time", "copyBlockOp_avg_time", "memNonHeapCommittedM", "loginFailure_num_ops", "tag.processName", "gcTimeMillis", "memNonHeapUsedM", "snapshot_imax_time", "blockReports_avg_time", "VolumeInfo", "writeBlockOp_num_ops", "tag.context", "copyBlockOp_num_ops", "Version", "publish_imax_time", "loginFailure_avg_time", "snapshot_avg_time", "replaceBlockOp_avg_time", "dropped_pub_all", "threadsBlocked", "logWarn", "HostName", "tag.port", "publish_imin_time", "snapshot_min_time", "callQueueLen", "publish_avg_time", "NamenodeAddress", "memHeapCommittedM", "readBlockOp_num_ops", "tag.hostName", "logFatal", "writeBlockOp_avg_time", "threadsWaiting", "logError", "publish_num_ops", "heartBeats_num_ops", "num_sinks", "NumOpenConnections", "replaceBlockOp_num_ops", "logInfo", "publish_min_time", "heartBeats_avg_time", "threadsTimedWaiting", "blockReports_num_ops", "num_sources", "publish_max_time", "loginSuccess_avg_time", "snapshot_stdev_time", "readBlockOp_avg_time", "loginSuccess_num_ops", "SentBytes", "snapshot_imin_time", "blocks_get_local_pathinfo", "threadsNew", "memHeapUsedM", "threadsTerminated", "blockChecksumOp_avg_time", "snapshot_max_time", "threadsRunnable"],"ttMisc":["shuffle_success_outputs", "ReceivedBytes", "tasks_failed_timeout", "done_avg_time", "getMapCompletionEvents_avg_time", "getMapCompletionEvents_num_ops", "shuffle_output_bytes", "gcCount", "snapshot_num_ops", "publish_stdev_time", "memNonHeapCommittedM", "loginFailure_num_ops", "statusUpdate_avg_time", "tag.processName", "gcTimeMillis", "memNonHeapUsedM", "snapshot_imax_time", "tag.context", "publish_imax_time", "Version", "loginFailure_avg_time", "snapshot_avg_time", "shuffle_handler_busy_percent", "dropped_pub_all", "canCommit_num_ops", "HttpPort", "threadsBlocked", "logWarn", "JobTrackerUrl", "commitPending_avg_time", "tag.port", "getTask_num_ops", "publish_imin_time", "reduces_running", "snapshot_min_time", "callQueueLen", "reduceTaskSlots", "publish_avg_time", "tasks_completed", "getProtocolVersion_num_ops", "commitPending_num_ops", "shuffle_exceptions_caught", "memHeapCommittedM", "tag.hostName", "ping_avg_time", "done_num_ops", "logFatal", "threadsWaiting", "logError", "publish_num_ops", "Healthy", "tag.sessionId", "statusUpdate_num_ops", "num_sinks", "NumOpenConnections", "logInfo", "publish_min_time", "TasksInfoJson", "threadsTimedWaiting", "shuffle_failed_outputs", "Hostname", "getTask_avg_time", "getProtocolVersion_avg_time", "num_sources", "ConfigVersion", "publish_max_time", "mapTaskSlots", "ping_num_ops", "loginSuccess_avg_time", "snapshot_stdev_time", "tasks_failed_ping", "loginSuccess_num_ops", "SentBytes", "maps_running", "snapshot_imin_time", "threadsNew", "memHeapUsedM", "threadsTerminated", "snapshot_max_time", "threadsRunnable", "canCommit_avg_time"],"nameNodeMisc":["Threads", "register_num_ops", "versionRequest_num_ops", "rollFsImage_num_ops", "JournalTransactionsBatchedInSync", "snapshot_num_ops", "Free", "memNonHeapCommittedM", "FilesTotal", "snapshot_imax_time", "CapacityRemaining", "TotalLoad", "tag.context", "DeleteFileOps", "publish_imax_time", "loginFailure_avg_time", "getBlockLocations_num_ops", "getListing_avg_time", "RpcProcessingTime_num_ops", "logWarn", "getFileInfo_num_ops", "register_avg_time", "publish_imin_time", "versionRequest_avg_time", "snapshot_min_time", "Used", "RpcProcessingTime_avg_time", "tag.hostName", "PercentRemaining", "logFatal", "renewLease_avg_time", "RpcQueueTime_num_ops", "sendHeartbeat_num_ops", "ExcessBlocks", "rename_num_ops", "rpcAuthenticationFailures", "GetListingOps", "GetBlockLocations", "delete_num_ops", "blockReport_num_ops", "create_num_ops", "Transactions_avg_time", "publish_min_time", "getEditLogSize_num_ops", "threadsTimedWaiting", "PendingDeletionBlocks", "rollFsImage_avg_time", "delete_avg_time", "ScheduledReplicationBlocks", "getFileInfo_avg_time", "rename_avg_time", "publish_max_time", "rollEditLog_avg_time", "blockReceived_avg_time", "getEditLogSize_avg_time", "RpcQueueTime_avg_time", "loginSuccess_num_ops", "SentBytes", "FSState", "snapshot_imin_time", "memHeapUsedM", "threadsNew", "threadsTerminated", "FilesDeleted", "snapshot_max_time", "Total", "addBlock_avg_time", "ReceivedBytes", "UpgradeFinalized", "create_avg_time", "publish_stdev_time", "loginFailure_num_ops", "PendingReplicationBlocks", "tag.processName", "memNonHeapUsedM", "FilesInGetListingOps", "FilesCreated", "Version", "BlocksTotal", "addBlock_num_ops", "fsImageLoadTime", "dropped_pub_all", "FilesRenamed", "threadsBlocked", "FileInfoOps", "NonDfsUsedSpace", "getBlockLocations_avg_time", "renewLease_num_ops", "Syncs_avg_time", "tag.port", "setPermission_num_ops", "complete_num_ops", "callQueueLen", "publish_avg_time", "getProtocolVersion_num_ops", "CapacityTotal", "FilesAppended", "setReplication_num_ops", "blockReport_avg_time", "setPermission_avg_time", "DeadNodes", "rpcAuthorizationSuccesses", "memHeapCommittedM", "CapacityUsed", "getListing_num_ops", "threadsWaiting", "publish_num_ops", "logError", "CreateFileOps", "Transactions_num_ops", "num_sinks", "mkdirs_avg_time", "NameDirStatuses", "DecomNodes", "NumOpenConnections", "logInfo", "rpcAuthenticationSuccesses", "rollEditLog_num_ops", "mkdirs_num_ops", "AddBlockOps", "rpcAuthorizationFailures", "getProtocolVersion_avg_time", "LiveNodes", "num_sources", "loginSuccess_avg_time", "snapshot_stdev_time", "sendHeartbeat_avg_time", "Syncs_num_ops", "complete_avg_time", "blockReceived_num_ops", "threadsRunnable", "setReplication_avg_time"],"jobTrackerMisc":["getJobProfile_num_ops", "blacklisted_maps", "running_maps", "jobs_failed", "snapshot_num_ops", "jobs_submitted", "memNonHeapCommittedM", "heartbeats", "snapshot_imax_time", "running_300", "GraylistedNodesInfoJson", "tag.context", "running_60", "publish_imax_time", "loginFailure_avg_time", "snapshot_avg_time", "SummaryJson", "getBuildVersion_num_ops", "RpcProcessingTime_num_ops", "logWarn", "running_1440", "jobs_preparing", "publish_imin_time", "snapshot_min_time", "RpcProcessingTime_avg_time", "heartbeat_avg_time", "tag.hostName", "logFatal", "getQueueAdmins_num_ops", "RpcQueueTime_num_ops", "waiting_maps", "rpcAuthenticationFailures", "tag.sessionId", "reserved_reduce_slots", "getNewJobId_num_ops", "publish_min_time", "getJobStatus_num_ops", "threadsTimedWaiting", "ConfigVersion", "publish_max_time", "jobs_completed", "reserved_map_slots", "RpcQueueTime_avg_time", "loginSuccess_num_ops", "getTaskCompletionEvents_num_ops", "SentBytes", "snapshot_imin_time", "running_reduces", "AliveNodesInfoJson", "threadsNew", "threadsTerminated", "snapshot_max_time", "getJobStatus_avg_time", "getStagingAreaDir_num_ops", "ReceivedBytes", "BlacklistedNodesInfoJson", "maps_completed", "publish_stdev_time", "loginFailure_num_ops", "tag.processName", "memNonHeapUsedM", "getJobCounters_avg_time", "getQueueAdmins_avg_time", "heartbeat_num_ops", "Version", "maps_failed", "QueueInfoJson", "dropped_pub_all", "getNewJobId_avg_time", "reduces_failed", "running_0", "trackers_decommissioned", "threadsBlocked", "tag.port", "getJobProfile_avg_time", "callQueueLen", "publish_avg_time", "getProtocolVersion_num_ops", "rpcAuthorizationSuccesses", "memHeapCommittedM", "threadsWaiting", "publish_num_ops", "logError", "num_sinks", "NumOpenConnections", "logInfo", "blacklisted_reduces", "getJobCounters_num_ops", "getTaskCompletionEvents_avg_time", "submitJob_avg_time", "rpcAuthenticationSuccesses", "maps_launched", "reduces_launched", "jobs_killed", "rpcAuthorizationFailures", "maps_killed", "getBuildVersion_avg_time", "getProtocolVersion_avg_time", "num_sources", "reduces_killed", "reduces_completed", "loginSuccess_avg_time", "getSystemDir_num_ops", "snapshot_stdev_time", "tag.Queue", "submitJob_num_ops", "getStagingAreaDir_avg_time", "getSystemDir_avg_time", "ThreadCount", "waiting_reduces", "threadsRunnable"]},"systemStats":{"cpu":["numberOfCores", "threadsPerCore", "cpuUsage"], "memory":["activememory", "swapcache", "inactivememory", "buffermemory", "usedmemory", "freeswap", "usedswap", "totalmemory", "swapcache", "totalswap", "freememory"], "os":["contextswitches", "interrupts", "forks", "time", "pagedout", "usercputicks", "cputicks", "pagedin", "swappedin", "swappedout"]}}';-->
 	var categoriesJson=$('#var_categoriesJson').val();
-	var defaultCategories = [ "freememory", "usedmemory", "DfsUsed" ];
-
-	var defaultTrendsCategories = [ "cpuUsage" ];
+	//var defaultCategories = [ "freememory", "usedmemory", "DfsUsed" ];
+	var defaultCategories = ["freememory", "totalmemory" ];
+	//var defaultTrendsCategories = [ "cpuUsage" ];
+	var defaultTrendsCategories = [ "cpuUsage"];
 
 	var TotalCount = 0;
 	var TotalRackCount = 0;
@@ -210,7 +194,11 @@
 	var AjaxCallStopFirst=false;
 	var AjaxCallStopSecond=false;
 	setDisableButtonInitialValue();
-
+	
+	function replaceAll(find, replace, str) {
+		  return str.split(find).join(replace);
+	}
+	
 	function setDisableButtonInitialValue() {
 
 		var disableProfilerValue = getCookie('DisableProfiler');
@@ -494,16 +482,17 @@
 	function trendChartHtml(obj) {
 		element = obj.previousSibling;
 		var catName = element.value;
+		var catNameWithUnderScore = replaceAll(".","_",catName);
 		var colorHtml = '';
 
 		if (element.checked == true && element.type == "checkbox") {
 			$('#trendInnerBox')
 					.append(
-							'<div id="trend_'+catName+'" class="commonBox" style="position:relative;"><div class="fleft" ><span class="catTxt">'
+							'<div id="trend_'+catNameWithUnderScore+'" class="commonBox" style="position:relative;"><div class="fleft" ><span class="catTxt">'
 									+ obj.innerHTML
 									+ '</span><br><span class="statTxt">'
 									+ catName
-									+ '</span></div><div id="profilingChart_'+catName+'" class="fright" ></div><img class="trendCloseImg" src="../skins/images/profiler_close.png" rel="'+catName+'"></div>');
+									+ '</span></div><div id="profilingChart_'+catNameWithUnderScore+'" class="fright" ></div><img class="trendCloseImg" src="../skins/images/profiler_close.png" rel="'+catName+'"></div>');
 			trendArr[catName] = [];
 		} else {
 			delete trendArr[catName];
@@ -517,7 +506,7 @@
 	function trendChart(catName) {
 		$.jqplot.config.defaultHeight = 80;
 		$.jqplot.config.defaultWidth = 450;
-
+		catName = replaceAll(".","_",catName);
 		$('#profilingChart_' + catName).html('');
 
 		var plot = $.jqplot('profilingChart_' + catName, [ [ 1 ] ], {
@@ -544,16 +533,18 @@
 	//Render default favroties & trends html
 	function defaultSelectedCategories() {
 		// default selected fav.
+		
 		if (defaultCategories.length > 0) {
 			for (i = 0; i < defaultCategories.length; i++) {
 				var inptuElement = $('#categoriesContainer').find(
 						'input[value="' + defaultCategories[i] + '"]');
 				selectSetting(inptuElement[0].nextSibling);
 				element = inptuElement[0];
+				var elementId = replaceAll(".","_",element.value);	
 				if (element.checked == true) {
 					$('#favInnerBox')
 							.append(
-									'<div id="'+element.value+'" class="favBox"><div class="favLeft fleft" ><span class="catTxt">'
+									'<div id="'+elementId+'" class="favBox"><div class="favLeft fleft" ><span class="catTxt">'
 											+ inptuElement[0].nextSibling.innerHTML
 											+ '</span><br><span class="statTxt">'
 											+ element.value
@@ -568,19 +559,19 @@
 		if (defaultTrendsCategories.length > 0) {
 			for (i = 0; i < defaultTrendsCategories.length; i++) {
 				var catName = defaultTrendsCategories[i];
+				var catIDName = replaceAll(".","_",catName);
 				var inptuElement = $('#categoriesContainer').find(
-						'input[value=' + catName + ']');
+						'input[value="' + catName + '"]');
 				selectSetting(inptuElement[1].nextSibling);
 				element = inptuElement[1];
-
 				if (element.checked == true && element.type == "checkbox") {
-					$('#trendInnerBox')
+				$('#trendInnerBox')
 							.append(
-									'<div id="trend_'+catName+'" class="commonBox" style="position:relative;"><div class="fleft" ><span class="catTxt">'
+									'<div id="trend_'+catIDName+'" class="commonBox" style="position:relative;"><div class="fleft" ><span class="catTxt">'
 											+ inptuElement[0].nextSibling.innerHTML
 											+ '</span><br><span class="statTxt">'
 											+ catName
-											+ '</span></div><div id="profilingChart_'+catName+'" class="fright" ></div><img class="trendCloseImg" src="../skins/images/profiler_close.png" rel="'+catName+'"></div>');
+											+ '</span></div><div id="profilingChart_'+catIDName+'" class="fright" ></div><img class="trendCloseImg" src="../skins/images/profiler_close.png" rel="'+catName+'"></div>');
 					trendArr[catName] = [];
 
 				} else {
@@ -593,7 +584,6 @@
 			}
 		}
 	}
-
 	//dc/rack/node common render function
 	function dataLoadTabData(profileClusterJson, boxID) {
 		var dataCenterHTML = '';
@@ -955,7 +945,7 @@
 																															favInner2ObjJsonVal) {
 																														$(
 																																'#'
-																																		+ favInner2ObjJsonkey.replace(".","_"))
+																																		+ replaceAll(".","_",favInner2ObjJsonkey))
 																																.find(
 																																		'.favRight')
 																																.html(
@@ -968,7 +958,7 @@
 																								} else {
 																									$(
 																											'#'
-																													+ favInnerObjJsonkey.replace(".","_"))
+																													+ replaceAll(".","_",favInnerObjJsonkey))
 																											.find(
 																													'.favRight')
 																											.html(
@@ -980,9 +970,9 @@
 																								}
 																							});
 																		} else {
-																			$(
+																		$(
 																					'#'
-																							+ favInnerJsonkey.replace(".","_"))
+																							+ replaceAll(".","_",favInnerJsonkey))
 																					.find(
 																							'.favRight')
 																					.html(
@@ -1044,18 +1034,18 @@
 																			trendInnerJsonkey,
 																			trendInnerJsonVal) {
 																		if (typeof trendInnerJsonVal == 'object') {
-																			$
+																				$
 																					.each(
 																							trendInnerJsonVal,
 																							function(
 																									trendInnerObjJsonkey,
 																									trendInnerObjJsonVal) {
+																								trendInnerObjJsonkeyWithUnderScore = replaceAll(".","_",trendInnerObjJsonkey);
 																								$(
 																										"#profilingChart_"
-																												+ trendInnerObjJsonkey)
+																												+ trendInnerObjJsonkeyWithUnderScore)
 																										.html(
 																												'');
-
 																								trendArr[trendInnerObjJsonkey]
 																										.push(Number(trendInnerObjJsonVal));
 																								if (trendArr[trendInnerObjJsonkey].length > 10) {
@@ -1065,7 +1055,7 @@
 																								linePlot = $
 																										.jqplot(
 																												'profilingChart_'
-																														+ trendInnerObjJsonkey,
+																														+ trendInnerObjJsonkeyWithUnderScore,
 																												[ trendArr[trendInnerObjJsonkey] ],
 																												{
 																													axesDefaults : {
@@ -1090,22 +1080,22 @@
 																								customJQPlotTooltip(
 																										'line',
 																										"profilingChart_"
-																												+ trendInnerObjJsonkey,
+																												+ trendInnerObjJsonkeyWithUnderScore,
 																										linePlot,
 																										''); // chartHolder, var in which you store your jqPlot
 																								$(
 																										'#profilingChart_'
-																												+ trendInnerObjJsonkey
+																												+ trendInnerObjJsonkeyWithUnderScore
 																												+ ' .jqplot-yaxis-label')
 																										.css(
 																												{
 																													left : '5px'
 																												});
 																							});
-																		} else {
+																		} else {trendInnerObjJsonkeyWithUnderScore = replaceAll(".","_",trendInnerJsonkey);
 																			$(
 																					"#profilingChart_"
-																							+ trendInnerJsonkey)
+																							+ trendInnerObjJsonkeyWithUnderScore)
 																					.html(
 																							'');
 
@@ -1118,7 +1108,7 @@
 																			linePlot = $
 																					.jqplot(
 																							'profilingChart_'
-																									+ trendInnerJsonkey,
+																									+ trendInnerObjJsonkeyWithUnderScore,
 																							[ trendArr[trendInnerJsonkey] ],
 																							{
 																								axesDefaults : {
@@ -1143,12 +1133,12 @@
 																			customJQPlotTooltip(
 																					'line',
 																					"profilingChart_"
-																							+ trendInnerJsonkey,
+																							+ trendInnerObjJsonkeyWithUnderScore,
 																					linePlot,
 																					''); // chartHolder, var in which you store your jqPlot
 																			$(
 																					'#profilingChart_'
-																							+ trendInnerJsonkey
+																							+ trendInnerObjJsonkeyWithUnderScore
 																							+ ' .jqplot-yaxis-label')
 																					.css(
 																							{
@@ -1205,7 +1195,6 @@
 
 	function checkCookie() {
 		var settingFormCookie = getCookie("settingFormCookie");
-
 		if (settingFormCookie != null && settingFormCookie != '') {
 			defaultCategories = [];
 			var parsedJson = $.parseJSON(settingFormCookie);
@@ -1345,14 +1334,11 @@
 									$('#dataCenterContainer').show();
 									$('#categoriesContainer').hide();
 
-									$('#networkContainer').hide();
 									$('#dataLoadContainer').hide();
 									$('#hdfsDataDistributionContainer').hide();
 
 									$('#favWidgetBox').show();
 									$('#trendWidgetBox').show();
-									$('#hypertreeNodeBox').hide();
-
 									$('#hdfsDataBox').hide();
 									$('#favWidgetBox').show();
 									$('#trendWidgetBox').show();
@@ -1370,65 +1356,16 @@
 									$('#categoriesContainer').show();
 									$('#dataCenterContainer').hide();
 
-									$('#networkContainer').hide();
 									$('#dataLoadContainer').hide();
 									$('#hdfsDataDistributionContainer').hide();
 									$('#hdfsDataBoxNodeInfo').hide();
 									$('#favWidgetBox').show();
 									$('#trendWidgetBox').show();
-									$('#hypertreeNodeBox').hide();
-
 									$('#hdfsDataBox').hide();
 									$('#favWidgetBox').show();
 									$('#trendWidgetBox').show();
 
 								});
-
-						$('#networkTabLink')
-								.live(
-										'click',
-										function() {
-											$('.tabSelected').removeClass(
-													'tabSelected').addClass(
-													'profilerTab');
-											$(this).addClass('tabSelected');
-											;
-											$('#hdfsDataBoxNodeInfo').hide();
-											$('#categoriesContainer').hide();
-											$('#dataCenterContainer').hide();
-
-											$('#networkContainer').show();
-											$('#networkContainer')
-													.html(
-															'<div class="txtCenter"><img src="./skins/images/loading.gif" width="300px"></div>');
-											$('#dataLoadContainer').hide();
-											$('#hdfsDataDistributionContainer')
-													.hide();
-
-											var generalSettingFormJson = formSubmit('generalSettingForm');
-											var ajaxReq = $
-													.ajax(
-															{
-																type : "POST",
-																url : "ProfilerServlet?VIEW_NAME=NETWORK_LATENCY_VIEW",
-																data : generalSettingFormJson
-															})
-													.done(
-															function(finalJSON) {
-																if (finalJSON) {
-																	$(
-																			'#networkContainer')
-																			.html(
-																					'<form id="networkForm" name="networkForm" method="POST"><ul id="networkNodeList" class="accordianList"></ul><div id="submitBtnBox" style="float:left; padding-left:5px;"><button id="networkSubmit" type="button"><span>Submit</span></button></div></form>');
-																	callProfilerOnSuccess(finalJSON);
-																}
-															});
-
-											$('#hdfsDataBox').hide();
-											$('#favWidgetBox').show();
-											$('#trendWidgetBox').show();
-
-										});
 
 						$('#dataLoadTabLink')
 								.live(
@@ -1441,9 +1378,6 @@
 											$('#hdfsDataBoxNodeInfo').hide();
 											$('#categoriesContainer').hide();
 											$('#dataCenterContainer').hide();
-											$('#networkContainer').hide();
-											$('#hypertreeNodeBox').hide();
-
 											$('#hdfsDataBox').hide();
 											$('#dataLoadContainer').show();
 											$('#hdfsDataDistributionContainer')
@@ -1486,10 +1420,8 @@
 									$('#hdfsDataBoxNodeInfo').show();
 									$('#categoriesContainer').hide();
 									$('#dataCenterContainer').hide();
-									$('#networkContainer').hide();
 									$('#dataLoadContainer').hide();
 									$('#hdfsDataDistributionContainer').show();
-									$('#hypertreeNodeBox').hide();
 									$('#hdfsFieldBox').show();
 									$('#hdfsDCBox').hide();
 									$('#hdfsDataBox').show();
@@ -1588,7 +1520,7 @@
 											if (element.checked == true) {
 												$('#favInnerBox')
 														.append(
-																'<div id="'+(element.value).replace(".","_")+'" class="favBox"><div class="favLeft fleft" ><span class="catTxt">'
+																'<div id="'+replaceAll(".","_",element.value)+'" class="favBox"><div class="favLeft fleft" ><span class="catTxt">'
 																		+ $(
 																				this)
 																				.text()
@@ -1665,11 +1597,12 @@
 											var inptuElement = $(
 													'#categoriesContainer')
 													.find(
-															'input[value='
+															'input[value="'
 																	+ category
-																	+ ']');
+																	+ '"]');
 											selectSetting(inptuElement[1].nextSibling);
-											$('#trend_' + category).remove();
+											var categorySepratedWithUnderScore =replaceAll(".","_",category); 
+											$('#trend_' + categorySepratedWithUnderScore).remove();
 
 										});
 
@@ -1816,106 +1749,6 @@
 								});
 
 						// network Submit button click
-						$('#networkSubmit')
-								.live(
-										'click',
-										function() {
-
-											var formData = form2js(
-													'networkForm',
-													'.',
-													true,
-													function(node) {
-														if (node.id
-																&& node.id
-																		.match(/callbackTest/)) {
-															return {
-																name : node.id,
-																value : node.innerHTML
-															};
-														}
-													});
-											$('#networkForm').get(0).reset();
-											if (typeof formData.NODE_LIST == 'undefined') {
-												alert('Please select nodes from list');
-												return;
-											}else if(formData.NODE_LIST.length<=1){
-												alert("Please select at least 2 nodes for Network latency graph.");
-												return;
-											}
-											
-											
-											var pwModelTbl = '<table><tr><th>Node List</th><th>Password</th></tr>';
-											$.each(formData.NODE_LIST, function(nodeJsonKey, nodeJsonVal) {
-													pwModelTbl += '<tr><td>' + nodeJsonVal + '</td><td><input type="password" id="node'+nodeJsonKey+'" name="'+nodeJsonVal+'" class="inputbox"></td></tr>';
-											});
-											pwModelTbl += '<tr><td>&nbsp;</td><td><button id="nodeListSubmit"><span>Submit</span></button></td></tr></table>';
-											$("#passwordModelBox").html(pwModelTbl);
-											
-											$("#passwordModel")
-													.dialog(
-															{
-																dialogClass : 'modalSelectLocation',
-																height : 300,
-																width : 400,
-																draggable : false,
-																resizable : false,
-																modal : true
-															});
-
-											return false;
-										});
-
-						// Node List Submit button click
-						$('#nodeListSubmit')
-								.live(
-										'click',
-										function() {
-											$("#passwordModel").dialog('close');
-											$('#favWidgetBox').hide();
-											$('#trendWidgetBox').hide();
-											$('#hypertreeNodeBox').show();
-
-											$('#hypertreeNodeBodyBox')
-													.html(
-															'<div class="txtCenter"><img src="./skins/images/loading.gif"></div>');
-
-											var formData = form2js(
-													'nodeListForm',
-													'..',
-													true,
-													function(node) {
-														if (node.id
-																&& node.id
-																		.match(/callbackTest/)) {
-															return {
-																name : node.id,
-																value : node.innerHTML
-															};
-														}
-													});
-											var nodeListJson = JSON
-													.stringify(formData);
-											//nodeListJson = '{"192.168.49.52":"impetus121","192.168.49.60":"impetus121"}';		
-											$
-													.ajax(
-															{
-																type : "POST",
-																url : "ProfilerServlet",
-																data : 'VIEW_NAME=NETWORK_LATENCY_RESULT&NODE_LIST='
-																		+ nodeListJson
-															})
-													.done(
-															function(resp) {
-																$(
-																		'#hypertreeNodeBodyBox')
-																		.html(
-																				'');
-																initHypertreeNode(resp);
-															});
-											return false;
-										});
-
 						$('#copyToAllLink').click(
 								function() {
 									var getPass = $('#node0').val();
@@ -2010,93 +1843,5 @@
 						});
 
 					});
-					
-function initHypertreeNode(json){
 
-	json = $.parseJSON(json);
-
-    //init Hypertree
-    var ht = new $jit.Hypertree({
-        //id of the visualization container
-        injectInto: 'hypertreeNodeBodyBox',
-	 width: 500,
-         height: 350,
-        //By setting overridable=true,
-        //Node and Edge global properties can be
-        //overriden for each node/edge.
-        Node: {
-            overridable: true,
-            'transform': false,
-            color: "#AB1F57"
-        },
-        
-        Edge: {
-            overridable: true,		
-	    type: 'hyperline',
-            color: "#000"
-        },
-        //calculate nodes offset
-        offset: 1.6,
-        //Change the animation transition type
-        transition: $jit.Trans.Back.easeOut,
-        //animation duration (in milliseconds)
-        duration:1000,
-        
-        //This method is called right before plotting an
-        //edge. This method is useful for adding individual
-        //styles to edges.
-        onBeforePlotLine: function(adj){
-            //Set random lineWidth for edges.
-            if (!adj.data.$lineWidth) 
-                adj.data.$lineWidth = Math.random() * 7 + 1;
-        },
-        
-        onBeforeCompute: function(node){
-            //Log.write("centering");
-        },
-        //Attach event handlers on label creation.
-        onCreateLabel: function(domElement, node){
-            domElement.innerHTML = node.name;
-            domElement.style.cursor = "pointer";
-            domElement.onclick = function () {
-                ht.onClick(node.id, { 
-                    hideLabels: false,
-                    onComplete: function() {
-                      ht.controller.onComplete();
-                    }
-                });
-            };
-        },
-        //This method is called when moving/placing a label.
-        //You can add some positioning offsets to the labels here.
-        onPlaceLabel: function(domElement, node){
-            var width = domElement.offsetWidth;
-            var intX = parseInt(domElement.style.left);
-            intX -= width / 2;
-            domElement.style.left = intX + 'px';
-        },
-        
-        onComplete: function(){
-            /*Log.write("done");
-
-            //Make the relations list shown in the right column.
-            var node = ht.graph.getClosestNodeToOrigin("current");
-            var html = "<h4>" + node.name + "</h4><b>Connections:</b>";
-            html += "<ul>";
-            node.eachAdjacency(function(adj){
-                var child = adj.nodeTo;
-                html += "<li>" + child.name + "</li>";
-            });
-            html += "</ul>";
-            $jit.id('hypertreeNodeBox').innerHTML = html;*/
-        }
-    });
-    //load JSON graph.
-    ht.loadJSON(json, 1);
-    //compute positions and plot
-    ht.refresh();
-    //end
-    ht.controller.onBeforeCompute(ht.graph.getNode(ht.root));
-    ht.controller.onComplete();
-}
 </script>
