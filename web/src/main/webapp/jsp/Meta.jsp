@@ -54,9 +54,6 @@
 <script type="text/javascript" src="${pageContext.servletContext.contextPath}/skins/js/plupload.html5.js"></script>
 <script type="text/javascript" src="${pageContext.servletContext.contextPath}/skins/js/plupload.silverlight.js"></script>
 
-<!-- JIT Library File -->
-<script language="javascript" type="text/javascript" src="${pageContext.servletContext.contextPath}/skins/js/plugins/Jit/jit.js"></script>
-
 <!-- jstree -->
 <script type="text/javascript" src="${pageContext.servletContext.contextPath}/skins/js/plugins/jquery/jquery.jstree.js"></script>
 
@@ -69,5 +66,4 @@
 
 <script type="text/javascript" src="${pageContext.servletContext.contextPath}/skins/js/plugins/help-framework/help-fw-1.0.min.js" ></script>
 <link type="text/css" rel="stylesheet" href="${pageContext.servletContext.contextPath}/skins/js/plugins/help-framework/skins/css/help-fw.css" />
-
 

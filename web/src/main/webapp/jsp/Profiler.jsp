@@ -32,9 +32,6 @@
 			<div id="catTabLink" class="catCenterTab profilerTab">
 				<img src="../skins/images/categories.png" alt="Categories" />
 			</div>
-			<div id="networkTabLink" class="networkCenterTab profilerTab">
-				<img src="../skins/images/netlanc.png" alt="Network Latency" />
-			</div>
 			<div id="dataLoadTabLink" class="dataLoadCenterTab profilerTab">
 				<img src="../skins/images/data_load.png" alt="Data Load" />
 			</div>
@@ -78,14 +75,6 @@
 				</ul>
 			</form>
 		</div>
-
-		<div id="networkContainer" class="dataCenterBox"
-			style="display: none; min-height: 514px;">
-			<ul id="networkNodeList" class="accordianList">
-
-			</ul>
-		</div>
-
 		<div id="dataLoadContainer" class="dataCenterBox"
 			style="display: none; min-height: 514px;">
 			<ul id="dataLoadNodeList" class="accordianList">
@@ -134,14 +123,6 @@
 				Trends
 				<div class="nodeIpCls fright bold"></div> </span>
 			<div id="trendInnerBox"></div>
-		</div>
-
-		<div class="profilingWidget" id="hypertreeNodeBox"
-			style="display: none;">
-			<div class="favHeader" id="f1">Network Latency Graph</div>
-			<div id="hypertreeNodeBodyBox" class="fleft" style="width: 500px;">
-
-			</div>
 		</div>
 
 		<div class="profilingWidget" id="hdfsDataBox" style="display: none;">
@@ -688,85 +669,6 @@
 
 							$(boxID).html(dataCenterHTML);
 						});
-	}
-
-	//Prepare dc, rack & node html for network latency tab.
-	function networkLatencyTabData(profileClusterJson, boxId) {
-		var dataCenterHTML = '';
-		var nodeDetails = '';
-		profileParsedJson = $.parseJSON(profileClusterJson);
-		$
-				.each(
-						profileParsedJson['dataCenters'],
-						function(profileJsonKey, profileJsonVal) {
-							TotalCount++;
-							TotalRackCount = 0;
-							dataCenterHTML += '<li>';
-							$
-									.each(
-											profileJsonVal,
-											function(profileDataCenterJsonKey,
-													profileDataCenterJsonVal) {
-
-												if (profileDataCenterJsonKey == 'clusterId') {
-													dataCenterHTML += '<a class="toggle" href="javascript:void(0);">'
-															+ profileDataCenterJsonVal
-															+ '</a>';
-												}
-												if (profileDataCenterJsonKey == 'racks') {
-													$
-															.each(
-																	profileDataCenterJsonVal,
-																	function(
-																			profileJsonInnerKey,
-																			profileJsonInnerVal) {
-																		TotalRackCount++;
-																		TotalInnerRackCount++;
-																		dataCenterHTML += '<div class="dataCenterMainBox fleft" style="clear:both;"><div class="rackBox"><fieldset><legend>'
-																				+ profileJsonInnerVal.rackId
-																				+ '</legend><div>';
-																		$
-																				.each(
-																						profileJsonInnerVal,
-																						function(
-																								profileJsonRackInnerKey,
-																								profileJsonRackInnerVal) {
-																							if (profileJsonRackInnerKey == 'nodes') {
-																								$
-																										.each(
-																												profileJsonInnerVal['nodes'],
-																												function(
-																														profileJsonNodeListInnerKey,
-																														profileJsonNodeListInnerVal) {
-																													TotalNodeCount++;
-																													if (typeof profileJsonNodeListInnerVal['performance'] != 'undefined') {
-																														if (typeof profileJsonNodeListInnerVal['performance'] != 'undefined') {
-																															if (profileJsonNodeListInnerVal['performance'] == 'Good') {
-																																dataCenterHTML += '<div class="nodeBoxWithoutClick green"><span><input type="checkbox" name="NODE_LIST[]" value="'+profileJsonNodeListInnerVal['nodeIp']+'" /></span></div>';
-																															} else if (profileJsonNodeListInnerVal['performance'] == 'Average') {
-																																dataCenterHTML += '<div class="nodeBoxWithoutClick orange"><span><input type="checkbox" name="NODE_LIST[]" value="'+profileJsonNodeListInnerVal['nodeIp']+'" /></span></div>';
-																															} else if (profileJsonNodeListInnerVal['performance'] == 'Unavailable') {
-																																dataCenterHTML += '<div class="nodeBoxWithoutClick gray"><span><input type="checkbox" name="NODE_LIST[]" value="'+profileJsonNodeListInnerVal['nodeIp']+': '+profileJsonNodeListInnerVal['message']+'" disabled/></span></div>';
-																															} else {
-																																dataCenterHTML += '<div class="nodeBoxWithoutClick"><span><input type="checkbox" name="NODE_LIST[]" value="'+profileJsonNodeListInnerVal['nodeIp']+'" /></span></div>';
-																															}
-																														}
-																													} else {
-																														dataCenterHTML += '<div class="nodeBoxWithoutClick"><span><input type="checkbox" name="NODE_LIST[]" value="'+profileJsonNodeListInnerVal['nodeIp']+'" /></span></div>';
-																													}
-																												});
-																							}
-																						});
-																		dataCenterHTML += '</div></fieldset></div></div>';
-																	});
-												}
-											});
-
-							dataCenterHTML += '</li>';
-
-							$(boxId).html(dataCenterHTML);
-						});
-
 	}
 
 	//dc/rack/node common render function
@@ -1322,18 +1224,7 @@
 											'down');
 								});
 
-						$('#networkNodeList').find('li div.dataCenterMainBox')
-								.hide();
-
-						$('#networkNodeList li a.toggle').live(
-								'click',
-								function() {
-									$(this).toggleClass('selected');
-									$(this).next('div.dataCenterMainBox')
-											.toggle('down');
-								});
-
-						$('#dcTabLink').live(
+					$('#dcTabLink').live(
 								'click',
 								function() {
 									$('.tabSelected')
@@ -1345,14 +1236,11 @@
 									$('#dataCenterContainer').show();
 									$('#categoriesContainer').hide();
 
-									$('#networkContainer').hide();
 									$('#dataLoadContainer').hide();
 									$('#hdfsDataDistributionContainer').hide();
 
 									$('#favWidgetBox').show();
 									$('#trendWidgetBox').show();
-									$('#hypertreeNodeBox').hide();
-
 									$('#hdfsDataBox').hide();
 									$('#favWidgetBox').show();
 									$('#trendWidgetBox').show();
@@ -1370,65 +1258,16 @@
 									$('#categoriesContainer').show();
 									$('#dataCenterContainer').hide();
 
-									$('#networkContainer').hide();
 									$('#dataLoadContainer').hide();
 									$('#hdfsDataDistributionContainer').hide();
 									$('#hdfsDataBoxNodeInfo').hide();
 									$('#favWidgetBox').show();
 									$('#trendWidgetBox').show();
-									$('#hypertreeNodeBox').hide();
-
 									$('#hdfsDataBox').hide();
 									$('#favWidgetBox').show();
 									$('#trendWidgetBox').show();
 
 								});
-
-						$('#networkTabLink')
-								.live(
-										'click',
-										function() {
-											$('.tabSelected').removeClass(
-													'tabSelected').addClass(
-													'profilerTab');
-											$(this).addClass('tabSelected');
-											;
-											$('#hdfsDataBoxNodeInfo').hide();
-											$('#categoriesContainer').hide();
-											$('#dataCenterContainer').hide();
-
-											$('#networkContainer').show();
-											$('#networkContainer')
-													.html(
-															'<div class="txtCenter"><img src="./skins/images/loading.gif" width="300px"></div>');
-											$('#dataLoadContainer').hide();
-											$('#hdfsDataDistributionContainer')
-													.hide();
-
-											var generalSettingFormJson = formSubmit('generalSettingForm');
-											var ajaxReq = $
-													.ajax(
-															{
-																type : "POST",
-																url : "ProfilerServlet?VIEW_NAME=NETWORK_LATENCY_VIEW",
-																data : generalSettingFormJson
-															})
-													.done(
-															function(finalJSON) {
-																if (finalJSON) {
-																	$(
-																			'#networkContainer')
-																			.html(
-																					'<form id="networkForm" name="networkForm" method="POST"><ul id="networkNodeList" class="accordianList"></ul><div id="submitBtnBox" style="float:left; padding-left:5px;"><button id="networkSubmit" type="button"><span>Submit</span></button></div></form>');
-																	callProfilerOnSuccess(finalJSON);
-																}
-															});
-
-											$('#hdfsDataBox').hide();
-											$('#favWidgetBox').show();
-											$('#trendWidgetBox').show();
-
-										});
 
 						$('#dataLoadTabLink')
 								.live(
@@ -1441,9 +1280,6 @@
 											$('#hdfsDataBoxNodeInfo').hide();
 											$('#categoriesContainer').hide();
 											$('#dataCenterContainer').hide();
-											$('#networkContainer').hide();
-											$('#hypertreeNodeBox').hide();
-
 											$('#hdfsDataBox').hide();
 											$('#dataLoadContainer').show();
 											$('#hdfsDataDistributionContainer')
@@ -1486,10 +1322,8 @@
 									$('#hdfsDataBoxNodeInfo').show();
 									$('#categoriesContainer').hide();
 									$('#dataCenterContainer').hide();
-									$('#networkContainer').hide();
 									$('#dataLoadContainer').hide();
 									$('#hdfsDataDistributionContainer').show();
-									$('#hypertreeNodeBox').hide();
 									$('#hdfsFieldBox').show();
 									$('#hdfsDCBox').hide();
 									$('#hdfsDataBox').show();
@@ -1815,106 +1649,7 @@
 									$('#chartpseudotooltip').html('').hide();
 								});
 
-						// network Submit button click
-						$('#networkSubmit')
-								.live(
-										'click',
-										function() {
-
-											var formData = form2js(
-													'networkForm',
-													'.',
-													true,
-													function(node) {
-														if (node.id
-																&& node.id
-																		.match(/callbackTest/)) {
-															return {
-																name : node.id,
-																value : node.innerHTML
-															};
-														}
-													});
-											$('#networkForm').get(0).reset();
-											if (typeof formData.NODE_LIST == 'undefined') {
-												alert('Please select nodes from list');
-												return;
-											}else if(formData.NODE_LIST.length<=1){
-												alert("Please select at least 2 nodes for Network latency graph.");
-												return;
-											}
-											
-											
-											var pwModelTbl = '<table><tr><th>Node List</th><th>Password</th></tr>';
-											$.each(formData.NODE_LIST, function(nodeJsonKey, nodeJsonVal) {
-													pwModelTbl += '<tr><td>' + nodeJsonVal + '</td><td><input type="password" id="node'+nodeJsonKey+'" name="'+nodeJsonVal+'" class="inputbox"></td></tr>';
-											});
-											pwModelTbl += '<tr><td>&nbsp;</td><td><button id="nodeListSubmit"><span>Submit</span></button></td></tr></table>';
-											$("#passwordModelBox").html(pwModelTbl);
-											
-											$("#passwordModel")
-													.dialog(
-															{
-																dialogClass : 'modalSelectLocation',
-																height : 300,
-																width : 400,
-																draggable : false,
-																resizable : false,
-																modal : true
-															});
-
-											return false;
-										});
-
-						// Node List Submit button click
-						$('#nodeListSubmit')
-								.live(
-										'click',
-										function() {
-											$("#passwordModel").dialog('close');
-											$('#favWidgetBox').hide();
-											$('#trendWidgetBox').hide();
-											$('#hypertreeNodeBox').show();
-
-											$('#hypertreeNodeBodyBox')
-													.html(
-															'<div class="txtCenter"><img src="./skins/images/loading.gif"></div>');
-
-											var formData = form2js(
-													'nodeListForm',
-													'..',
-													true,
-													function(node) {
-														if (node.id
-																&& node.id
-																		.match(/callbackTest/)) {
-															return {
-																name : node.id,
-																value : node.innerHTML
-															};
-														}
-													});
-											var nodeListJson = JSON
-													.stringify(formData);
-											//nodeListJson = '{"192.168.49.52":"impetus121","192.168.49.60":"impetus121"}';		
-											$
-													.ajax(
-															{
-																type : "POST",
-																url : "ProfilerServlet",
-																data : 'VIEW_NAME=NETWORK_LATENCY_RESULT&NODE_LIST='
-																		+ nodeListJson
-															})
-													.done(
-															function(resp) {
-																$(
-																		'#hypertreeNodeBodyBox')
-																		.html(
-																				'');
-																initHypertreeNode(resp);
-															});
-											return false;
-										});
+						
 
 						$('#copyToAllLink').click(
 								function() {
@@ -2011,92 +1746,4 @@
 
 					});
 					
-function initHypertreeNode(json){
-
-	json = $.parseJSON(json);
-
-    //init Hypertree
-    var ht = new $jit.Hypertree({
-        //id of the visualization container
-        injectInto: 'hypertreeNodeBodyBox',
-	 width: 500,
-         height: 350,
-        //By setting overridable=true,
-        //Node and Edge global properties can be
-        //overriden for each node/edge.
-        Node: {
-            overridable: true,
-            'transform': false,
-            color: "#AB1F57"
-        },
-        
-        Edge: {
-            overridable: true,		
-	    type: 'hyperline',
-            color: "#000"
-        },
-        //calculate nodes offset
-        offset: 1.6,
-        //Change the animation transition type
-        transition: $jit.Trans.Back.easeOut,
-        //animation duration (in milliseconds)
-        duration:1000,
-        
-        //This method is called right before plotting an
-        //edge. This method is useful for adding individual
-        //styles to edges.
-        onBeforePlotLine: function(adj){
-            //Set random lineWidth for edges.
-            if (!adj.data.$lineWidth) 
-                adj.data.$lineWidth = Math.random() * 7 + 1;
-        },
-        
-        onBeforeCompute: function(node){
-            //Log.write("centering");
-        },
-        //Attach event handlers on label creation.
-        onCreateLabel: function(domElement, node){
-            domElement.innerHTML = node.name;
-            domElement.style.cursor = "pointer";
-            domElement.onclick = function () {
-                ht.onClick(node.id, { 
-                    hideLabels: false,
-                    onComplete: function() {
-                      ht.controller.onComplete();
-                    }
-                });
-            };
-        },
-        //This method is called when moving/placing a label.
-        //You can add some positioning offsets to the labels here.
-        onPlaceLabel: function(domElement, node){
-            var width = domElement.offsetWidth;
-            var intX = parseInt(domElement.style.left);
-            intX -= width / 2;
-            domElement.style.left = intX + 'px';
-        },
-        
-        onComplete: function(){
-            /*Log.write("done");
-
-            //Make the relations list shown in the right column.
-            var node = ht.graph.getClosestNodeToOrigin("current");
-            var html = "<h4>" + node.name + "</h4><b>Connections:</b>";
-            html += "<ul>";
-            node.eachAdjacency(function(adj){
-                var child = adj.nodeTo;
-                html += "<li>" + child.name + "</li>";
-            });
-            html += "</ul>";
-            $jit.id('hypertreeNodeBox').innerHTML = html;*/
-        }
-    });
-    //load JSON graph.
-    ht.loadJSON(json, 1);
-    //compute positions and plot
-    ht.refresh();
-    //end
-    ht.controller.onBeforeCompute(ht.graph.getNode(ht.root));
-    ht.controller.onComplete();
-}
 </script>
