@@ -24,10 +24,6 @@
 			<a href="/Home"><img src="${pageContext.servletContext.contextPath}/skins/images/logo_text.png" alt="Jumbune Logo"/></a>
 		</div>
 		  <div class="navbar-right">
-			<ul class="nav right">
-
-			  <li><a id="helpLink" href="javascript:void(0);">Help</a></li>
-			</ul>
 		  </div>
 		  <div class="clear"></div>
 		</div>

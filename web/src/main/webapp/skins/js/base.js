@@ -2,7 +2,6 @@ var colorCodes = ["#0000ff", "#8a2be2", "#a52a2a", "#5f9ea0", "#7fff00", "#d2691
 
 	$(document).ready(function() {
 
-		$("#helpLink").helpfw({ url:"skins/js/plugins/help-framework/helpjson.json", width:700, height:500, theme:"green" ,autolinking:true});
 		//yaml form validation code Begin here
 		$("#yamlUploadForm").validationEngine('attach', {promptPosition : "centerRight", scroll: false});
 		//yaml form validation code End here
