@@ -64,6 +64,3 @@
 
 <!--[if IE]><script language="javascript" type="text/javascript" src="${pageContext.servletContext.contextPath}/skins/js/plugins/Jit/Extras/excanvas.js"></script><![endif]-->
 
-<script type="text/javascript" src="${pageContext.servletContext.contextPath}/skins/js/plugins/help-framework/help-fw-1.0.min.js" ></script>
-<link type="text/css" rel="stylesheet" href="${pageContext.servletContext.contextPath}/skins/js/plugins/help-framework/skins/css/help-fw.css" />
-
