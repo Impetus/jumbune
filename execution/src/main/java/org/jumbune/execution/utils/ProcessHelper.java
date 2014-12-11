@@ -38,7 +38,7 @@ import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.beans.LogConsolidationInfo;
 import org.jumbune.common.beans.Master;
 import org.jumbune.common.beans.ServiceInfo;
-import org.jumbune.common.beans.SupportedApacheHadoopVersions;
+import org.jumbune.common.beans.SupportedHadoopDistributions;
 import org.jumbune.common.utils.ArrayParamBuilder;
 import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.ConfigurationUtil;
@@ -53,6 +53,7 @@ import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.datavalidation.DataValidationConstants;
 import org.jumbune.execution.beans.JobProcessBean;
 import org.jumbune.remoting.client.Remoter;
+import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
 import org.jumbune.utils.exception.JumbuneException;
@@ -391,7 +392,7 @@ public class ProcessHelper {
 			if (params.toString().contains("bin/hadoop")) {
 				cmdParams = params.toString().split(RemotingConstants.JUMBUNE_REMOTE_COMMAND_SEPARATOR);
 			}
-			builder.addCommand(commandBuffer.toString(), true, Arrays.asList(cmdParams));
+			builder.addCommand(commandBuffer.toString(), true, Arrays.asList(cmdParams), CommandType.HADOOP_JOB);
 			response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 			if (relativePath.indexOf("profiling") != -1){
 				remoter.receiveLogFiles(relativePath.substring(0, relativePath.indexOf("profiling")), relativePath);
@@ -693,7 +694,7 @@ public class ProcessHelper {
 		
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		String [] stringArray=(String[]) sb.toList().toArray(new String [sb.toList().size()]);
-		builder.addCommand(commandBuffer.toString(), true, Arrays.asList(stringArray));
+		builder.addCommand(commandBuffer.toString(), true, Arrays.asList(stringArray), CommandType.HADOOP_JOB);
 		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		remoter.close();
 		if (response == null || response.trim().equals("")){
@@ -732,16 +733,8 @@ public class ProcessHelper {
 			String inputPath, String dvFileDir, String dvBeanString,
 			String hadoopHome, Master master, Remoter remoter,
 			String userSuppliedJars) {
-		YamlLoader yamlLoader = (YamlLoader)loader;
 		ArrayParamBuilder sb=new ArrayParamBuilder(Constants.NINE);
-		if(SupportedApacheHadoopVersions.HADOOP_NON_YARN.equals(RemotingUtil.getHadoopVersion(yamlLoader.getYamlConfiguration()))|| SupportedApacheHadoopVersions.HADOOP_YARN.equals(RemotingUtil.getHadoopVersion(yamlLoader.getYamlConfiguration()))||
-								SupportedApacheHadoopVersions.HADOOP_MAPR.equals(RemotingUtil.getHadoopVersion(yamlLoader.getYamlConfiguration()))){
-			sb.append(hadoopHome+"/"+Constants.H_COMMAND);
-		}else{
-			String hadoopDir = RemotingUtil.fireWhereIsHadoopCommand(remoter, master, yamlLoader.getYamlConfiguration());
-				sb.append(hadoopDir);
-		}
-		sb.append(Constants.H_COMMAND_TYPE).append(Constants.AGENT_ENV_VAR_NAME+Constants.DV_JAR_PATH)
+		sb.append("HADOOP_HOME"+Constants.H_COMMAND).append(Constants.H_COMMAND_TYPE).append(Constants.AGENT_ENV_VAR_NAME+Constants.DV_JAR_PATH)
 		.append(Constants.DV_MAIN_CLASS).append(Constants.LIB_JARS).append(Constants.AGENT_ENV_VAR_NAME+
 		Constants.GSON_JAR+","+Constants.AGENT_ENV_VAR_NAME+Constants.COMMON_JAR+","+
 		Constants.AGENT_ENV_VAR_NAME+Constants.UTILITIES_JAR+userSuppliedJars+","+Constants.AGENT_ENV_VAR_NAME
