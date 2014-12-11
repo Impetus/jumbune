@@ -42,7 +42,7 @@
 		<profile>
 			  <id>yarn</id>
 			  <properties>
-				<distribution>APACHE-Y</distribution>
+				<distribution>Yarn</distribution>
 			  </properties>
 		</profile>	
 		<profile>
@@ -51,7 +51,7 @@
 				<activeByDefault>true</activeByDefault>
 			</activation>			  
 			  <properties>
-				<distribution>APACHE-NY</distribution>
+				<distribution>Non-Yarn</distribution>
 			  </properties>
 		</profile>	    
 	</profiles>

@@ -29,7 +29,7 @@ Brief Deployment Guide
     
     4)  Start the Jumbune agent by using the command 'java -jar <Jumbune-Agent-Name> portNo'.
     
-    5)  Please make sure that the port mentioned while starting the Jumbune agent is later entered in the job YAML. 
+    5)  Please make sure that the port mentioned while starting the Jumbune agent is later entered in the job JSON. 
 
     
 For detailed deployment guide, please refer to the 'Jumbune Usage Document'.
@@ -40,11 +40,11 @@ Running Jumbune Sample Jobs
 
     1) Using the browser navigate to 'localhost:8080' if Jumbune is deployed on the same machine or navigate to '<Jumbune machine IP>:8080', Jumbune page would appear.
 
-    2) Upload one of the YAMLs found in the '<Jumbune home>/examples/resources/sample yaml/' directory.
+    2) Upload one of the JSON found in the '<Jumbune home>/examples/resources/sample_json/' directory.
     
     3) The sample job jars are found in the '<Jumbune home>/examples/example-distribution/' directory.
     
-    4) Select the appropriate YAML file from the sample YAML directory, following are the steps for doing so.
+    4) Select the appropriate JSON file from the sample JSON directory, following are the steps for doing so.
     
     Word Count:
     ----------
@@ -52,7 +52,7 @@ Running Jumbune Sample Jobs
         1) Upload sample input file in HDFS by using the following command
           bin/hadoop fs -put <Jumbune Home>/examples/resources/data/PREPROCESSED/data1 /Jumbune/Demo/input/PREPROCESSED/data1
     
-        2) Upload the sample wordcount YAML (<Jumbune home>/examples/resources/sample yaml/WordCountSample.yaml).
+        2) Upload the sample wordcount JSON (<Jumbune home>/examples/resources/sample_json/WordCountSample.json).
         
         3) Edit the Name-node and Data-node information.
         

@@ -1,6 +1,7 @@
 package org.jumbune.common.utils;
 
 import java.io.File;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.ClasspathElement;
@@ -9,6 +10,7 @@ import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.remoting.client.Remoter;
+import org.jumbune.remoting.common.CommandType;
 
 
 
@@ -57,7 +59,7 @@ public final class YamlConfigUtil {
 		Master master = yamlConfig.getMaster();
 		Remoter remoter = new Remoter(master.getHost(), Integer.valueOf(master.getAgentPort()));
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand("ls lib/", false, null);
+		builder.addCommand("ls lib/", false, null, CommandType.FS);
 		String result = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		remoter.close();
 		return (result.length() > 0) ? true : false;
@@ -77,7 +79,7 @@ public final class YamlConfigUtil {
 		if(resourceDir.exists()){
 			Remoter remoter = new Remoter(master.getHost(), Integer.valueOf(master.getAgentPort()));
 			CommandWritableBuilder builder = new CommandWritableBuilder();
-			builder.addCommand("ls "+jarFilepath, false, null);
+			builder.addCommand("ls "+jarFilepath, false, null, CommandType.FS);
 			String result = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 			remoter.close();
 			return (result.length() > 0) ? true : false;
@@ -97,7 +99,7 @@ public final class YamlConfigUtil {
 	public static void sendLibJarCommand(Remoter remoter, Config config, String command) {
 		
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(command, false, null).populate(config, null);
+		builder.addCommand(command, false, null, CommandType.FS).populate(config, null);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 	
 	}

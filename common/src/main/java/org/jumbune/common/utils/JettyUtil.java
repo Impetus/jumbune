@@ -1,7 +1,6 @@
 package org.jumbune.common.utils;
 
 import static org.jumbune.common.utils.Constants.SPACE;
-import io.netty.channel.nio.NioEventLoopGroup;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -19,6 +18,7 @@ import java.util.List;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.client.SingleNIOEventGroup;
 import org.jumbune.remoting.common.BasicYamlConfig;
+import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.writable.CommandWritable;
 import org.jumbune.remoting.writable.CommandWritable.Command;
 
@@ -72,7 +72,6 @@ public final class JettyUtil {
 				performTopCommandCleanUp();
 				specifyStopKey(stopPort, stopKey);
 				shutDownNettyEventLoopGroup();
-
 				InetAddress host = InetAddress.getByName("127.0.0.1");
 				Socket socket = new Socket(host.getHostName(), stopPort);
 				BufferedWriter oos = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
@@ -93,9 +92,6 @@ public final class JettyUtil {
 		}
 	}
 
-	private static void shutDownNettyEventLoopGroup() {
-		SingleNIOEventGroup.eventLoopGroup().shutdownGracefully();
-	}
 
 	private static void performTopCommandCleanUp()
 			throws IOException, ClassNotFoundException {
@@ -185,11 +181,16 @@ public final class JettyUtil {
 			commandWritable.setUsername(config.getUser());
 			commandWritable.setRsaFilePath(config.getRsaFile());
 			commandWritable.setSlaveHost(host);
+			commandWritable.setCommandType(CommandType.FS);
 			remoter.fireAndForgetCommand(commandWritable);
 			remoter.close();
 		}
 		ConsoleLogUtil.CONSOLELOGGER.info("Executed command [ShutTop] on worker nodes..");
 
 	}
+	
+	private static void shutDownNettyEventLoopGroup() {
+		SingleNIOEventGroup.eventLoopGroup().shutdownGracefully();
+	}	
 
 }

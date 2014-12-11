@@ -10,7 +10,7 @@ import java.util.Arrays;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
+import org.jumbune.remoting.server.HadoopConfigurationPropertyLoader;
 
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
@@ -63,85 +63,85 @@ public final class JschUtil {
 	 * @throws JSchException
 	 *             the j sch exception
 	 */
-	public static Session createSession(String user, String host, String rsaFilePath, String dsaFilePath) throws JSchException {
+	public static Session createSession(String user, String host, String rsaFilePath, String dsaFilePath, CommandType commandType) throws JSchException {
 		JSch jsch = new JSch();
-		File rsaFile = null;
-		File dsaFile = null;
 		Session session = null;
-
-		if(rsaFilePath!= null && !"".equals(rsaFilePath)){
-			rsaFile = new File(rsaFilePath);
-			if (rsaFile.exists()) {
-				jsch.addIdentity(rsaFile.getAbsolutePath());
-			}
+	
+		SwitchedIdentity switchedIdentity = changeIdentityAsPerCommand(user, rsaFilePath, dsaFilePath, commandType);
+		if(commandType.equals(CommandType.FS)){
+			jsch.addIdentity(switchedIdentity.getPrivatePath());
 		}
-		if(dsaFilePath!= null && !"".equals(dsaFilePath)){
-			dsaFile = new File(dsaFilePath);
-			if (dsaFile.exists()) {
-				jsch.addIdentity(dsaFile.getAbsolutePath());
-			}
-		}
-		
 		java.util.Properties conf = new java.util.Properties();
-		session = jsch.getSession(user, host, RemotingConstants.TWENTY_TWO);
-		UserInfo info = new JumbuneUserInfo();
+		session = jsch.getSession(switchedIdentity.getUser(), host, RemotingConstants.TWENTY_TWO);
+		UserInfo info = getSwitchedUser(commandType, switchedIdentity);
 		session.setUserInfo(info);
 		conf.put(STRICT_HOST_KEY_CHECKING, "no");
 		session.setConfig(conf);
-		LOGGER.debug("Session Established, RSA/DSA file Path ["+rsaFile+"]");
+		LOGGER.debug("Session Established, for user ["+switchedIdentity.getUser()+"]");
 		return session;
 	}
-
-	/**
-	 * Opens a new channel,sets the command,input and error streams and return it.
-	 * 
-	 * @param command
-	 *            the command
-	 * @param user
-	 *            the user
-	 * @param host
-	 *            the host
-	 * @param rsaFilePath
-	 *            the rsa file path
-	 * @param dsaFilePath
-	 *            the dsa file path
-	 * @return the channel
-	 * @throws JSchException
-	 *             the j sch exception
-	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
-	 */
-	@Deprecated
-	public static Channel getChannel(String command, String user, String host, String rsaFilePath, String dsaFilePath) throws JSchException,
-			IOException {
-
+	
+	public static boolean verifyPassword(String user, String encryptedPasswrd) throws JSchException {
 		JSch jsch = new JSch();
-		File rsaFile = new File(rsaFilePath);
-		File dsaFile = new File(dsaFilePath);
 		Session session = null;
-		if (rsaFile.exists()){
-			jsch.addIdentity(rsaFile.getAbsolutePath());
-		}
-
-		if (dsaFile.exists()){
-			jsch.addIdentity(dsaFile.getAbsolutePath());
-		}
-
-		session = jsch.getSession(user, host, RemotingConstants.TWENTY_TWO);
-		UserInfo info = new JumbuneUserInfo();
-		session.setUserInfo(info);
 		java.util.Properties conf = new java.util.Properties();
+		session = jsch.getSession(user, "localhost", RemotingConstants.TWENTY_TWO);
+		UserInfo info = new JumbuneUserInfo(StringUtil.getPlain(encryptedPasswrd));
+		session.setUserInfo(info);
 		conf.put(STRICT_HOST_KEY_CHECKING, "no");
 		session.setConfig(conf);
-		session.connect();
-		Channel channel = session.openChannel("exec");
-		((ChannelExec) channel).setCommand(command);
-		channel.setInputStream(null);
-		((ChannelExec) channel).setErrStream(System.err);
-		channel.connect();
-		return channel;
+	//	LOGGER.debug("Session Established, for user ["+user+"]");
+		boolean isConnected = false;
+		if(session!=null){
+			session.connect();
+			isConnected = session.isConnected();
+			LOGGER.debug("Session Connected, for user ["+user+"]");
+			session.disconnect();
+		}
+		return isConnected;
+	}	
+	
+	private static UserInfo getSwitchedUser(CommandType commandType, SwitchedIdentity switchedIdentity){
+		UserInfo info;
+		if(commandType.equals(CommandType.HADOOP_FS)){
+			info = new JumbuneUserInfo(StringUtil.getPlain(switchedIdentity.getPasswd()));
+		}else if(commandType.equals(CommandType.HADOOP_JOB)){
+			info = new JumbuneUserInfo(StringUtil.getPlain(switchedIdentity.getPasswd()));
+		}else{
+			info = new JumbuneUserInfo();
+		}
+		return info;
 	}
-
+	
+	private static SwitchedIdentity changeIdentityAsPerCommand(String user, String rsaFilePath, String dsaFilePath, CommandType commandType){
+		HadoopConfigurationPropertyLoader hcpl = HadoopConfigurationPropertyLoader.getInstance();
+		SwitchedIdentity switchedIdentity = new SwitchedIdentity();
+		if(commandType.equals(CommandType.HADOOP_FS)){
+			switchedIdentity.setUser(hcpl.getHdfsUser());
+			setPasswd(switchedIdentity, hcpl.getHdfsPasswd());
+		}else if(commandType.equals(CommandType.HADOOP_JOB)){
+			switchedIdentity.setUser(hcpl.getYarnUser());
+			setPasswd(switchedIdentity, hcpl.getYarnPasswd());	
+		}else{
+			switchedIdentity.setUser(user);
+			String privateKeyFilePath;
+			if(rsaFilePath!= null && !"".equals(rsaFilePath)){
+				privateKeyFilePath = rsaFilePath;
+			}else{
+				privateKeyFilePath = dsaFilePath;
+			}
+			switchedIdentity.setPrivatePath(privateKeyFilePath);
+		}
+		LOGGER.warn("For commandType: "+ commandType+ " Switched Identity to: "+ switchedIdentity);
+		return switchedIdentity;
+	}
+		
+	private static void setPasswd(SwitchedIdentity switchedIdentity, String passwd){
+		if(passwd!= null && !"".equals(passwd)){
+				switchedIdentity.setPasswd(passwd);
+		}		
+	}
+	
 	/**
 	 * Gets the channel.
 	 * 
@@ -156,12 +156,8 @@ public final class JschUtil {
 	 *             Signals that an I/O exception has occurred.
 	 */
 	public static Channel getChannel(Session session, String command) throws JSchException, IOException {
-		UserInfo info = new JumbuneUserInfo();
-		session.setUserInfo(info);
-		java.util.Properties conf = new java.util.Properties();
-		conf.put(STRICT_HOST_KEY_CHECKING, "no");
-		session.setConfig(conf);
 		session.connect();
+		LOGGER.debug("Session ["+session+"] connected");		
 		Channel channel = session.openChannel("exec");
 	
 		((ChannelExec) channel).setCommand(command);
@@ -202,11 +198,6 @@ public final class JschUtil {
 	 *             Signals that an I/O exception has occurred.
 	 */
 	public static Channel getChannelWithResponse(Session session, String command) throws JSchException, IOException {
-		UserInfo info = new JumbuneUserInfo();
-		session.setUserInfo(info);
-		java.util.Properties conf = new java.util.Properties();
-		conf.put(STRICT_HOST_KEY_CHECKING, "no");	
-		session.setConfig(conf);
 		session.connect();
 		Channel channel = session.openChannel("exec");
 		if(command.contains("sudo")){
@@ -215,11 +206,7 @@ public final class JschUtil {
 			LOGGER.info("after setting pty for sudo");
 		}
 		((ChannelExec) channel).setCommand(command);
-		channel.setInputStream(null);
-		// TODO ,As Marker: Intentionally commenting below channel.connect() call: Reason being, it should be called after ch.getInputStream() as
-		// specified in JSCH Api doc.
-		((ChannelExec) channel).setErrStream(System.err);
-		
+		((ChannelExec) channel).setErrStream(System.err);		
 		return channel;
 	}
 
@@ -271,11 +258,19 @@ public final class JschUtil {
 	 */
 	private static class JumbuneUserInfo implements UserInfo {
 
+		String passwd;
+
+		JumbuneUserInfo(){
+		}
+		
+		JumbuneUserInfo(String passwd){
+		  this.passwd = passwd;	
+		}
 		/**
 		 * gets the password
 		 */
 		public String getPassword() {
-			return null;
+			return passwd;
 		}
 
 		/**
@@ -327,11 +322,6 @@ public final class JschUtil {
 	 *             Signals that an I/O exception has occurred.
 	 */
 	public static Channel getShellChannel(Session session, String command) throws JSchException, IOException {
-		UserInfo info = new JumbuneUserInfo();
-		session.setUserInfo(info);
-		java.util.Properties conf = new java.util.Properties();
-		conf.put(STRICT_HOST_KEY_CHECKING, "no");
-		session.setConfig(conf);
 		session.connect();
 		return session.openChannel("shell");
 	}
@@ -388,5 +378,42 @@ public final class JschUtil {
 		return response;
 	}
 
+	private static class SwitchedIdentity{
+		private String user;
+		
+		private String passwd;
+		
+		private String privatePath;
 
+		public String getUser() {
+			return user;
+		}
+
+		public void setUser(String user) {
+			this.user = user;
+		}
+
+		public String getPasswd() {
+			return passwd;
+		}
+
+		public void setPasswd(String passwd) {
+			this.passwd = passwd;
+		}
+
+		public String getPrivatePath() {
+			return privatePath;
+		}
+
+		public void setPrivatePath(String privatePath) {
+			this.privatePath = privatePath;
+		}
+
+		@Override
+		public String toString() {
+			return "SwitchedIdentity [user=" + user + ", passwd=" + passwd
+					+ ", privatePath=" + privatePath + "]";
+		}
+
+	}
 }

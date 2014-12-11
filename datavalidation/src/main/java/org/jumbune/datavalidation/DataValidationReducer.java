@@ -70,7 +70,10 @@ public class DataValidationReducer extends Reducer<Text, ObjectWritable, Text, D
 		StringBuilder sb = new StringBuilder(dirPath);
 		sb.append(key.toString()).append(FILE_SEPARATOR);
 		folderPath = sb.toString();
-		new File(folderPath).mkdirs();
+		File f = new File(folderPath);
+		f.mkdirs();
+		f.setReadable(true, false);
+		f.setWritable(true, false);
 		
 		String fileName = null;
 		StringBuffer wb = new StringBuffer();
@@ -195,7 +198,10 @@ public class DataValidationReducer extends Reducer<Text, ObjectWritable, Text, D
 	private BufferedWriter getFileHandler(String fileName) throws IOException {
 		BufferedWriter out = fileHandlerMap.get(fileName);
 		if (out == null) {
-			out = new BufferedWriter(new FileWriter(folderPath + fileName));
+			String path = folderPath + fileName;
+			File f = new File(path);
+			f.setReadable(true, false);
+			out = new BufferedWriter(new FileWriter(f));
 			fileHandlerMap.put(fileName, out);
 		}
 		return out;

@@ -1,7 +1,6 @@
 package org.jumbune.remoting.server;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -11,19 +10,21 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
+import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.net.URISyntaxException;
 import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Properties;
+import java.util.Scanner;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -34,15 +35,44 @@ import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.jumbune.remoting.common.BasicYamlConfig;
+import org.jumbune.remoting.common.CommandType;
+import org.jumbune.remoting.common.JschUtil;
 import org.jumbune.remoting.common.RemotingConstants;
+import org.jumbune.remoting.common.StringUtil;
 import org.jumbune.remoting.writable.CommandWritable;
 import org.jumbune.remoting.writable.CommandWritable.Command;
+
+import com.jcraft.jsch.JSchException;
 
 /**
  * The Class JumbuneAgent is used for running the remoting jar on agent
  */
 public final class JumbuneAgent {
 	
+	/** M represents MapR Hadoop distribution */
+	private static final String M = "m";
+	
+	/** C represents CDH Hadoop distribution */
+	private static final String C = "c";
+	
+	/** A represents APACHE Hadoop distribution */
+	private static final String A = "a";
+	
+	/** H represents HDP Hadoop distribution */   
+	private static final String H = "h";
+
+	/** Name of Hadoop distribution file */ 
+	private static final String DISTRIBUTION_PROPERTIES = "distribution.properties";
+
+	/** The Hadoop distribution */ 
+	private static final String HADOOP_DISTRIBUTION = "hadoop-distribution";
+	
+	/** Represent Yarn distribution of Hadoop */
+	private static final String YARN = "Yarn";
+	
+	/** Represents Non-Yarn distribution of Hadoop */
+	private static final String NON_YARN = "Non-Yarn";
+
 	private static final String VERBOSE = "-verbose";
 
 	private static final String ROLLING_FILE_APPENDER = "rollingFileAppender";
@@ -52,8 +82,10 @@ public final class JumbuneAgent {
 	
 	/** The Constant LOGGER. */
 	public static final Logger CONSOLE_LOGGER = LogManager.getLogger("EventLogger");
+	
 	public static final Logger LOGGER = LogManager.getLogger(JumbuneAgent.class);
-	private static final String HADOOP_VERSION_NON_YARN_COMMAND = "bin/hadoop version";
+	
+	private static final Scanner SCANNER = new Scanner(System.in);
 
 	/** The Constant CAT_CMD. */
 	private static final String CAT_CMD = "cat";
@@ -87,28 +119,40 @@ public final class JumbuneAgent {
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws InterruptedException the interrupted exception
 	 * @throws URISyntaxException the uRI syntax exception
+	 * @throws ClassNotFoundException 
 	 */
-	public static void main(String[] jumbuneAgentArgs) throws IOException, InterruptedException, URISyntaxException {
+	public static void main(String[] jumbuneAgentArgs) throws IOException, InterruptedException, URISyntaxException, ClassNotFoundException {
+		String agentHome = null;
 		 if (jumbuneAgentArgs.length < 1 || jumbuneAgentArgs.length >2) {
 			CONSOLE_LOGGER.info("Usage: java -jar <jar-name> <agent-port>  [|-verbose ]");
 			System.exit(0);
 		}
-		checkForLoggingLevel(jumbuneAgentArgs);
-		int port = Integer.parseInt(jumbuneAgentArgs[0]);
-		final String storageDir = System.getenv("AGENT_HOME");
-
-		if (storageDir == null || "".equals(storageDir.trim())) {
+		agentHome = System.getenv("AGENT_HOME");
+		if (agentHome == null || "".equals(agentHome.trim())) {
 			throw new IllegalArgumentException("$AGENT_HOME is not set properly!!");
+		}
+	
+		final String agentHomeDir = agentHome.endsWith(File.separator) ? agentHome : agentHome + File.separator;
+		if(jumbuneAgentArgs.length>1){
+			if(jumbuneAgentArgs.length==2 && jumbuneAgentArgs[1]!=null && jumbuneAgentArgs[1].equals(VERBOSE)){
+				turnLoggingLevelToDebug(jumbuneAgentArgs[1]);
+			}else{
+				CONSOLE_LOGGER.info("Usage: java -jar <jar-name> <agent-port>  [|-verbose]");
+			}
 		}
 
 		// if path assigned as agent home doesn't exists then creating it on
 		// file system.
-		File file = new File(storageDir);
+		File file = new File(agentHomeDir);
 		if (checkNullEmptyORNotADirectory(file)) {
 			file.mkdirs();
 		}
+		
+		validateHadoopConfiguration();
+		int port = Integer.parseInt(jumbuneAgentArgs[0]);
+				
 		// Creating lib directory and extract all contents in jar's lib into $AGENT_HOME/lib directory
-		String libLocation = storageDir + "/lib/";
+		String libLocation = agentHomeDir + "/lib/";
 		file = new File(libLocation);
 		if(file.exists()){
 			String[] files = file.list();
@@ -122,7 +166,7 @@ public final class JumbuneAgent {
 			file.mkdir();
 			extractlibJars(libLocation);
 		}
-		copyAgentLibJarsToHadoopLib(jars, storageDir);
+		copyAgentLibJarsToHadoopLib(jars, agentHomeDir);
 		ServerBootstrap bootstrap;
         bossGroup = new NioEventLoopGroup();
         workerGroup = new NioEventLoopGroup();
@@ -134,22 +178,17 @@ public final class JumbuneAgent {
              .childHandler(new ChannelInitializer<SocketChannel>() {
                  @Override
                  public void initChannel(SocketChannel ch) throws Exception {
-                     ch.pipeline().addLast("JaDecoder", new JumbuneAgentDecoder(storageDir));
+                     ch.pipeline().addLast("JaDecoder", new JumbuneAgentDecoder(agentHomeDir));
                  }
              });
-
+        	CONSOLE_LOGGER.info("Jumbune Agent started successfully on port [" + port + "]");
              // Bind and start to accept incoming connections.
              bootstrap.bind(port).sync().channel().closeFuture().sync();
         }finally{
 	         bossGroup.shutdownGracefully();
 	         workerGroup.shutdownGracefully();
-	         
-	         // Wait until all threads are terminated.
-/*	         bossGroup.terminationFuture().sync();
-	         workerGroup.terminationFuture().sync();	         
-*/        }
+	    }
 
-   		CONSOLE_LOGGER.info("Jumbune Agent started successfully on port [" + port + "]");
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			public void run(){
 				//killing top command
@@ -185,74 +224,245 @@ public final class JumbuneAgent {
 		});
 	}
 	
-	private static void checkForLoggingLevel(String[] jumbuneAgentArgs) {
-		if(jumbuneAgentArgs.length>1){
-			if(jumbuneAgentArgs.length==2 && jumbuneAgentArgs[1]!=null && jumbuneAgentArgs[1].equals(VERBOSE)){
-				LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-				Configuration config = ctx.getConfiguration();
-				LoggerConfig loggerConfig = config.getLoggerConfig(ROLLING_FILE_APPENDER);
-				loggerConfig.setLevel(Level.DEBUG);
-				ctx.updateLoggers();
-				LOGGER.info("logging level changed to [DEBUG]");
-			}else{
-				CONSOLE_LOGGER.info("Usage: java -jar <jar-name> <agent-port>  [|-verbose]");
+	/***
+	 * Validates and loades hadoop cluster configuration 
+	 * @param jumbuneAgentArgs
+	 * @param agentHome
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
+	private static void validateHadoopConfiguration() throws IOException, ClassNotFoundException {
+		
+		String hadoopHome = null;
+		String hadoopType = null;
+		String distributionType = null;
+		
+		HadoopConfigurationPropertyLoader hcpl = HadoopConfigurationPropertyLoader.getInstance();
+		if(!hcpl.isPropertyLoaded()){			
+			getHadoopConfigurationFromUser(hcpl);
+		}else{
+			hadoopHome = hcpl.getHadoopHome();
+			hadoopType = hcpl.getHadoopType();
+			distributionType = hcpl.getDistributionType();
+			CONSOLE_LOGGER.info("HADOOP HOME: ["+hadoopHome+"]");
+			CONSOLE_LOGGER.info("HADOOP TYPE: ["+hadoopType+"]");
+			switch(distributionType){
+			case "c":
+				distributionType = "CDH";
+				break;
+			case "h":
+				distributionType = "HDP";
+				break;
+			case "m":
+				distributionType = "MapR";
+				break;
+			default:
+				distributionType = "Apache";				
+			}
+			CONSOLE_LOGGER.info("DISTRIBUTION : ["+distributionType+"]");
+		}
+	}
+
+	private static void getHadoopConfigurationFromUser(HadoopConfigurationPropertyLoader hcpl)
+			throws IOException {
+		String hadoopHome;
+		String hadoopType;
+		String distributionType;
+		Properties prop = new Properties();
+		prop.load(JumbuneAgent.class.getClassLoader().getResourceAsStream(DISTRIBUTION_PROPERTIES));
+		hadoopType = prop.getProperty(HADOOP_DISTRIBUTION);
+		
+		if(hadoopType.equalsIgnoreCase(YARN)){
+			CONSOLE_LOGGER.info("Choose the Hadoop Distribution Type : (a)Apache | (c)Cloudera | (h)HortonWorks");	
+			distributionType=SCANNER.nextLine().trim();
+			while (distributionType.isEmpty()
+					|| (!distributionType.equalsIgnoreCase(A)
+							&& !distributionType.equalsIgnoreCase(H) && !distributionType.equalsIgnoreCase(C))) {
+				CONSOLE_LOGGER.info("Invalid input! Choose from the given Hadoop Distribution Type : (a)Apache | (c)Cloudera | (h)HortonWorks");
+				distributionType = SCANNER.nextLine().trim();
+			}
+		}else{
+			CONSOLE_LOGGER.info("Choose the Hadoop Distribution Type : (a)Apache | (m)MapR");
+			distributionType = SCANNER.nextLine().trim();
+			while (distributionType.isEmpty()
+					|| (!distributionType.equalsIgnoreCase(A)
+							&& !distributionType.equalsIgnoreCase(M))) {
+				CONSOLE_LOGGER.info("Invalid input! Choose from the given Hadoop Distribution Type : (a)Apache | (m)MapR");
+				distributionType = SCANNER.nextLine().trim();
 			}
 		}
+		hadoopHome = System.getenv("HADOOP_HOME");
+		String promptedHadoopHome;
+		if (hadoopHome != null && !"".equals(hadoopHome.trim())) {	
+			CONSOLE_LOGGER.info("Please verify Hadoop installation directory ["+hadoopHome+"]");
+			promptedHadoopHome = SCANNER.nextLine().trim();
+			if("".equals(promptedHadoopHome)){
+				promptedHadoopHome = hadoopHome;
+			}			
+		}else{
+			CONSOLE_LOGGER.info("Please specify Hadoop installation directory, typically it's the directory containing sub directories & files like (bin, sbin, lib, libexec, hadoop-common-*.jar), [/usr/lib/hadoop]");
+			promptedHadoopHome= SCANNER.nextLine().trim();
+			if("".equals(promptedHadoopHome)){
+				promptedHadoopHome = "/usr/lib/hadoop";
+			}			
+		}
+		hadoopHome = validateHadoopHome(promptedHadoopHome);
+
+		hcpl.setHadoopHome(hadoopHome);
+		hcpl.setDistributionType(distributionType);
+		hcpl.setHadoopType(hadoopType);
+		
+		
+		CONSOLE_LOGGER.info("Do you have separate users for MapReduce, Yarn and HDFS? (y)Yes/(n)No");
+		String hasSeparateUsers= SCANNER.nextLine().trim();
+		while(!("n".equalsIgnoreCase(hasSeparateUsers) || "y".equalsIgnoreCase(hasSeparateUsers))){
+			CONSOLE_LOGGER.info("Do you have separate users for MapReduce, Yarn and HDFS? (y)Yes/(n)No");
+			hasSeparateUsers= SCANNER.nextLine().trim();
+		}
+		String hdfsUser;
+		String yarnUser;
+		String hdfsPasswd = null;
+		String yarnPasswd = null;
+		//String isSingleUser;
+		if("n".equalsIgnoreCase(hasSeparateUsers)){
+			//isSingleUser = "y";
+			CONSOLE_LOGGER.info("Please provide the username [root]:");
+			hdfsUser = SCANNER.nextLine().trim();
+			if("".equals(hdfsUser)){
+				hdfsUser = "root";
+				yarnUser = "root";
+			}else {
+				yarnUser = hdfsUser;	
+			}
+			hdfsPasswd = promptPassword(hdfsUser);
+			yarnPasswd = hdfsPasswd;
+			
+		}else{
+			CONSOLE_LOGGER.info("Please provide the hdfs user [hdfs]:");
+			hdfsUser = SCANNER.nextLine().trim();
+			if("".equals(hdfsUser)){
+				hdfsUser = "hdfs";
+			}
+			hdfsPasswd = promptPassword(hdfsUser);
+			
+			CONSOLE_LOGGER.info("Please provide the yarn user [yarn]:");
+			yarnUser = SCANNER.nextLine().trim();
+			
+			if("".equals(yarnUser)){
+				yarnUser = "yarn";
+			}
+			yarnPasswd = promptPassword(yarnUser);
+		}
+		hcpl.setYarnUser(yarnUser);
+		hcpl.setYarnPasswd(yarnPasswd);
+		hcpl.setHdfsUser(hdfsUser);
+		hcpl.setHdfsPasswd(hdfsPasswd);
+		
+		hcpl.persistPropertiesToDisk();
+	}
+
+	private static String promptPassword(String user){
+		char[] passwd;
+		Console console = System.console();
+		boolean verified = false;
+		String encryptedPassword = null;
+		do{
+			CONSOLE_LOGGER.info("Please provide the password for "+user+ " user:");
+			passwd = console.readPassword();
+			try {
+				encryptedPassword = StringUtil.getEncrypted(new String(passwd));
+				verified = JschUtil.verifyPassword(user, encryptedPassword);
+			} catch (JSchException e) {
+				verified = false;
+			}
+			if(!verified){
+				CONSOLE_LOGGER.info("Password verification failed for user ["+user+"]");
+			}
+		}while(!verified);
+		return encryptedPassword;
+	}
+	
+	/***
+	 * Validate Hadoop installed directory location 
+	 * @param hadoopHome
+	 * @return
+	 */
+	private static String validateHadoopHome(String hadoopHome) {
+		if(hadoopHome == null || hadoopHome.isEmpty()){
+			CONSOLE_LOGGER.info("Hadoop installation directory is not valid !! Please specify Hadoop installation directory");
+			hadoopHome= SCANNER.nextLine().trim();
+			hadoopHome = validateHadoopHome(hadoopHome);
+		}
+		hadoopHome = hadoopHome.endsWith(File.separator) ? hadoopHome : hadoopHome + File.separator;
+		File file = new File(hadoopHome);
+		if(!file.exists()){
+			hadoopHome = validateHadoopHome(null);
+		}
+		return hadoopHome;
+	}
+
+	private static void turnLoggingLevelToDebug(String verboseMode) {
+		LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+		Configuration config = ctx.getConfiguration();
+		LoggerConfig loggerConfig = config.getLoggerConfig(ROLLING_FILE_APPENDER);
+		loggerConfig.setLevel(Level.DEBUG);
+		ctx.updateLoggers();
+		LOGGER.info("logging level changed to [DEBUG]");
 	}
 	
 	/**
-	 * *
+	 *
 	 * This method copies specified jars from Agent's lib to hadoop's lib directory.
 	 *
 	 * @param jars the jars
 	 * @param agentLibDir the storage dir
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws InterruptedException the interrupted exception
+	 * @throws ClassNotFoundException 
 	 */
-	private static void copyAgentLibJarsToHadoopLib(List<String> jars, String agentLibDir) throws IOException, InterruptedException {
-		String hadoopHomeDir = getHadoopHome();
-		LOGGER.debug("Hadoop Home ["+hadoopHomeDir+"]");
-		String command = "."+File.separator + HADOOP_VERSION_NON_YARN_COMMAND;
-		String versionResponse = executeProcessBuilderCommand(command.split(" "), hadoopHomeDir);
-		String versionNumber = getVersionNumber(versionResponse);
-		StringBuilder destinationPath = new StringBuilder().append(hadoopHomeDir).append(File.separator).append("share")
-		.append(File.separator).append("hadoop").append(File.separator).append("yarn").append(File.separator).append("lib").append(File.separator);
-		if (hadoopHomeDir != null) {
-			String pathToHadoopLib = pathBuilder(versionNumber, hadoopHomeDir);
-						for (String jar : jars) {
-						StringBuilder copyToHadoopJar = new StringBuilder()
-								.append("cp ").append(agentLibDir).append(jar)
-								.append(" ").append(pathToHadoopLib).append("/lib/");
-						executeCommand(copyToHadoopJar.toString());
-					}
-			}		
+	private static void copyAgentLibJarsToHadoopLib(List<String> jars, String agentLibDir) throws IOException, InterruptedException, ClassNotFoundException {
+		String pathToHadoopLib  = getHadoopLibPath(agentLibDir);
+		for (String jar : jars) {
+				StringBuilder copyToHadoopJar = new StringBuilder().append("cp ")
+						.append(agentLibDir).append(jar).append(" ").append(pathToHadoopLib);
+			executeCommand(copyToHadoopJar.toString());
+		}		
 	}
 	
-	private static String pathBuilder(String versionNumber, String hadoopHomeDir){
-		StringBuilder path;
-		if(versionNumber.contains("cdh")){
-			path = new StringBuilder().append(hadoopHomeDir).append("-yarn").append(File.separator);
-			return path.toString() ;
-		}else if(versionNumber.startsWith("2.") || versionNumber.startsWith("0.")){
-			path = new StringBuilder().append(hadoopHomeDir).append(File.separator).append("share")
-			.append(File.separator).append("hadoop").append(File.separator).append("yarn").append(File.separator);
-			return path.toString();
-		}else {
-				return hadoopHomeDir;
+	private static String getHadoopLibPath(String agentLibDir) throws FileNotFoundException, ClassNotFoundException, IOException {
+		HadoopConfigurationPropertyLoader hcpl = HadoopConfigurationPropertyLoader.getInstance();
+		String hadoopHomeDir = hcpl.getHadoopHome();
+		String hadoopType = hcpl.getHadoopType();
+		String distributionType = hcpl.getDistributionType();
+		StringBuilder destinationPath = new StringBuilder();
+		destinationPath.append(hadoopHomeDir);
+		switch(hadoopType){
+			case YARN :
+				if(distributionType.equalsIgnoreCase(H)){
+					destinationPath = new StringBuilder(hadoopHomeDir.endsWith(File.separator) ? hadoopHomeDir.substring(0,
+							hadoopHomeDir.lastIndexOf(File.separator)) : hadoopHomeDir);
+					destinationPath.append("-yarn").append(File.separator).append("lib").append(File.separator);
+				}else if(distributionType.equals(A)){
+					destinationPath.append("share").append(File.separator).append("hadoop").append(File.separator).append("yarn")
+					.append(File.separator).append("lib").append(File.separator);
+				}else if(distributionType.equalsIgnoreCase(C)){
+					destinationPath = new StringBuilder(hadoopHomeDir.endsWith(File.separator) ? hadoopHomeDir.substring(0,
+							hadoopHomeDir.lastIndexOf(File.separator)) : hadoopHomeDir);
+					destinationPath.append("-yarn").append(File.separator).append("lib").append(File.separator);
+				}
+				break;
+			case NON_YARN :
+				if(distributionType.equalsIgnoreCase(A)){
+					destinationPath.append("lib").append(File.separator);
+				}else if(distributionType.equalsIgnoreCase(M)){
+					destinationPath.append("lib").append(File.separator);
+				}
+				break;
+			default : 
+				new IllegalArgumentException("Hadoop type not supported");
 		}
+		return destinationPath.toString();
 	}
-	
-	/**
-	 * Gets the version number after parsing the response from the hadoop version commands.
-	 *
-	 * @param versionResponse the version response
-	 * @return the version number
-	 */
-	private static String getVersionNumber(String versionResponse) {
-		String[] versionNumber = versionResponse.split("Subversion");
-		versionNumber = versionNumber[0].split(" ");
-		return versionNumber[1].trim();
-	}	
 
 	/**
 	 * *
@@ -324,15 +534,6 @@ public final class JumbuneAgent {
 		p.destroy();
 	}
 
-	/**
-	 * Gets the hadoop home.
-	 *
-	 * @return the hadoop home
-	 */
-	private static String getHadoopHome() {
-		return System.getenv("HADOOP_HOME");
-	}
-	
 	private static void shutTopCmdOnSlaves(BasicYamlConfig config) {
 		String slaveTmpDir = config.getTmpDir();
 		StringBuilder command = new StringBuilder();
@@ -358,7 +559,7 @@ public final class JumbuneAgent {
 			commandWritable.setUsername(config.getUser());
 			commandWritable.setRsaFilePath(config.getRsaFile());
 			commandWritable.setSlaveHost(host);
-			
+			commandWritable.setCommandType(CommandType.FS);
 			CommandDelegator cmdDelegator = new CommandDelegator();
 			cmdDelegator.performAction(commandWritable);
 		}
@@ -367,51 +568,5 @@ public final class JumbuneAgent {
 			LOGGER.error(e);
 		}
 	}
-	
-	/**
-	 * Execute the given command.
-	 *
-	 * @param commands
-	 *            the commands
-	 * @param directory
-	 *            the directory
-	 */
-	private static String executeProcessBuilderCommand(String[] commands, String directory) {
-		StringBuffer response = new StringBuffer();
-		ProcessBuilder pb = new ProcessBuilder(commands);
-		if (directory == null || directory.isEmpty()) {
-			throw new IllegalArgumentException("Directory: "+ directory +" is either null or empty");
-		} else {
-			pb.directory(new File(directory));
-		}
-		Process p = null;
-		InputStream is = null;
-		BufferedReader br = null;
-		try {
-			p = pb.start();
-			is = p.getInputStream();
-			if (is != null) {
-				br = new BufferedReader(new InputStreamReader(is));
-				String line; 
-				while ((line = br.readLine())!= null) {
-					response.append(line+"\n");
-				}
-			}
-		} catch (IOException e) {
-			LOGGER.error(e);
-		} finally {
-			try {
-				if (br != null) {
-					br.close();
-				}
-				if(is != null){
-					is.close();
-				}
-			} catch (IOException e) {
-				LOGGER.error(e);
-			}
-		}
-		return response.toString();
-	}	
 
 }

@@ -25,6 +25,7 @@ import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.ApiInvokeHintsEnum;
+import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
@@ -50,6 +51,13 @@ public class RemoteFileUtil {
 
 	/** The Constant MKDIR_P_CMD. */
 	private static final String MKDIR_P_CMD = "mkdir -p ";
+
+	private static final String CHMOD_CMD = "chmod o+w ";
+
+	private static final String RM_CMD = "rm";
+
+	/** The Constant TOP_DUMP_FILE. */
+	private static final String TOP_DUMP_FILE = "top.txt";
 
 	/**
 	 * <p>
@@ -108,7 +116,7 @@ public class RemoteFileUtil {
 		Remoter remoter = new Remoter(hostMaster, agentPort);
 		String command = "rm -r " + getFolderName(locationMaster);
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(command, false, null);
+		builder.addCommand(command, false, null, CommandType.FS);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 		remoter.close();
 		LOGGER.debug("Sent Async command on master machine [" + command + "]");
@@ -135,7 +143,7 @@ public class RemoteFileUtil {
 			for (String hostNode : hostsNode) {
 				remoter = new Remoter(masterHost, agentPort);
 				String command = RemotingConstants.REMOVE_FOLDER + RemotingConstants.SINGLE_SPACE + getFolderName(locationNode);
-				builder.addCommand(command, false, null).populateFromLogConsolidationInfo(logCollection, hostNode);
+				builder.addCommand(command, false, null, CommandType.FS).populateFromLogConsolidationInfo(logCollection, hostNode);
 				LOGGER.debug("Removing log file from Worker node [" + hostNode + "]" + ", command [" + "] command");
 				remoter.fireAndForgetCommand(builder.getCommandWritable());
 				remoter.close();
@@ -168,7 +176,8 @@ public class RemoteFileUtil {
 			    String command = MKDIR_P_CMD + getFolderName(locationNode);
 				LOGGER.debug("Executing command on Worker node [" + command + "]");
 				CommandWritableBuilder builder = new CommandWritableBuilder();
-				builder.addCommand(command, false, null).populateFromLogConsolidationInfo(logCollection, null);
+				builder.addCommand(command, false, null, CommandType.FS).populateFromLogConsolidationInfo(logCollection, hostNode);
+				builder.addCommand(CHMOD_CMD + getFolderName(locationNode), false, null, CommandType.FS).populateFromLogConsolidationInfo(logCollection, hostNode);
 				remoter.fireAndForgetCommand(builder.getCommandWritable());
 			}
 		}
@@ -198,7 +207,7 @@ public class RemoteFileUtil {
 		Remoter remoter = new Remoter(hostMaster, Integer.valueOf(master.getAgentPort()));
 		String remoteMkdir = MKDIR_P_CMD + AGENT_HOME + relativePath;
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(remoteMkdir, false, null);
+		builder.addCommand(remoteMkdir, false, null, CommandType.FS);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 		//Creating local directories in Jumbune Working Dir
 		String mkdirCmd = MKDIR_P_CMD + locationMaster;
@@ -216,12 +225,12 @@ public class RemoteFileUtil {
 				String command = "scp -r " + userNode + "@" + hostNode + ":" + locationNode + " " + userMaster + "@" + hostMaster + ":" + AGENT_HOME
 						+ relativePath;
 				CommandWritableBuilder copyBuilder = new CommandWritableBuilder();
-				copyBuilder.addCommand(command, false, null).populateFromLogConsolidationInfo(logCollection, null);
+				copyBuilder.addCommand(command, false, null, CommandType.FS).populateFromLogConsolidationInfo(logCollection, null);
 				remoter.fireAndForgetCommand(copyBuilder.getCommandWritable());
 			}
 		}
 		builder.getCommandBatch().clear();
-		builder.addCommand(AGENT_HOME + relativePath, false, null).setApiInvokeHints(ApiInvokeHintsEnum.GET_FILES);
+		builder.addCommand(AGENT_HOME + relativePath, false, null, CommandType.FS).setApiInvokeHints(ApiInvokeHintsEnum.GET_FILES);
 		String[] files = (String[]) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		for (String string : files) {
 			remoter.receiveLogFiles(relativePath, relativePath + "/" + string);
@@ -254,7 +263,7 @@ public class RemoteFileUtil {
 		String remoteMkdir = MKDIR_P_CMD + AGENT_HOME + relativePath;
 
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(remoteMkdir, false, null);
+		builder.addCommand(remoteMkdir, false, null, CommandType.FS);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 
 		String mkdirCmd = MKDIR_P_CMD + locationMaster;
@@ -273,19 +282,19 @@ public class RemoteFileUtil {
 						.append(locationNode.substring(0, locationNode.indexOf("*.log*"))).append("-").append(relativePath);
 
 				builder.getCommandBatch().clear();
-				builder.addCommand(lsSb.toString(), false, null).populateFromLogConsolidationInfo(logCollection, null)
+				builder.addCommand(lsSb.toString(), false, null, CommandType.FS).populateFromLogConsolidationInfo(logCollection, null)
 						.setApiInvokeHints(ApiInvokeHintsEnum.DB_DOUBLE_HASH);
 				remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 				String command = "scp -r " + userNode + "@" + hostNode + ":" + locationNode + " " + userMaster + "@" + hostMaster + ":" + AGENT_HOME
 						+ relativePath;
 
 				builder.getCommandBatch().clear();
-				builder.addCommand(command, false, null);
+				builder.addCommand(command, false, null, CommandType.FS);
 				remoter.fireAndForgetCommand(builder.getCommandWritable());
 			}
 		}
 		builder.getCommandBatch().clear();
-		builder.addCommand(AGENT_HOME + relativePath, false, null).setApiInvokeHints(ApiInvokeHintsEnum.GET_FILES);
+		builder.addCommand(AGENT_HOME + relativePath, false, null, CommandType.FS).setApiInvokeHints(ApiInvokeHintsEnum.GET_FILES);
 		String[] files = (String[]) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		for (String string : files) {
 			remoter.receiveLogFiles(relativePath, relativePath + "/" + string);
@@ -320,7 +329,7 @@ public class RemoteFileUtil {
 		Remoter remoter = new Remoter(master.getHost(), Integer.valueOf(master.getAgentPort()), jobName);
 		String mkdir = MKDIR_P_CMD + userLibLoc;
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(mkdir, false, null);
+		builder.addCommand(mkdir, false, null, CommandType.FS);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 
 		Slave slave = yamlLoader.getSlavesInfo().get(0);
@@ -333,7 +342,7 @@ public class RemoteFileUtil {
 			String command = "scp " + slave.getUser() + "@" + host + ":" + file + " " + master.getUser() + "@" + master.getHost() + ":" + userLibLoc;
 			LOGGER.debug("Executing the cmd: " + command);
 			builder.getCommandBatch().clear();
-			builder.addCommand(command, false, null).populate(yamlLoader.getYamlConfiguration(), null);
+			builder.addCommand(command, false, null, CommandType.FS).populate(yamlLoader.getYamlConfiguration(), null);
 			remoter.fireAndForgetCommand(builder.getCommandWritable());
 		}
 		remoter.close();
@@ -413,7 +422,7 @@ public class RemoteFileUtil {
 		Remoter remoter = new Remoter(host, agentPort, jobName);
 
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(command, false, null).populate(yamlLoader.getYamlConfiguration(), null);
+		builder.addCommand(command, false, null, CommandType.FS).populate(yamlLoader.getYamlConfiguration(), null);
 		String line = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		remoter.close();
 		if (line == null || "".equals(line.trim())) {
@@ -606,7 +615,7 @@ public class RemoteFileUtil {
 		String remoteMkdir = MKDIR_P_CMD + AGENT_HOME + relativePath;
 
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(remoteMkdir, false, null);
+		builder.addCommand(remoteMkdir, false, null, CommandType.FS);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 
 		String mkdirCmd = MKDIR_P_CMD + locationMaster;
@@ -631,14 +640,34 @@ public class RemoteFileUtil {
 				copyMemFile.append(SPACE).append(userNode).append(AT_OP).append(hostNode).append(COLON).append(locationNode).append(File.separator)
 						.append(MEM_DUMP_FILE).append(UNDERSCORE).append(hostNode).append(SPACE).append(userMaster).append(AT_OP).append(hostMaster)
 						.append(COLON).append(AGENT_HOME).append(relativePath);
+				
+				String topDumpFile = locationNode + File.separator + TOP_DUMP_FILE;
+				
+				StringBuffer rmTopDumpFile = new StringBuffer(RM_CMD);
+				rmTopDumpFile.append(SPACE).append(topDumpFile);
+
+				
+				StringBuffer rmCpuFile = new StringBuffer(RM_CMD);
+				rmCpuFile.append(SPACE).append(locationNode).append(File.separator)
+						.append(CPU_DUMP_FILE).append(UNDERSCORE).append(hostNode);
+
+				// copy memory stats file from slaves
+				StringBuffer rmMemFile = new StringBuffer(SCP_R_CMD);
+				rmMemFile.append(SPACE).append(locationNode).append(File.separator)
+						.append(MEM_DUMP_FILE).append(UNDERSCORE).append(hostNode);				
 
 				builder.getCommandBatch().clear();
-				builder.addCommand(copyCpuFile.toString(), false, null).addCommand(copyMemFile.toString(), false, null);
+				builder.addCommand(copyCpuFile.toString(), false, null, CommandType.FS).
+				addCommand(copyMemFile.toString(), false, null, CommandType.FS).
+				addCommand(rmCpuFile.toString(), false, null, CommandType.FS).
+				addCommand(rmMemFile.toString(), false, null, CommandType.FS).
+				addCommand(rmTopDumpFile.toString(), false, null, CommandType.FS);
+
 				remoter.fireAndForgetCommand(builder.getCommandWritable());
 			}
 		}
 		builder.getCommandBatch().clear();
-		builder.addCommand(AGENT_HOME + relativePath, false, null).setApiInvokeHints(ApiInvokeHintsEnum.GET_FILES);
+		builder.addCommand(AGENT_HOME + relativePath, false, null, CommandType.FS).setApiInvokeHints(ApiInvokeHintsEnum.GET_FILES);
 		String[] files = (String[]) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		for (String string : files) {
 			remoter.receiveLogFiles(relativePath, relativePath + File.separator + string);

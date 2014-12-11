@@ -26,8 +26,10 @@ import org.jumbune.common.utils.ClasspathUtil;
 import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.remoting.client.Remoter;
+import org.jumbune.remoting.common.CommandType;
 import org.jumbune.utils.YamlUtil;
 import org.jumbune.utils.beans.LogLevel;
+
 import com.google.gson.Gson;
 import com.jcraft.jsch.JSchException;
 
@@ -68,6 +70,8 @@ public class YamlLoader implements Loader{
 
 	/** The Constant CONSOLELOGGER. */
 	public static final Logger CONSOLELOGGER = LogManager.getLogger("EventLogger");
+
+	private static final String CHMOD_CMD = "chmod -R o+w ";
 
 	static {
 		// locating jumbune home form env properties
@@ -254,7 +258,7 @@ public class YamlLoader implements Loader{
 		
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		YamlLoader yamlLoader = (YamlLoader)loader;
-		builder.addCommand(ECHO_HADOOP_HOME, false, null).populate(yamlLoader.getYamlConfiguration(), null);
+		builder.addCommand(ECHO_HADOOP_HOME, false, null, CommandType.FS).populate(yamlLoader.getYamlConfiguration(), null);
 		hadoopHomeTemp = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		remoter.close();
 		return hadoopHomeTemp;
@@ -1222,8 +1226,14 @@ public class YamlLoader implements Loader{
 				LOGGER.debug("Log directory generation command on WorkerNode ["+command+"]");
 				
 				CommandWritableBuilder builder = new CommandWritableBuilder();
-				builder.addCommand(command, false, null).populateFromLogConsolidationInfo(logCollection, hostNode);
-				
+				builder.addCommand(command, false, null, CommandType.FS).populateFromLogConsolidationInfo(logCollection, hostNode);
+				String parentOfLocationNode = null;
+				if(locationNode.lastIndexOf('/')>-1){
+						parentOfLocationNode = locationNode.substring(0, locationNode.lastIndexOf('/'));
+						LOGGER.info("Location Node "+ locationNode);
+						LOGGER.info("Parent of Location Node "+ parentOfLocationNode);
+						builder.addCommand(CHMOD_CMD+parentOfLocationNode, false, null, CommandType.FS).populateFromLogConsolidationInfo(logCollection, hostNode);						
+				}
 				remoter.fireAndForgetCommand(builder.getCommandWritable());
 			}
 			LOGGER.info("Log directory created on WorkerNodes ");

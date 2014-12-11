@@ -41,6 +41,7 @@ import org.jumbune.execution.utils.ExecutionUtil;
 import org.jumbune.execution.utils.ProcessHelper;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.BasicYamlConfig;
+import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.utils.exception.JumbuneException;
 
@@ -294,7 +295,7 @@ public abstract class CoreExecutorService {
 					+ cleanLocationAgentStrBuilder + "]");
 			
 			builder.addCommand(cleanLocationAgentStrBuilder.toString(),
-					false, null);
+					false, null, CommandType.FS);
 			remoter.fireAndForgetCommand(builder.getCommandWritable());
 		}
 		remoter.close();
@@ -349,7 +350,7 @@ public abstract class CoreExecutorService {
 					+ cleanLocationStrBuilder + "]");
 			CommandWritableBuilder builder = new CommandWritableBuilder();
 			builder.populate(yamlConfig, hostNode);
-			builder.addCommand(cleanLocationStrBuilder.toString(), false, null);
+			builder.addCommand(cleanLocationStrBuilder.toString(), false, null, CommandType.FS);
 			remoter.fireAndForgetCommand(builder.getCommandWritable());
 			
 			//removing top.txt file under slave working directory
@@ -360,7 +361,7 @@ public abstract class CoreExecutorService {
 					.append(ExecutionConstants.TOPTXTFILE);
 			LOGGER.debug("Cleanup top txt file on slave command ["+ cleanLocationStrBuilder + "]");
 			builder = new CommandWritableBuilder();
-			builder.addCommand(cleanLocationStrBuilder.toString(), false, null);
+			builder.addCommand(cleanLocationStrBuilder.toString(), false, null, CommandType.FS);
 			builder.populate(yamlConfig, hostNode);
 			remoter.fireAndForgetCommand(builder.getCommandWritable());
 
@@ -420,7 +421,7 @@ public abstract class CoreExecutorService {
 				.getAgentPort()));
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		String agentJobJarPath = MAKE_JOBJARS_DIR_ON_AGENT + yamlLoader.getJumbuneJobName();
-		builder.addCommand(agentJobJarPath, false, null);
+		builder.addCommand(agentJobJarPath, false, null, CommandType.FS);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 		
 	}
