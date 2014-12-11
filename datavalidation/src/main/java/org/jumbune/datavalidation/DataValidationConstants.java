@@ -69,7 +69,7 @@ public interface DataValidationConstants {
 	String RECORD_SEPARATOR = "recordSeparator";
 	
 	/** The output dir path. */
-	String OUTPUT_DIR_PATH = "/jumbune/dvreport";
+	String OUTPUT_DIR_PATH = "/tmp/jumbune/dvreport";
 	
 	/** The hdfs url prefix. */
 	String HDFS_URL_PREFIX = "hdfs://";
