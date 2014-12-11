@@ -232,7 +232,7 @@ public final class RemotingUtil {
 	 */
 	public static String fireWhereIsHadoopCommand(Remoter remoter, Master master, Config config) {
 		String hadoopDir = null;
-		String command = "whereis hadoop";
+		String command = "whereis hadoop  ";
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand(command, false, null, CommandType.FS).populate(config, null);
 		
