@@ -110,7 +110,7 @@ public class ProfilingProcessor extends BaseProcessor {
 					collector.shutTopCmdOnSlaves(receiveDir);
 					LOGGER.debug("Stopped top command on Workers");
 
-					jobOutput = getJobOutput(jobID);
+					jobOutput = getJobOutput(jobID.trim());
 					List<String> selectedHosts = collector
 							.getNodesForJob(jobOutput);
 					collector.processTopDumpFile(receiveDir, selectedHosts);
@@ -119,7 +119,7 @@ public class ProfilingProcessor extends BaseProcessor {
 				} else {
 					jobID = yamlConfig.getExistingJobName();
 					// rumen processing
-					jobOutput = getJobOutput(jobID);
+					jobOutput = getJobOutput(jobID.trim());
 					collector.addPhaseResourceUsageFromRumen(jobOutput, jobID);
 				}
 			} else {
@@ -128,12 +128,12 @@ public class ProfilingProcessor extends BaseProcessor {
 							.executeJar(pureJarPath, super.isCommandBased(),
 									super.getLoader(), false);
 					jobID = getJobIdfromJobCountersMap(jobsCounterMap);
-					jobOutput = getJobOutput(jobID);
+					jobOutput = getJobOutput(jobID.trim());
 				} else {
 					YamlConfig yConfig = (YamlConfig) ((YamlLoader) super
 							.getLoader()).getYamlConfiguration();
 					jobID = yConfig.getExistingJobName();
-					jobOutput = getJobOutput(jobID);
+					jobOutput = getJobOutput(jobID.trim());
 				}
 			}
 
