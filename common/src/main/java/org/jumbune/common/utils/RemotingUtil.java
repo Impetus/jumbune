@@ -14,7 +14,7 @@ import org.apache.hadoop.mapred.JobClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Master;
-import org.jumbune.common.beans.SupportedApacheHadoopVersions;
+import org.jumbune.common.beans.SupportedHadoopDistributions;
 import org.jumbune.common.utils.locators.ApacheNonYarnLocator;
 import org.jumbune.common.utils.locators.ApacheYarnLocator;
 import org.jumbune.common.utils.locators.HadoopDistributionLocator;
@@ -26,6 +26,7 @@ import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.BasicYamlConfig;
+import org.jumbune.remoting.common.CommandType;
 
 
 /***
@@ -42,7 +43,7 @@ public final class RemotingUtil {
 	private static final String HADOOP_VERSION_REGEX = "(^[hH]adoop)(\\s)* [0-9.]*";
 	
 	/** The hadoop version. */
-	private static SupportedApacheHadoopVersions hadoopVersion;
+	private static SupportedHadoopDistributions hadoopVersion;
 	
 	/** The Constant LOGGER. */
 	private static final Logger LOGGER = LogManager.getLogger(RemotingUtil.class);
@@ -102,7 +103,7 @@ public final class RemotingUtil {
 		String command = "echo $HADOOP_HOME  \n \n";
 		
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(command, false, null).populate(config, null);
+		builder.addCommand(command, false, null, CommandType.FS).populate(config, null);
 		
 		return (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 	}
@@ -119,7 +120,7 @@ public final class RemotingUtil {
 		String command = "echo $HADOOP_HOME  \n \n";
 		
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(command, false, null).populate(config, null);
+		builder.addCommand(command, false, null, CommandType.FS).populate(config, null);
 		
 		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		remoter.close();
@@ -143,7 +144,7 @@ public final class RemotingUtil {
 			Remoter remoter = new Remoter(master.getHost(), Integer.valueOf(master.getAgentPort()));
 			
 			CommandWritableBuilder builder = new CommandWritableBuilder();
-			builder.addCommand(Constants.ECHO_AGENT_HOME, false, null).populate(config, null);
+			builder.addCommand(Constants.ECHO_AGENT_HOME, false, null, CommandType.FS).populate(config, null);
 			
 			agentHome =  (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 			remoter.close();
@@ -186,7 +187,7 @@ public final class RemotingUtil {
 	public static String executeCommand(YamlConfig config, String command) {
 		Remoter remoter = getRemoter(config, "");
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(command, false, null).populate(config, null);
+		builder.addCommand(command, false, null, CommandType.FS).populate(config, null);
 		return (String) remoter.fireCommandAndGetObjectResponse(builder
 				.getCommandWritable());
 	}		
@@ -200,25 +201,23 @@ public final class RemotingUtil {
 	 * @return the string
 	 */
 	
-	public static String fireCommandOnSupporteHadoopVersionAndGetStringResponse(Config config, String command) {
+	public static String fireCommandAsHadoopDistribution(Config config, String command, CommandType commandType) {
 		String hadoopHome = RemotingUtil.getHadoopHome(config);
 		Remoter remoter = getRemoter(config, " ");
 		YamlConfig yamlConfig = (YamlConfig)config;
 		Master master = yamlConfig.getMaster();
-
 		String hadoopDir = fireWhereIsHadoopCommand(remoter, master, config);
 		List<String> host = new ArrayList<String>();
 		host.add(master.getHost());
 		String commandToExecute = null;
 		if(hadoopDir != null){
-			commandToExecute = hadoopDir+" "+command;
-		}else{
-			commandToExecute = hadoopHome+"/bin/hadoop  "+command;
+			commandToExecute = hadoopDir + " " + command;
+		} else {
+			commandToExecute = hadoopHome + "/bin/hadoop  " + command;
 		}
-			
+		LOGGER.debug("Command to be executed:" + commandToExecute);
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(commandToExecute, false, null).populate(config, null);
-		
+		builder.addCommand(commandToExecute, false, null, commandType).populate(config, null);
 		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		remoter.close();
 		return response;
@@ -233,9 +232,9 @@ public final class RemotingUtil {
 	 */
 	public static String fireWhereIsHadoopCommand(Remoter remoter, Master master, Config config) {
 		String hadoopDir = null;
-		String command = "whereis hadoop  ";
+		String command = "whereis hadoop";
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(command, false, null).populate(config, null);
+		builder.addCommand(command, false, null, CommandType.FS).populate(config, null);
 		
 		String wherIsHadoopResponse=(String)remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		if(wherIsHadoopResponse!=null && 2<wherIsHadoopResponse.split(" ").length){
@@ -306,8 +305,8 @@ public final class RemotingUtil {
 		Remoter remoter = getRemoter(yamlConfig, jumbuneHome);
 		String copyCommand = new StringBuilder().append("cp ").append(hadoopConfDir).append(hadoopConfigurationFile).append(" ").append(getAgentHome(yamlConfig)).append("/jobJars/").append(jumbuneJobName).toString();
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(MAKE_JOBJARS_DIR_ON_AGENT + jumbuneJobName, false, null)
-		.addCommand(copyCommand, false, null);
+		builder.addCommand(MAKE_JOBJARS_DIR_ON_AGENT + jumbuneJobName, false, null,CommandType.FS)
+		.addCommand(copyCommand, false, null, CommandType.FS);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 		//If execution happended to fast, we won't be able to get a directory to find files for next command
 		remoter.receiveLogFiles(File.separator + Constants.JOB_JARS_LOC  + jumbuneJobName, File.separator + Constants.JOB_JARS_LOC + jumbuneJobName + hadoopConfigurationFile);
@@ -331,7 +330,7 @@ public final class RemotingUtil {
 		Remoter remoter = getRemoter(yamlConfig, "");
 		String copyCommand = new StringBuilder().append("cp ").append(remoteAbsolutePath).append(" ").append(getAgentHome(yamlConfig)).append("/jobJars/").append(jumbuneJobName).toString();
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(MAKE_JOBJARS_DIR_ON_AGENT + jumbuneJobName, false, null).addCommand(copyCommand, false, null);
+		builder.addCommand(MAKE_JOBJARS_DIR_ON_AGENT + jumbuneJobName, false, null, CommandType.FS).addCommand(copyCommand, false, null, CommandType.FS);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 		String fileName = remoteAbsolutePath.substring(remoteAbsolutePath.lastIndexOf(File.separator)+1);
 		remoter.receiveLogFiles(File.separator + Constants.JOB_JARS_LOC  + jumbuneJobName, File.separator + Constants.JOB_JARS_LOC + jumbuneJobName + fileName);
@@ -398,7 +397,7 @@ public final class RemotingUtil {
 		Remoter remoter = getRemoter(loader, jumbuneHome);
 		String command =  hostName;
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(command, false, null).setApiInvokeHints(ApiInvokeHintsEnum.HOST_TO_IP_OP);
+		builder.addCommand(command, false, null, CommandType.FS).setApiInvokeHints(ApiInvokeHintsEnum.HOST_TO_IP_OP);
 		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		remoter.close();
 		return response;
@@ -422,17 +421,17 @@ public final class RemotingUtil {
 	 *
 	 * @return the hadoop version
 	 */
-	public static SupportedApacheHadoopVersions getHadoopVersion(Config config) {
+	public static SupportedHadoopDistributions getHadoopVersion(Config config) {
 
 		if (hadoopVersion != null) {
 			return hadoopVersion;
 		}
 		
-		String commandResponse = fireCommandOnSupporteHadoopVersionAndGetStringResponse(config, "version");
+		String commandResponse = fireCommandAsHadoopDistribution(config, "version", CommandType.HADOOP_FS);
 		
 		for (String line : commandResponse.split("\\n")) {
 			if (line.matches(HADOOP_VERSION_REGEX)|| line.matches(CLOUDERA_HADOOP_REGEX)) {
-				hadoopVersion = SupportedApacheHadoopVersions.getEnumByValue(line.trim());
+				hadoopVersion = SupportedHadoopDistributions.getEnumByValue(line.trim());
 			}
 		}
 		return hadoopVersion;
@@ -444,7 +443,7 @@ public final class RemotingUtil {
 	 * @param version
 	 * @return
 	 */
-	public static HadoopDistributionLocator getDistributionLocator(SupportedApacheHadoopVersions version) {
+	public static HadoopDistributionLocator getDistributionLocator(SupportedHadoopDistributions version) {
 		HadoopDistributionLocator hadoopLocator = null;
 	    switch (version) {
 	      case HADOOP_NON_YARN:

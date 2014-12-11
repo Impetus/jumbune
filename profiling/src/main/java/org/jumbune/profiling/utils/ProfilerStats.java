@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.jumbune.common.beans.Slave;
-import org.jumbune.common.beans.SupportedApacheHadoopVersions;
+import org.jumbune.common.beans.SupportedHadoopDistributions;
 import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yarn.beans.YarnMaster;
@@ -84,7 +84,7 @@ public class ProfilerStats {
 	/** The reset. */
 	private boolean reset;
 
-	private SupportedApacheHadoopVersions version;
+	private SupportedHadoopDistributions version;
 	
 	private static final String COLLECTJMXSTATSFAILED = "Collecting JMX stats failed for Node ";
 
@@ -96,7 +96,7 @@ public class ProfilerStats {
 	 * @param nodeIp
 	 *            the node ip
 	 */
-	public ProfilerStats(Config config, String nodeIp, SupportedApacheHadoopVersions version) {
+	public ProfilerStats(Config config, String nodeIp, SupportedHadoopDistributions version) {
 		this.config = (YamlConfig) config;
 		this.nodeIp = nodeIp;
 		profilerJMXDump = new ProfilerJMXDump();
@@ -608,7 +608,7 @@ public class ProfilerStats {
 		if ((rmStats == null) || reset) {
 			try {
 				rmStats = profilerJMXDump.getAllJMXStats(
-						JMXDeamons.RESOURCE_MANAGER, version, nodeIp,
+						JMXDeamons.RESOURCE_MANAGER, version, getNameNodeIP(),
 						getRmPort());
 			} catch (Exception e) {
 				/*

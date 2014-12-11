@@ -10,6 +10,7 @@ import org.jumbune.common.beans.Slave;
 import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.remoting.common.ApiInvokeHintsEnum;
+import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemoterUtility;
 import org.jumbune.remoting.writable.CommandWritable;
 
@@ -121,6 +122,17 @@ public class CommandWritableBuilder {
 		getCommandWritable().setUsername(username);
 		return this;
 	}
+	
+	/**
+	 * This is an explicit setter method created, use this method only in cases where
+	 * overloaded method addCommand(..., setStorageCommand) is not used for creating command
+	 * @param isStorageCommand
+	 * @return
+	 */
+	public CommandWritableBuilder setCommandType(CommandType commandType){
+		getCommandWritable().setCommandType(commandType);
+		return this;
+	}
 
 	/**
 	 * sets the api invoke hint 
@@ -133,11 +145,36 @@ public class CommandWritableBuilder {
 	}
 
 	/**
+	 * adds a new command to be executed over Remoting
+	 * the command may optionally have params too
+	 * @param commandStr, the command String
+	 * @param hasParams, whether the command has parameters
+	 * @param params, command parameters
+	 * @param commandType, whether the command is an hadoop fs command, an execution command or fs command
+	 * @return
+	 */
+	public CommandWritableBuilder addCommand(String commandStr, boolean hasParams, List<String> params, CommandType commandType) {
+		if (getCommandBatch() == null) {
+			setCommandBatch(new ArrayList<CommandWritable.Command>());
+		}
+		CommandWritable.Command cmd = new CommandWritable.Command();
+		cmd.setCommandString(commandStr);
+		cmd.setHasParams(hasParams);
+		if (hasParams) {
+			cmd.setParams(params);
+		}
+		getCommandBatch().add(cmd);
+		getCommandWritable().setBatchedCommands(getCommandBatch());
+		getCommandWritable().setCommandType(commandType);
+		return this;
+	}	
+	
+	/**
 	 * adds a new command to be executed over remoting
 	 * the command may optionally have params too
-	 * @param commandStr
-	 * @param hasParams
-	 * @param params
+	 * @param commandStr, the command String
+	 * @param hasParams, whether the command has parameters
+	 * @param params, command parameters
 	 * @return
 	 */
 	public CommandWritableBuilder addCommand(String commandStr, boolean hasParams, List<String> params) {

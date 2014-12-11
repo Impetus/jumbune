@@ -20,13 +20,14 @@ import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.beans.Master;
 import org.jumbune.common.beans.ProfilingParam;
 import org.jumbune.common.beans.Slave;
-import org.jumbune.common.beans.SupportedApacheHadoopVersions;
+import org.jumbune.common.beans.SupportedHadoopDistributions;
 import org.jumbune.common.beans.Validation;
 import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.remoting.client.Remoter;
+import org.jumbune.remoting.common.CommandType;
 import org.jumbune.utils.beans.VirtualFileSystem;
 import org.jumbune.utils.exception.JumbuneException;
 
@@ -66,6 +67,8 @@ public class ValidateInput {
 	private static final Logger LOGGER = LogManager.getLogger(ValidateInput.class);
 
 	private static final String DATA_VALIDATION_FIELD_LIST = "dataValidation.fieldValidationList[";
+	
+	private static final String MAPR_DATANODE_IP = "maprcli node list -filter \"[rp==/*]and[svc==nfs]\" -columns ip | awk '{print $2}'";
 
 	/**
 	 * constructor for initialise data member.
@@ -121,12 +124,8 @@ public class ValidateInput {
 			if(!isNullOrEmpty(existingJobId)){
 				
 				Remoter remoter = new Remoter(yamlConfig.getMaster().getHost(), Integer.valueOf(yamlConfig.getMaster().getAgentPort()));
-				String remoteHadoop = RemotingUtil.getHadoopHome(remoter, config) + File.separator; 
-				String command = remoteHadoop+"bin/hadoop job -status "+existingJobId;
-				
-				CommandWritableBuilder builder = new CommandWritableBuilder();
-				builder.addCommand(command, false, null);
-				String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+				String response = RemotingUtil.fireCommandAsHadoopDistribution(yamlConfig,  "job -status "+existingJobId, CommandType.HADOOP_JOB);				
+
 				//checks for a completed hadoop job
 				if(!response.contains("Counters:")){
 					failedCases.put("profiling",errorMessages.get(ErrorMessages.EXISTING_JOB_INVALID));
@@ -489,13 +488,13 @@ public class ValidateInput {
 		StringBuilder lsRsa = new StringBuilder().append(Constants.LS_COMMAND).append(Constants.SPACE).append(master.getRsaFile());
 		
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(lsRsa.toString(), false, null);
+		builder.addCommand(lsRsa.toString(), false, null, CommandType.FS);
 		String responseRsa = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		String rsaResponse = responseRsa.substring(0, responseRsa.length()-1);
 		
 		StringBuilder  lsDsa = new StringBuilder().append(Constants.LS_COMMAND).append(Constants.SPACE).append(master.getDsaFile());
 		builder.getCommandBatch().clear();
-		builder.addCommand(lsDsa.toString(), false, null);
+		builder.addCommand(lsDsa.toString(), false, null, CommandType.FS);
 		String responseDsa = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		remoter.close();
 		String dsaResponse = responseDsa.substring(0, responseDsa.length()-1);
@@ -537,10 +536,24 @@ public class ValidateInput {
 		List<String> listOfValidDataNode = new ArrayList<String>();
 		YamlConfig yamlConfig = (YamlConfig)config;
 		List<Slave> slaves = yamlConfig.getSlaves();
-		String commandResponse = RemotingUtil.fireCommandOnSupporteHadoopVersionAndGetStringResponse(config, REPORT_FROM_CLUSTER);
+		SupportedHadoopDistributions hadoopVersion = RemotingUtil.getHadoopVersion(yamlConfig);
+		if(SupportedHadoopDistributions.HADOOP_MAPR.equals(hadoopVersion)){
+			StringBuilder commandBuilder = new StringBuilder().append(MAPR_DATANODE_IP);
+			Remoter remoter = RemotingUtil.getRemoter(config,"");
+			CommandWritableBuilder commandWritableBuilder = new CommandWritableBuilder();
+			commandWritableBuilder.addCommand(commandBuilder.toString(), false, null, CommandType.HADOOP_FS).populate(config, null);
+			String commandResponse = (String) remoter.fireCommandAndGetObjectResponse(commandWritableBuilder.getCommandWritable());
+			LOGGER.debug("MAPR datanode command response :" +commandResponse);
+			String[] getDataNodes = commandResponse.split(NEW_LINE);
+			for(int i=1;i<getDataNodes.length;i++){
+				listOfValidDataNode.add(getDataNodes[i]);
+			}
+		}else{
+		String commandResponse = RemotingUtil.fireCommandAsHadoopDistribution(config, REPORT_FROM_CLUSTER, CommandType.HADOOP_FS);
 		String[] splitArray = commandResponse.split(NEW_LINE);
 		for (String line : splitArray) {
 			listOfValidDataNode.add(line.split(":")[1].trim());
+		}
 		}
 		for (Slave slave : slaves) {
 			count++;
@@ -692,7 +705,7 @@ public class ValidateInput {
 	 */
 	public boolean isHadoopInputPath(String path, Config config) throws JumbuneException {
 		LOGGER.debug("Valdating HDFS Path :"+HDFS_FILE_EXISTS+path);
-		String commandResponse = RemotingUtil.fireCommandOnSupporteHadoopVersionAndGetStringResponse(config, HDFS_FILE_EXISTS + path);
+		String commandResponse = RemotingUtil.fireCommandAsHadoopDistribution(config, HDFS_FILE_EXISTS + path, CommandType.HADOOP_FS);
 		LOGGER.debug("HDFS Path ["+path+"] exist? Response :"+commandResponse);
 		if(commandResponse!=null && !"".equals(commandResponse)){
 			return true;

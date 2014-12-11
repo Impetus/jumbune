@@ -45,7 +45,7 @@ import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.HttpReportsBean;
 import org.jumbune.common.beans.ProfilingParam;
 import org.jumbune.common.beans.Slave;
-import org.jumbune.common.beans.SupportedApacheHadoopVersions;
+import org.jumbune.common.beans.SupportedHadoopDistributions;
 import org.jumbune.common.beans.UnavailableHost;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
@@ -308,7 +308,7 @@ public class ExecutionServlet extends HttpServlet {
       }else {
         categoryInfo = new NonYarnCategoryInfo();
       }
-      SupportedApacheHadoopVersions hadoopVersion =
+      SupportedHadoopDistributions hadoopVersion =
           RemotingUtil.getHadoopVersion(yamlLoader.getYamlConfiguration());
       WorkerJMXInfo levelJMXInfo =null;
       ClusterWideInfo clusterWideInfo = new ClusterWideInfo();
@@ -336,7 +336,7 @@ public class ExecutionServlet extends HttpServlet {
 
 
     private void setNodeLevelDaemons(YamlLoader loader, YarnMaster master, YarnSlaveParam slave,
-        SupportedApacheHadoopVersions hadoopVersion, ProfilerJMXDump dump, WorkerJMXInfo levelJMXInfo)
+        SupportedHadoopDistributions hadoopVersion, ProfilerJMXDump dump, WorkerJMXInfo levelJMXInfo)
         throws IOException, AttributeNotFoundException, InstanceNotFoundException, MBeanException,
         ReflectionException, IntrospectionException {
     	YamlConfig yamlConfig = (YamlConfig) ((YamlLoader)loader).getYamlConfiguration();
@@ -352,7 +352,7 @@ public class ExecutionServlet extends HttpServlet {
     }
     
     private void setYarnAndNonYarnDaemons(String host, YarnSlaveParam slave,
-            SupportedApacheHadoopVersions hadoopVersion, ProfilerJMXDump dump,
+            SupportedHadoopDistributions hadoopVersion, ProfilerJMXDump dump,
             WorkerJMXInfo levelJMXInfo) throws IOException,
             AttributeNotFoundException, InstanceNotFoundException, MBeanException, ReflectionException,
             IntrospectionException {
@@ -370,7 +370,7 @@ public class ExecutionServlet extends HttpServlet {
 
 	private void setClusterLevelDaemons(YarnMaster master,
 			ClusterWideInfo clusterWideInfo,
-			SupportedApacheHadoopVersions hadoopVersion, ProfilerJMXDump dump)
+			SupportedHadoopDistributions hadoopVersion, ProfilerJMXDump dump)
 			throws IOException, AttributeNotFoundException,
 			InstanceNotFoundException, MBeanException, ReflectionException,
 			IntrospectionException {

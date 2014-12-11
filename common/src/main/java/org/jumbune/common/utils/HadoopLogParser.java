@@ -7,11 +7,9 @@ import static org.jumbune.common.utils.Constants.COLON;
 import static org.jumbune.common.utils.Constants.SPACE;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
@@ -23,7 +21,7 @@ import org.jumbune.common.beans.JobDetails;
 import org.jumbune.common.beans.JobOutput;
 import org.jumbune.common.beans.PhaseDetails;
 import org.jumbune.common.beans.PhaseOutput;
-import org.jumbune.common.beans.SupportedApacheHadoopVersions;
+import org.jumbune.common.beans.SupportedHadoopDistributions;
 import org.jumbune.common.beans.TaskDetails;
 import org.jumbune.common.beans.TaskOutputDetails;
 import org.jumbune.common.yaml.config.Config;
@@ -32,6 +30,7 @@ import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.ApiInvokeHintsEnum;
+import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
 
 import com.google.gson.Gson;
@@ -41,6 +40,8 @@ import com.google.gson.Gson;
  * Gets all details pertaining to a job, and its phases.
  */
 public class HadoopLogParser {
+
+	private static final String HADOOP_HOME = "HADOOP_HOME";
 
 	/** The LOGGER. */
 	private static final Logger LOGGER = LogManager.getLogger(HadoopLogParser.class);
@@ -95,17 +96,18 @@ public class HadoopLogParser {
 	/** The Constant HISTORY_DIR_SUFFIX. */
 	private static final String HISTORY_DIR_SUFFIX = "/history/done/version-1";
 	
-	/** The Constant HISTORY_DIR_SUFFIX_OLD. */
-	private static final String HISTORY_DIR_SUFFIX_OLD = "/history/";
+	private static final String HISTORY_INT_DIR_SUFFIX_YARN = "/tmp/hadoop-yarn/staging/history/done_intermediate/*/";
 	
-	private static final String HISTORY_DIR_SUFFIX_YARN = "/tmp/hadoop-yarn/staging/history/done/";
+	private static final String HISTORY_DIR_SUFFIX_YARN = "/tmp/hadoop-yarn/staging/history/done/*/*/*/*/";
 		
-	private static final String LOG_DIR_SUFFIX = "000000/*";
-	
 	private static final String HDFS_FILE_GET_COMMAND = "/bin/hadoop fs -get";
 	
 	/** The Constant wildcard**/
 	private static final String WILDCARD="/*";
+
+	private static final String CHMOD_CMD = "chmod o+w ";
+
+	private static final String HDFS_FILE_EXISTS = " fs -ls";
 
 	/**
 	 * Gets the job details.
@@ -122,11 +124,10 @@ public class HadoopLogParser {
 		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
 		String agentHome = RemotingUtil.getAgentHome(yamlConfig);
 		Remoter remoter = RemotingUtil.getRemoter(yamlLoader, appHome);
-		String remoteHadoop = RemotingUtil.getHadoopHome(remoter, yamlConfig) + File.separator;
 		String logsHistory = null;
-		SupportedApacheHadoopVersions hadoopVersion = RemotingUtil.getHadoopVersion(yamlConfig);
+		SupportedHadoopDistributions hadoopVersion = RemotingUtil.getHadoopVersion(yamlConfig);
 		String user = yamlConfig.getMaster().getUser();
-		logsHistory = changeLogHistoryPathAccToHadoopVersion(remoteHadoop,
+		logsHistory = changeLogHistoryPathAccToHadoopVersion(HADOOP_HOME,
 				hadoopVersion, user);
 		
 		CommandWritableBuilder builder = new CommandWritableBuilder();
@@ -147,19 +148,19 @@ public class HadoopLogParser {
 		String topologyFilePath = pathToRumenDir + TOPOLOGY_FILE;
 		
 		builder.getCommandBatch().clear();
-		builder.addCommand(MKDIR_CMD + pathToRumenDir, false, null);
+		builder.addCommand(MKDIR_CMD + pathToRumenDir, false, null, CommandType.FS);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 		
 		// preparing command for rumen processing
-		remoteHadoop = remoteHadoop + File.separator;
-		String remoteHadoopLib = remoteHadoop + LIB;
+		
+		String remoteHadoopLib = HADOOP_HOME + LIB;
 		Properties props = loadHadoopJarConfigurationProperties();
 		
 		String coreJar;
-		if(SupportedApacheHadoopVersions.HADOOP_NON_YARN.equals(hadoopVersion)) {
-			coreJar = remoteHadoop + props.getProperty("CORE_JAR");	
+		if(SupportedHadoopDistributions.HADOOP_NON_YARN.equals(hadoopVersion)) {
+			coreJar = HADOOP_HOME + props.getProperty("CORE_JAR");	
 		}else {
-			coreJar = remoteHadoop + WILDCARD;
+			coreJar = HADOOP_HOME + WILDCARD;
 		}
 		
 		String commonsLoggingJar = agentHome + LIB + props.getProperty("COMMONS_LOGGING_JAR");
@@ -189,12 +190,15 @@ public class HadoopLogParser {
 	 		
 			String relativeRemotePath = Constants.JOB_JARS_LOC + yamlLoader.getJumbuneJobName() + File.separator + jobID;
 			String remotePath = agentHome + relativeRemotePath;
-			getLogFilePathForYarn(jobID, remoter, logsHistory, builder,yamlLoader.getYamlConfiguration(),agentHome,remotePath);
-			
+			builder.addCommand(MKDIR_CMD + remotePath, false, null, CommandType.FS);
+			builder.addCommand(CHMOD_CMD + remotePath, false, null, CommandType.FS);
+			remoter.fireAndForgetCommand(builder.getCommandWritable());
+			checkAndgetCurrentLogFilePathForYarn(remoter, logsHistory,yamlLoader.getYamlConfiguration(),agentHome,remotePath,jobID);
 			relLocalPath  = Constants.JOB_JARS_LOC + yamlLoader.getJumbuneJobName();
-			remoter = RemotingUtil.getRemoter(yamlLoader, appHome);
 			remoter.receiveLogFiles(relLocalPath, relativeRemotePath);
-			String localPath =	appHome + relLocalPath + jobID;
+			String absolutePath = appHome + relLocalPath + jobID + File.separator;
+			String fileName = checkAndGetHistFile(absolutePath);
+			String localPath = absolutePath + fileName;
 			java.lang.reflect.Method method = null;
 			Class<?> yarnJobStatsUtility = null;
 			try {
@@ -207,6 +211,23 @@ public class HadoopLogParser {
 			}
 			return null;
 	}
+	
+	
+	private String checkAndGetHistFile(String remotePath) {
+		String fileName = null;
+			
+			File jobFilePath = new File(remotePath);
+
+			if (jobFilePath.exists() && jobFilePath.isDirectory()) {
+				File[] getJobFiles = jobFilePath.listFiles();
+				for (File file : getJobFiles) {
+					if (file.getName().endsWith(".jhist")) {
+						fileName = file.getName();
+					}
+				}
+			}
+		return fileName;
+	}
 	/**
 	 * 	This api is used to fetch the .hist files containing the job details
 	 *
@@ -218,29 +239,36 @@ public class HadoopLogParser {
 	 * @param agentHome the agent home
 	 * @param relRemotePath the rel remote path
 	 * @return the log file path for yarn
+	 * @throws FileNotFoundException 
 	 */
-	private void getLogFilePathForYarn(String jobID, Remoter remoter,
-			String logsHistory, CommandWritableBuilder builder, Config config, String agentHome,String relRemotePath) {
+	private void checkAndgetCurrentLogFilePathForYarn(Remoter remoter,
+			String logsHistory,Config config, String agentHome,String relRemotePath,String jobID){
 		YamlConfig yamlConfig = (YamlConfig)config;
-		builder.addCommand(MKDIR_CMD + relRemotePath, false, null);
-		remoter.fireAndForgetCommand(builder.getCommandWritable());
-		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-		Date date = new Date();
-		String currentDate = dateFormat.format(date);
-		String[] dateArr = currentDate.split("-");
-		CommandWritableBuilder fsGetBuilder = new CommandWritableBuilder();
-		String hadoopHome = RemotingUtil.getHadoopHome(yamlConfig);
-		StringBuffer commandToExecute = new StringBuffer().append(hadoopHome).append(HDFS_FILE_GET_COMMAND).append(Constants.SPACE).append(logsHistory).append(dateArr[0]).append(File.separator).append(dateArr[1]).append(File.separator).append(dateArr[2])
-		.append(File.separator).append(LOG_DIR_SUFFIX).append(Constants.SPACE).append(relRemotePath);
-		LOGGER.info("File get Command" + commandToExecute.toString());
-		fsGetBuilder.addCommand(commandToExecute.toString(),false,null).populate(yamlConfig, null);;
-		remoter.fireAndForgetCommand(fsGetBuilder.getCommandWritable());
+			
+			if(yamlConfig.getRunJobFromJumbune() == Enable.TRUE){
+			CommandWritableBuilder fsGetBuilder = new CommandWritableBuilder();
+			StringBuffer commandToExecute = new StringBuffer().append(Constants.HADOOP_HOME).append(HDFS_FILE_GET_COMMAND).append(Constants.SPACE).append(logsHistory)
+			.append(jobID).append("*").append(Constants.SPACE).append(relRemotePath);
+			LOGGER.debug("File get Command" + commandToExecute.toString());
+			fsGetBuilder.addCommand(commandToExecute.toString(),false, null, CommandType.HADOOP_FS).populate(yamlConfig, null);
+			remoter = RemotingUtil.getRemoter(yamlConfig, "");
+			remoter.fireAndForgetCommand(fsGetBuilder.getCommandWritable());
+			}
+			else{
+			CommandWritableBuilder fsGetBuilder = new CommandWritableBuilder();
+			StringBuffer commandToExecute = new StringBuffer().append(Constants.HADOOP_HOME).append(HDFS_FILE_GET_COMMAND).append(Constants.SPACE).append(HISTORY_DIR_SUFFIX_YARN)
+			.append(jobID).append("*").append(Constants.SPACE).append(relRemotePath);
+			LOGGER.debug("File get Command" + commandToExecute.toString());
+			fsGetBuilder.addCommand(commandToExecute.toString(),false, null, CommandType.HADOOP_FS).populate(yamlConfig, null);
+			remoter = RemotingUtil.getRemoter(yamlConfig, "");
+			remoter.fireAndForgetCommand(fsGetBuilder.getCommandWritable());
+			}
 	}
 
 	private String getLogFilePath(String jobID, Remoter remoter,
 			String logsHistory, CommandWritableBuilder builder) {
 		String command = jobID + RemotingConstants.SINGLE_SPACE + logsHistory;
-		builder.addCommand(command, false, null).setApiInvokeHints(ApiInvokeHintsEnum.GET_JOB_LOG_FILE_OP);
+		builder.addCommand(command, false, null, CommandType.FS).setApiInvokeHints(ApiInvokeHintsEnum.GET_JOB_LOG_FILE_OP);
 		return (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		
 	}
@@ -257,7 +285,7 @@ public class HadoopLogParser {
 			String relRemotePath, StringBuilder sb) {
 		// Starting rumen processing on master
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(sb.toString(), false, null);
+		builder.addCommand(sb.toString(), false, null, CommandType.HADOOP_JOB);
 		remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		LOGGER.info("Completed Rumen processing");
 	}
@@ -302,14 +330,12 @@ public class HadoopLogParser {
 	 * @return the string
 	 */
 	private String changeLogHistoryPathAccToHadoopVersion(String remoteHadoop,
-			SupportedApacheHadoopVersions hadoopVersion, String user) {
-		String logsHistory;
-		if(SupportedApacheHadoopVersions.HADOOP_NON_YARN.equals(hadoopVersion)) {
+			SupportedHadoopDistributions hadoopVersion, String user) {
+		String logsHistory = null;
+		if(SupportedHadoopDistributions.HADOOP_NON_YARN.equals(hadoopVersion)) {
 			logsHistory = remoteHadoop + LOGS + HISTORY_DIR_SUFFIX;
-		}else if(SupportedApacheHadoopVersions.HADOOP_MAPR.equals(hadoopVersion) || SupportedApacheHadoopVersions.HADOOP_YARN.equals(hadoopVersion)){
-			logsHistory = HISTORY_DIR_SUFFIX_YARN;
-		}else{
-			logsHistory = remoteHadoop + LOGS + user + HISTORY_DIR_SUFFIX;
+		}else if(SupportedHadoopDistributions.HADOOP_YARN.equals(hadoopVersion) || SupportedHadoopDistributions.CDH_5.equals(hadoopVersion) || SupportedHadoopDistributions.APACHE_02X.equals(hadoopVersion)){
+			logsHistory = HISTORY_INT_DIR_SUFFIX_YARN;
 		}
 		return logsHistory;
 	}
@@ -331,7 +357,7 @@ public class HadoopLogParser {
 	 * @param sb
 	 */
 	private void checkHadoopVersionsForRumen(
-			SupportedApacheHadoopVersions hadoopVersion, String logfilePath,
+			SupportedHadoopDistributions hadoopVersion, String logfilePath,
 			String jsonFilepath, String topologyFilePath, String coreJar,
 			String commonsLoggingJar, String commonsCliJar,
 			String commonsConfigurationJar, String commonsLangJar,

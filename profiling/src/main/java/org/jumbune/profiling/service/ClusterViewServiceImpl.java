@@ -28,7 +28,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.Slave;
-import org.jumbune.common.beans.SupportedApacheHadoopVersions;
+import org.jumbune.common.beans.SupportedHadoopDistributions;
 import org.jumbune.common.beans.UnavailableHost;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.RemoteFileUtil;
@@ -76,7 +76,7 @@ import org.jumbune.profiling.utils.ViewHelper;
  */
 public class ClusterViewServiceImpl implements ProfilingViewService {
 	private Loader loader = null;
-	private SupportedApacheHadoopVersions hadoopVersions = null;
+	private SupportedHadoopDistributions hadoopVersions = null;
 	private boolean isYarnEnable = false;	
 	private static final Logger LOGGER = LogManager
 			.getLogger(ClusterViewServiceImpl.class);
