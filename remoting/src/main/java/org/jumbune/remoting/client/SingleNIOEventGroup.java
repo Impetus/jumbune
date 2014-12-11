@@ -3,6 +3,10 @@ package org.jumbune.remoting.client;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 
+/**
+ * Singleton class for initializing the NIO event group. JumbuneAgentCommunicator reuses it for creating channel for each remoter command.
+ *
+ */
 public class SingleNIOEventGroup {
 
 	private static SingleNIOEventGroup instance;

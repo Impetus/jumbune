@@ -29,7 +29,7 @@ import com.jcraft.jsch.UserInfo;
  */
 public final class SessionEstablisher {
 
-	static final String ECHO_HADOOP_HOME = "echo $HADOOP_HOME \n";
+	static final String ECHO_HADOOP_HOME = "echo $HADOOP_HOME \n \n";
 	private static final String SCP_COMMAND = "scp -f ";
 	private static final Logger LOGGER = LogManager.getLogger("EventLogger");
 	public static final String WHERE_IS_HADOOP = "whereis hadoop";
@@ -101,16 +101,17 @@ public final class SessionEstablisher {
 	 * @throws JSchException
 	 * @throws IOException
 	 */
-	public static void fetchHadoopJarsFromNamenode(Session session, String username, String namenodeIP, String hadoopHome, String destinationAbsolutePath, Deployer deployer,String distributionType, String... files)
+	public static void fetchHadoopJarsFromNamenode(Session session, String username, String namenodeIP, String hadoopHome, String destinationAbsolutePath, String hadoopDistributionType, String distributionType, String... files)
 			throws JSchException, IOException {
 		new File(destinationAbsolutePath).mkdirs();
+		Deployer deployer = DeployerFactory.getDeployer(distributionType,hadoopDistributionType);
 		String versionCommand = null ;
 		String versionNumber = null ;
-		if(!distributionType.equalsIgnoreCase("MAPR")){
-		if (distributionType.equalsIgnoreCase("CDH")
-				|| distributionType.equalsIgnoreCase("HDP")) {
+		if(!hadoopDistributionType.equalsIgnoreCase("m")){
+		if (hadoopDistributionType.equalsIgnoreCase("c")
+				|| hadoopDistributionType.equalsIgnoreCase("h")) {
 			versionCommand = File.separator + "usr" + File.separator + HADOOP_VERSION_YARN_COMMAND;
-		}else if(distributionType.equalsIgnoreCase("APACHE-NY")){
+		}else if(distributionType.equalsIgnoreCase("Non-Yarn")){
 			versionCommand = hadoopHome + File.separator + HADOOP_VERSION_NON_YARN_COMMAND;
 		} else {
 			versionCommand = hadoopHome + File.separator
@@ -120,11 +121,12 @@ public final class SessionEstablisher {
 		 versionNumber = getVersionNumber(versionResponse);
 		}
 		String[] listOfFiles = deployer.getRelativePaths(versionNumber);
+		LOGGER.info("Syncing Jars from Hadoop to Jumbune...");
 		for (String fileName : listOfFiles) {
 			String command = SCP_COMMAND + hadoopHome + fileName;
-			LOGGER.info("Fetching Jar:" + hadoopHome + fileName);
 			copyRemoteFile(session, command, destinationAbsolutePath);
 		}
+		LOGGER.info("Done.");		
 	}
 
 	/**
@@ -134,9 +136,12 @@ public final class SessionEstablisher {
 	 * @return the version number
 	 */
 	private static String getVersionNumber(String versionResponse) {
-		String[] versionNumber = versionResponse.split("Subversion");
-		versionNumber = versionNumber[0].split(" ");
-		return versionNumber[1].trim();
+		if(versionResponse!=null){
+		String[] versionResponseSplits = versionResponse.split("Subversion");
+		String[] hadoopSplit = versionResponseSplits[0].split(" ");
+		return hadoopSplit[1].trim();
+		}
+		return null;
 	}
 
 	private static void copyRemoteFile(Session session, String command, String fileLocation) throws JSchException, IOException {
@@ -398,6 +403,9 @@ public final class SessionEstablisher {
 					response = stringBuilder.toString();
 					break;
 				}
+				if((line.contains(session.getUserName())) && (line.trim().endsWith("$") || line.trim().endsWith("#"))){
+					break;
+			}
 			}
 		} finally {
 			if (brIn != null) {

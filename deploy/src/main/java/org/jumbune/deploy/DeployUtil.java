@@ -4,13 +4,11 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.Console;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.JarURLConnection;
@@ -18,12 +16,10 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.CodeSource;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Scanner;
@@ -31,6 +27,7 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import org.apache.hadoop.fs.Path;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.Constants;
@@ -49,10 +46,9 @@ public final class DeployUtil {
 	private static final Map<String, String> FoundPaths = new HashMap<String, String>(3);
 	private static final Set<String> agentJars = new HashSet<String>(12);
 	private static final Set<String> subDirs = new HashSet<String>(6);
+	private static final Set<String> executableFiles = new HashSet<String>(3);
 	
 	private static final String[] FOLDERS = { "tmp/" };	
-	private static final String[] ADDITIONAL_HADOOP_JARS_FOR_SHELL = {"commons-lang-*.jar", "commons-configuration-*.jar", "jackson-mapper-asl-*.jar", "jackson-core-asl-*.jar" };
-	
 	
 	private static final String CLEAN_UNUSED_FILES_AND_DIRS = "rm -rf WEB-INF/ skins META-INF/ jsp/ lib/";
 	private static final String UPDATE_WAR_FILE = "/modules/jumbune-web-"+ Versioning.BUILD_VERSION + Versioning.DISTRIBUTION_NAME + ".war WEB-INF/lib";
@@ -64,8 +60,13 @@ public final class DeployUtil {
 	private static final String JAVA_ENV_VAR = "JAVA_HOME";
 	private static String namenodeIP = null;
 	private static String username = null;
+	
 	private static int MAX_RETRY_ATTEMPTS = 3;
+
+	
 	private static final Scanner SCANNER = new Scanner(System.in);
+
+	private static final String UPDATE_WAR_CLASSES_FILE = "/modules/jumbune-web-"+ Versioning.BUILD_VERSION + Versioning.DISTRIBUTION_NAME + ".war WEB-INF/classes";
 
 	static {
 		agentJars.add("jumbune-datavalidation");
@@ -91,6 +92,12 @@ public final class DeployUtil {
 		subDirs.add("examples");
 	}
 	
+	static {
+		executableFiles.add("/bin/startWeb");
+		executableFiles.add("/bin/stopWeb");
+		executableFiles.add("/bin/runCli");
+	}
+	
 	private DeployUtil() {
 		// hiding utility class constructor
 	}	
@@ -104,6 +111,7 @@ public final class DeployUtil {
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
 		String distributionType;
+		String hadoopDistributionType;
 		if (args.length != 0) {
 			LOGGER.info("Usage: java -jar <jar-name>");
 			System.exit(1);
@@ -113,22 +121,44 @@ public final class DeployUtil {
 		distributionType = prop.getProperty("hadoop-distribution");
 		Session session = null;
 		try{			
-			
+			LOGGER.info("--Jumbune built for ["+distributionType+" based Hadoop] distributions--");
 			URLConnection jarConnection = performSanity();
 			
+			if (distributionType.equalsIgnoreCase("Non-Yarn")) {
+				LOGGER.info("Choose the Hadoop Distribution Type : (a)Apache | (m)MapR");
+				hadoopDistributionType = SCANNER.nextLine().trim();
+				while (hadoopDistributionType.isEmpty()
+						|| (!hadoopDistributionType.equalsIgnoreCase("a")
+						&& !hadoopDistributionType.equalsIgnoreCase("m"))) {
+					LOGGER.info("Invalid input! Choose from the given Hadoop Distribution Type : (a)Apache | (m)MapR");
+					hadoopDistributionType = SCANNER.nextLine().trim();
+				}
+			} else {
+				LOGGER.info("Choose the Hadoop Distribution Type : (a)Apache | (c)Cloudera | (h)HortonWorks");
+				hadoopDistributionType = SCANNER.nextLine().trim();
+				while (hadoopDistributionType.isEmpty()
+						|| (!hadoopDistributionType.equalsIgnoreCase("a")
+						&& !hadoopDistributionType.equalsIgnoreCase("h") && !hadoopDistributionType.equalsIgnoreCase("c"))) {
+					LOGGER.info("Invalid input! Choose from the given Hadoop Distribution Type : (a)Apache | (c)Cloudera | (h)HortonWorks");
+					hadoopDistributionType = SCANNER.nextLine().trim();
+				}
+			}
+			
 			session = getSession();
-						
+			
 			LOGGER.info("Extracting Jumbune...");
 			
 			extractJarDirectories(new File(FoundPaths.get("<JUMBUNE.HOME>")), jarConnection);
 			
 			checkJumbuneDirectoryCreation();
 			
-			Deployer deployer = DeployerFactory.getDeployer(distributionType);
+			changeRunnablePermissions();
 			
-			updateJumbuneAndHadoopDistribution(FoundPaths.get("<JAVA.HOME>"), session, FoundPaths.get("<JUMBUNE.HOME>"), deployer,distributionType);
+			serializeDistributionType(distributionType, hadoopDistributionType);
 			
-			LOGGER.info("!!! Jumbune deployment got completed successfully. !!!");
+			updateJumbuneAndHadoopDistribution(FoundPaths.get("<JAVA.HOME>"), session, FoundPaths.get("<JUMBUNE.HOME>"), hadoopDistributionType, distributionType);
+			
+			LOGGER.info("!!! Jumbune successfully deployed at ["+FoundPaths.get("<JUMBUNE.HOME>")+"] !!!");
 			
 		} catch (Exception e) {
 			LOGGER.error("Error occurred while deploying jumbune.", e);
@@ -139,22 +169,13 @@ public final class DeployUtil {
 			cleanup();
 		}
 	}
-
-	private static boolean isExpected(String distributionType) {
-		switch(distributionType){
-		case "APACHE-NY":
-			return true;
-		case "APACHE-Y":
-			return true;
-		case "CDH":
-			return true;
-		case "HDP":
-			return true;
-		case "MAPR":
-			return true;
-		default:
-			return false;	
-		}
+	
+	private static void serializeDistributionType(String distributionType, String HadoopDistribution) throws IOException{
+		FileWriter writer = new FileWriter(new File("./WEB-INF/classes/distributionInfo.properties"));
+		writer.write("DistributionType="+distributionType);
+		writer.write("\n");
+		writer.write("HadoopDistribution="+HadoopDistribution);
+		writer.close();
 	}
 
 	private static void checkJumbuneDirectoryCreation() {
@@ -166,6 +187,14 @@ public final class DeployUtil {
 		}
 	}
 	
+	private static void changeRunnablePermissions(){
+		File f;
+		for(String file : executableFiles){
+			f = new File(FoundPaths.get("<JUMBUNE.HOME>")+file);
+			f.setExecutable(true);
+		}
+	}
+	
 	private static Session getSession() throws IOException{
 		Console console = System.console();
 		return validateUserAuthentication(console);
@@ -173,7 +202,7 @@ public final class DeployUtil {
 	
 	
 	private static URLConnection performSanity() throws IOException, URISyntaxException{
-		
+			new File("./WEB-INF/classes/").mkdirs();
 			new File("./WEB-INF/lib/").mkdirs();
 			String javaHomeStr = null;
 			javaHomeStr = getAndCheckDirectoryExistence(JAVA_ENV_VAR);
@@ -242,26 +271,27 @@ public final class DeployUtil {
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	private static void updateJumbuneAndHadoopDistribution(String javaHomeStr, Session session, String jumbuneHomeStr, Deployer deployer, String distributionType) throws JSchException, IOException, InterruptedException {
+	private static void updateJumbuneAndHadoopDistribution(String javaHomeStr, Session session, String jumbuneHomeStr, String hadoopDistributionType, String distributionType) throws JSchException, IOException, InterruptedException {
 		String currentDir = System.getProperty(USER_DIR) + "/";
 		String currentLibDir = currentDir + "/lib/";
 		new File(currentLibDir).mkdirs();
-		String hadoopHome = getHadoopLocation(session);
+		String hadoopHome = getHadoopLocation(session,hadoopDistributionType);
 		if(hadoopHome.endsWith(File.separator)){
 			hadoopHome = hadoopHome.substring(0,hadoopHome.length()-1);
 		}
-		SessionEstablisher.fetchHadoopJarsFromNamenode(session, username, namenodeIP, hadoopHome, currentDir + WEB_FOLDER_STRUCTURE, deployer,distributionType);
+		SessionEstablisher.fetchHadoopJarsFromNamenode(session, username, namenodeIP, hadoopHome, currentDir + WEB_FOLDER_STRUCTURE, hadoopDistributionType,distributionType);
 		String updateJumbuneWar = append(javaHomeStr, "/bin/", UPDATE_JAR, jumbuneHomeStr, UPDATE_WAR_FILE, "/");
+		String updateJumbuneWarClasses = append(javaHomeStr, "/bin/", UPDATE_JAR, jumbuneHomeStr, UPDATE_WAR_CLASSES_FILE, "/");		
 		String updateAgentJar = append(javaHomeStr, "/bin/", UPDATE_JAR, jumbuneHomeStr, UPDATE_AGENT_JAR);
-		String copyHadoopJarsToLib = append("cp -r ", currentDir, WEB_FOLDER_STRUCTURE, " ", jumbuneHomeStr, "");
-		
+		String copyHadoopJarsToLib = append("cp -r ", currentDir, WEB_FOLDER_STRUCTURE, " ", FoundPaths.get("<JUMBUNE.HOME>"), Path.SEPARATOR, " ");
 		executeCommand(copyHadoopJarsToLib);
 		executeCommand(updateJumbuneWar);
+		executeCommand(updateJumbuneWarClasses);
 		executeCommand(updateAgentJar);
 		LOGGER.debug("Updated agent jar and war");
 	}
 
-	private static String getHadoopLocation(Session session) throws JSchException, IOException{
+	private static String getHadoopLocation(Session session,String hadoopDistributionType) throws JSchException, IOException{
 		LOGGER.debug("Trying to locate Hadoop with echo $HADOOP_HOME");
 		String hadoopHome = SessionEstablisher.executeCommandUsingShell(session, SessionEstablisher.ECHO_HADOOP_HOME,"hadoop");
 		LOGGER.debug("Hadoop location with echo $HADOOP_HOME " + hadoopHome);
@@ -278,7 +308,7 @@ public final class DeployUtil {
 					hadoopHome = split;
 				}
 			}
-			if(hadoopHome == null || hadoopHome.trim().isEmpty()){
+			if((hadoopHome == null || hadoopHome.trim().isEmpty()) && hadoopDistributionType.equalsIgnoreCase("m")){
 				//Support in case of mapr is run through VM.
 				String llResponse = SessionEstablisher.executeCommandUsingShell(session,SessionEstablisher.LL_COMMAND, "->");
 				LOGGER.debug("<ll> command Response"+ llResponse);
@@ -287,7 +317,7 @@ public final class DeployUtil {
 			validateHadoopLocation(hadoopHome);
 		}
 		hadoopHome = hadoopHome.replace("\n", "");
-		LOGGER.info("Hadoop found at location " + hadoopHome);
+		LOGGER.info("Using Hadoop: [" + hadoopHome+"]");
 		return hadoopHome;
 	}
 
@@ -301,7 +331,7 @@ public final class DeployUtil {
 		if(llResponse!=null){
 			llResponse = llResponse.substring((llResponse.indexOf(">")+1), llResponse.length());
 			llResponse = llResponse.substring(0,llResponse.indexOf("bin")-1);
-			return llResponse.replaceAll("\\s+","");
+			return llResponse.replaceAll("\u001B\\[01;32m","");
 		}
 		return null;
 	}
@@ -350,7 +380,7 @@ public final class DeployUtil {
 		int retryAttempts=0;
 		do {
 			String masterNode = InetAddress.getLocalHost().getHostAddress();
-			LOGGER.info("Please provide IP address of the machine designed to run hadoop namenode daemon ["+ masterNode + "]");
+			LOGGER.info("\r\nPlease provide IP address of the machine designated to run hadoop namenode daemon ["+ masterNode + "]");
 			namenodeIP = SCANNER.nextLine().trim();
 			if ("".equals(namenodeIP)) {
 				namenodeIP = masterNode;
@@ -383,10 +413,10 @@ public final class DeployUtil {
 			}
 				tempSession = SessionEstablisher.establishConnection(username,
 						namenodeIP, new String(password), privateKeyPath);
-			if (++retryAttempts == MAX_RETRY_ATTEMPTS) {
-				LOGGER.error("Exiting Installation as maximum number of authentication attempts are exhaused!");
-				System.exit(1);
-			}
+				if(++retryAttempts==MAX_RETRY_ATTEMPTS){
+					LOGGER.error("Exiting Installation as maximum number of authentication attempts are exhaused!");
+					System.exit(1);
+				}
 		} while (tempSession == null || !tempSession.isConnected());
 		return tempSession;
 	}
@@ -441,20 +471,20 @@ public final class DeployUtil {
 			final JarEntry entry = e.nextElement();
 			String filename;
 			if ((filename = entry.getName()) != null) {
-				for (String subDirName : subDirs) {
-					if ("lib".equals(subDirName) || "modules".equals(subDirName)) {
-						includeAdditionalFileInLib(entry, filename, jarFile);
+					if (filename.startsWith("lib") || filename.startsWith("modules")) {
+						includeAdditionalFileInLib(entry, jarFile);
 					}
-					if (filename.startsWith(subDirName)) {
-						copyJarResources(destDir, jarFile, entry, filename);
+					String dirSplit = filename.split(File.separator)[0];
+					if(subDirs.contains(dirSplit)){
+						copyJarResources(destDir, jarFile, entry);
 					}
-				}
 			}
 		}
 		return true;
 	}
 
-	private static boolean copyJarResources(final File destDir, final JarFile jarFile, final JarEntry entry, final String filename) throws IOException {
+	private static boolean copyJarResources(final File destDir, final JarFile jarFile, final JarEntry entry) throws IOException {
+		String filename = entry.getName();
 		final File f = new File(destDir, filename);
 		if (!entry.isDirectory()) {
 			InputStream entryInputStream = null;
@@ -488,8 +518,9 @@ public final class DeployUtil {
 	 * @param entry
 	 * @throws IOException
 	 */
-	private static void includeAdditionalFileInLib(JarEntry entry, String filename, JarFile jarFile) throws IOException {
+	private static void includeAdditionalFileInLib(JarEntry entry, JarFile jarFile) throws IOException {
 		String fileToBeCopiedOnAgent = null;
+		String filename = entry.getName();
 		String agentDestDir = System.getProperty(USER_DIR) + "/";
 		for (String jarName : agentJars) {
 			int index = filename.indexOf('/');
