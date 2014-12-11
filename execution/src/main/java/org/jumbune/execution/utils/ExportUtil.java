@@ -227,8 +227,8 @@ public final class ExportUtil {
 	}
 
 	private static void addFlieList(JsonElement jsonElement, Set<String> set) {
-		JsonArray array = jsonElement.getAsJsonObject().getAsJsonArray(UtilitiesConstants.VIOLATION_LIST_TAG);
-		if (jsonElement != null && array != null) {
+		JsonArray array = null;
+		if(jsonElement != null && (array = jsonElement.getAsJsonObject().getAsJsonArray(UtilitiesConstants.VIOLATION_LIST_TAG))!= null){
 			for (JsonElement element : array) {
 				set.add(element.getAsJsonObject().get(UtilitiesConstants.FILE_NAME_TAG).getAsString());
 			}
