@@ -40,11 +40,6 @@ for f in $JUMBUNE_HOME/lib/*.jar; do
   CLASSPATH=${CLASSPATH}:$f;
 done
 
-#addming hadoop lib to classpath
-for f in $HADOOP_HOME/hadoop*core*.jar; do
-  CLASSPATH=${CLASSPATH}:$f;
-done
-
 CLASS='org.jumbune.execution.service.ShellExecutorService'
 
 echo $CLASSPATH
