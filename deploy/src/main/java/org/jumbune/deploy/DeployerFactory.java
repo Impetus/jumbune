@@ -8,21 +8,25 @@ import org.jumbune.deploy.mapr.MapRDeployer;
 
 public class DeployerFactory {
 
-	public static Deployer getDeployer(String distributionType) {
-		switch(distributionType){
-		case "APACHE-NY":
+	public static Deployer getDeployer(String distributionType, String hadoopDistributionType) {
+		
+		if(distributionType.equalsIgnoreCase("Non-Yarn") && hadoopDistributionType.contains("a")){
 			return new ApacheNonYarnDeployer();
-		case "APACHE-Y":
-			return new ApacheYarnDeployer();
-		case "CDH":
-			return new CDHDeployer();
-		case "HDP":
-			return new HDPDeployer();
-		case "MAPR":
-			return new MapRDeployer();
-		default:
-			return null;	
 		}
+		if(distributionType.equalsIgnoreCase("Yarn") && hadoopDistributionType.contains("a")){
+			return new ApacheYarnDeployer();
+		}
+		if(hadoopDistributionType.equalsIgnoreCase("h")){
+			return new HDPDeployer();
+		}
+		if(hadoopDistributionType.equalsIgnoreCase("c")){
+			return new CDHDeployer();
+		}
+		if(hadoopDistributionType.equalsIgnoreCase("m")){
+			return new MapRDeployer();
+		}
+		return null;
+		
 
 	}
 
