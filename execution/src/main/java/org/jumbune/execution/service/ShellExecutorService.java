@@ -148,7 +148,7 @@ public class ShellExecutorService extends CoreExecutorService {
 		 * (validatedData.get(Constants.FAILURE_KEY) != null && !validatedData.get(Constants.FAILURE_KEY).isEmpty()) {
 		 * ConsoleLogUtil.CONSOLELOGGER.debug(validatedData); throw new HTFException(ErrorCodesAndMessages.INVALID_YAML); }
 		 */
-		RemotingUtil.copyAndGetHadoopConfigurationFilePath(loader, "core-site.xml");
+		
 		loadInitialSetup(loader.getYamlConfiguration());
 		disableModules(loader);
 		loader.createJumbuneDirectories();
