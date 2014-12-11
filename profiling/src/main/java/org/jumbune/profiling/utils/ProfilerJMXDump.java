@@ -82,6 +82,8 @@ import com.jcraft.jsch.UserInfo;
 
 public class ProfilerJMXDump {
 
+	private static final String NAME = "name";
+
 	/** The Constant LOGGER. */
 	private static final Logger LOGGER = LogManager.getLogger(ProfilerJMXDump.class);
 
@@ -149,13 +151,17 @@ public class ProfilerJMXDump {
 					name = mbi[i].getName();
 					Object attributeValue = connection.getAttribute(objName, name);
 					if (attributeValue != null) {
-						serviceStats.put(name, String.valueOf(attributeValue));
+						serviceStats.put(getKeyName(objName, name), String.valueOf(attributeValue));
 					}
 
 				}
 			}
 		}
 		return serviceStats;
+	}
+
+	private String getKeyName(ObjectName objectName,  String name) {
+		return objectName.getKeyProperty(NAME)+"."+name;
 	}
 
 	/**
@@ -210,10 +216,10 @@ public class ProfilerJMXDump {
 					jmxAttributeList.add(name);
 					Object attributeValue = connection.getAttribute(objName, name);
 					if (attributeValue != null) {
-						serviceStats.put(name, String.valueOf(attributeValue));
+						serviceStats.put(objName.getKeyProperty(NAME)+"."+name, String.valueOf(attributeValue));
 					}
 					if("".equals(attributeValue) || "[]".equals(attributeValue)){
-						serviceStats.put(name, "-");
+						serviceStats.put(getKeyName(objName, name), "-");
 					}
 
 				}
@@ -276,10 +282,10 @@ public class ProfilerJMXDump {
 				jmxAttributeList.add(name);
 				Object attributeValue = connection.getAttribute(objName, name);
 				if (attributeValue != null) {
-					serviceStats.put(name, String.valueOf(attributeValue));
+					serviceStats.put(objName.getKeyProperty(NAME)+"."+name, String.valueOf(attributeValue));
 				}
 				if("".equals(attributeValue) || "[]".equals(attributeValue)){
-					serviceStats.put(name, "-");
+					serviceStats.put(getKeyName(objName, name), "-");
 				}
 	
 			}
@@ -325,7 +331,7 @@ public class ProfilerJMXDump {
 				String name = null;
 				for (int i = 0; i < info.getAttributes().length; i++) {
 					name = mbi[i].getName();
-					jmxAttributeList.add(name);
+					jmxAttributeList.add(getKeyName(objName, name));
 				}
 			}
 		}
