@@ -1,6 +1,15 @@
+<%@page import="java.util.Properties"%>
+<%@page import="java.io.InputStream"%>
 <script>
 var uploader_mr;
 </script>
+<body>
+	<%
+		InputStream stream =  Thread.currentThread().getContextClassLoader().getResourceAsStream("distributionInfo.properties");
+		Properties props = new Properties();
+		props.load(stream);
+		String hadoopDistValue = props.getProperty("HadoopDistribution");
+	%>
 <div id="yaml-dialog-modal" class="commonBox">
 
 	<form method="POST" action="ExecutionServlet" name="yamlForm"
@@ -21,10 +30,15 @@ var uploader_mr;
 				</a>
 				</li>
 				<li class="stepLine"></li>
-
-				<li><a href="#step-6"><label class="stepNumber">Profiling</label>
-				</a>
-				</li>
+				<%
+				if (!hadoopDistValue.equals("m")) {
+				%>
+					<li><a href="#step-6"><label class="stepNumber">Profiling</label>
+					</a>				
+					</li>
+				<%					
+					}
+				%>
 				<li class="stepLine"></li>
 				
 				<li><a href="#step-2"><label class="stepNumber">HDFS Validation</label>
@@ -37,6 +51,7 @@ var uploader_mr;
 				</a>
 				</li>
 			</ul>
+			
 			<div id="step-1" class="step-content">
 
 			<div class="status note">
@@ -566,7 +581,7 @@ var uploader_mr;
 								<div class="fieldsetBox clear">
 									<div class="paddBott">
 										<a style="margin-top: -1px;" href="javascript:void(0);"
-							asdfasdfsdf				onclick="javascript:instrumentUserDefValidateRemoveField(0);"
+											onclick="javascript:instrumentUserDefValidateRemoveField(0);"
 											class="removeSign">Remove</a>User Validation 1
 									</div>
 									<fieldset>
@@ -612,7 +627,9 @@ var uploader_mr;
 				</div>
 
 			</div>
-
+				<%
+				if (!hadoopDistValue.equals("m")) {
+				%>
 			<div id="step-6" class="step-content">
 
 				<div class="status note">
@@ -702,7 +719,9 @@ var uploader_mr;
 				</div>
 
 			</div>
-
+			<%					
+					}
+				%>
 
 			<div id="step-9" class="step-content">
 				<div id="step9LoaderWrap">
@@ -1572,6 +1591,9 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 
 						function checkStepNumber(obj) { 
 							var step_num = obj.attr('rel'); // get the current step number	
+							<%
+							if (!hadoopDistValue.equals("m")) {
+							%>
 							if (step_num == 6) {
 								$('#yaml-dialog-modal .actionBar a').hide();
 								if ( yamlValidate == true ) {
@@ -1597,6 +1619,38 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 								$('#yaml-dialog-modal .actionBar a#saveYamlBtn').remove();
 								$('#yaml-dialog-modal .actionBar a').show();
 							}
+							<%
+							}else
+							{
+							%>
+								if (step_num == 5) {
+									$('#yaml-dialog-modal .actionBar a').hide();
+									if ( yamlValidate == true ) {
+										$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');	
+									} else {
+										$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="disableNextStep buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="disableNextStep buttonPrevious" href="javascript:void(0);">Run</a>');	
+									}
+									//$('#yaml-dialog-modal .actionBar a').hide('slow');
+									/*if ($('#yaml-dialog-modal .actionBar').find('a#validateWizardBtn').text() == "") {
+										$('#yaml-dialog-modal .actionBar').append('<a id="validateWizardBtn" style= "display:none" class="buttonPrevious validateWizard" href="javascript:void(0);">Validate</a>');
+									   $('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');
+									}*/
+								} else if (step_num == 4) {
+									$('a.buttonNext').addClass('buttonDisabled');
+									$('#yaml-dialog-modal .actionBar a#validateWizardBtn').remove();
+									$('#yaml-dialog-modal .actionBar a#runWizardBtn').remove();
+									$('#yaml-dialog-modal .actionBar a#saveYamlBtn').remove();
+									$('#yaml-dialog-modal .actionBar a').show();
+								} else {
+									$('a.buttonNext').removeClass('buttonDisabled');
+									$('#yaml-dialog-modal .actionBar a#validateWizardBtn').remove();
+									$('#yaml-dialog-modal .actionBar a#runWizardBtn').remove();
+									$('#yaml-dialog-modal .actionBar a#saveYamlBtn').remove();
+									$('#yaml-dialog-modal .actionBar a').show();
+								}
+							<%
+							}
+							%>
 							if (step_num == 1) {
 								//auto-opening the "no. of unique users" node 1
 								//$("#noOfSlavesBtn").trigger("click");
@@ -1677,6 +1731,9 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 									$(".stepContainer").find(".sugg-field").removeClass("sugg-field");
 									$('#validateMsgBox').empty();
 									var jsonData = JSON.stringify(jsonData);
+									<%
+									if (!hadoopDistValue.equals("m")) {
+									%>
 									if (typeof jsonData != 'undefined' && jsonData.length > 2) {
 										var parsedJsonData = JSON.parse(jsonData);
 										var suggestString = "";
@@ -1774,7 +1831,109 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 											}
 										}
 									}
+									<%
+									}else{
+									%>
+									if (typeof jsonData != 'undefined' && jsonData.length > 2) {
+										var parsedJsonData = JSON.parse(jsonData);
+										var suggestString = "";
+										var ErrorString = "";
+										$.each(parsedJsonData, function(key, value) {
+											if (key == "Suggestions") {
+												yamlValidate = true;
+												suggestString += '<div class="normalMsg">';
+												$.each(value, function(suggestKey, suggestValue) {
+													suggestString += '<dl><dt>'+ suggestKey +'</dt><dd>';
+													$.each(suggestValue, function(suggestDataKey, suggestDataValue) {
+														suggestString += '<div><a href="javascript:void(0)" target="'+suggestKey+'">' + suggestDataValue + '</a></div>';
+														$("[name='"+suggestDataKey+"']").addClass("sugg-field");
+													});
+													suggestString += '</dd></dl>';
+												});
+												suggestString += '</div>';
+												
+												$('#validateMsgBox').show('slow').append('<div class="status info"><span>Suggestions: </span>' + suggestString + '</div>');
+												
+												if ( $("#wizard ul a.selected").attr("rel") == 5 ) {
+													$('#yaml-dialog-modal .actionBar a').hide();
+													
+													if ( $('#yaml-dialog-modal .actionBar #saveYamlBtn').size() > 0 ) {
+														$('#yaml-dialog-modal .actionBar #saveYamlBtn').removeClass("disableNextStep").show();
+														$('#yaml-dialog-modal .actionBar #runWizardBtn').removeClass("disableNextStep").show();
+													} else {
+														$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');
+													}
+												}
+											} else if (key == "Failures") {
+												yamlValidate = false;
+												ErrorString += '<div class="validateMsg">';
+												$.each(value, function(suggestKey, suggestValue) {
+													ErrorString += '<dl><dt>'+ suggestKey +'</dt><dd>';
+													$.each(suggestValue, function(suggestDataKey, suggestDataValue) {
+														ErrorString += '<div><a href="javascript:void(0)" target="'+suggestKey+'">' + suggestDataValue + '</a></div>';
+														$("[name='"+suggestDataKey+"']").addClass("err-field");
+													});
+													ErrorString += '</dd></dl>';
+												});
+												ErrorString += '</div>';
+												
+												$('#validateMsgBox').show('slow').append('<div class="status error"><span>Failures: </span>' + ErrorString + '</div>');
+												
+												if ( $("#wizard ul a.selected").attr("rel") == 5 ) {
+													if ( $('#yaml-dialog-modal .actionBar #saveYamlBtn').size() > 0 ) {
+														$('#yaml-dialog-modal .actionBar #saveYamlBtn').addClass("disableNextStep").show();
+														$('#yaml-dialog-modal .actionBar #runWizardBtn').addClass("disableNextStep").show();
+													} else {
+														$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');
+													}
+												}
 
+												//$('#yaml-dialog-modal .actionBar a#validateWizardBtn').show('slow');																 
+												//$('#yaml-dialog-modal .actionBar').append('<a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');
+											}
+										});
+																
+										/*-----For Mulitple files for MR Jobs */
+										/*
+										if (uploader_mr.total.uploaded == 0) {
+											// Files in queue upload them first
+											if (uploader_mr.files.length > 0) {
+												// When all files are uploaded submit form
+												uploader_mr.bind('UploadProgress', function() {
+													if (uploader_mr.total.uploaded == uploader_mr.files.length){
+														alert('submitting the form');
+														//document.create.submit();
+														
+													}
+												})
+
+												
+											} else
+												//alert('You must at least upload one file.');
+
+											$('#yamlForm').submit();
+										}*/
+										
+										return;
+									} else { 
+										yamlValidate = true;
+										$('#validateMsgBox').show('slow').append('<div class="status success"><span>Information: </span>Validated Successfully.</div>');
+																				
+										/* $('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');*/
+										
+										if ( $("#wizard ul a.selected").attr("rel") == 5 ) {
+											$('#yaml-dialog-modal .actionBar a').hide();
+											if ( $('#yaml-dialog-modal .actionBar #saveYamlBtn').size() > 0 ) {
+												$('#yaml-dialog-modal .actionBar #saveYamlBtn').removeClass("disableNextStep").show();
+												$('#yaml-dialog-modal .actionBar #runWizardBtn').removeClass("disableNextStep").show();
+											} else {
+												$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');
+											}
+										}
+									}
+									<%
+									}
+									%>
 								});
 								return false;
 							}
@@ -2056,3 +2215,4 @@ $(".msgBox").css("display","none");
 						
 					});
 </script>
+</body>
