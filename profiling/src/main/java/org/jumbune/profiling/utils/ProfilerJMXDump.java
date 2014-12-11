@@ -47,7 +47,7 @@ import javax.management.remote.JMXServiceURL;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Slave;
-import org.jumbune.common.beans.SupportedApacheHadoopVersions;
+import org.jumbune.common.beans.SupportedHadoopDistributions;
 import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.RemoteFileUtil;
@@ -67,6 +67,7 @@ import org.jumbune.profiling.healthview.ResultInfo;
 import org.jumbune.profiling.hprof.DFSEnum;
 import org.jumbune.profiling.hprof.NodePerformance;
 import org.jumbune.remoting.client.Remoter;
+import org.jumbune.remoting.common.CommandType;
 
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
@@ -81,6 +82,8 @@ import com.jcraft.jsch.UserInfo;
  */
 
 public class ProfilerJMXDump {
+
+	private static final String NAME = "name";
 
 	/** The Constant LOGGER. */
 	private static final Logger LOGGER = LogManager.getLogger(ProfilerJMXDump.class);
@@ -149,13 +152,17 @@ public class ProfilerJMXDump {
 					name = mbi[i].getName();
 					Object attributeValue = connection.getAttribute(objName, name);
 					if (attributeValue != null) {
-						serviceStats.put(name, String.valueOf(attributeValue));
+						serviceStats.put(getKeyName(objName, name), String.valueOf(attributeValue));
 					}
 
 				}
 			}
 		}
 		return serviceStats;
+	}
+
+	private String getKeyName(ObjectName objectName,  String name) {
+		return objectName.getKeyProperty(NAME)+"."+name;
 	}
 
 	/**
@@ -181,7 +188,7 @@ public class ProfilerJMXDump {
 	 * @throws IntrospectionException
 	 *             the introspection exception
 	 */
-	public Map<String, String> getAllJMXStats(JMXDeamons jmxDaemon, SupportedApacheHadoopVersions hadoopVersion, String host, String port) throws IOException,
+	public Map<String, String> getAllJMXStats(JMXDeamons jmxDaemon, SupportedHadoopDistributions hadoopVersion, String host, String port) throws IOException,
 			AttributeNotFoundException, InstanceNotFoundException, MBeanException, ReflectionException, IntrospectionException {
 		List<String> jmxAttributeList = new ArrayList<String>();
 		JMXConnector connector = null;
@@ -210,10 +217,10 @@ public class ProfilerJMXDump {
 					jmxAttributeList.add(name);
 					Object attributeValue = connection.getAttribute(objName, name);
 					if (attributeValue != null) {
-						serviceStats.put(name, String.valueOf(attributeValue));
+						serviceStats.put(objName.getKeyProperty(NAME)+"."+name, String.valueOf(attributeValue));
 					}
 					if("".equals(attributeValue) || "[]".equals(attributeValue)){
-						serviceStats.put(name, "-");
+						serviceStats.put(getKeyName(objName, name), "-");
 					}
 
 				}
@@ -222,31 +229,7 @@ public class ProfilerJMXDump {
 		return serviceStats;
 
 	}
-	
-	/***
-	 * Gets JMX parameter for Operating system service attributes
-	 *  
-	 * @param jmxDaemon
-	 * 			Enum representation of Operating system and Hadoop daemons
-	 * @param host
-	 * 			the host name
-	 * @param port
-	 * 			identify the running port of the service
-	 * @return 
-	 * 			the map containing all the JMX stats for a particular service
-	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
-	 * @throws AttributeNotFoundException
-	 *             the attribute not found exception
-	 * @throws InstanceNotFoundException
-	 *             the instance not found exception
-	 * @throws MBeanException
-	 *             the m bean exception
-	 * @throws ReflectionException
-	 *             the reflection exception
-	 * @throws IntrospectionException
-	 *             the introspection exception
-	 */
+
 	public Map<String, String> getOSJMXStats(JMXDeamons jmxDaemon, String host, String port) throws IOException,
 	AttributeNotFoundException, InstanceNotFoundException, MBeanException, ReflectionException, IntrospectionException {
 	List<String> jmxAttributeList = new ArrayList<String>();
@@ -276,10 +259,10 @@ public class ProfilerJMXDump {
 				jmxAttributeList.add(name);
 				Object attributeValue = connection.getAttribute(objName, name);
 				if (attributeValue != null) {
-					serviceStats.put(name, String.valueOf(attributeValue));
+					serviceStats.put(objName.getKeyProperty(NAME)+"."+name, String.valueOf(attributeValue));
 				}
 				if("".equals(attributeValue) || "[]".equals(attributeValue)){
-					serviceStats.put(name, "-");
+					serviceStats.put(getKeyName(objName, name), "-");
 				}
 	
 			}
@@ -303,7 +286,7 @@ public class ProfilerJMXDump {
 	 * @throws ReflectionException
 	 * @throws IntrospectionException
 	 */
-	public List<String> getAllJMXAttribute(JMXDeamons jmxDaemon, SupportedApacheHadoopVersions hadoopVersion, String host, String port) throws IOException,
+	public List<String> getAllJMXAttribute(JMXDeamons jmxDaemon, SupportedHadoopDistributions hadoopVersion, String host, String port) throws IOException,
 			AttributeNotFoundException, InstanceNotFoundException, MBeanException, ReflectionException, IntrospectionException {
 		List<String> jmxAttributeList = new ArrayList<String>();
 		JMXConnector connector = null;
@@ -325,7 +308,7 @@ public class ProfilerJMXDump {
 				String name = null;
 				for (int i = 0; i < info.getAttributes().length; i++) {
 					name = mbi[i].getName();
-					jmxAttributeList.add(name);
+					jmxAttributeList.add(getKeyName(objName, name));
 				}
 			}
 		}
@@ -618,7 +601,7 @@ public class ProfilerJMXDump {
 		for (String host : hosts) {
 			
 			CommandWritableBuilder builder = new CommandWritableBuilder();
-			builder.addCommand(VMSTAT_COMMAND, false, null).populate(config, host);
+			builder.addCommand(VMSTAT_COMMAND, false, null, CommandType.FS).populate(config, host);
 			String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 			if (response == null || "".equals(response.trim())){
 				LOGGER.error("Invalid response!!!");
@@ -743,7 +726,7 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public List<ResultInfo> getNodeThroughput(Config config, SupportedApacheHadoopVersions version, String nodeIp) throws AttributeNotFoundException,
+	public List<ResultInfo> getNodeThroughput(Config config, SupportedHadoopDistributions version, String nodeIp) throws AttributeNotFoundException,
 			InstanceNotFoundException, IntrospectionException, MBeanException, ReflectionException, IOException {
 
 		YamlConfig yamlConfig = (YamlConfig)config;
@@ -1018,12 +1001,12 @@ public class ProfilerJMXDump {
 			
 			
 			CommandWritableBuilder builder = new CommandWritableBuilder();
-			builder.addCommand(CPU_USAGE_COMMAND, false, null).populate(config, host);
+			builder.addCommand(CPU_USAGE_COMMAND, false, null, CommandType.FS).populate(config, host);
 			response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 			if (response == null || "".equals(response.trim())) {
 				LOGGER.warn("No response from remote machine on command " + CPU_USAGE_COMMAND);
 				CommandWritableBuilder builderWoCaret = new CommandWritableBuilder();
-				builderWoCaret.addCommand(CPU_USAGE_COMMAND_WITHOUT_CARET, false, null).populate(config, host);
+				builderWoCaret.addCommand(CPU_USAGE_COMMAND_WITHOUT_CARET, false, null, CommandType.FS).populate(config, host);
 				
 				response = (String) remoter.fireCommandAndGetObjectResponse(builderWoCaret.getCommandWritable());
 
@@ -1121,7 +1104,7 @@ public class ProfilerJMXDump {
 		Remoter remoter = new Remoter(yamlConfig.getMaster().getHost(), Integer.valueOf(yamlConfig.getMaster().getAgentPort()),
 				yamlConfig.getFormattedJumbuneJobName());
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand("cat /proc/cpuinfo", false, null).populate(config, host);
+		builder.addCommand("cat /proc/cpuinfo", false, null, CommandType.FS).populate(config, host);
 		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		remoter.close();
 		ResultParser resultParser = new ResultParser();
@@ -1476,7 +1459,7 @@ public class ProfilerJMXDump {
 		StringBuilder sb = new StringBuilder();
 				sb.append(NETWORK_LATENCY_COMMAND).append(" ").append(node2);
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(sb.toString(), false, null).populate(config, host);
+		builder.addCommand(sb.toString(), false, null, CommandType.FS).populate(config, host);
 		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		remoter.close();
 		latency = 0.0f;

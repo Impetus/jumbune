@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -19,7 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.beans.JobOutput;
-import org.jumbune.common.beans.SupportedApacheHadoopVersions;
+import org.jumbune.common.beans.SupportedHadoopDistributions;
 import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.MessageLoader;
@@ -36,6 +37,7 @@ import org.jumbune.profiling.hprof.HeapAllocSitesBean;
 import org.jumbune.profiling.hprof.HprofData;
 import org.jumbune.profiling.hprof.CPUSamplesBean.SampleDescriptor;
 import org.jumbune.remoting.client.Remoter;
+import org.jumbune.remoting.common.CommandType;
 import org.jumbune.utils.exception.JumbuneException;
 
 import com.google.gson.Gson;
@@ -57,6 +59,8 @@ public class ProfilerUtil {
 	private YamlLoader loader;
 
 	private static final String HADOOP = "Hadoop";
+	
+	private static final String DFS_ADMIN_COMMAND = " dfsadmin -report";
 	/**
 	 * Creates an instance of ProfilerUtil which would have MessageLoader
 	 * 
@@ -554,15 +558,8 @@ public class ProfilerUtil {
 	 */
 	public static String[] getDFSAdminReportCommandResult(Loader loader) {
 		YamlLoader yamlLoader = (YamlLoader)loader;
-		Remoter remoter = RemotingUtil.getRemoter(loader, "");
-		StringBuilder sbReport = new StringBuilder();
-		sbReport.append(yamlLoader.getHadoopHome(loader)).append("/bin/hadoop").append(" ").append("dfsadmin")
-				.append(" ").append("-report");
-		
-		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(sbReport.toString(), false, null).populate(yamlLoader.getYamlConfiguration(), null);
-		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
-		remoter.close();
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		String response = RemotingUtil.fireCommandAsHadoopDistribution( yamlConfig, DFS_ADMIN_COMMAND, CommandType.HADOOP_FS);
 		return response.split("\n");
 	}
 
@@ -577,22 +574,11 @@ public class ProfilerUtil {
 			String hdfsFilePath) {
 		YamlLoader yamlLoader = (YamlLoader)loader;
 		YamlConfig yamlConfig = (YamlConfig)yamlLoader.getYamlConfiguration();
-		Remoter remoter = RemotingUtil.getRemoter(yamlLoader, "");
 		StringBuilder sbReport = new StringBuilder();
-		if (Enable.TRUE.equals(yamlConfig.getEnableYarn())) {
-			sbReport.append(yamlLoader.getHadoopHome(loader))
-					.append("/bin/hdfs fsck ").append(hdfsFilePath).append(" ")
-					.append("-files -blocks -locations ");
-		} else {
-			sbReport.append(yamlLoader.getHadoopHome(loader))
-					.append("/bin/hadoop fsck ").append(hdfsFilePath)
-					.append(" ").append("-files -blocks -locations ");
-		}
-		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(sbReport.toString(), false, null).populate(
-				yamlConfig, null);
-		return (String) remoter.fireCommandAndGetObjectResponse(builder
-				.getCommandWritable());
+		sbReport.append(" fsck ").append(hdfsFilePath)
+			.append(" ").append("-files -blocks -locations ");
+		return RemotingUtil.fireCommandAsHadoopDistribution(yamlConfig, sbReport.toString(), CommandType.HADOOP_FS);
+		
 	}	
 	/***
 	 * This method finds out the Hadoop URL which is used while monitoring remote hadoop jmx based on the hadoop version.
@@ -601,17 +587,7 @@ public class ProfilerUtil {
 	 * @param jmxDaemon
 	 * @return
 	 */
-	public static String getHadoopJMXURLPrefix(SupportedApacheHadoopVersions hadoopVersion, JMXDeamons jmxDaemon) {
-		String hadoopJMXURL = null;
-		switch (hadoopVersion) {
-		/*case HADOOP_0_20_2:
-			hadoopJMXURL = "hadoop";
-			break;*/
-		default:
-			hadoopJMXURL = HADOOP;
-			break;
-		}
-		return hadoopJMXURL;
-
+	public static String getHadoopJMXURLPrefix(SupportedHadoopDistributions hadoopVersion, JMXDeamons jmxDaemon) {
+		return HADOOP;
 	}
 }

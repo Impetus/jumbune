@@ -30,13 +30,14 @@ import org.jumbune.common.beans.PhaseDetails;
 import org.jumbune.common.beans.PhaseOutput;
 import org.jumbune.common.beans.PhaseType;
 import org.jumbune.common.beans.Slave;
-import org.jumbune.common.beans.SupportedApacheHadoopVersions;
+import org.jumbune.common.beans.SupportedHadoopDistributions;
 import org.jumbune.common.beans.TaskOutputDetails;
 import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.ApiInvokeHintsEnum;
+import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
 
 
@@ -132,7 +133,7 @@ public class ResourceUsageCollector {
 		Remoter remoter = RemotingUtil.getRemoter(loader, receiveDirectory);
 		for (Slave slave : yamlLoader.getSlavesInfo()) {
 			for (String host : slave.getHosts()) {
-				builder.addCommand(command.toString(), true, params).populate(yamlConfig, host);
+				builder.addCommand(command.toString(), true, params, CommandType.FS).populate(yamlConfig, host);
 				remoter.fireAndForgetCommand(builder.getCommandWritable());
 				builder.getCommandBatch().clear();
 			}			
@@ -166,8 +167,8 @@ public class ResourceUsageCollector {
 				
 		Remoter remoter = RemotingUtil.getRemoter(loader, receiveDirectory);
 		for (String host : hosts) {
-			builder.addCommand(cpuCommand.toString(), true, params)
-			.addCommand(memCommand.toString(), true, params).populate(yamlConfig, host);
+			builder.addCommand(cpuCommand.toString(), true, params, CommandType.FS)
+			.addCommand(memCommand.toString(), true, params, CommandType.FS).populate(yamlConfig, host);
 			remoter.fireAndForgetCommand(builder.getCommandWritable());
 			builder.getCommandBatch().clear();
 		}
@@ -193,7 +194,7 @@ public class ResourceUsageCollector {
 		params.add(slaveTmpDir);
 		for (Slave slave : yamlLoader.getSlavesInfo()) {
 			for (String host : slave.getHosts()) {
-				builder.addCommand(command.toString(), true, params).populate(yamlConfig, host);
+				builder.addCommand(command.toString(), true, params, CommandType.FS).populate(yamlConfig, host);
 				remoter.fireAndForgetCommand(builder.getCommandWritable());
 				builder.getCommandBatch().clear();
 			}
@@ -440,12 +441,12 @@ public class ResourceUsageCollector {
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		String remoteHadoop = RemotingUtil.getHadoopHome(remoter, yamlConfig) + File.separator;
 		String user = yamlConfig.getMaster().getUser();
-		SupportedApacheHadoopVersions hadoopVersion = RemotingUtil.getHadoopVersion(yamlConfig);
+		SupportedHadoopDistributions hadoopVersion = RemotingUtil.getHadoopVersion(yamlConfig);
 		String logsHistory = changeLogHistoryPathAccToHadoopVersion(remoteHadoop,
 				hadoopVersion, user);
 		String command = jobID + RemotingConstants.SINGLE_SPACE + logsHistory;
 		
-		builder.addCommand(command, false, null).setApiInvokeHints(ApiInvokeHintsEnum.GET_HADOOP_CONFIG);
+		builder.addCommand(command, false, null, CommandType.FS).setApiInvokeHints(ApiInvokeHintsEnum.GET_HADOOP_CONFIG);
 		String configFilePath = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		
 		String destinationReceiveDir = RemotingUtil.copyAndGetHadoopConfigurationFilePath(configFilePath, loader);
@@ -697,11 +698,11 @@ public class ResourceUsageCollector {
 	 * @return the string
 	 */
 	private String changeLogHistoryPathAccToHadoopVersion(String remoteHadoop,
-			SupportedApacheHadoopVersions hadoopVersion, String user) {
+			SupportedHadoopDistributions hadoopVersion, String user) {
 		String logsHistory;
-		if(SupportedApacheHadoopVersions.HADOOP_NON_YARN.equals(hadoopVersion)|| SupportedApacheHadoopVersions.HADOOP_NON_YARN.equals(hadoopVersion)) {
+		if(SupportedHadoopDistributions.HADOOP_NON_YARN.equals(hadoopVersion)|| SupportedHadoopDistributions.HADOOP_NON_YARN.equals(hadoopVersion)) {
 			logsHistory = remoteHadoop + LOGS + HISTORY_DIR_SUFFIX;
-		}else if(SupportedApacheHadoopVersions.HADOOP_NON_YARN.equals(hadoopVersion)){
+		}else if(SupportedHadoopDistributions.HADOOP_NON_YARN.equals(hadoopVersion)){
 			logsHistory = remoteHadoop + LOGS + HISTORY_DIR_SUFFIX_OLD;
 		}else{
 			logsHistory = remoteHadoop + LOGS + user + HISTORY_DIR_SUFFIX;
