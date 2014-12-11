@@ -83,7 +83,7 @@ public class CommandAsyncDelegator extends SimpleChannelInboundHandler<CommandWr
 		List<Command> commandList = commandWritable.getBatchedCommands();
 
 		for (Command command : commandList) {
-			if (ApiInvokeHintsEnum.JOB_EXECUTION.equals(commandWritable
+/*			if (ApiInvokeHintsEnum.JOB_EXECUTION.equals(commandWritable
 					.getApiInvokeHints())) {
 				String arr[] = command.getCommandString().split(
 						RemotingConstants.SINGLE_SPACE);
@@ -91,7 +91,8 @@ public class CommandAsyncDelegator extends SimpleChannelInboundHandler<CommandWr
 						RemotingConstants.SSH, arr[0], arr[1],
 						arr[RemotingConstants.TWO],
 						arr[RemotingConstants.THREE] }, null);
-			} else if (commandWritable.isAuthenticationRequired()) {
+			} else */
+			if (commandWritable.isAuthenticationRequired()) {
 				executeCommandsWithJsch(commandWritable, command);
 			} else {
 				String agentHome = System.getenv(RemotingConstants.AGENT_HOME);
@@ -164,7 +165,7 @@ public class CommandAsyncDelegator extends SimpleChannelInboundHandler<CommandWr
 		}
 		Session session = null;
 		try {
-			session = JschUtil.createSession(user, host, rsaFile, dsaFile);
+			session = JschUtil.createSession(user, host, rsaFile, dsaFile, null);
 			String commandStr = command.getCommandString();
 			if (commandStr.contains(RemotingConstants.AGENT_HOME)) {
 				commandStr = commandStr.replace(RemotingConstants.AGENT_HOME,

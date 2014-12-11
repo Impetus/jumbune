@@ -19,6 +19,7 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.remoting.common.ApiInvokeHintsEnum;
+import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.JschUtil;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.remoting.writable.CommandWritable;
@@ -69,15 +70,9 @@ public class CommandDelegator extends SimpleChannelInboundHandler<CommandWritabl
 			throws IOException {
 		String rippedCommand = null;
 		List<Command> commandList = commandWritable.getBatchedCommands();
-
 		for (Command command : commandList) {
-			if (ApiInvokeHintsEnum.JOB_EXECUTION.equals(commandWritable.getApiInvokeHints())) {
-				String arr[] = command.getCommandString().split(RemotingConstants.SINGLE_SPACE);
-				String[] jschArray = new String[arr.length+1];
-				jschArray[0] = RemotingConstants.SSH;
-				System.arraycopy(arr, 0, jschArray, 1, arr.length);
-				JschUtil.execSlaveCleanUpTask(jschArray, null);
-			} else if (commandWritable.isAuthenticationRequired()) {
+			command.setCommandString(replaceSymbolsWithConfigurationVariable(command.getCommandString()));
+			if (commandWritable.isAuthenticationRequired()) {
 				executeCommandsWithJsch(commandWritable, command);
 			} else  {
 				String agentHome = System.getenv(RemotingConstants.AGENT_HOME);
@@ -85,6 +80,16 @@ public class CommandDelegator extends SimpleChannelInboundHandler<CommandWritabl
 				execute(rippedCommand.split(RemotingConstants.SINGLE_SPACE));
 			}
 		}
+	}
+	
+	private String replaceSymbolsWithConfigurationVariable(String commandString) {
+		String agentHome = System.getenv(RemotingConstants.AGENT_HOME);
+		agentHome = agentHome.endsWith(File.separator) ? agentHome : agentHome + File.separator;
+
+		HadoopConfigurationPropertyLoader hcpl = HadoopConfigurationPropertyLoader.getInstance();
+		commandString = commandString.replaceAll("HADOOP_HOME", hcpl.getHadoopHome());
+		commandString = commandString.replaceAll("AGENT_HOME", agentHome);
+		return commandString;
 	}
 
 	/**
@@ -146,8 +151,12 @@ public class CommandDelegator extends SimpleChannelInboundHandler<CommandWritabl
 			host = commandWritable.getSlaveHost();
 		}
 		Session session = null;
+		CommandType commandType = commandWritable.getCommandType();
+		if(commandType==null){
+			LOGGER.warn("No Command Type found for ["+commandWritable.toString()+"]");			
+		}
 		try {
-			session = JschUtil.createSession(user, host, rsaFile, dsaFile);
+			session = JschUtil.createSession(user, host, rsaFile, dsaFile, commandType);
 			String commandStr = command.getCommandString();
 			if (commandStr.contains(RemotingConstants.AGENT_HOME)) {
 				commandStr = commandStr.replace(RemotingConstants.AGENT_HOME, System.getenv(RemotingConstants.AGENT_HOME));
@@ -202,7 +211,7 @@ public class CommandDelegator extends SimpleChannelInboundHandler<CommandWritabl
 				String pid = line.trim();
 				StringBuffer sb = new StringBuffer(ECHO_CMD);
 				sb.append(SINGLE_SPACE).append("'").append(CONST_PID).append(Integer.parseInt(pid)-2).append("'").append(REDIRECT_SYMBOL).append(command.getParams().get(0)).
-				append(PID_FILE);
+						append(PID_FILE);
 				ps.println(sb.toString());
 				ps.println(EXIT_CMD);
 				LOGGER.debug("Executed commmand [" + sb + EXIT_CMD + "] host" + host);			

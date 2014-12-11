@@ -142,7 +142,7 @@ public class DataDistributionStats {
 		List<String> nodeInfo;
 		BlockInfo bInfo;
 		for (String line : commandResult) {
-			if (line.contains("blk") && line.contains("repl")) {
+			if (line.contains("blk") && line.contains("repl=")) {
 				nodeInfo = new ArrayList<String>();
 				bInfo = new BlockInfo();
 				String splittedArrayBasedOnReplication[] = line.split("repl=");

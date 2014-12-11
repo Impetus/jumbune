@@ -26,6 +26,7 @@ import org.jumbune.profiling.utils.JMXConnectorCache;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.client.SingleNIOEventGroup;
 import org.jumbune.remoting.common.BasicYamlConfig;
+import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.remoting.writable.CommandWritable;
 import org.jumbune.remoting.writable.CommandWritable.Command;
@@ -209,6 +210,7 @@ public class HomeServlet extends HttpServlet {
 			commandWritable.setUsername(config.getUser());
 			commandWritable.setRsaFilePath(config.getRsaFile());
 			commandWritable.setSlaveHost(host);
+			commandWritable.setCommandType(CommandType.FS);
 			remoter.fireAndForgetCommand(commandWritable);
 		}
 		ConsoleLogUtil.CONSOLELOGGER
@@ -233,7 +235,7 @@ public class HomeServlet extends HttpServlet {
 		LOGGER.info("Cleanup agent temporary directories command ["
 				+ cleanLocationAgentStrBuilder + "]");
 
-		builder.addCommand(cleanLocationAgentStrBuilder.toString(), false, null);
+		builder.addCommand(cleanLocationAgentStrBuilder.toString(), false, null, CommandType.FS);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 	}
 }

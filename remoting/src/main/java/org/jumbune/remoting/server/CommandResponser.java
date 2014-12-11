@@ -106,7 +106,7 @@ public class CommandResponser extends SimpleChannelInboundHandler<String> {
 					throw new IllegalArgumentException("Invalid method parameters!!!");
 				}
 				session = JschUtil.createSession(params[0], params[1],
-						params[2], params[RemotingConstants.THREE]);
+						params[2], params[RemotingConstants.THREE], null);
 				Channel ch = JschUtil.getChannelWithResponse(session, command);
 				in = ch.getInputStream();
 				ch.connect();
@@ -116,7 +116,7 @@ public class CommandResponser extends SimpleChannelInboundHandler<String> {
 					throw new IllegalArgumentException("Invalid method parameters!!!");
 				}
 				session = JschUtil.createSession(params[0], params[1],
-						params[2], params[RemotingConstants.THREE]);
+						params[2], params[RemotingConstants.THREE], null);
 				Channel ch = JschUtil.getChannelWithResponse(session, command);
 				in = ch.getInputStream();
 				ch.connect();
@@ -126,7 +126,7 @@ public class CommandResponser extends SimpleChannelInboundHandler<String> {
 				
 				}
 				session = JschUtil.createSession(params[0], params[1],
-						params[2], params[RemotingConstants.THREE]);
+						params[2], params[RemotingConstants.THREE], null);
 				Channel ch = JschUtil.getChannelWithResponse(session, command);
 				in = ch.getInputStream();
 				ch.connect();

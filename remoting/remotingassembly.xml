@@ -36,6 +36,7 @@
 					<include>org/jumbune/remoting/common**/*</include>
 					<include>org/jumbune/remoting/codecs**/*</include>
 					<include>log4j2.xml</include>
+					<include>distribution.properties</include>
 				</includes>
 			</unpackOptions>
 		</dependencySet>

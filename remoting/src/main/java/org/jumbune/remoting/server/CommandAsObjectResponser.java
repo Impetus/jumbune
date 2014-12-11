@@ -17,11 +17,13 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.remoting.common.ApiInvokeHintsEnum;
+import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.JschUtil;
 import org.jumbune.remoting.common.RemoterUtility;
 import org.jumbune.remoting.common.RemotingConstants;
@@ -69,8 +71,28 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 	private Object performAction(final CommandWritable commandWritable) throws JSchException, IOException {
 		LOGGER.debug("going to perform action");
 		List<Command> commandList = commandWritable.getBatchedCommands();
-		for(Command command : commandList){	
-			String agentHome = System.getenv(RemotingConstants.AGENT_HOME);
+		HadoopConfigurationPropertyLoader hcpl = HadoopConfigurationPropertyLoader.getInstance();
+		for(Command command : commandList){
+			String commandString = command.getCommandString();
+			String[] commandStringSplits = commandString.split("\\s+");
+			if(commandStringSplits[0].startsWith("echo")){
+				switch (commandStringSplits[1]){
+				case "$HADOOP_HOME":
+					return hcpl.getHadoopHome();
+				case "$AGENT_HOME":
+					String agentHomeDir = System.getenv("AGENT_HOME");
+					agentHomeDir = agentHomeDir.endsWith(File.separator) ? agentHomeDir:agentHomeDir+File.separator;
+					return agentHomeDir;
+				}
+			}
+			command.setCommandString(replaceSymbolsWithConfigurationVariable(command.getCommandString()));
+			List<String> parameters = command.getParams();
+			if(parameters!=null){
+				for(int i =0; i<parameters.size(); i++){
+					String mayBeReplacedParam = replaceSymbolsWithConfigurationVariable(parameters.get(i));
+					parameters.set(i, mayBeReplacedParam);
+				}
+			}
 			ApiInvokeHintsEnum apiInvokeHint = commandWritable.getApiInvokeHints();
 			
 			//checks if command uses some api invoke hint
@@ -84,10 +106,10 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 						return getHadoopConfigFilefromJobID(strTmp[0], strTmp[1]);
 					case HOST_TO_IP_OP:
 						return convertHostNameToIP(command.getCommandString());
-					case JOB_EXECUTION:
-						return processJob(command.getCommandString(), agentHome);
+				//	case JOB_EXECUTION:
+				//		return processJob(command.getCommandString(), agentHome);
 					case GET_FILES:
-					File file = processGetFiles(command, agentHome);
+					File file = processGetFiles(command);
 						return file.list();
 					case DB_DOUBLE_HASH:
 						return processDBOptSteps(command.getCommandString());
@@ -113,14 +135,24 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 		return commandWritable;
 	}
 
+	private String replaceSymbolsWithConfigurationVariable(String commandString) {
+		String agentHome = System.getenv(RemotingConstants.AGENT_HOME);
+		agentHome = agentHome.endsWith(File.separator) ? agentHome : agentHome + File.separator;
+
+		HadoopConfigurationPropertyLoader hcpl = HadoopConfigurationPropertyLoader.getInstance();
+		commandString = commandString.replaceAll("HADOOP_HOME", hcpl.getHadoopHome());
+		commandString = commandString.replaceAll("AGENT_HOME", agentHome);
+		return commandString;
+	}
+
 	private void checkValidParams(String[] commands) {
 		if (commands.length != RemotingConstants.THREE) {
 			throw new IllegalArgumentException("Invalid params received from Remoter!!!");
 		}
 	}
 
-	private File processGetFiles(Command command, String agentHome) {
-		File file = new File(command.getCommandString().replace(RemotingConstants.AGENT_HOME, agentHome).trim());
+	private File processGetFiles(Command command) {
+		File file = new File(command.getCommandString().trim());
 		if (!file.isDirectory()) {
 			throw new  IllegalArgumentException("Not a directory!!!");
 		}
@@ -143,6 +175,7 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 
 		String sReturnValue = null;
 		Session session = null;
+		CommandType commandType = commandWritable.getCommandType();
 		try {
 			String lineBreaker = null;
 			String command = commandObj.getCommandString();
@@ -153,14 +186,14 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 			if (host == null) {
 				host = commandWritable.getSlaveHost();
 			}
-			session = JschUtil.createSession(user, host, rsaFile, dsaFile);
+			session = JschUtil.createSession(user, host, rsaFile, dsaFile, commandType);
 			if ((lineBreaker = extractLineBreaker(command)) != null) {
 				sReturnValue = JschUtil.executeCommandUsingShell(session, command + RemotingConstants.DOUBLE_NEWLINE, lineBreaker);
 			} else {
 				Channel ch = JschUtil.getChannelWithResponse(session, command);
 				InputStream in = ch.getInputStream();
 				ch.connect();
-				sReturnValue = converToString(in);
+				sReturnValue = convertToString(in);
 			}
 		} finally {
 			if (session != null) {
@@ -258,7 +291,7 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 	/**
 	 * Execute.
 	 * 
-	 * @param commands
+	 * @param commandWithParams
 	 *            the commands
 	 * @param jarLocation
 	 *            the jar location
@@ -266,19 +299,19 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 	 *            the dir location
 	 * @return the string
 	 */
-	private String executeCommand(String[] commands, String jarLocation, String dirLocation) throws IOException{
+	private String executeCommand(String[] commandWithParams, String jarLocation, String dirLocation) throws IOException{
 		String agentHome = System.getenv(RemotingConstants.AGENT_HOME);
 		if (!agentHome.endsWith("/")) {
 			agentHome += "/";
 		}
-		String hadoopHome=RemoterUtility.getHadoopHome();
-		for(int i=0;i<commands.length;i++){
-			commands[i]=commands[i].replaceAll("AGENT_HOME", agentHome);
-			commands[i]=commands[i].replaceAll("HADOOP_HOME", hadoopHome);	
+/*		String hadoopHome=RemoterUtility.getHadoopHome();
+		for(int i=0;i<commandWithParams.length;i++){
+			commandWithParams[i]=commandWithParams[i].replaceAll("AGENT_HOME", agentHome);
+			commandWithParams[i]=commandWithParams[i].replaceAll("HADOOP_HOME", hadoopHome);	
 		}
-		String jobJarAbsolutePath = agentHome + jarLocation;
+*/		String jobJarAbsolutePath = agentHome + jarLocation;
 		File fileLoc = new File(jobJarAbsolutePath);
-		if(!commands[2].contains(RemotingConstants.DATA_VALIDATION_JAR)){
+		if(!commandWithParams[2].contains(RemotingConstants.DATA_VALIDATION_JAR)){
 			String[] fileList = fileLoc.list();
 			String jarName = null;
 			for (String filename : fileList) {
@@ -287,9 +320,9 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 					break;
 				}
 			}
-			commands[2] = jobJarAbsolutePath + "/" + jarName;
+			commandWithParams[2] = jobJarAbsolutePath + "/" + jarName;
 		}
-		ProcessBuilder pb = new ProcessBuilder(commands);
+		ProcessBuilder pb = new ProcessBuilder(commandWithParams);
 		File loc = new File(agentHome + dirLocation);
 		if (!loc.exists()) {
 			loc.mkdir();
@@ -311,7 +344,7 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 					br.close();
 				}
 		}
-		LOGGER.debug("Executed command ["+Arrays.toString(commands) +"], sending back response ["+sb.toString()+"]");
+		LOGGER.debug("Executed command ["+Arrays.toString(commandWithParams) +"], sending back response ["+sb.toString()+"]");
 		return sb.toString();
 		
 	}
@@ -329,7 +362,7 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 			p = pb.start();
 			is = p.getInputStream();
 			if (is != null) {
-				sb.append(converToString(is));
+				sb.append(convertToString(is));
 			}
 		}finally {
 				if (br != null) {
@@ -352,7 +385,7 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 	 * 
 	 * @throws IOException
 	 */
-	private String converToString(InputStream in) throws IOException {
+	private String convertToString(InputStream in) throws IOException {
 
 		StringBuilder sb = new StringBuilder();
 		if (in != null) {
@@ -563,4 +596,3 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 	}
 	
 }
-

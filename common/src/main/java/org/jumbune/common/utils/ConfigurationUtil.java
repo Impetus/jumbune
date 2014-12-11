@@ -41,7 +41,7 @@ import org.xml.sax.SAXException;
  * 
  
  */
-public final class ConfigurationUtil {
+public class ConfigurationUtil {
 	
 	/** The Constant LOGGER. */
 	public static final Logger LOGGER = LogManager.getLogger(ConfigurationUtil.class);
@@ -381,7 +381,7 @@ public final class ConfigurationUtil {
 	 */
 	public static ClasspathElement loadJumbuneSuppliedJarList() throws JumbuneException {
 		ClasspathElement classpathElement = new ClasspathElement();
-		String[] files = {"AGENT_HOMElib/jumbune-utils-1.3.1-SNAPSHOT.jar"};
+		String[] files = {"AGENT_HOMElib/jumbune-utils-1.3.0.jar","AGENT_HOMElib/log4j-api-2.0.jar","AGENT_HOMElib/log4j-core-2.0.jar"};
 		classpathElement.setFiles(files);
 		classpathElement.setSource(-1);
 		return classpathElement;

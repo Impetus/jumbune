@@ -64,22 +64,9 @@ public class YarnJobStatsUtility {
 	 */
 	public JobOutput parseAndGetJobStats(String reLocalPath) throws IOException{
 		
-		long timestamp = 0, latestTimestamp = 0;
-		File jobFilePath = new File(reLocalPath);
-		File[] getJobFiles = jobFilePath.listFiles();
-		String fileName = null;
-		 for (File file : getJobFiles) {
-			 if(file.getName().endsWith(".jhist")){
-				 String[] nameAttribs = file.getName().split("-");
-				 timestamp = Long.parseLong(nameAttribs[1]);
-					if (timestamp > latestTimestamp) {
-						latestTimestamp = timestamp;
-						fileName = file.getName();
-					}
-				 }
-		 }
-		String histFileLocation = reLocalPath + File.separator + fileName ;
-		Path histFilePath = new Path(histFileLocation);
+		
+		
+		Path histFilePath = new Path(reLocalPath);
 		DecoratedJobHistoryParser decoratedJobHistoryParser = new DecoratedJobHistoryParser(FileSystem.getLocal(new Configuration()), histFilePath);
 		JobOutput jobOutput = null;
 		try {

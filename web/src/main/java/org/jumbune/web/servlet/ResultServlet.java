@@ -31,6 +31,7 @@ import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.execution.service.HttpExecutorService;
 import org.jumbune.remoting.client.Remoter;
+import org.jumbune.remoting.common.CommandType;
 import org.jumbune.web.utils.WebConstants;
 
 import com.google.gson.Gson;
@@ -161,7 +162,7 @@ public class ResultServlet extends HttpServlet {
 				.append(" ").append(jobName);
 		
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(sbReport.toString(), false, null).populate(yamlLoader.getYamlConfiguration(), null);
+		builder.addCommand(sbReport.toString(), false, null, CommandType.HADOOP_JOB).populate(yamlLoader.getYamlConfiguration(), null);
 		String commandResponse = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		LOG.info("Hadoop Job has been killed ["+jobName+"]");
 		LOG.debug("Killed Hadoop Job command response ["+commandResponse+"]");
