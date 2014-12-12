@@ -6,7 +6,7 @@
 	<parent>
 		<artifactId>jumbune</artifactId>
 		<groupId>org.jumbune</groupId>
-		<version>1.4.0</version>
+		<version>1.4.1-SNAPSHOT</version>
 	</parent>
 
 	<groupId>org.jumbune</groupId>
@@ -84,7 +84,7 @@
 		<dependency>
 			<groupId>org.jumbune</groupId>
 			<artifactId>jumbune-remoting</artifactId>
-			<version>1.4.0</version>
+			<version>1.4.1-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 	<build>

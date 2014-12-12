@@ -60,7 +60,7 @@
     "hadoopJobProfile": "TRUE",
     "hdfsInputPath": "/Jumbune/Demo/input/PREPROCESSED/data1",
     "includeClassJar": "TRUE",
-    "inputFile": "user.home.directory/Desktop/Jumbune_Home/examples/example-distribution/examples-usregionportouts-1.4.0.jar",
+    "inputFile": "user.home.directory/Desktop/Jumbune_Home/examples/example-distribution/examples-usregionportouts-1.4.1-SNAPSHOT.jar",
     "jobs": [
       {
         "jobClass": null,
