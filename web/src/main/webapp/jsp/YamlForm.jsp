@@ -347,7 +347,7 @@ var uploader_mr;
 									value="2" /> <label for="masterMachinePath">Jumbune system</label>
 							</div>
 						</div>
-
+                   <input type="hidden" id="isLocalSystemJar" name="isLocalSystemJar" value="somevalue">
 						<div class="commonBox">
 							<div id="localMachinePathFieldBox" class="previewInfo">
 								<div class="fleft">
@@ -1709,6 +1709,15 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 										validationFields[i].fieldNumber = fieldNum;
 									}
 								}
+						
+								if($("input:radio[name='jobjar.machinePath']:checked").val()==1)
+								{formData["isLocalSystemJar"]="TRUE"
+								}
+								if($("input:radio[name='jobjar.machinePath']:checked").val()==2)
+								{formData["isLocalSystemJar"]="FALSE"
+								}
+								
+								
 								
 								var finalJson = JSON.stringify(formData, null, '\t');
 								var regExp = /\\\\/g;

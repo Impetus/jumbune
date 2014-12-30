@@ -315,4 +315,7 @@ public interface ErrorMessages {
 	
 	/**existing job name invalid */
 	int EXISTING_JOB_INVALID = 2111;
+	
+	/**existing job name invalid */
+	int SUPPLIED_JAR_INVALID = 2112;
 }
