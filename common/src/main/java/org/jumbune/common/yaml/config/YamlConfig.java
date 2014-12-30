@@ -108,6 +108,19 @@ public class YamlConfig implements Config {
 	/** Specify the job name of an existing job on Hadoop cluster **/
 	private String existingJobName;
 
+	
+	/**
+	 *The Jar is from Junbune System is isLocalSystemJar is FALSE otherwise from local system
+	 */
+	private Enable isLocalSystemJar;
+	
+	/**
+	 * @return if isLocalSystemJar is TRUE or FALSE
+	 */
+	public Enable getIsLocalSystemJar()  {
+		return isLocalSystemJar;
+	}
+
 	/**
 	 * Gets the formatted jumbune job name.
 	 * 
@@ -709,7 +722,11 @@ public class YamlConfig implements Config {
 				+ hdfsInputPath + ", dataValidation=" + dataValidation
 				+ ", jumbuneJobName=" + jumbuneJobName + ", slaveParam="
 				+ slaveParam + ", runJobFromJumbune=" + runJobFromJumbune
-				+ ", existingJobName=" + existingJobName + "]";
+				+ ", existingJobName=" + existingJobName
+				+ ", isLocalSystemJar=" + isLocalSystemJar + "]";
 	}
-}
 
+
+
+	
+}

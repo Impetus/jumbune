@@ -13,6 +13,7 @@ import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.ClasspathElement;
 import org.jumbune.common.beans.DataValidationBean;
 import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.FieldValidationBean;
@@ -68,7 +69,7 @@ public class ValidateInput {
 
 	private static final String DATA_VALIDATION_FIELD_LIST = "dataValidation.fieldValidationList[";
 	
-	private static final String MAPR_DATANODE_IP = "maprcli node list -filter \"[rp==/*]and[svc==nfs]\" -columns ip | awk '{print $2}'";
+	private static final String MAPR_DATANODE_IP = "maprcli node list -columns ip | awk '{print $2}'";
 
 	/**
 	 * constructor for initialise data member.
@@ -103,7 +104,8 @@ public class ValidateInput {
 			if(isEnable(yamlConfig.getEnableStaticJobProfiling())){
 				validateProfilingField(config);
 			}
-
+			validateJarPath(yamlConfig);
+		
 		}
 		if (!failedValidation.isEmpty()) {
 			validateInput.put(Constants.FAILURE_KEY, failedValidation);
@@ -114,6 +116,39 @@ public class ValidateInput {
 		return validateInput;
 	}
 
+	/**
+	 * This method checks whether the jar location given corresponds to a valid
+	 * jar file or not.
+	 * 
+	 * @param yamlConfig
+	 */
+	public void validateJarPath(YamlConfig yamlConfig) {
+	
+		//validation to be done only when flow debugging and job profiling (only "Run from jumbune" option) are enabled. 
+		if(isEnable(yamlConfig.getDebugAnalysis())||(isEnable(yamlConfig.getEnableStaticJobProfiling())&&isEnable(yamlConfig.getRunJobFromJumbune())))
+    	{	    
+		     String inputFile = yamlConfig.getInputFile();
+		     Map<String, String> failedCases = new HashMap<String, String>();
+		     boolean isLocalSystemJar = isEnable(yamlConfig.getIsLocalSystemJar());
+		     if(inputFile!=null)
+		     {   
+		    	 boolean endsWithJar=inputFile.trim().endsWith(".jar");
+		          if ((((!endsWithJar || ! new File(inputFile).exists())&&(!isLocalSystemJar))||(isLocalSystemJar&&!endsWithJar))) 
+		          {
+		    	 failedCases.put(inputFile,
+		    			errorMessages.get(ErrorMessages.SUPPLIED_JAR_INVALID));
+		     	 failedValidation.put("M/R-Jobs", failedCases);
+		           }
+		     }
+		     else
+		     {
+		    	 failedCases.put(inputFile,
+			    			errorMessages.get(ErrorMessages.SUPPLIED_JAR_INVALID));
+			     	failedValidation.put("M/R-Jobs", failedCases);
+		     }
+		}
+	}
+	
 	
 	private void validateProfilingField(Config config) {
 		Map<String,String> failedCases = new HashMap<String,String>();
