@@ -63,7 +63,8 @@ public class DataValidationMapper extends Mapper<Object, Text, Text, ObjectWrita
 		// getting file name
 		InputSplit is = context.getInputSplit();
 		if (is instanceof DataValidationFileSplit) {
-			fileName = ((DataValidationFileSplit) is).getPath().getName();
+			fileName = ((DataValidationFileSplit) is).getPath().toUri().getPath();
+			fileName = fileName.replaceAll("/", ".").substring(1, fileName.length());
 		}
 
 	}
