@@ -2,15 +2,18 @@ package org.jumbune.datavalidation;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.hadoop.fs.BlockLocation;
+import org.apache.hadoop.fs.ContentSummary;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -72,14 +75,39 @@ public class DataValidationInputFormat extends
 	public List<InputSplit> getSplits(JobContext job) throws IOException {
 		long minSize = Math.max(getFormatMinSplitSize(), getMinSplitSize(job));
 		long maxSize = getMaxSplitSize(job);
-
 		// generate splits
 		List<InputSplit> splits = new ArrayList<InputSplit>();
-		for (FileStatus file : listStatus(job)) {
-			generateSplits(job, minSize, maxSize, splits, file);
-		}
+		setData(job,minSize,maxSize,splits, listStatus(job));
 		LOGGER.debug("Total # of splits: " + splits.size());
 		return splits;
+	}
+	
+	/**
+	 *  Finds files inside directories recusively and add to  fileStatusList
+	 * @param job refers to JobContext that is being used to read the configurations of the job that ran
+	 * @param minSize refers to the minimum file block size.
+	 * @param maxSize refers to the maximum file block size.
+	 * @param splits refers  to a list of splits that are being generated.
+	 * @param fileStatusList list of FileStatus
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	public void setData(JobContext job, long minSize, long maxSize,
+			List<InputSplit> splits, List<FileStatus> fileStatusList) throws IOException {
+		for(FileStatus file:fileStatusList) {
+			if (file.isDir()) {
+				Path dirPath = file.getPath();
+				FileStatus [] fileArray = dirPath.getFileSystem(job.getConfiguration()).listStatus(dirPath);
+				setData(job, minSize, maxSize, splits, Arrays.asList(fileArray));
+			} else {
+				//Checking whether file is empty or not
+				Path path  = file.getPath();
+				FileSystem fs = path.getFileSystem(job.getConfiguration());
+				ContentSummary cs = fs.getContentSummary(path);
+				if (cs.getLength() > 0) {
+					generateSplits(job, minSize, maxSize, splits, file);	
+				} 
+		    }
+		}
 	}
 
 	/**
