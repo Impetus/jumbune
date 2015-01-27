@@ -374,31 +374,39 @@ public final class DeployUtil {
 	 *         authentication.
 	 */
 	private static Session validateUserAuthentication(Console console) throws IOException {
-		char[] password;
+		char[] password = null;
 		String privateKeyPath;
 		Session tempSession;
 		int retryAttempts=0;
+		LOGGER.info("\r\nJumbune needs to calibrate itself according to the installed Hadoop distribution, please provide details about hadoop namenode machine");
 		do {
 			String masterNode = InetAddress.getLocalHost().getHostAddress();
-			LOGGER.info("\r\nPlease provide IP address of the machine designated to run hadoop namenode daemon ["+ masterNode + "]");
+			LOGGER.info("\r\nIP address of the namenode machine ["+ masterNode + "]");
 			namenodeIP = SCANNER.nextLine().trim();
 			if ("".equals(namenodeIP)) {
 				namenodeIP = masterNode;
 			}
 
 			String user = System.getProperty("user.name");
-			LOGGER.info("Username: [" + user + "]");
+			LOGGER.info("Username of the namenode machine: [" + user + "]");
 			username = SCANNER.nextLine().trim();
 			if ("".equals(username)) {
 				username = user;
 			}
-			LOGGER.info("Password:");
-			password = console.readPassword();
-			while ("".equals(new String(password))) {
-				LOGGER.info("Please enter a valid password");
-				password = console.readPassword();
+			LOGGER.info("Do we have passwordless SSH between ["+masterNode+"] - ["+namenodeIP+"] machines? (y)/(n)");
+			String isPLSSH = SCANNER.nextLine().trim();
+			while(!"y".equalsIgnoreCase(isPLSSH)&&!"n".equalsIgnoreCase(isPLSSH)){
+				LOGGER.info("Do we have passwordless SSH between ["+masterNode+"] - ["+namenodeIP+"] machines? (y)/(n)");
+				isPLSSH = SCANNER.nextLine().trim();
 			}
-
+			if("n".equalsIgnoreCase(isPLSSH)){
+				LOGGER.info("Password of the namenode machine:");
+				password = console.readPassword();
+				while ("".equals(new String(password))) {
+					LOGGER.info("Please enter a valid password");
+					password = console.readPassword();
+				}				
+			}
 			String defaultPrivateKeyPath = "/home/" + user + "/.ssh/id_rsa";
 			LOGGER.info("Please provide private key file path ["+ defaultPrivateKeyPath + "]");
 			privateKeyPath = SCANNER.nextLine().trim();
@@ -411,8 +419,13 @@ public final class DeployUtil {
 				privateKeyPath = SCANNER.nextLine().trim();
 				privateKeyFile = new File(privateKeyPath);
 			}
+			if(password!=null){
 				tempSession = SessionEstablisher.establishConnection(username,
 						namenodeIP, new String(password), privateKeyPath);
+			}else{
+				tempSession = SessionEstablisher.establishConnection(username,
+						namenodeIP, null, privateKeyPath);
+			}
 				if(++retryAttempts==MAX_RETRY_ATTEMPTS){
 					LOGGER.error("Exiting Installation as maximum number of authentication attempts are exhaused!");
 					System.exit(1);

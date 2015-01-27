@@ -70,7 +70,9 @@ public final class SessionEstablisher {
 		} catch (JSchException e) {
 			LOGGER.error(e);
 		}
+		if(nnpwd!=null){
 		session.setPassword(nnpwd);
+		}
 		UserInfo info = new JumbuneUserInfo();
 		try {
 			jsch.addIdentity(privateKeyPath);
@@ -80,7 +82,9 @@ public final class SessionEstablisher {
 		session.setUserInfo(info);
 		java.util.Properties config = new java.util.Properties();
 		config.put("StrictHostKeyChecking", "no");
+		if(nnpwd!=null){
 		config.put("PreferredAuthentications", "password");
+		}
 		session.setConfig(config);
 		try {
 			session.connect();
