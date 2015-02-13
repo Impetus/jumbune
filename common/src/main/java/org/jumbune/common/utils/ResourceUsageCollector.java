@@ -295,7 +295,7 @@ public class ResourceUsageCollector {
 		List<TaskOutputDetails> setupTaskDetails = setupDetails.getTaskOutputDetails();
 		for (TaskOutputDetails tod : setupTaskDetails) {
 			String location = tod.getLocation();
-			if(!hostConversions.containsKey(location)){
+			if(location!=null && !hostConversions.containsKey(location)){
 				String host = convertHostNameToIP(location);
 				hosts.add(host);
 				hostConversions.put(location, host);
@@ -306,7 +306,7 @@ public class ResourceUsageCollector {
 		List<TaskOutputDetails> mapTaskDetails = mapDetails.getTaskOutputDetails();
 		for (TaskOutputDetails tod : mapTaskDetails) {
 			String location = tod.getLocation();
-			if(!hostConversions.containsKey(location)){
+			if(location!=null && !hostConversions.containsKey(location)){
 				String host = convertHostNameToIP(location);
 				hosts.add(host);
 				hostConversions.put(location, host);
@@ -317,7 +317,7 @@ public class ResourceUsageCollector {
 		List<TaskOutputDetails> reduceTaskDetails = reduceDetails.getTaskOutputDetails();
 		for (TaskOutputDetails tod : reduceTaskDetails) {
 			String location = tod.getLocation();
-			if(!hostConversions.containsKey(location)){
+			if(location!=null && !hostConversions.containsKey(location)){
 				String host = convertHostNameToIP(location);
 				hosts.add(host);
 				hostConversions.put(location, host);
@@ -328,7 +328,7 @@ public class ResourceUsageCollector {
 		List<TaskOutputDetails> cleanupTaskDetails = cleanupDetails.getTaskOutputDetails();
 		for (TaskOutputDetails tod : cleanupTaskDetails) {
 			String location = tod.getLocation();
-			if(!hostConversions.containsKey(location)){
+			if(location!=null && !hostConversions.containsKey(location)){
 				String host = convertHostNameToIP(location);
 				hosts.add(host);
 				hostConversions.put(location, host);
@@ -531,8 +531,11 @@ public class ResourceUsageCollector {
 		float totalPhaseCpu = 0;
 		int totalPhaseIntervals = 0;
 		for (TaskOutputDetails tod : taskDetails) {
-			String location = convertHostNameToIP(tod.getLocation());
-			NodeSystemStats nss = nodeStats.get(location);
+			String todLocation = tod.getLocation();
+			if(todLocation!=null){
+				String location = convertHostNameToIP(todLocation);
+				NodeSystemStats nss = nodeStats.get(location);
+
 			if (PhaseType.MAP == phase) {
 				maxPhaseMem = nss.getMapPhaseMaxMem();
 				totalPhaseCpu = nss.getTotalMapPhaseCpu();
@@ -579,6 +582,9 @@ public class ResourceUsageCollector {
 			}
 			setMapReducePhaseNodeSystemStats(phase, nss, maxPhaseMem,
 					totalPhaseCpu, totalPhaseIntervals);
+                             }else{
+				LOGGER.warn("Found null location for task ["+tod.getTaskType()+"], skipping populating PhaseNodeSystemStats for the task");
+			}
 		}
 	}
 
@@ -667,6 +673,7 @@ public class ResourceUsageCollector {
 	 */
 	private String convertHostNameToIP(final String hostName) throws UnknownHostException {
 		String hostNameTemp = hostName;
+                LOGGER.info("hostname in convertHostNameToIP:"+hostName);
 		hostNameTemp = hostNameTemp.replace(DEFAULT_RACK_SUFFIX, "");
 		return RemotingUtil.getIPfromHostName(loader, hostNameTemp);
 	}

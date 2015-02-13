@@ -214,7 +214,9 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 		String lineBreaker = null;
 		if (command.contains("echo $AGENT")) {
 			lineBreaker = "$ echo $AGENT_HOME";
-		} else if (command.contains("echo $HADOOP")) {
+		} else if (command.contains("echo $HADOOP_CONF_DIR")) {
+			lineBreaker = "$ echo $HADOOP_CONF_DIR";
+                } else if (command.contains("echo $HADOOP")) {
 			lineBreaker = "$ echo $HADOOP_HOME";
 		} else if (command.contains("free -m")) {
 			lineBreaker = "Swap:";

@@ -321,8 +321,10 @@ public final class JumbuneAgent {
 		}
 		String hdfsUser;
 		String yarnUser;
+		String mapredUser;
 		String hdfsPasswd = null;
 		String yarnPasswd = null;
+		String mapredPasswd = null;
 		//String isSingleUser;
 		if("n".equalsIgnoreCase(hasSeparateUsers)){
 			//isSingleUser = "y";
@@ -331,11 +333,12 @@ public final class JumbuneAgent {
 			if("".equals(hdfsUser)){
 				hdfsUser = "root";
 				yarnUser = "root";
+				mapredUser = "root";
 			}else {
-				yarnUser = hdfsUser;	
+				mapredUser = yarnUser = hdfsUser;	
 			}
 			hdfsPasswd = promptPassword(hdfsUser);
-			yarnPasswd = hdfsPasswd;
+			mapredPasswd = yarnPasswd = hdfsPasswd;
 			
 		}else{
 			CONSOLE_LOGGER.info("Please provide the hdfs user [hdfs]:");
@@ -352,11 +355,22 @@ public final class JumbuneAgent {
 				yarnUser = "yarn";
 			}
 			yarnPasswd = promptPassword(yarnUser);
+			
+			CONSOLE_LOGGER.info("Please provide the mapred user [mapred]:");
+			mapredUser = SCANNER.nextLine().trim();
+			
+			if("".equals(mapredUser)){
+				mapredUser = "mapred";
+			}
+			mapredPasswd = promptPassword(mapredUser);
+			
 		}
 		hcpl.setYarnUser(yarnUser);
 		hcpl.setYarnPasswd(yarnPasswd);
 		hcpl.setHdfsUser(hdfsUser);
 		hcpl.setHdfsPasswd(hdfsPasswd);
+		hcpl.setMapredUser(mapredUser);
+		hcpl.setMapredPasswd(mapredPasswd);
 		
 		hcpl.persistPropertiesToDisk();
 	}

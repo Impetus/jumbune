@@ -90,4 +90,12 @@ public class PhaseOutput {
 		this.cleanupDetails = cleanupDetails;
 	}
 
+	@Override
+	public String toString() {
+		return "PhaseOutput [setupDetails=" + setupDetails + ", mapDetails="
+				+ mapDetails + ", reduceDetails=" + reduceDetails
+				+ ", cleanupDetails=" + cleanupDetails + "]";
+	}
+
+
 }

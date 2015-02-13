@@ -2,6 +2,7 @@ package org.jumbune.common.utils.locators;
 
 import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.common.yaml.config.YamlConfig;
+import java.io.File;
 
 public class CDHLocator extends AbstractDistributionLocator {
 
@@ -44,6 +45,8 @@ public class CDHLocator extends AbstractDistributionLocator {
 	    result = response.substring((response.indexOf(">") + 1),
 					response.length());
 		}
+
+           result = result.endsWith(File.separator)?result:result.trim()+File.separator;
 
 		return result;
 	}

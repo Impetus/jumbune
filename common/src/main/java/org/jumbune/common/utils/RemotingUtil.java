@@ -17,6 +17,7 @@ import org.jumbune.common.beans.Master;
 import org.jumbune.common.beans.SupportedHadoopDistributions;
 import org.jumbune.common.utils.locators.ApacheNonYarnLocator;
 import org.jumbune.common.utils.locators.ApacheYarnLocator;
+import org.jumbune.common.utils.locators.CDHLocator;
 import org.jumbune.common.utils.locators.HadoopDistributionLocator;
 import org.jumbune.common.utils.locators.MapRLocator;
 import org.jumbune.common.yaml.config.Config;
@@ -27,6 +28,9 @@ import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.BasicYamlConfig;
 import org.jumbune.remoting.common.CommandType;
+import org.apache.hadoop.mapreduce.MRConfig;
+import org.jumbune.common.beans.Enable;
+import org.jumbune.remoting.common.StringUtil;
 
 
 /***
@@ -170,8 +174,18 @@ public final class RemotingUtil {
 		YamlLoader yamlLoader = (YamlLoader)loader;
 		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
 		config.set(yamlConfig.getMaster().getUser(), "");
+		if(Enable.TRUE.equals(yamlConfig.getEnableYarn())){
+			config.set(MRConfig.FRAMEWORK_NAME, MRConfig.YARN_FRAMEWORK_NAME);
+		}
+
 		try {
-			client = new JobClient(new InetSocketAddress(jobTrackerURI.split(":")[0], Integer.parseInt(jobTrackerURI.split(":")[1])), config);
+			
+			if(StringUtil.emptyOrNull(jobTrackerURI)){
+				client = new JobClient(new InetSocketAddress("0:0:0:0", 8032), config);
+			}else {
+				client = new JobClient(new InetSocketAddress(jobTrackerURI.split(":")[0], Integer.parseInt(jobTrackerURI.split(":")[1])), config);
+			}
+
 		} catch (Exception e) {
 			LOGGER.error(e);
 		}
@@ -377,7 +391,12 @@ public final class RemotingUtil {
 			YamlLoader yamlLoader = (YamlLoader)loader;
 			YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
 			org.apache.hadoop.conf.Configuration config = new org.apache.hadoop.conf.Configuration();
-			String nameNodeURI = RemotingUtil.getHadoopConfigurationValue(loader, "core-site.xml", "fs.default.name");
+			String nameNodeURI;
+			if(Enable.FALSE.equals(yamlConfig.getEnableYarn())){
+				nameNodeURI = RemotingUtil.getHadoopConfigurationValue(loader, "core-site.xml", "fs.default.name");
+			}else{
+				nameNodeURI = RemotingUtil.getHadoopConfigurationValue(loader, "core-site.xml", "fs.defaultFS");
+			}
 			fs = FileSystem.get(URI.create(nameNodeURI), config);
 		} catch (Exception e) {
 			LOGGER.error(e);
@@ -455,6 +474,12 @@ public final class RemotingUtil {
 	      case HADOOP_YARN:
 	    	  hadoopLocator = new ApacheYarnLocator();
 	        break;
+	      case CDH_5:
+	    	  hadoopLocator = new CDHLocator();
+	    	  break;
+	      case APACHE_02X:
+	      	  hadoopLocator = new MapRLocator();
+	      	  break;
 	      default:
 	    	  hadoopLocator =  new ApacheNonYarnLocator();
 	      break;

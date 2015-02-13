@@ -51,4 +51,12 @@ public class PhaseDetails {
 		this.avgDataFlowRate = avgDataFlowRate;
 	}
 
+	@Override
+	public String toString() {
+		return "PhaseDetails [taskOutputDetails=" + taskOutputDetails
+				+ ", avgDataFlowRate=" + avgDataFlowRate + "]";
+	}
+
+	
+
 }

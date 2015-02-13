@@ -218,4 +218,15 @@ public class JobOutput {
 		this.nodeStats = nodeStats;
 	}
 
+	@Override
+	public String toString() {
+		return "JobOutput [jobID=" + jobID + ", user=" + user + ", jobName="
+				+ jobName + ", totalTime=" + totalTime
+				+ ", totalTimeInMilliSec=" + totalTimeInMilliSec + ", outcome="
+				+ outcome + ", cpuUsage=" + cpuUsage + ", memUsage=" + memUsage
+				+ ", phaseOutput=" + phaseOutput + ", nodeStats=" + nodeStats
+				+ "]";
+	}
+	
+
 }

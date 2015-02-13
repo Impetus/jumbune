@@ -43,6 +43,10 @@ public class StringUtil {
 		}	    
 	    return new String(decryptedTextBytes);	
 	}
+
+	public static boolean emptyOrNull(String str){
+		return str==null?true:(str.trim().length()==0?true:false);
+	}
     
     private static class CustomKey implements Key{
 

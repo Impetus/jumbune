@@ -229,7 +229,9 @@ public class HadoopLogParser {
 		return fileName;
 	}
 	/**
-	 * 	This api is used to fetch the .hist files containing the job details
+	 * 	This api is used to fetch the .hist files containing the job details.
+	 * We first try in the intermediate folder and then fall back to done folder on HDFS.
+	 * At least one of them is expected to fetch the file.
 	 *
 	 * @param jobID the job id is the jobname that ran on hadoop
 	 * @param remoter the remoter
@@ -245,24 +247,22 @@ public class HadoopLogParser {
 			String logsHistory,Config config, String agentHome,String relRemotePath,String jobID){
 		YamlConfig yamlConfig = (YamlConfig)config;
 			
-			if(yamlConfig.getRunJobFromJumbune() == Enable.TRUE){
+			
 			CommandWritableBuilder fsGetBuilder = new CommandWritableBuilder();
 			StringBuffer commandToExecute = new StringBuffer().append(Constants.HADOOP_HOME).append(HDFS_FILE_GET_COMMAND).append(Constants.SPACE).append(logsHistory)
 			.append(jobID).append("*").append(Constants.SPACE).append(relRemotePath);
 			LOGGER.debug("File get Command" + commandToExecute.toString());
-			fsGetBuilder.addCommand(commandToExecute.toString(),false, null, CommandType.HADOOP_FS).populate(yamlConfig, null);
+			fsGetBuilder.addCommand(commandToExecute.toString(),false, null, CommandType.MAPRED).populate(yamlConfig, null);
 			remoter = RemotingUtil.getRemoter(yamlConfig, "");
-			remoter.fireAndForgetCommand(fsGetBuilder.getCommandWritable());
-			}
-			else{
-			CommandWritableBuilder fsGetBuilder = new CommandWritableBuilder();
-			StringBuffer commandToExecute = new StringBuffer().append(Constants.HADOOP_HOME).append(HDFS_FILE_GET_COMMAND).append(Constants.SPACE).append(HISTORY_DIR_SUFFIX_YARN)
-			.append(jobID).append("*").append(Constants.SPACE).append(relRemotePath);
+			
+			
+			commandToExecute = new StringBuffer().append(Constants.HADOOP_HOME).append(HDFS_FILE_GET_COMMAND).append(Constants.SPACE).append(HISTORY_DIR_SUFFIX_YARN)
+ 			.append(jobID).append("*").append(Constants.SPACE).append(relRemotePath);
 			LOGGER.debug("File get Command" + commandToExecute.toString());
-			fsGetBuilder.addCommand(commandToExecute.toString(),false, null, CommandType.HADOOP_FS).populate(yamlConfig, null);
-			remoter = RemotingUtil.getRemoter(yamlConfig, "");
+			fsGetBuilder.addCommand(commandToExecute.toString(),false, null, CommandType.MAPRED).populate(yamlConfig, null);
+		
 			remoter.fireAndForgetCommand(fsGetBuilder.getCommandWritable());
-			}
+	
 	}
 
 	private String getLogFilePath(String jobID, Remoter remoter,
