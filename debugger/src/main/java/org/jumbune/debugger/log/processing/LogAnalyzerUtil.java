@@ -318,7 +318,7 @@ public class LogAnalyzerUtil {
 				String line = null;
 				while (true) {
 					line = bufferedReader.readLine();
-					if (line == null) {
+					if (line == null || line.trim().isEmpty()) {
 						break;
 					}
 					ChainingInfoBean chainingInfoBean = new ChainingInfoBean();
@@ -387,7 +387,7 @@ public class LogAnalyzerUtil {
 		String line = null;
 		while (true) {
 			line = bufferedReader.readLine();
-			if (line == null) {
+			if (line == null || line.trim().isEmpty()) {
 				break;
 			}
 

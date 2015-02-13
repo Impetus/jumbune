@@ -319,12 +319,12 @@ public final class LogUtil {
 			StringBuilder msg = new StringBuilder();
 
 			for (Object msgPart : msgParts) {
-				msg.append(separateMessage(msgPart));
+				msg.append(DEFAULT_MESSAGE_SEPARATOR).append(msgPart);
 			}
 
 			// add fillers
 			for (int i = MAX_VALUES_IN_LOG - msgParts.length; i > 0; i--) {
-				msg.append(separateMessage(UtilitiesConstants.EMPTY_STRING));
+				msg.append(DEFAULT_MESSAGE_SEPARATOR).append(UtilitiesConstants.EMPTY_STRING);
 			}
 
 			logMessage(LoggerUtil.getMapReduceLogger(MapReduceExecutionUtil

@@ -112,6 +112,9 @@ public class LogAnalyzer {
 				while ((line = bufferedReader.readLine()) != null) {
 
 					// parses the line and stores the result in lineMap
+					if(line==null || line.trim().isEmpty()){
+						continue;
+					}
 					parseLine(line,props);
 
 					if ((LPConstants.NOT_AVAILABLE.equals(currentExpCounter))
