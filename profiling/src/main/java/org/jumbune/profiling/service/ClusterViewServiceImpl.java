@@ -87,8 +87,9 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 * @param yamlLoader
 	 *            the yaml loader
 	 */
-    public ClusterViewServiceImpl(YamlLoader yamlLoader) {
-      this.loader = yamlLoader;
+    public ClusterViewServiceImpl(Loader loader) {
+      this.loader = loader;
+	  YamlLoader yamlLoader = (YamlLoader)loader;
       YamlConfig config = (YamlConfig)yamlLoader.getYamlConfiguration();
       isYarnEnable = Enable.TRUE.equals(config.getEnableYarn());
       this.hadoopVersions = RemotingUtil.getHadoopVersion(config);

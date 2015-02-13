@@ -754,7 +754,7 @@ public class ValidateInput {
 	 * @param config the config
 	 * @return true, if is atleast one module enabled
 	 */
-	private boolean isAtleastOneModuleEnabled(Config config) {
+	protected boolean isAtleastOneModuleEnabled(Config config) {
 		boolean result = false;
 		YamlConfig yamlConfig = (YamlConfig)config;
 		boolean isProfiling = isProfilingModuleEnabled(config);
@@ -772,7 +772,7 @@ public class ValidateInput {
 	 * @param config the config
 	 * @return true, if profiling module is enabled
 	 */
-	private boolean isProfilingModuleEnabled(Config config) {
+	protected boolean isProfilingModuleEnabled(Config config) {
 		boolean result = false;
 		YamlConfig yamlConfig = (YamlConfig)config;
 		if (isEnable(yamlConfig.getEnableStaticJobProfiling())) {
