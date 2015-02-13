@@ -32,6 +32,16 @@ public final class ErrorMessageLoader {
 	/** message file which containing all the messages. */
 	private static final String INPUT_VALIDATION_MESSAGE_FILE = "inputyaml.error";
 
+/** Input validation Messages file name*/
+	private static String inputValidationMessageFile=INPUT_VALIDATION_MESSAGE_FILE;
+	
+	/** setter for inputValidationMessageFile to override the default. */
+	public static void setInputValidationMessageFile(
+			String inputValidationMessageFile) {
+		ErrorMessageLoader.inputValidationMessageFile = inputValidationMessageFile;
+	}
+
+
 	/**
 	 * *
 	 * create object of ErrorMessageLoader class if it is not instantiated otherwise returns already used object this method load message file as an
@@ -41,7 +51,7 @@ public final class ErrorMessageLoader {
 	 */
 	public static ErrorMessageLoader getInstance() {
 		if (instance == null) {
-			final String messageFileName = INPUT_VALIDATION_MESSAGE_FILE;
+			final String messageFileName = inputValidationMessageFile;
 			final InputStream msgStream = ErrorMessageLoader.class.getClassLoader().getResourceAsStream(messageFileName);
 			try {
 				instance = new ErrorMessageLoader(msgStream);

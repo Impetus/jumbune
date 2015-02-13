@@ -273,9 +273,6 @@ public final class ExportUtil {
 		}
 	}
 
-	static enum Grade {
-		PURE_JOB_JSON, INSTRUMENTED_JOB_JSON, DATA_DELIDATION, PROFILING, LOG_ANALISYS, DATA_SCIENCE
-	};
 
 	static void createDebugAnalyzer(HSSFWorkbook wb, String jSONString, String sheetName, HSSFCellStyle cellStyle) {
 

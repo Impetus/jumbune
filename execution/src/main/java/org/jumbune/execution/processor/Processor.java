@@ -28,9 +28,5 @@ public interface Processor {
 	 */
 	void chain(Processor processor);
 
-	/**
-	 * Method for testing process chain
-	 */
-	void dryRun();
-
+	
 }

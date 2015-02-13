@@ -35,12 +35,6 @@
 		</repository>
 	</repositories>
 	<!-- distribution to maven repo -->	
-	<distributionManagement>
-	  <snapshotRepository>
-	    <id>ossrh</id>
-	    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-	  </snapshotRepository>
-	</distributionManagement>
 
 	<dependencyManagement>
 		<dependencies>
@@ -280,6 +274,7 @@
 				<outputDir>${HOME}/Desktop/jumbune</outputDir>
 			</properties>
 
+
 		</profile>
 		<profile>
 			<id>yarn</id>
@@ -516,20 +511,7 @@
 					<useProjectReferences>false</useProjectReferences>
 				</configuration>
 			</plugin>
-			    <plugin>
-			      <groupId>org.sonatype.plugins</groupId>
-			      <artifactId>nexus-staging-maven-plugin</artifactId>
-			      <version>1.6.2</version>
-			      <extensions>true</extensions>
-			      <configuration>
-			        <serverId>ossrh</serverId>
-			        <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-			        <autoReleaseAfterClose>false</autoReleaseAfterClose>
-				<keepStagingRepositoryOnCloseRuleFailure>true</keepStagingRepositoryOnCloseRuleFailure>
-				<stagingProgressTimeoutMinutes>15</stagingProgressTimeoutMinutes>
-			      </configuration>
-			    </plugin>
-
+			   
 		</plugins>
 	</build>
 

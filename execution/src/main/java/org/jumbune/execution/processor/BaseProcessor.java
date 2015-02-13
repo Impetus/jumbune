@@ -42,15 +42,6 @@ public abstract class BaseProcessor implements Processor {
 		this.isCommandBased = isCommandBased;
 	}
 
-	/**
-	 * Method for testing application flow without any execution
-	 */
-	public void dryRun() {
-		if (next != null){
-			next.dryRun();
-		}
-	}
-
 	
 	protected Loader getLoader() {
 		return loader;
