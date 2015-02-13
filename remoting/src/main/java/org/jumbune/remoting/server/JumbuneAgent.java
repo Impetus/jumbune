@@ -107,8 +107,8 @@ public final class JumbuneAgent {
 	private JumbuneAgent() {
 	}
 	static {
-		jars.add("/lib/log4j-api-2.0.jar");
-		jars.add("/lib/log4j-core-2.0.jar");
+		jars.add("/lib/log4j-api-2.1.jar");
+		jars.add("/lib/log4j-core-2.1.jar");
 	}
 
 	/**

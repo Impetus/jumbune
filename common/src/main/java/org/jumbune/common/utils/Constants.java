@@ -77,10 +77,10 @@ public interface Constants {
 	String JOB_JARS_LOC = "jobJars/";
 	
 	/** The LO g4 j2_ ap i_ jar. */
-	String LOG4J2_API_JAR = "/lib/log4j-api-2.0.jar";
+	String LOG4J2_API_JAR = "/lib/log4j-api-2.1.jar";
 	
 	/** The LO g4 j2_ cor e_ jar. */
-	String LOG4J2_CORE_JAR = "/lib/log4j-core-2.0.jar";
+	String LOG4J2_CORE_JAR = "/lib/log4j-core-2.1.jar";
 	
 	/** The echo agent home. */
 	String ECHO_AGENT_HOME = "echo $AGENT_HOME \n \n";
