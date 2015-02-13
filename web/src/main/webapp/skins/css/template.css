@@ -926,9 +926,9 @@ a#supportOptionsLink { color: #095AC6; }
 img.trendCloseImg{position: absolute; right: 11px; top: 2px;cursor: pointer;} 
 img.colorCloseImg{position: absolute; right: -8px; top: 4px;cursor: pointer;} 
 .favHeader{background-color: #ccc;color: #000;float: left;width: 92%;font-size:14px;padding:5px 20px;font-size:12px;color:#333;}
-.profilingWidget{float:left;border:solid 1px #ccc;width:538px;margin:0 0 0 10px;}
-.dataCenterBox{border:solid 1px #ccc;width:350px;float:left;margin-left:-2px;}
-.dataCenterBox ul li{float: left; width: 338px;list-style:none;border:solid 1px #ccc;font-size:12px;}
+.profilingWidget{float:left;border:solid 1px #ccc;width:450px;margin:0 0 0 10px;}
+.dataCenterBox{border:solid 1px #ccc;width:420px;float:left;margin-left:-2px;}
+.dataCenterBox ul li{float: left; width: 410px;list-style:none;border:solid 1px #ccc;font-size:12px;}
 .rackBox{margin-top:5px;float: left;}
 .green span{background-color:green;}
 .orange span{background-color:orange;}
@@ -936,7 +936,7 @@ img.colorCloseImg{position: absolute; right: -8px; top: 4px;cursor: pointer;}
 .catTxt{font-size:10px;}
 .statTxt{font-size:12px;}
 .favRight{  border-left: 1px solid #CCCCCC; float: right; padding: 5px; text-align: right; width: auto; margin-left:10px;}
-.toggle {float:left;width:92%;padding:5px 5px 5px 22px;background:url(../images/max_icon.png) 3px 7px no-repeat #ddd;text-transform:uppercase;}
+.toggle {float:left;width:93%;padding:5px 5px 5px 22px;background:url(../images/max_icon.png) 3px 7px no-repeat #ddd;text-transform:uppercase;}
 .dataCenterBox .selected{background:url("../images/min_icon.png") 3px 7px no-repeat #ddd;}
 .accordianList{float:left;padding-left:5px; margin: 5px 0;}
 .dataCenterMainBox{width:335px;}
