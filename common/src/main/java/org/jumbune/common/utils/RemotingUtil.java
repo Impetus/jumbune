@@ -28,7 +28,6 @@ import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.BasicYamlConfig;
 import org.jumbune.remoting.common.CommandType;
-import org.apache.hadoop.mapreduce.MRConfig;
 import org.jumbune.common.beans.Enable;
 import org.jumbune.remoting.common.StringUtil;
 
@@ -175,7 +174,7 @@ public final class RemotingUtil {
 		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
 		config.set(yamlConfig.getMaster().getUser(), "");
 		if(Enable.TRUE.equals(yamlConfig.getEnableYarn())){
-			config.set(MRConfig.FRAMEWORK_NAME, MRConfig.YARN_FRAMEWORK_NAME);
+			config.set("mapreduce.framework.name", "yarn");
 		}
 
 		try {
