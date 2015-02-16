@@ -1,4 +1,4 @@
-package org.jumbune.utils.yarn;
+package org.jumbune.yarn.utils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -30,7 +30,7 @@ import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.ipc.RPCUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.utils.yarn.ContainerManagementProtocolProxy.ContainerManagementProtocolProxyData;
+import org.jumbune.yarn.utils.ContainerManagementProtocolProxy.ContainerManagementProtocolProxyData;
 
 public class NMClient extends AbstractService{
 	

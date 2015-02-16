@@ -1,4 +1,4 @@
-package org.jumbune.utils.yarn;
+package org.jumbune.yarn.utils;
 
 import java.io.IOException;
 import java.net.ConnectException;

@@ -37,7 +37,7 @@
 		<artifactId>maven-compiler-plugin</artifactId>
 		<configuration>
 			 <excludes>
-			    <exclude>org/jumbune/utils/yarn/**/*</exclude>
+			    <exclude>org/jumbune/yarn/utils/**/*</exclude>
 			  </excludes>
 		</configuration>
 		</plugin>

@@ -1,4 +1,4 @@
-package org.jumbune.utils.yarn.client;
+package org.jumbune.yarn.utils.client;
 
 import java.util.ArrayList;
 import java.util.Arrays;
