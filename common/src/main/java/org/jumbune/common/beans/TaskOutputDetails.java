@@ -384,6 +384,20 @@ public class TaskOutputDetails {
 		this.resourceUsageMetrics = resourceUsageMetrics;
 	}
 
+	@Override
+	public String toString() {
+		return "TaskOutputDetails [taskType=" + taskType + ", taskStatus="
+				+ taskStatus + ", taskID=" + taskID + ", startPoint="
+				+ startPoint + ", endPoint=" + endPoint + ", location="
+				+ location + ", dataFlowRate=" + dataFlowRate + ", hostName="
+				+ hostName + ", timeTaken=" + timeTaken + ", shuffleStart="
+				+ shuffleStart + ", shuffleEnd=" + shuffleEnd + ", sortStart="
+				+ sortStart + ", sortEnd=" + sortEnd + ", reduceStart="
+				+ reduceStart + ", reduceEnd=" + reduceEnd + ", outputBytes="
+				+ outputBytes + ", outputRecords=" + outputRecords
+				+ ", resourceUsageMetrics=" + resourceUsageMetrics + "]";
+	}
+
 
 }
 

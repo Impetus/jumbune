@@ -107,7 +107,9 @@ public final class JschUtil {
 			info = new JumbuneUserInfo(StringUtil.getPlain(switchedIdentity.getPasswd()));
 		}else if(commandType.equals(CommandType.HADOOP_JOB)){
 			info = new JumbuneUserInfo(StringUtil.getPlain(switchedIdentity.getPasswd()));
-		}else{
+		}else if(commandType.equals(CommandType.MAPRED)){
+			info = new JumbuneUserInfo(StringUtil.getPlain(switchedIdentity.getPasswd()));
+                }else{
 			info = new JumbuneUserInfo();
 		}
 		return info;
@@ -121,7 +123,10 @@ public final class JschUtil {
 			setPasswd(switchedIdentity, hcpl.getHdfsPasswd());
 		}else if(commandType.equals(CommandType.HADOOP_JOB)){
 			switchedIdentity.setUser(hcpl.getYarnUser());
-			setPasswd(switchedIdentity, hcpl.getYarnPasswd());	
+			setPasswd(switchedIdentity, hcpl.getYarnPasswd());
+                }else if(commandType.equals(CommandType.MAPRED)){
+			switchedIdentity.setUser(hcpl.getMapredUser());
+			setPasswd(switchedIdentity, hcpl.getMapredPasswd());		
 		}else{
 			switchedIdentity.setUser(user);
 			String privateKeyFilePath;

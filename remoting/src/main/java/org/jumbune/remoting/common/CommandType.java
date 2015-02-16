@@ -4,5 +4,6 @@ public enum CommandType {
 	
 	HADOOP_FS,
 	HADOOP_JOB,
-	FS	
+	FS,
+        MAPRED	
 }

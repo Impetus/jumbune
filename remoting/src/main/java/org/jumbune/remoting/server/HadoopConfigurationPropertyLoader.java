@@ -19,12 +19,15 @@ public class HadoopConfigurationPropertyLoader {
 	
 	private static final String HDFS_USER = "hdfsUser";
 	private static final String YARN_USER = "yarnUser";
+        private static final String MAPRED_USER = "mapredUser";
 	
 	private static final String HDFS_PASSWD = "hdfsPasswd";
-	private static final String YARN__PASSWD = "yarnPasswd";
+	private static final String YARN_PASSWD = "yarnPasswd";
+	private static final String MAPRED_PASSWD = "mapredPasswd";
 	
 	private static final String HDFS_USER_PRIVATE_KEY_PATH = "hdfsUserPrivateKeyPath";
 	private static final String YARN_USER_PRIVATE_KEY_PATH = "yarnUserPrivateKeyPath";
+        private static final String MAPRED_USER_PRIVATE_KEY_PATH = "mapredUserPrivateKeyPath";
 
 	/** Logger instance. */
 	private static final Logger LOGGER = LogManager.getLogger(HadoopConfigurationPropertyLoader.class);
@@ -224,13 +227,56 @@ public class HadoopConfigurationPropertyLoader {
 	 * @return the yarnPasswd
 	 */
 	public String getYarnPasswd() {
-		return properties.getProperty(YARN__PASSWD);
+		return properties.getProperty(YARN_PASSWD);
 	}
 
 	/**
 	 * @param yarnPasswd the yarnPasswd to set
 	 */
 	public void setYarnPasswd(String yarnPasswd) {
-		properties.setProperty(YARN__PASSWD, yarnPasswd);
+		properties.setProperty(YARN_PASSWD, yarnPasswd);
 	}
+
+	/**
+	 * @return, get's the mapred user
+	 */
+	public String getMapredUser() {
+		return properties.getProperty(MAPRED_USER);
+	}
+
+	/**
+	 * @param mapredUser, set's the mapred user
+	 */
+	public void setMapredUser(String mapredUser) {
+		properties.setProperty(MAPRED_USER, mapredUser);
+	}
+ 	
+        /**
+	 * @return the mapredUserPrivateKeyPath
+	 */
+	public String getMapRedUserPrivateKeyPath() {
+		return properties.getProperty(MAPRED_USER_PRIVATE_KEY_PATH);
+	}
+
+	/**
+	 * @param mapredUserPrivateKeyPath the mapredUserPrivateKeyPath to set
+	 */
+	public void setMapredUserPrivateKeyPath(String mapredUserPrivateKeyPath) {
+		properties.setProperty(MAPRED_USER_PRIVATE_KEY_PATH, mapredUserPrivateKeyPath);
+	}
+
+	/**
+	 * @return the mapredPasswd
+	 */
+	public String getMapredPasswd() {
+		return properties.getProperty(MAPRED_PASSWD);
+	}
+
+	/**
+	 * @param mapredPasswd the mapredPasswd to set
+	 */
+	public void setMapredPasswd(String mapredPasswd) {
+		properties.setProperty(MAPRED_PASSWD, mapredPasswd);
+	}
+
 }
