@@ -1,4 +1,4 @@
-package org.jumbune.common.utils.yarn;
+package org.jumbune.common.yarn.utils;
 
 
 
@@ -30,8 +30,8 @@ import org.jumbune.common.beans.PhaseOutput;
 import org.jumbune.common.beans.ResourceUsageMetrics;
 import org.jumbune.common.beans.TaskOutputDetails;
 import org.jumbune.common.utils.Constants;
-import org.jumbune.common.utils.yarn.DecoratedJobHistoryParser.AdditionalJobInfo;
-import org.jumbune.common.utils.yarn.DecoratedJobHistoryParser.AdditionalTaskInfo;
+import org.jumbune.common.yarn.utils.DecoratedJobHistoryParser.AdditionalJobInfo;
+import org.jumbune.common.yarn.utils.DecoratedJobHistoryParser.AdditionalTaskInfo;
 
 
 /**

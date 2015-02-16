@@ -1,4 +1,4 @@
-package org.jumbune.common.utils.yarn;
+package org.jumbune.common.yarn.utils;
 
 import java.io.IOException;
 import java.util.Arrays;

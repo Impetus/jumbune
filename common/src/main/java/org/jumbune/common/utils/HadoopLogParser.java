@@ -86,7 +86,7 @@ public class HadoopLogParser {
 	/** The Constant RUMEN_MAIN_CLASS_OLD. */
 	private static final String RUMEN_MAIN_CLASS_OLD = "org.jumbune.org.apache.hadoop.tools.rumen.TraceBuilder";
 	
-	private static final String YARN_JOB_STATS_UTILITY_CLASS = "org.jumbune.common.utils.yarn.YarnJobStatsUtility";
+	private static final String YARN_JOB_STATS_UTILITY_CLASS = "org.jumbune.common.yarn.utils.YarnJobStatsUtility";
 	
 	private static final String YARN_JOB_STATS_UTILITY_CLASS_PARSE_METHOD = "parseAndGetJobStats";	
 	

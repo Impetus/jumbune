@@ -1,4 +1,4 @@
-package org.jumbune.utils.yarn.client;
+package org.jumbune.yarn.utils.client;
 
 import java.io.File;
 import java.io.IOException;

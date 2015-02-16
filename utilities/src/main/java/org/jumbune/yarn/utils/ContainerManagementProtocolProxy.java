@@ -1,4 +1,4 @@
-package org.jumbune.utils.yarn;
+package org.jumbune.yarn.utils;
 
 import java.net.InetSocketAddress;
 import java.security.PrivilegedAction;

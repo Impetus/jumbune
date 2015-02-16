@@ -1,4 +1,4 @@
-package org.jumbune.utils.yarn;
+package org.jumbune.yarn.utils;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.retry.FailoverProxyProvider;
