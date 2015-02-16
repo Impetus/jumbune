@@ -10,11 +10,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.JarURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLDecoder;
 import java.security.CodeSource;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -221,7 +223,8 @@ public final class DeployUtil {
 
 			CodeSource codeSource = DeployUtil.class.getProtectionDomain().getCodeSource();
 			File distJarFile = new File(codeSource.getLocation().toURI().getPath());
-			String jarPath = new File(".").getCanonicalPath() + "/"+ distJarFile.getName();
+			String parentPath = getJarContainingFolder(codeSource, DeployUtil.class);
+			String jarPath = parentPath + "/"+ distJarFile.getName();
 			URL url = new URL("jar:file:" + jarPath + "!/");
 			JarURLConnection jarConnection = (JarURLConnection) url.openConnection();
 			return jarConnection;
@@ -653,5 +656,26 @@ public final class DeployUtil {
 		return builder.toString();
 
 	}
-}	
 
+	/**
+	 * Method get's the parent path of the jar file
+	 * 
+	 * @param codeSource, the codeSource of the class
+	 * @param aClass, class file
+	 * @return the parent path of the jar file
+	 */
+	private static String getJarContainingFolder(CodeSource codeSource, Class aClass) throws URISyntaxException, UnsupportedEncodingException {
+		  File jarFile;
+		  if (codeSource.getLocation() != null) {
+		    jarFile = new File(codeSource.getLocation().toURI());
+		  }
+		  else {
+		    String path = aClass.getResource(aClass.getSimpleName() + ".class").getPath();
+		    String jarFilePath = path.substring(path.indexOf(":") + 1, path.indexOf("!"));
+		    jarFilePath = URLDecoder.decode(jarFilePath, "UTF-8");
+		    jarFile = new File(jarFilePath);
+		  }
+		  return jarFile.getParentFile().getAbsolutePath();
+		}	
+
+}
