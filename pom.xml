@@ -5,7 +5,7 @@
 
 	<groupId>org.jumbune</groupId>
 	<artifactId>jumbune</artifactId>
-	<version>1.4.1-SNAPSHOT</version>
+	<version>1.4.2-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>Jumbune</name>
@@ -151,53 +151,53 @@
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-common</artifactId>
-				<version>1.4.1-SNAPSHOT</version>
+				<version>1.4.2-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-exec</artifactId>
-				<version>1.4.1-SNAPSHOT</version>
+				<version>1.4.2-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-datavalidation</artifactId>
-				<version>1.4.1-SNAPSHOT</version>
+				<version>1.4.2-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-utils</artifactId>
-				<version>1.4.1-SNAPSHOT</version>
+				<version>1.4.2-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-debugger</artifactId>
-				<version>1.4.1-SNAPSHOT</version>
+				<version>1.4.2-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-profiling</artifactId>
-				<version>1.4.1-SNAPSHOT</version>
+				<version>1.4.2-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-deploy</artifactId>
-				<version>1.4.1-SNAPSHOT</version>
+				<version>1.4.2-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-remoting</artifactId>
-				<version>1.4.1-SNAPSHOT</version>
+				<version>1.4.2-SNAPSHOT</version>
 
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-web</artifactId>
-				<version>1.4.1-SNAPSHOT</version>
+				<version>1.4.2-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-rumen</artifactId>
-				<version>1.4.1-SNAPSHOT</version>
+				<version>1.4.2-SNAPSHOT</version>
 			</dependency>		
 			<!-- jetty runner dependencies -->
 			<dependency>

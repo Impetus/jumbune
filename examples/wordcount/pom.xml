@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.jumbune</groupId>
 		<artifactId>jumbune</artifactId>
-		<version>1.4.1-SNAPSHOT</version>
+		<version>1.4.2-SNAPSHOT</version>
 		<relativePath>../../pom.xml</relativePath>
 
 	</parent>
