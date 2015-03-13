@@ -50,6 +50,7 @@ import org.jumbune.common.beans.UnavailableHost;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.RemotingUtil;
+import org.jumbune.common.utils.HadoopJobCounters;
 import org.jumbune.common.utils.ValidateInput;
 import org.jumbune.common.utils.YamlConfigUtil;
 import org.jumbune.common.yaml.config.Config;
@@ -145,6 +146,8 @@ public class ExecutionServlet extends HttpServlet {
 		HttpReportsBean reports = new HttpReportsBean();
 		HttpSession session = request.getSession();
 		LOG.info("\n\n *************************** NEW REQUEST ************************* \n\n");
+
+
 		try {
 			HttpExecutorService service = new HttpExecutorService();
 

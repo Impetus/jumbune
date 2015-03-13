@@ -67,4 +67,12 @@ public class ChainingInfoBean {
 		this.contextWrites = contextWrites;
 	}
 
+	@Override
+	public String toString() {
+		return "ChainingInfoBean [name=" + name + ", inputKeys=" + inputKeys
+				+ ", contextWrites=" + contextWrites + "]";
+	}
+	
+	
+
 }

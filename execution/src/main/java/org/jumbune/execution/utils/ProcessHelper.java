@@ -34,6 +34,7 @@ import java.util.Scanner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Enable;
+import org.jumbune.common.beans.JobCounterBean;
 import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.beans.LogConsolidationInfo;
 import org.jumbune.common.beans.Master;
@@ -41,6 +42,7 @@ import org.jumbune.common.beans.ServiceInfo;
 import org.jumbune.common.beans.SupportedHadoopDistributions;
 import org.jumbune.common.utils.ArrayParamBuilder;
 import org.jumbune.common.utils.CommandWritableBuilder;
+import org.jumbune.common.utils.HadoopJobCounters;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.MessageLoader;
@@ -50,8 +52,8 @@ import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.beans.JobProcessBean;
 import org.jumbune.datavalidation.DataValidationConstants;
-import org.jumbune.execution.beans.JobProcessBean;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
@@ -70,7 +72,19 @@ public class ProcessHelper {
 	private static final Logger LOGGER = LogManager.getLogger(ProcessHelper.class);
 	private static final MessageLoader MESSAGES = MessageLoader.getInstance();
 	private static final String LIBDIR = "lib/";
-	private static boolean isYarnJob = false;	
+	private static boolean isYarnJob = false;
+	private HadoopJobCounters hadoopJobCounters=null;
+	
+	
+
+	public HadoopJobCounters getHadoopJobCounters() {
+		return hadoopJobCounters;
+	}
+
+	public void setHadoopJobCounters(HadoopJobCounters hadoopJobCounters) {
+		this.hadoopJobCounters = hadoopJobCounters;
+	}
+
 	/**
 	 * Method for writing service yaml file
 	 * 
@@ -550,6 +564,8 @@ public class ProcessHelper {
 	    }else{
 	      jobCounterMap.putAll(getRemoteJobCounters(bean.getJobName(), bean.getProcessResponse(), loader, isDebugged)); 
 	    }
+	    hadoopJobCounters=new HadoopJobCounters();
+	    hadoopJobCounters.setJobCounterBeans(bean.getJobName(), bean.getProcessResponse(), loader);
 	}
 	
 	private Map<? extends String, ? extends Map<String, String>> getRemoteYarnJobCounters(

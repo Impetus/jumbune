@@ -377,7 +377,13 @@ public interface Constants {
 	 * The Debug Analyzer String
 	 */
 	String DEBUG_ANALYZER = "DEBUG_ANALYZER";	
-	
+
+	/** The map input record. */
+	String MAP_INPUT_RECORD = "Map input records";
+
+	/** The reduce output record. */
+	String REDUCE_OUTPUT_RECORD = "Reduce output records";
+
 	/*
 	 * Following are Number literals used in different classes, to avoid usage of magic numbers
 	 */

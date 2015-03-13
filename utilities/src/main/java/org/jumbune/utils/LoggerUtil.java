@@ -71,6 +71,7 @@ public final class LoggerUtil {
 	public static void loadLogger(String logFileDir, String taskAttemptID) throws IOException, URISyntaxException, ParserConfigurationException,
 			SAXException, TransformerException {
 	    LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+	    ctx.reconfigure();
         Configuration config = ctx.getConfiguration();
         MemoryMappedFileAppender memoryMappedfileAppender = createMemoryMappedFileAppender(config, LOG_APPENDER_NAME + taskAttemptID, logFileDir, taskAttemptID, 0);
         memoryMappedfileAppender.start();
@@ -127,6 +128,7 @@ public final class LoggerUtil {
 			ParserConfigurationException, SAXException, TransformerException, URISyntaxException {
 	  
 	    LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+	    ctx.reconfigure();
         Configuration config = ctx.getConfiguration();
         for (int k = 0; k < numberOfLoggers; k++) {
         	  MemoryMappedFileAppender memoryMappedfileAppender = createMemoryMappedFileAppender(config, LOG_APPENDER_NAME + taskAttemptID+k, logFileDir, taskAttemptID, k+1);

@@ -112,7 +112,7 @@ public class DebugProcessor extends BaseProcessor {
 					yamlLoader.getLogProcessMaxThreads());
 			LOGGER.debug("Consolidate logs files kept on master at ["+ locationOfLogFiles+"]");
 			debugAnalyserReport = logUtil.processLogs(locationOfLogFiles,
-					yamlLoader.isInstrumentEnabled("partitioner"));
+					yamlLoader.isInstrumentEnabled("partitioner"),super.getLoader(),processHelper.getHadoopJobCounters());
 
 		} catch (IOException e) {
 			debugAnalyserReport =  Constants.LOG_PROCESSOR_ERROR;

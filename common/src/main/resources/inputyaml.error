@@ -101,3 +101,4 @@
 2110=Profiler is already running, Please wait for the completion of profiling. 
 2111=Profiling- The existing job name is invalid.
 2112=M/R Jobs- job jar location does not correspond to a valid jar file.
+2113=Flow Debugging - Either user validations or Regex validations or both should be enabled.

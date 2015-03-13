@@ -86,6 +86,8 @@ public abstract class Instrumenter {
 	 */
 	public abstract byte[] instrumentEntry(byte[] bytes) throws IOException;
 
+	public static String currentlyInstrumentingClass;
+	
 	/**
 	 * <p>
 	 * This method instruments a given file to a destination file.
@@ -197,6 +199,9 @@ public abstract class Instrumenter {
 			// instrument if and only if it is a class file
 			if (entry.getName().endsWith(
 					InstrumentConstants.CLASS_FILE_EXTENSION)) {
+				currentlyInstrumentingClass = entry.getName().replace('/', '.');
+				currentlyInstrumentingClass = currentlyInstrumentingClass
+						.substring(0,currentlyInstrumentingClass.indexOf(".class"));
 				outputBytes = instrumentEntry(outputBytes);
 			}
 
