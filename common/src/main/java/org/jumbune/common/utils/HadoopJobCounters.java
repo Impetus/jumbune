@@ -48,7 +48,7 @@ public class HadoopJobCounters {
 	private static final String HADOOP_TYPE = "hadoopType";
 
 	/** The job counter beans. */
-	private static List<JobCounterBean> jobCounterBeans = new ArrayList<JobCounterBean>();
+	private List<JobCounterBean> jobCounterBeans = new ArrayList<JobCounterBean>();
 
 	/**
 	 * Fetch cluster configuration properties.
@@ -57,7 +57,7 @@ public class HadoopJobCounters {
 	 *            the loader
 	 * @return the string
 	 */
-	private static String fetchClusterConfigurationProperties(Loader loader) {
+	private String fetchClusterConfigurationProperties(Loader loader) {
 		YamlLoader yamlLoader = (YamlLoader) loader;
 		String expectedLocation = new StringBuilder()
 				.append(YamlLoader.getjHome()).append(File.separator)
@@ -83,7 +83,7 @@ public class HadoopJobCounters {
 	 *
 	 * @return the job counter beans
 	 */
-	public static List<JobCounterBean> getJobCounterBeans() {
+	public List<JobCounterBean> getJobCounterBeans() {
 		return jobCounterBeans;
 	}
 
@@ -99,7 +99,7 @@ public class HadoopJobCounters {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public static void setJobCounterBeans(String processName, String response,
+	public void setJobCounterBeans(String processName, String response,
 			Loader loader) throws IOException {
 		YamlLoader yamlLoader = (YamlLoader) loader;
 		List<String> jobs = new LinkedList<String>();
@@ -174,7 +174,7 @@ public class HadoopJobCounters {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	private static void processExceptionCondition(String processName,
+	private void processExceptionCondition(String processName,
 			Map<String, String> map, BufferedReader reader, String jobName,
 			String line) throws IOException {
 		LOGGER.error("Exception occured while executing jar: " + line);
@@ -195,4 +195,27 @@ public class HadoopJobCounters {
 
 	}
 
+
+	/**
+	 * Gets the value by job name and property.
+	 *
+	 * @param jobList the job list
+	 * @param jobName the job name
+	 * @param property the property
+	 * @return the value by job name and property
+	 */
+	public String getValueByJobNameAndProperty(List<JobCounterBean> jobList,String jobName, String property)
+	{
+		
+		for(JobCounterBean bean:jobList)
+		{   if(bean.getJobName().equalsIgnoreCase(jobName))
+		   {
+			return bean.getJobStatsMap().get(property);
+		   }
+			
+		}
+			
+			return null;
+	}
+	
 }

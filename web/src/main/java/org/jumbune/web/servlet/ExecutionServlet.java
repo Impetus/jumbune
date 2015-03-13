@@ -147,8 +147,6 @@ public class ExecutionServlet extends HttpServlet {
 		HttpSession session = request.getSession();
 		LOG.info("\n\n *************************** NEW REQUEST ************************* \n\n");
 
-		// clearing counters of previous requests when a new request comes in.
-		HadoopJobCounters.getJobCounterBeans().clear();
 
 		try {
 			HttpExecutorService service = new HttpExecutorService();

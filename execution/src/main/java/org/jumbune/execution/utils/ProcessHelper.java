@@ -34,6 +34,7 @@ import java.util.Scanner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Enable;
+import org.jumbune.common.beans.JobCounterBean;
 import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.beans.LogConsolidationInfo;
 import org.jumbune.common.beans.Master;
@@ -71,7 +72,19 @@ public class ProcessHelper {
 	private static final Logger LOGGER = LogManager.getLogger(ProcessHelper.class);
 	private static final MessageLoader MESSAGES = MessageLoader.getInstance();
 	private static final String LIBDIR = "lib/";
-	private static boolean isYarnJob = false;	
+	private static boolean isYarnJob = false;
+	private HadoopJobCounters hadoopJobCounters=null;
+	
+	
+
+	public HadoopJobCounters getHadoopJobCounters() {
+		return hadoopJobCounters;
+	}
+
+	public void setHadoopJobCounters(HadoopJobCounters hadoopJobCounters) {
+		this.hadoopJobCounters = hadoopJobCounters;
+	}
+
 	/**
 	 * Method for writing service yaml file
 	 * 
@@ -551,7 +564,8 @@ public class ProcessHelper {
 	    }else{
 	      jobCounterMap.putAll(getRemoteJobCounters(bean.getJobName(), bean.getProcessResponse(), loader, isDebugged)); 
 	    }
-	    HadoopJobCounters.setJobCounterBeans(bean.getJobName(), bean.getProcessResponse(), loader);
+	    hadoopJobCounters=new HadoopJobCounters();
+	    hadoopJobCounters.setJobCounterBeans(bean.getJobName(), bean.getProcessResponse(), loader);
 	}
 	
 	private Map<? extends String, ? extends Map<String, String>> getRemoteYarnJobCounters(

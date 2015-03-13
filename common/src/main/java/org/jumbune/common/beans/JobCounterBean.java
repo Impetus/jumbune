@@ -6,6 +6,7 @@ import java.util.Map;
 
 /**
  * The Class JobCounterBean.
+ * This class keeps track of different job counters bounded to their job name. 
  */
 public class JobCounterBean {
 
@@ -73,26 +74,5 @@ public class JobCounterBean {
 		this.jobStatsMap = jobStatsMap;
 	}
 	
-	/**
-	 * Gets the value by job name and property.
-	 *
-	 * @param jobList the job list
-	 * @param jobName the job name
-	 * @param property the property
-	 * @return the value by job name and property
-	 */
-	public static String getValueByJobNameAndProperty(List<JobCounterBean> jobList,String jobName, String property)
-	{
-		
-		for(JobCounterBean bean:jobList)
-		{   if(bean.getJobName().equalsIgnoreCase(jobName))
-		   {
-			return bean.getJobStatsMap().get(property);
-		   }
-			
-		}
-			
-			return null;
-	}
 	
 }

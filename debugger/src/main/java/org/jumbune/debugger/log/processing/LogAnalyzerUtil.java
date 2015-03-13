@@ -149,7 +149,7 @@ public class LogAnalyzerUtil {
 	 * @throws IOException
 	 */
 	public final String processLogs(final String dirPath,
-			boolean isPartitionerEnabled, Loader loader) throws JumbuneException,
+			boolean isPartitionerEnabled, Loader loader, HadoopJobCounters hadoopJobCounters) throws JumbuneException,
 			InterruptedException, ExecutionException, IOException {
 		InputStream in = ConfigurationUtil.readFile(dirPath.substring(0, dirPath.indexOf("consolidated"))+SYMBOL_TABLE_NAME);
 		if(in == null){
@@ -249,9 +249,7 @@ public class LogAnalyzerUtil {
 		Map<String, JobBean> logMap = debugAnalysisBean.getLogMap();
 		Set<String> logMapKeys = logMap.keySet();
 		List<String> jobList = new ArrayList<String>();
-		List<JobCounterBean> jobCounterBeans = HadoopJobCounters
-				.getJobCounterBeans();
-
+		List<JobCounterBean> jobCounterBeans=hadoopJobCounters.getJobCounterBeans();
 		for (JobCounterBean jobCounterBean : jobCounterBeans) {
 			jobList.add(jobCounterBean.getJobName());
 
@@ -272,12 +270,12 @@ public class LogAnalyzerUtil {
 				// setting total input keys and output records according to
 				// hadoop job counters.
 				logMap.get(jobId).setTotalInputKeys(
-						Integer.valueOf(JobCounterBean
+						Integer.valueOf(hadoopJobCounters
 								.getValueByJobNameAndProperty(jobCounterBeans,
 										jobId, Constants.MAP_INPUT_RECORD)));
 				logMap.get(jobId)
 						.setTotalContextWrites(
-								Integer.valueOf(JobCounterBean
+								Integer.valueOf(hadoopJobCounters
 										.getValueByJobNameAndProperty(
 												jobCounterBeans, jobId,
 												Constants.REDUCE_OUTPUT_RECORD)));
