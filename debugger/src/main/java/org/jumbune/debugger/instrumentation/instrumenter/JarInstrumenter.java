@@ -6,6 +6,8 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.text.MessageFormat;
 import java.util.Map;
 import java.util.zip.ZipEntry;
@@ -13,6 +15,7 @@ import java.util.zip.ZipOutputStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.Validation;
 import org.jumbune.common.utils.ClasspathUtil;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.yaml.config.Loader;
@@ -64,7 +67,8 @@ public class JarInstrumenter extends Instrumenter {
 	private static Environment env;
 	private static final Logger LOGGER = LogManager.getLogger(Instrumenter.class);
 
-	
+	public List<String> userDefValidationsClasses = new ArrayList<String>();
+	public List<String> regexValidationsClasses = new ArrayList<String>();
 	
 	/**
 	 * <p>
@@ -186,8 +190,36 @@ public class JarInstrumenter extends Instrumenter {
 			boolean instrumentMapreduceRegex,
 			boolean instrumentMapreduceUserDefinedValidation,
 			boolean instrumentJobPartitioner) throws IOException {
+		
+		YamlLoader loader = (YamlLoader) getLoader();
+
+		// getting all regex validations
+		List<Validation> validations = loader.getRegex();
+
+		for (Validation validation : validations) {
+			regexValidationsClasses.add(validation.getClassname());
+		}
+
+		// getting all user validations
+		validations = loader.getUserValidations();
+
+		for (Validation validation : validations) {
+			userDefValidationsClasses.add(validation.getClassname());
+		}
+
+		boolean isRegexValidationClass = regexValidationsClasses
+				.contains(currentlyInstrumentingClass);
+		boolean isUserDefValidationClass = userDefValidationsClasses
+				.contains(currentlyInstrumentingClass);
+
 		ClassWriter cw;
 		byte[] instrumentBytesTmp = instrumentBytes;
+		
+
+		//add logging only if validations are enabled on a particular class. 
+		if(isRegexValidationClass||isUserDefValidationClass)
+	{	
+		
 		// Step 2: Handling for regex and user validations
 		if (instrumentMapreduceRegex
 				|| instrumentMapreduceUserDefinedValidation) {
@@ -219,7 +251,8 @@ public class JarInstrumenter extends Instrumenter {
 			instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
 					new BlockLogAdapter(getLoader(), cw,env), cw);
 		}
-
+	}
+		
 		// Step 7: Partitioner handler
 		if (instrumentJobPartitioner) {
 			cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
@@ -234,13 +267,18 @@ public class JarInstrumenter extends Instrumenter {
 					new ConfigureMapReduceAdapter(getLoader(), cw,env), cw);
 		}
 
-		// Step 9: Add logging for map/reduce context.write method calls
-		if (InstrumentConfig.INSTRUMENT_CONTEXT_WRITE) {
-			cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-			instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
-					new ContextWriteLogAdapter(getLoader(), cw), cw);
-		}
+		// add logging only if validations are enabled on a particular class.
+		if (isRegexValidationClass || isUserDefValidationClass) {
 
+			// Step 9: Add logging for map/reduce context.write method calls
+			if (InstrumentConfig.INSTRUMENT_CONTEXT_WRITE) {
+				cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+				instrumentBytesTmp = InstrumentUtil.instrumentBytes(
+						instrumentBytesTmp, new ContextWriteLogAdapter(
+								getLoader(), cw), cw);
+			}
+
+		}
 		// Step 10: Handling Chained tasks
 		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,

@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -20,6 +21,12 @@ import java.util.concurrent.Future;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.JobCounterBean;
+import org.jumbune.common.utils.Constants;
+import org.jumbune.common.utils.HadoopJobCounters;
+import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.beans.Validation;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.debugger.instrumentation.utils.InstrumentConstants;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
@@ -72,6 +79,9 @@ public class LogAnalyzerUtil {
 
 	private int totalReducerInputKeys;
 
+	public List<String> userDefValidationClasses = new ArrayList<String>();
+	public List<String> regexValidationsClasses = new ArrayList<String>();
+	
 	/**
 	 * This constructor takes input to set maximum number of threads to be
 	 * spawned
@@ -139,7 +149,7 @@ public class LogAnalyzerUtil {
 	 * @throws IOException
 	 */
 	public final String processLogs(final String dirPath,
-			boolean isPartitionerEnabled) throws JumbuneException,
+			boolean isPartitionerEnabled, Loader loader) throws JumbuneException,
 			InterruptedException, ExecutionException, IOException {
 		InputStream in = ConfigurationUtil.readFile(dirPath.substring(0, dirPath.indexOf("consolidated"))+SYMBOL_TABLE_NAME);
 		if(in == null){
@@ -217,6 +227,62 @@ public class LogAnalyzerUtil {
 		if (isPartitionerEnabled) {
 			Map<String, List<PartitionerInfoBean>> partitionerMap = getPartitionCounters(mrChainSortedMap);
 			debugAnalysisBean.setPartitionerMap(partitionerMap);
+          	}
+		YamlLoader yamlLoader = (YamlLoader) loader;
+		// getting all regex validations
+		List<Validation> validations = yamlLoader.getRegex();
+		for (Validation validation : validations) {
+			regexValidationsClasses.add(validation.getClassname());
+		}
+
+		// getting all user validations
+		validations = yamlLoader.getUserValidations();
+		for (Validation validation : validations) {
+			userDefValidationClasses.add(validation.getClassname());
+		}
+
+		// removing entries which are not required
+		List<String> classesRequiredInResult = new ArrayList<String>(
+				regexValidationsClasses);
+		classesRequiredInResult.addAll(userDefValidationClasses);
+
+		Map<String, JobBean> logMap = debugAnalysisBean.getLogMap();
+		Set<String> logMapKeys = logMap.keySet();
+		List<String> jobList = new ArrayList<String>();
+		List<JobCounterBean> jobCounterBeans = HadoopJobCounters
+				.getJobCounterBeans();
+
+		for (JobCounterBean jobCounterBean : jobCounterBeans) {
+			jobList.add(jobCounterBean.getJobName());
+
+		}
+
+		for (String jobId : logMapKeys) {
+			Set<String> jobMapKeys = logMap.get(jobId).getJobMap().keySet();
+
+			Iterator<String> jobKeys = jobMapKeys.iterator();
+			String mapperReducerName = null;
+			while (jobKeys.hasNext()) {
+				mapperReducerName = jobKeys.next();
+				if (!classesRequiredInResult.contains(mapperReducerName)) {
+					jobKeys.remove();
+				}
+			}
+			if (jobList.contains(jobId)) {
+				// setting total input keys and output records according to
+				// hadoop job counters.
+				logMap.get(jobId).setTotalInputKeys(
+						Integer.valueOf(JobCounterBean
+								.getValueByJobNameAndProperty(jobCounterBeans,
+										jobId, Constants.MAP_INPUT_RECORD)));
+				logMap.get(jobId)
+						.setTotalContextWrites(
+								Integer.valueOf(JobCounterBean
+										.getValueByJobNameAndProperty(
+												jobCounterBeans, jobId,
+												Constants.REDUCE_OUTPUT_RECORD)));
+
+			}
 		}
 
 		Map<String, DebugAnalysisBean> debugAnalysisMap = new HashMap<String, DebugAnalysisBean>();

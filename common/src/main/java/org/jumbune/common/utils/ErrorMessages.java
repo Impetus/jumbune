@@ -318,4 +318,7 @@ public interface ErrorMessages {
 	
 	/**existing job name invalid */
 	int SUPPLIED_JAR_INVALID = 2112;
+	
+	/** The both debugger validations null. */
+	int BOTH_DEBUGGER_VALIDATIONS_NULL = 2113;
 }

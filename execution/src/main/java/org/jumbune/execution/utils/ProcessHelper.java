@@ -41,6 +41,7 @@ import org.jumbune.common.beans.ServiceInfo;
 import org.jumbune.common.beans.SupportedHadoopDistributions;
 import org.jumbune.common.utils.ArrayParamBuilder;
 import org.jumbune.common.utils.CommandWritableBuilder;
+import org.jumbune.common.utils.HadoopJobCounters;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.MessageLoader;
@@ -50,8 +51,8 @@ import org.jumbune.common.yaml.config.Config;
 import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.beans.JobProcessBean;
 import org.jumbune.datavalidation.DataValidationConstants;
-import org.jumbune.execution.beans.JobProcessBean;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
@@ -550,6 +551,7 @@ public class ProcessHelper {
 	    }else{
 	      jobCounterMap.putAll(getRemoteJobCounters(bean.getJobName(), bean.getProcessResponse(), loader, isDebugged)); 
 	    }
+	    HadoopJobCounters.setJobCounterBeans(bean.getJobName(), bean.getProcessResponse(), loader);
 	}
 	
 	private Map<? extends String, ? extends Map<String, String>> getRemoteYarnJobCounters(

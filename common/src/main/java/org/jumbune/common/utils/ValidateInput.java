@@ -16,6 +16,7 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.ClasspathElement;
 import org.jumbune.common.beans.DataValidationBean;
 import org.jumbune.common.beans.Enable;
+import org.jumbune.utils.beans.LogLevel;
 import org.jumbune.common.beans.FieldValidationBean;
 import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.beans.Master;
@@ -261,6 +262,11 @@ public class ValidateInput {
 		}
 		*/
 		YamlConfig yamlConfig = (YamlConfig)config;
+		if (!ifDebuggerValidationsEnabled(config)) {
+			failedDebug.put("debuggerConf.logLevel.instrumentRegex",
+					errorMessages
+							.get(ErrorMessages.BOTH_DEBUGGER_VALIDATIONS_NULL));
+		}
 		if (yamlLoader.isInstrumentEnabled(Constants.DEBUG_INSTR_REGEX_KEY)) {
 			if (!yamlConfig.getRegexValidations().isEmpty()) {
 				checkFieldsValue(yamlConfig.getRegexValidations(), ErrorMessages.DEBUG_REGEX_CLASS_INVALID, ErrorMessages.DEBUG_REGEX_KEY_INVALID,
@@ -282,6 +288,31 @@ public class ValidateInput {
 		addToValidationList(Constants.DEBUGGER_VALIDATION, failedDebug, suggestionDebug);
 	}
 
+	/**
+	 * This method checks if one of the validations (User or Regex) are enabled
+	 * while running debugger.
+	 * 
+	 * @param config
+	 * @param failedDebug
+	 * @return true if one of the validations (User or Regex) are enabled.
+	 */
+	private boolean ifDebuggerValidationsEnabled(Config config) {
+		YamlConfig yamlConfig = (YamlConfig) config;
+		Map<String, LogLevel> logLevelMap = yamlConfig.getDebuggerConf()
+				.getLogLevel();
+		final String REGEXKEY = "instrumentRegex";
+		final String USERVALIDATEKEY = "instrumentUserDefValidate";
+
+		if ((logLevelMap.containsKey(USERVALIDATEKEY) && logLevelMap
+				.get(USERVALIDATEKEY).toString().equalsIgnoreCase("TRUE"))
+				|| (logLevelMap.containsKey(REGEXKEY) && logLevelMap
+						.get(REGEXKEY).toString().equalsIgnoreCase("TRUE"))) {
+			return true;
+		}
+		return false;
+	}	
+	
+	
 	/**
 	 * *
 	 * * In fields of debugger it validates regex userdefine validations.

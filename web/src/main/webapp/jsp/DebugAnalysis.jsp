@@ -45,7 +45,7 @@
 			</div>
 
 			<div class="widget-container jmritablewrap">
-				<div class="widget-header"><div class="title">Mappers/Reducers</div><a id="mapsChainSorting" href="javascript:void(0);" >chain</a><div id="mapActiveGrid" class="activegrid"></div></div>
+				<div class="widget-header"><div class="title">Faulty Mappers/Reducers</div><a id="mapsChainSorting" href="javascript:void(0);" >chain</a><div id="mapActiveGrid" class="activegrid"></div></div>
 				<div class="widget-body">
 					<div id="mapptreegrid"></div>
 				</div>

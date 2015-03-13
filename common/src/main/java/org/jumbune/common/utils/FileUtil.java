@@ -2,13 +2,16 @@ package org.jumbune.common.utils;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
+import java.util.Properties;
 
 import org.jumbune.common.yaml.config.Loader;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 /**
@@ -18,7 +21,8 @@ import org.jumbune.common.yaml.config.Loader;
  */
 public final class FileUtil {
 	
-	
+	private static final Logger LOGGER = LogManager
+			.getLogger(FileUtil.class);
 	/**
 	 * Instantiates a new file util.
 	 */
@@ -63,5 +67,36 @@ public final class FileUtil {
 	
 		cu.copyRemoteLibFilesToMaster(loader);
 	}
+	
+
+	/**
+	 * Extracts the property value from Properties instance from the given file instance
+	 * @param file
+	 * @param propertyKey for which property value to be returned
+	 * @return the populated property value as String
+	 */
+	public static String getPropertyFromFile(String file, String propertyKey){
+		Properties properties;
+			properties = new Properties();
+			File filePath = new File(file);
+			FileReader fileReader = null;
+			try{
+				fileReader = new FileReader(filePath);
+				properties.load(fileReader);
+			} catch (IOException e) {
+				LOGGER.warn("This is unexpected! Configuration file doesn't exist");
+			}finally{
+				if(fileReader != null){
+					try {
+						fileReader.close();
+					} catch (IOException e) {
+						LOGGER.error("Unable to close File Reader instance."+e);
+					}
+				}
+			}
+			return properties.getProperty(propertyKey);
+	}
+
+
 
 }
