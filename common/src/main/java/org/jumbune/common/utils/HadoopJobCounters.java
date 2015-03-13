@@ -204,10 +204,10 @@ public class HadoopJobCounters {
 	 * @param property the property
 	 * @return the value by job name and property
 	 */
-	public String getValueByJobNameAndProperty(List<JobCounterBean> jobList,String jobName, String property)
+	public String getValueByJobNameAndProperty(String jobName, String property)
 	{
 		
-		for(JobCounterBean bean:jobList)
+		for(JobCounterBean bean:jobCounterBeans)
 		{   if(bean.getJobName().equalsIgnoreCase(jobName))
 		   {
 			return bean.getJobStatsMap().get(property);

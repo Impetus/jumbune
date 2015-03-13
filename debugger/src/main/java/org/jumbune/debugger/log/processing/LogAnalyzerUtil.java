@@ -271,14 +271,12 @@ public class LogAnalyzerUtil {
 				// hadoop job counters.
 				logMap.get(jobId).setTotalInputKeys(
 						Integer.valueOf(hadoopJobCounters
-								.getValueByJobNameAndProperty(jobCounterBeans,
-										jobId, Constants.MAP_INPUT_RECORD)));
-				logMap.get(jobId)
-						.setTotalContextWrites(
-								Integer.valueOf(hadoopJobCounters
-										.getValueByJobNameAndProperty(
-												jobCounterBeans, jobId,
-												Constants.REDUCE_OUTPUT_RECORD)));
+								.getValueByJobNameAndProperty(jobId,
+										Constants.MAP_INPUT_RECORD)));
+				logMap.get(jobId).setTotalContextWrites(
+						Integer.valueOf(hadoopJobCounters
+								.getValueByJobNameAndProperty(jobId,
+										Constants.REDUCE_OUTPUT_RECORD)));
 
 			}
 		}
