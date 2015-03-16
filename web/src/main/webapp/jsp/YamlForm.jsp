@@ -484,6 +484,14 @@ var uploader_mr;
 						<div id="debugAnalysisBox">
 							<div class="commonBox clear">
 								<div class="fld chk">
+									<input type="checkbox" name="logKeyValues" id="logKeyValues" />
+								</div>
+								<div class="">
+									<label>Enable Logging of Unmatched Keys / Values</label>
+								</div>
+							</div>
+							<div class="commonBox clear">
+								<div class="fld chk">
 									<input type="checkbox" id="instrumentRegex" name="debuggerConf.logLevel.instrumentRegex" value="FALSE" disabled/>
 								</div>
 								<div class="">
@@ -763,7 +771,17 @@ var uploader_mr;
 		promptPosition : "topLeft",
 		scroll : false
 	});
-        
+  
+     $('#logKeyValues')
+	.change(
+			function() {
+					
+				if ($('#logKeyValues').prop('checked') == true) {
+					$('#logKeyValues').val("TRUE");
+				} else  {
+					$('#logKeyValues').val("FALSE");
+				}
+			});     
        
 
 	function removeJobRow(rowId) {
@@ -1389,7 +1407,8 @@ var uploader_mr;
 							.click(
 									function() {
 										if ($('#debugAnalysis').prop(
-												'checked') == true) {												
+												'checked') == true) {
+												$('#logKeyValues').removeAttr("disabled");
 												$("#instrumentUserDefValidate, #instrumentRegex").removeAttr("disabled");
 												var instrumentRegexCheck = $('#instrumentRegex').prop('checked');													
 												if (instrumentRegexCheck) { 
@@ -1415,7 +1434,10 @@ var uploader_mr;
 														$("#instrumentUserDefValidate").attr("value", "FALSE");
 												}
 										
-										} else {												
+										} else {
+												$("#logKeyValues").attr("checked", false);
+												$('#logKeyValues').val("FALSE");
+												$('#logKeyValues').attr("disabled", true);
 												$("#instrumentUserDefValidate, #instrumentRegex").attr("disabled", true).attr("checked", false);
 											$('#debugAnalysisBox')
 													.find(
@@ -1675,7 +1697,7 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 								$('#jsonData').val('');
 								$('#saveJsonData').val('');
 								$('#validateMsgBox').html('');
-
+								
 								var formData = form2js(
 									'yamlForm',
 									'.',
@@ -1691,6 +1713,7 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 								
 								if ( typeof formData.debugAnalysis === "undefined" ) {
 									formData["debugAnalysis"] = "FALSE";
+									formData["logKeyValues"] = "FALSE";
 								}
 								
 								if ( typeof formData.debuggerConf === "undefined" ) {
@@ -2154,6 +2177,10 @@ $(".msgBox").css("display","none");
 
 						if (typeof populatejson != 'undefined'
 								&& populatejson != null && populatejson != '') {
+							if (populatejson.logKeyValues =="TRUE") {
+								$("#logKeyValues").attr("checked", true);
+								$("#logKeyValues").val("TRUE");
+							}
 							function populateForm() {
 								var popData = JSON
 										.stringify(eval(populatejson));

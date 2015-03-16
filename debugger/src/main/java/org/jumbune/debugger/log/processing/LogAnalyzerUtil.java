@@ -178,7 +178,7 @@ public class LogAnalyzerUtil {
 			for (Map.Entry<String, Map<String, List<String>>> nodeFilePairs : nodeFileMap
 					.entrySet()) {
 				nodeAnalysisTask = new LogAnalyzerCallable(
-						nodeFilePairs.getKey(), nodeFilePairs.getValue());
+						nodeFilePairs.getKey(), nodeFilePairs.getValue(), loader);
 				analysisResults.add(pool.submit(nodeAnalysisTask));
 			}
 

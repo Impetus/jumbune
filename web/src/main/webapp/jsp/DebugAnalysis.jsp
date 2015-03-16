@@ -2,17 +2,6 @@
 <div id="treeGridBox">
 	<div class="pageTopPane">
 		<h2 class="pageTitle">Cluster-wide MapReduce Job Execution Analysis(Debug) Report - </h2>
-		<div class="pageTopPaneRight" id="debugRptViewOpt">
-			<div class="tblChartOpts">
-				<span class="optLbl">Table View -</span><br />
-				<a href="javascript:void(0);" id="tblView" class="viewOpt" ui:target="debugreportTableView"><span class="selView"></span></a>
-			</div>
-			<div class="tblChartOptsSap"></div>
-			<div class="tblChartOpts">
-				<span class="optLbl">Chart View -</span><br />
-				<a href="javascript:void(0);" id="pieChartView" class="viewOpt" ui:target="debugreportPieChartView"><span></span></a>
-			</div>
-		</div>
 	</div>
 
 	<div id="debugreportTableView" class="debugReportTblChartViewCnt">	
@@ -545,7 +534,6 @@ function enableDebugAnalysis(logAnalysisJSONString)
 	$('#mapptreegrid').find('div.ui-jqgrid-sdiv').insertBefore($('#mapptreegrid').find('div.ui-jqgrid-bdiv'));
 	$('#insptreegrid').find('div.ui-jqgrid-sdiv').insertBefore($('#insptreegrid').find('div.ui-jqgrid-bdiv'));
 
-	createDebugReportPieCharts();
 }
 
 function addPaddInVal(cellvalue, options, rowObject)
@@ -1242,208 +1230,6 @@ function createTreeTable(itemObj, insTotalUnmatchedKeys, insTotalUnmatchedValues
 }
 
 
-
-function createDebugReportPieCharts() {
-	// Chart View Start
-	var chartViewContent='';
-	var chartViewCounter=0;
-	var mapReduceChartArr=new Array();
-	var insChartArr=new Array();
-
-	$.each(logAnalysisJSONStringObj, function(logName, logBean){
-	var logMap=logBean["logMap"];	
-	if(logName == 'ErrorAndException' || logName == 'debuggerSummary')
-	{
-		return;
-	}	
-		$.each(logMap, function(jobId, jobBean) {
-		
-				var totalUnmatchedKeys=jobBean["totalUnmatchedKeys"];
-				if(totalUnmatchedKeys == '-1')
-				{
-					totalUnmatchedKeys = '-';
-				}
-				var totalUnmatchedValues=jobBean["totalUnmatchedValues"];
-				if(totalUnmatchedValues == '-1')
-				{
-					totalUnmatchedValues = '-';
-				}
-			
-			chartViewContent = '<h3 class="accordion-heading"><table width="100%" cellpadding="0" cellspacing="0"><tr><td width="40%" align="left"><div class="seljob">'+jobId+'</div></td><td width="15%" align="center">'+jobBean["totalInputKeys"]+'</td><td width="15%" align="center" class="selCol">'+jobBean["totalContextWrites"]+'</td><td width="15%" align="center">'+totalUnmatchedKeys+'</td><td width="15%" align="center" class="last">'+totalUnmatchedValues+'</td></tr></table></h3><div class="accordion-content"><div class="debugreportchartholder" id="MapReduceChartHolder_'+chartViewCounter+'"></div><div class="debugreportchartholder" id="insChartHolder_'+chartViewCounter+'"></div><div class="charttitle">Mappers/Reducers</div><div class="charttitle">Instances</div></div>';
-			$("#debugReportAccordion").append(chartViewContent);
-			createMapReducePieChart("MapReduceChartHolder_"+chartViewCounter, jobId, jobBean, chartViewCounter);
-			chartViewCounter++;
-			chartViewContent = '';
-		});
-	});
-
-	$("#debugReportAccordion").parent().append('<input id="makeReportAccordian" type="button" style="display:none;" value="make accordian" />');	
-	$('#makeReportAccordian').click(function(){
-		$("#debugReportAccordion").accordion();
-		$('#makeReportAccordian').remove();
-	});	
-		setTimeout(function(){
-			$('#makeReportAccordian').trigger("click");
-			$('.accordion-heading').find('table').attr("height","100%");
-		},4000);
-}
-
-function createMapReducePieChart(mrChartHolder, jobId, jobBean, counter) {
-	var colorCounter = 0;
-	var newY;
-	var totalContextWrite = 0;
-	mapReduceChartArr = new Array();
-	mrColorCode = new Array();
-	var colors = ["#4572A7", "#AA4643", "#89A54E", "#80699B", "#3D96AE", "#DB843D", "#92A8CD", "#A47D7C", "#B5CA92"];
-	
-	$.each(logAnalysisJSONStringObj, function(logName, logBean){
-	var logMap=logBean["logMap"];
-	if(logName == 'ErrorAndException' || logName == 'debuggerSummary')
-	{
-		return;
-	}
-		$.each(logMap[jobId].jobMap, function(mapReduceName, mapReduceBean){
-			totalContextWrite += mapReduceBean["totalContextWrites"];			
-		});
-
-		$.each(logMap[jobId].jobMap, function(mapReduceName, mapReduceBean){
-			if(colorCounter < 1){
-				newY = Math.round(((mapReduceBean["totalContextWrites"]*100)/totalContextWrite)*100)/100;
-				mapReduceChartArr.push([
-					mapReduceName,
-					newY
-				]);
-			}else {
-				mapReduceChartArr.push([
-					mapReduceName,
-					Math.round(((mapReduceBean["totalContextWrites"]*100)/totalContextWrite)*100)/100
-				]);
-			}
-			mrColorCode.push(colors[colorCounter]);
-			colorCounter++;
-		});
-	});
-	
-	if(isNaN(newY) == false) {
-		// Create the chart
-		$.jqplot.config.defaultWidth = 420;
-		$.jqplot.config.defaultHeight = 250;
-		$.jqplot.config.enablePlugins = true;
-		mrPlot[counter] = jQuery.jqplot (mrChartHolder, [mapReduceChartArr], {
-			seriesColors: mrColorCode,
-			grid: {
-				drawBorder: false,
-				shadow: false,
-				background: 'transparent'
-			},
-			seriesDefaults: {
-				// Make this a pie chart.
-				renderer: jQuery.jqplot.PieRenderer,
-				rendererOptions: {
-					// Put data labels on the pie slices.
-					// By default, labels show the percentage of the slice.
-					showDataLabels: true,
-					sliceMargin: 1,
-					startAngle: -90,
-					dataLabelPositionFactor: 1.3,
-					dataLabelFormatString:'%.2f %'
-				},
-				shadow: false
-			},
-			legend: { show:false }
-		});
-
-		$('#'+mrChartHolder).bind('jqplotDataClick', 
-			function (ev, seriesIndex, pointIndex, data ) {
-				iChartHolder = mrChartHolder.split('_');						
-				createInstancePieChart("insChartHolder_"+iChartHolder[1],counter, jobId, jobBean, data[0], mrPlot[counter].series[seriesIndex].seriesColors[pointIndex]);
-			}
-		);
-
-		customJQPlotTooltip('pie', mrChartHolder, mrPlot[counter], "%"); // chartHolder, var in which you store your jqPlot
-
-		createInstancePieChart("insChartHolder_"+counter,counter, jobId, jobBean, mapReduceChartArr[0][0], mrColorCode[0]);
-	}else {
-		$("#"+mrChartHolder).siblings(".charttitle").hide();
-		$("#"+mrChartHolder).parent("div").html('<div class="status info" style="margin-bottom:0px;"><span>Information: </span>No data available.</div>');
-	}
-}
-
-function createInstancePieChart(iChartHolder,graphCounter, jobId, jobBean, mapId, mapColor) {
-	var colorCounter = 0;
-	insChartArr = new Array();
-	instMapColorCode = new Array();
-	var colors = ["#4572A7", "#AA4643", "#89A54E", "#80699B", "#3D96AE", "#DB843D", "#92A8CD", "#A47D7C", "#B5CA92"];
-
-	$("#"+iChartHolder).html("");
-	$.each(logAnalysisJSONStringObj, function(logName, logBean){
-	var logMap=logBean["logMap"];
-	if(logName == 'ErrorAndException' || logName == 'debuggerSummary')
-	{
-		return;
-	}	
-		$.each(logMap[jobId].jobMap, function(mapReduceName, mapReduceBean){			
-			var mapReduceMap = mapReduceBean["mapReduceMap"];
-						
-			if(mapId && mapReduceName != mapId)
-			{				
-				return true;
-			}
-						
-
-			if(colorCounter < 1) {
-				$.each(mapReduceMap, function(nodeName, nodeBean){
-					var nodeMap=nodeBean["nodeMap"];
-					$.each(nodeMap, function(instanceName, instanceBean){
-						var newY = Math.round(((instanceBean["totalContextWrites"]*100)/mapReduceBean["totalContextWrites"])*100)/100;
-						if(isNaN(newY) == true) {
-							newY = 0;
-						}
-						insChartArr.push([
-							instanceName,
-							newY
-						]);
-						instMapColorCode.push(mapColor);
-						colorCounter++;
-					});
-				});
-			}
-		});
-	});
-
-	// Create the chart
-	var colors = ["#4572A7", "#AA4643", "#89A54E", "#80699B", "#3D96AE", "#DB843D", "#92A8CD", "#A47D7C", "#B5CA92"];
-	$.jqplot.config.defaultWidth = 455;
-	$.jqplot.config.defaultHeight = 250;
-	$.jqplot.config.enablePlugins = true;
-	iPlot[graphCounter] = jQuery.jqplot (iChartHolder, [insChartArr], {
-		seriesColors: instMapColorCode,
-		grid: {
-			drawBorder: false,
-			shadow: false,
-			background: 'transparent'
-		},
-		seriesDefaults: {
-			// Make this a pie chart.
-			renderer: jQuery.jqplot.PieRenderer,
-			rendererOptions: {
-				// Put data labels on the pie slices.
-				// By default, labels show the percentage of the slice.
-				showDataLabels: true,
-				sliceMargin: 1,
-				startAngle: 90,
-				dataLabelPositionFactor: 1.3,
-				dataLabelFormatString:'%.2f %'
-			},
-			shadow: false
-		},
-		legend: { show:false }
-	});
-	
-	
-	customJQPlotTooltip('pie', iChartHolder, iPlot[graphCounter], "%"); // chartHolder, var in which you store your jqPlot
-}
-
 $("#debugRptViewOpt").find("a.viewOpt").click(function() {
 	$("#debugRptViewOpt").find("a.viewOpt").each(function() {
 		$(this).find("span").removeClass("selView");
@@ -1454,11 +1240,6 @@ $("#debugRptViewOpt").find("a.viewOpt").click(function() {
 		$(this).css({"display":"none"});
 	});
 	$("div#"+targetView).css({"display":"block"});
-	if(targetView == "debugreportPieChartView") {
-		$("#debugReportAccordion").find("div.ui-accordion-content").each(function() {
-			$(this).css({"height":"auto"});
-		});
-	}
 	
 	for(var k=0; k<mrPlot.length; k++){
 		mrPlot[k].replot();

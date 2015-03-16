@@ -268,7 +268,7 @@ public class JarInstrumenter extends Instrumenter {
 		}
 
 		// add logging only if validations are enabled on a particular class.
-		if (isRegexValidationClass || isUserDefValidationClass) {
+/*		if (isRegexValidationClass || isUserDefValidationClass) {
 
 			// Step 9: Add logging for map/reduce context.write method calls
 			if (InstrumentConfig.INSTRUMENT_CONTEXT_WRITE) {
@@ -279,6 +279,7 @@ public class JarInstrumenter extends Instrumenter {
 			}
 
 		}
+*/
 		// Step 10: Handling Chained tasks
 		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
