@@ -19,7 +19,7 @@ import org.jumbune.common.beans.HttpReportsBean;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.yaml.config.Loader;
 import org.jumbune.common.yaml.config.YamlLoader;
-import org.jumbune.execution.utils.ExportUtil;
+import org.jumbune.execution.utils.ReportGenerator;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.web.utils.WebConstants;
 
@@ -126,7 +126,7 @@ public class ExportExcelServlet extends HttpServlet {
 		checkAndMakeExcelDirectory(xlsDirectory);
 		addDataValidationReportToMap(map, loader);
 
-		ExportUtil.writesToExcelFile(map, contextRealPath + xlsFolder + fileName, reportsJson);
+		ReportGenerator.writesToExcelFile(map, contextRealPath + xlsFolder + fileName, reportsJson);
 		LOG.info("Exported to Excel Successfully....");
 
 		out.println(getURLWithContextPath(request) + xlsFolder + fileName);

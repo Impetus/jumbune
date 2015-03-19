@@ -31,7 +31,7 @@ import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.execution.beans.Parameters;
 import org.jumbune.execution.processor.Processor;
 import org.jumbune.execution.utils.ExecutionUtil;
-import org.jumbune.execution.utils.ExportUtil;
+import org.jumbune.execution.utils.ReportGenerator;
 import org.jumbune.utils.YamlUtil;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
 import org.jumbune.utils.exception.JumbuneException;
@@ -256,7 +256,7 @@ public class ShellExecutorService extends CoreExecutorService {
 		if (map.containsKey(Constants.DATA_VALIDATION) && yamlLoader != null) {
 			map.put(Constants.DATA_VALIDATION, yamlLoader.getJumbuneJobLoc());
 		}
-		ExportUtil.writesToExcelFile(map, reportFolderPath, reportsJson);
+		ReportGenerator.writesToExcelFile(map, reportFolderPath, reportsJson);
 	}
 	
 

@@ -14,17 +14,13 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Stack;
 
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.util.CellRangeAddress;
 import org.jumbune.common.beans.Validation;
-import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.debugger.instrumentation.utils.InstrumentConstants;
-
-
+import org.jumbune.utils.ExportUtil;
+import org.jumbune.utils.beans.Worksheet;
 
 
 /**
@@ -100,6 +96,7 @@ public class LogAnalyzer {
 	private String blockName = null;
 	
 	private String lineNumber = null;
+	
 	/**
 	 * Analyzes logs and return the analysis result for the node
 	 * 
@@ -115,70 +112,28 @@ public class LogAnalyzer {
 			return logMap;
 		}
 		this.nodeIP = nodeIP;
-		YamlLoader yamlLoader = (YamlLoader) loader;
-		Properties props = LogAnalyzerUtil.getSystemTable();
 		
+		Properties props = LogAnalyzerUtil.getSystemTable();
+		YamlLoader yamlLoader = (YamlLoader) loader;
 		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
 		boolean logKeyValues = yamlConfig.getLogKeyValues().getEnumValue();
 		
 		BufferedReader bufferedReader = null;
-		FileOutputStream out = null;
-		String[] tuples, temp;
-		String excelFileLoc = null;
-		Stack<String[]> stack = null;
-		HSSFWorkbook workbook = null;
 		List<String> validationClassSymbols = null;
-		HashMap<String, HSSFSheet> sheets = null;
 		
-		if (logKeyValues == true) {
-			workbook = new HSSFWorkbook();
+		if (logKeyValues) {
 			validationClassSymbols = getValidationClassSymbol(props, yamlLoader);
-			sheets = getSheets(workbook, validationClassSymbols, props);
 		}
 
-		writeKeyValue = false;
 		for (Map.Entry<String, List<String>> pairs : fileListMap.entrySet()) {
 			List<String> fileList = pairs.getValue();
 			try {
 				for (String fileName : fileList) {
 					bufferedReader = new BufferedReader(new FileReader(fileName));
 					String line = null;
-					if (logKeyValues && isValidationClassFile(fileName,validationClassSymbols )) {
-						excelFileLoc = fileName;		
-						stack = new Stack<String[]>();
 					
-						while ((line = bufferedReader.readLine()) != null) {
-							// parses the line and stores the result in lineMap
-							if(line==null || line.trim().isEmpty()){
-								continue;
-							}
-							parseLine(line,props);
-							if ((LPConstants.NOT_AVAILABLE.equals(currentExpCounter))
-									&& (!LPConstants.METHODS_CHECK_LIST
-											.contains(message))) {
-								continue;
-							}
-							// process the line and add the result to logMap
-							processLine();
-						
-							tuples = line.split(LPConstants.PIPE_SEPARATOR, InstrumentConstants.SIX);
-						
-							if (tuples[2].endsWith("En")) {
-								stack.push(tuples);
-							} else if (tuples[2].endsWith("Ex")) {
-								stack.pop();
-							}
-							if (writeKeyValue == true) {
-								writeKeyValue = false;
-								temp = stack.peek();
-								temp[2] = blockName;
-								temp[3] = lineNumber;
-								addRow(temp, tuples, sheets, props);
-							}
-						}							
-						
-					} else {
-						
+					if ( logKeyValues == false ||
+							(logKeyValues && ! isValidationClassFile(fileName, validationClassSymbols)) ) {
 						while ((line = bufferedReader.readLine()) != null) {
 							// parses the line and stores the result in lineMap
 							if(line==null || line.trim().isEmpty()){
@@ -193,9 +148,84 @@ public class LogAnalyzer {
 							// process the line and add the result to logMap
 							processLine();
 						}
-					
 					}
+					
 					addRecursiveCounters();
+				}
+			} finally {
+				if (bufferedReader != null) {
+					bufferedReader.close();
+				}
+			}
+		}
+		if (logKeyValues) {
+			analyzeLogsAndWriteToExcel(fileListMap, props, validationClassSymbols);
+		}
+		return logMap;
+	}
+	
+/**
+ * Analyzes logs and write unmatched key/value to excel sheet
+ * @param fileListMap the map of lists of different log files for the node
+ * @param props
+ * @param validationClassSymbols
+ * @throws IOException
+ */
+	public void analyzeLogsAndWriteToExcel(
+			final Map<String, List<String>> fileListMap, Properties props,
+			List<String> validationClassSymbols) throws IOException {
+
+		BufferedReader bufferedReader = null;
+		FileOutputStream out = null;
+		String[] tuples, temp;
+		String excelFileLoc = null;
+		Stack<String[]> stack = null;
+		Worksheet worksheet = ExportUtil.getUnmatchedKeyValuesDebuggerWorksheet(
+				validationClassSymbols, props);
+
+		writeKeyValue = false;
+		for (Map.Entry<String, List<String>> pairs : fileListMap.entrySet()) {
+			List<String> fileList = pairs.getValue();
+			try {
+				for (String fileName : fileList) {
+					bufferedReader = new BufferedReader(new FileReader(fileName));
+					String line = null;
+					
+					if (isValidationClassFile(fileName,validationClassSymbols )) {
+						excelFileLoc = fileName;		
+						stack = new Stack<String[]>();
+						
+						while ((line = bufferedReader.readLine()) != null) {
+							// parses the line and stores the result in lineMap
+							if(line==null || line.trim().isEmpty()){
+								continue;
+							}
+							parseLine(line,props);
+							if ((LPConstants.NOT_AVAILABLE.equals(currentExpCounter))
+									&& (!LPConstants.METHODS_CHECK_LIST
+											.contains(message))) {
+								continue;
+							}
+							// process the line and add the result to logMap
+							processLine();
+							
+							tuples = line.split(LPConstants.PIPE_SEPARATOR, InstrumentConstants.SIX);
+							
+							if (tuples[2].endsWith("En")) {
+								stack.push(tuples);
+							} else if (tuples[2].endsWith("Ex")) {
+								stack.pop();
+							}
+							if (writeKeyValue == true) {
+								writeKeyValue = false;
+								temp = stack.peek();
+								temp[2] = blockName;
+								temp[3] = lineNumber;
+								ExportUtil.addUnmatchedKeyValuesRow(worksheet, temp, tuples, props);
+							}
+						}							
+						addRecursiveCounters();
+					} 	
 				}
 			} finally {
 				if (bufferedReader != null) {
@@ -208,89 +238,12 @@ public class LogAnalyzer {
 			excelFileLoc = dir + "Unmatched_Keys_and_Values.xls";
 			try {
 				out = new FileOutputStream(new File(excelFileLoc));
-				workbook.write(out);
+				ExportUtil.writeWorksheet(worksheet, out);
 			} finally {
 				if (out != null) {
 					out.close();
 				}
 			}
-		}
-		return logMap;
-	}
-	
-	/**
-	 *  It return hashmap containing symbols and references of excel sheet of classes 
-	 * @param workbook
-	 * @param classSymbols symbols of class
-	 * @param props properties
-	 * @return
-	 */
-	public  HashMap<String, HSSFSheet> getSheets(
-			HSSFWorkbook workbook, List<String> classSymbols, Properties props) {
-		HashMap<String, HSSFSheet> map = 
-				new HashMap<String, HSSFSheet>();
-		HSSFRow row;
-		String className = null;
-		String sheetName = null;
-		Iterator<String> it = classSymbols.iterator();
-		String symbol;
-		int i = 1, j;
-		while(it.hasNext()) {
-			symbol = it.next();
-			className = props.getProperty(symbol);
-			sheetName = i + ". " + className.substring(className.lastIndexOf(".")+1, className.length());
-			i++;
-			HSSFSheet sheet = workbook.createSheet(sheetName);
-			map.put(symbol, sheet);
-			for (j=0; j<=5; j++) {
-				sheet.autoSizeColumn(i);
-			}
-			
-			//Adding class name in first row
-			
-			row = sheet.createRow(0);
-			row.createCell(0).setCellValue(className);
-			sheet.addMergedRegion(CellRangeAddress.valueOf("A1:F1"));
-			
-			row = sheet.createRow(1);
-			row.createCell(0).setCellValue("Method");
-			row.createCell(1).setCellValue("Block Name");
-			row.createCell(2).setCellValue("Line No.");
-			row.createCell(3).setCellValue("Input Key");
-			row.createCell(4).setCellValue("Output Key");
-			row.createCell(5).setCellValue("Output Value");
-		}
-		return map;
-	}
-	
-	/**
-	 * Add a row in a sheet
-	 * @param blockLine the blockLine
-	 * @param keyValueLine line having unmatched key or value
-	 * @param sheets
-	 */
-	public void addRow(String[] blockLine, String[] keyValueLine,
-			HashMap<String, HSSFSheet> sheets, Properties props) {
-		
-		String methodName = props.getProperty(blockLine[0] + "|" + blockLine[1]);
-		
-		HSSFSheet sheet = sheets.get(blockLine[0]);
-		int rowNum = sheet.getLastRowNum() + 1;
-		if (rowNum > 10000) {
-			return;
-		}
-		HSSFRow row = sheet.createRow(rowNum);
-		
-		row.createCell(0).setCellValue(methodName);
-		row.createCell(1).setCellValue(blockLine[2]);					//Block Name
-		row.createCell(2).setCellValue(blockLine[3]);					//Line Number
-		row.createCell(3).setCellValue(keyValueLine[5]);			//Input Key
-		if ("K".equals(keyValueLine[3])) {
-			row.createCell(4).setCellValue(keyValueLine[4]);		//Output Key
-			row.createCell(5).setCellValue("");								//Output Value
-		} else {
-			row.createCell(4).setCellValue("");
-			row.createCell(5).setCellValue(keyValueLine[4]);
 		}
 	}
 	
@@ -301,6 +254,7 @@ public class LogAnalyzer {
 	 * @return list of symbols of classes for validation
 	 */
 	public List<String> getValidationClassSymbol(Properties props, YamlLoader yamlLoader) {
+		
 		List<Validation> validationClassesList = new ArrayList<Validation>();
 		validationClassesList.addAll(yamlLoader.getRegex());
 		validationClassesList.addAll(yamlLoader.getUserValidations());
@@ -328,7 +282,8 @@ public class LogAnalyzer {
 	 * @return
 	 * @throws IOException
 	 */
-	private boolean isValidationClassFile(String fileName, List<String> validationClassSymbols) throws IOException {
+	private boolean isValidationClassFile(String fileName, 
+			List<String> validationClassSymbols) throws IOException {
 		BufferedReader bufferedReader = null;
 		String line;
 		bufferedReader = new BufferedReader(new FileReader(fileName));

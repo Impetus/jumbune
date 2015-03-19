@@ -37,10 +37,5 @@
 			<groupId>org.jumbune</groupId>
 			<artifactId>jumbune-common</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.apache.poi</groupId>
-			<artifactId>poi</artifactId>
-			<version>3.8</version>
-		</dependency>
 	</dependencies>
 </project>
