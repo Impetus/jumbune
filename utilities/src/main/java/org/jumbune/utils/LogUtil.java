@@ -13,7 +13,6 @@ import org.apache.logging.log4j.Logger;
  * its methods are injected in compiled classes so these methods will be called
  * from instrumented jar
  */
-@SuppressWarnings("deprecation")
 public final class LogUtil {
 	private static final String MAPRED_COUNTER = "org.apache.hadoop.mapred.Task$Counter";
 	private static final String MAP_INPUT_RECORDS = "MAP_INPUT_RECORDS";
@@ -261,10 +260,32 @@ public final class LogUtil {
 	 * @param result the result
 	 * @return the reg ex info
 	 */
-	public static void getRegExInfo(String className, String methodName,
-			String message1, String message2, boolean result) {
-		getLogMsg(className, methodName, message1, message2, result);
+ 	public static void getRegExInfo(String className, String methodName,
+ 			String message1, String message2, boolean result) {
+		if (result == false) {
+			getLogMsg(className, methodName, message1, message2, "");
+		}
 	}
+	
+	/**
+	 * This method is used to gets the regular expression info.
+	 *
+	 * @param className the class name
+	 * @param methodName the method name
+	 * @param message1 the message1
+	 * @param message2 the message2
+	 * @param result the result
+	 * @param outputValue output key/value of map/reduce
+	 * @param inputKey input key of map/reduce
+	 * @return the reg ex info
+	 */
+	public static void getRegExInfo(String className, String methodName,
+			String message1, String message2, boolean result, Object outputValue,
+			Object inputKey) {
+		if (result == false) {
+			getLogMsg(className, methodName, message1, message2, outputValue, inputKey);
+		}
+ 	}
 
 	/**
 	 * Based on the logLevel select appropriate logMethod to log this message

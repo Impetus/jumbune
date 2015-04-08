@@ -37,5 +37,5 @@
 			<groupId>org.jumbune</groupId>
 			<artifactId>jumbune-common</artifactId>
 		</dependency>
-		</dependencies>
+	</dependencies>
 </project>

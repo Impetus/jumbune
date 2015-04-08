@@ -53,6 +53,7 @@ public final class InstrumentUtil {
 	private static final Logger LOGGER = LogManager
 			.getLogger(InstrumentUtil.class);
 	private static final int CONTEXT_VARIABLE_IN_CLEANUP_SETUP = 1;
+	
 	private InstrumentUtil(){};
 
 	private static final char DEFAULT_MESSAGE_SEPARATOR = '|';
@@ -84,7 +85,7 @@ public final class InstrumentUtil {
 	public static Map<Integer, String> getJumpInsnOpcodesMap() {
 		return jumpInsnOpcodeMap;
 	}
-
+	
 	/**
 	 * <p>
 	 * This method provides instructions to be included before various logging
@@ -100,7 +101,6 @@ public final class InstrumentUtil {
 		for (Object value : values) {
 			il.add(new LdcInsnNode(value));
 		}
-
 		return il;
 	}
 
@@ -357,16 +357,26 @@ public final class InstrumentUtil {
 	 *            be used to call the isPatternValidate
 	 * @param validatorClass
 	 *            - validator class
+	 *  @param classQualifiedName the classQualifiedName
+	 *  @param methodNode method which is currently being traversed
 	 * @return InstructionList to add instructions for calling
 	 *         LogUtil.getRegExinfo(..)
 	 */
 	public static InsnList addLoggerWithClassMethodCall(LogInfoBean logBean,
-			int variableIndex, String validatorFieldName,
-			String validatorClass, String classQualifiedName) {
-		String logMethodDesc = Type.getMethodDescriptor(Type.VOID_TYPE,
-				TYPE_STRING, TYPE_STRING, TYPE_STRING, TYPE_STRING,
-				Type.BOOLEAN_TYPE);
-
+			int variableIndex, String validatorFieldName, String validatorClass,
+			String classQualifiedName, MethodNode methodNode, boolean logKeyValues) {
+		
+		String logMethodDesc;
+		
+		if (logKeyValues) {
+			logMethodDesc = Type.getMethodDescriptor(Type.VOID_TYPE,
+					TYPE_STRING, TYPE_STRING, TYPE_STRING, TYPE_STRING,
+					Type.BOOLEAN_TYPE, TYPE_OBJECT, TYPE_OBJECT);
+		} else {
+			logMethodDesc = Type.getMethodDescriptor(Type.VOID_TYPE,
+					TYPE_STRING, TYPE_STRING, TYPE_STRING, TYPE_STRING,
+					Type.BOOLEAN_TYPE);
+		}
 		InsnList il = new InsnList();
 
 		il.add(createBasicLoggerInsns(logBean));
@@ -385,7 +395,13 @@ public final class InstrumentUtil {
 				InstrumentConstants.CLASSNAME_PATTERNVALIDATOR,
 				InstrumentConstants.USER_PATTERN_VALIDATOR_METHOD_NAME,
 				InstrumentConstants.DESCRIPTOR_PATTERNVALIDATOR_ISPATTERNVALID));
-
+		
+		if (logKeyValues) {
+			il.add(new VarInsnNode(Opcodes.ALOAD, variableIndex));
+			methodNode.visitVarInsn(Opcodes.ASTORE, 1);
+			il.add(new VarInsnNode(Opcodes.ALOAD, 1));
+		}
+		
 		il.add(new MethodInsnNode(Opcodes.INVOKESTATIC, CLASSNAME_LOGUTIL,
 				InstrumentConstants.REGEX_LOG_METHOD, logMethodDesc));
 
@@ -467,11 +483,21 @@ public final class InstrumentUtil {
 	 * @return
 	 */
 	public static InsnList addRegExMatcherClassCall(LogInfoBean logBean,
-			int variableIndex, String pattern, String classQualifiedName) {
+			int variableIndex, String pattern, String classQualifiedName,
+			MethodNode methodNode, boolean logKeyValues) {
 		// If using context use this else not
-		String logMethodDesc = Type.getMethodDescriptor(Type.VOID_TYPE,
-				TYPE_STRING, TYPE_STRING, TYPE_STRING, TYPE_STRING,
-				Type.BOOLEAN_TYPE);
+		
+		String logMethodDesc;
+		
+		if (logKeyValues) {
+			logMethodDesc = Type.getMethodDescriptor(Type.VOID_TYPE,
+					TYPE_STRING, TYPE_STRING, TYPE_STRING, TYPE_STRING,
+					Type.BOOLEAN_TYPE, TYPE_OBJECT, TYPE_OBJECT);
+		} else {
+			logMethodDesc = Type.getMethodDescriptor(Type.VOID_TYPE,
+					TYPE_STRING, TYPE_STRING, TYPE_STRING, TYPE_STRING,
+					Type.BOOLEAN_TYPE);
+		}
 
 		InsnList il = createBasicLoggerInsns(logBean);
 		il.add(new VarInsnNode(Opcodes.ALOAD, variableIndex));
@@ -485,6 +511,13 @@ public final class InstrumentUtil {
 				InstrumentConstants.CLASSNAME_PATTERNMATCHER,
 				InstrumentConstants.REGEX_METHOD_NAME,
 				InstrumentConstants.REGEX_METHOD_DESC));
+		
+		if (logKeyValues) {
+			il.add(new VarInsnNode(Opcodes.ALOAD, variableIndex));
+			methodNode.visitVarInsn(Opcodes.ASTORE, 1);
+			il.add(new VarInsnNode(Opcodes.ALOAD, 1));
+		}
+		
 		il.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
 				InstrumentConstants.CLASSNAME_LOGUTIL,
 				InstrumentConstants.REGEX_LOG_METHOD, logMethodDesc));
@@ -503,15 +536,27 @@ public final class InstrumentUtil {
 	 *            logging
 	 * @param variableIndex
 	 *            index of writable object to be matched against null
+	 * @param methodNode
+	 *            - method which holds context.write either map/reduce
+	 *  @param logKeyValues
+	 *  			check if user wants to log unmatched key/values
 	 * @return InstructionList containing instructions for inserting statement
 	 *         LogUtil.getRegexInfo("msg" + PatternMatcher.match(writableVal));
 	 */
 	public static InsnList addRegExMatcherClassCall(LogInfoBean logBean,
-			int variableIndex) {
+			int variableIndex, MethodNode methodNode, boolean logKeyValues) {
 		// If using context use this else not
-		String logMethodDesc = Type.getMethodDescriptor(Type.VOID_TYPE,
-				TYPE_STRING, TYPE_STRING, TYPE_STRING, TYPE_STRING,
-				Type.BOOLEAN_TYPE);
+		String logMethodDesc;
+		
+		if (logKeyValues) {
+			logMethodDesc = Type.getMethodDescriptor(Type.VOID_TYPE,
+					TYPE_STRING, TYPE_STRING, TYPE_STRING, TYPE_STRING,
+					Type.BOOLEAN_TYPE, TYPE_OBJECT, TYPE_OBJECT);
+		} else {
+			logMethodDesc = Type.getMethodDescriptor(Type.VOID_TYPE,
+					TYPE_STRING, TYPE_STRING, TYPE_STRING, TYPE_STRING,
+					Type.BOOLEAN_TYPE);
+		}
 
 		InsnList il = createBasicLoggerInsns(logBean);
 		il.add(new VarInsnNode(Opcodes.ALOAD, variableIndex));
@@ -521,6 +566,13 @@ public final class InstrumentUtil {
 				InstrumentConstants.CLASSNAME_PATTERNMATCHER,
 				InstrumentConstants.REGEX_METHOD_NAME,
 				InstrumentConstants.REGEX_NULL_METHOD_DESC));
+		
+		if (logKeyValues) {
+			il.add(new VarInsnNode(Opcodes.ALOAD, variableIndex));
+			methodNode.visitVarInsn(Opcodes.ASTORE, 1);
+			il.add(new VarInsnNode(Opcodes.ALOAD, 1));
+		}
+		
 		il.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
 				InstrumentConstants.CLASSNAME_LOGUTIL,
 				InstrumentConstants.REGEX_LOG_METHOD, logMethodDesc));

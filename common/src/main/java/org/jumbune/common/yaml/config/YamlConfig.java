@@ -114,6 +114,29 @@ public class YamlConfig implements Config {
 	 */
 	private Enable isLocalSystemJar;
 	
+	/** The logKeyValues */
+	private Enable logKeyValues = Enable.FALSE;
+	
+	/**
+	 * Sets the log key values.
+	 * 
+	 * @param logKeyValues
+	 *            the log key values
+	 */
+	public void setLogKeyValues(Enable logKeyValues) {
+		this.logKeyValues = logKeyValues;
+	}
+
+	/**
+	 * Gets the log key values.
+	 * 
+	 * @param logKeyValues
+	 *            the log key values
+	 */
+	public Enable getLogKeyValues() {
+		return logKeyValues;
+	}
+	
 	/**
 	 * @return if isLocalSystemJar is TRUE or FALSE
 	 */
@@ -715,6 +738,7 @@ public class YamlConfig implements Config {
 				+ ", reducerSuperClasses="
 				+ Arrays.toString(reducerSuperClasses) + ", debuggerConf="
 				+ debuggerConf + ", classpath=" + classpath
+				+", logKeyValues=" + logKeyValues
 				+ ", regexValidations=" + regexValidations
 				+ ", userValidations=" + userValidations
 				+ ", partitionerSampleInterval=" + partitionerSampleInterval

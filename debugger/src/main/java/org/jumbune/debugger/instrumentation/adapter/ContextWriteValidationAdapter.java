@@ -8,10 +8,10 @@ import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.beans.InstructionsBean;
 import org.jumbune.common.beans.Validation;
 import org.jumbune.common.utils.CollectionUtil;
 import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.debugger.instrumentation.utils.ContextWriteParams;
 import org.jumbune.debugger.instrumentation.utils.InstrumentConstants;
@@ -19,6 +19,7 @@ import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
 import org.jumbune.debugger.instrumentation.utils.InstrumentationMessageLoader;
 import org.jumbune.debugger.instrumentation.utils.MessageConstants;
 import org.jumbune.debugger.instrumentation.utils.MethodByteCodeUtil;
+import org.jumbune.common.beans.InstructionsBean;
 import org.jumbune.utils.beans.LogInfoBean;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
@@ -38,7 +39,8 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 			.getLogger(ContextWriteValidationAdapter.class);
 
 	private static String validateingMessage=null;
-
+	
+	private static boolean logKeyValues;
 	/**
 	 * Creates new instance of ContextWriteValidationAdapter
 	 * @param loader
@@ -49,6 +51,9 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 		this.cv = cv;
 		validateingMessage = InstrumentationMessageLoader
 				.getMessage(MessageConstants.VALIDATION_KEY_VALUE);
+		YamlLoader yamlLoader = (YamlLoader) getLoader();
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		logKeyValues = yamlConfig.getLogKeyValues().getEnumValue();
 	}
 
 	/**
@@ -75,7 +80,6 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 			for (int i = 0; i < methods.size(); i++) {
 				MethodNode mn = (MethodNode) methods.get(i);
 				int variableIndex = mn.maxLocals;
-
 				/**
 				 * context.write/output.collect has been written in the
 				 * map/reduce methods and other user defined functions. Applying
@@ -133,7 +137,7 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 										+ ContextWriteParams.getInstance()
 												.getTempKeyVariableIndex());
 								addValidations(patternValidationInsnList, 
-										insBean, mn.name);
+										insBean, mn);
 
 								if (patternValidationInsnList != null
 										&& patternValidationInsnList.size() > 0) {
@@ -165,10 +169,11 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 	 * @param insBean
 	 *            - the InstructionBean holds the index of variables in which
 	 *            key/value is temporarily saved
-	 * @param methodName
+	 * @param methodNode
 	 *            - method which holds context.write either map/reduce
 	 */
-	private void addValidations(InsnList patternValidationInsnList, InstructionsBean insBean, String methodName) {
+	private void addValidations(InsnList patternValidationInsnList, InstructionsBean insBean,
+			MethodNode methodNode) {
 		YamlLoader yamlLoader = (YamlLoader)getLoader();
 		String keyValidationClass = yamlLoader
 				.getMapReduceKeyValidator(getClassName());
@@ -185,8 +190,8 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 		boolean[] isValidated = new boolean[2];
 		String[] validators = new String[2];
 
-		if (instrumentMapreduceUserdefinedValidation && validateUserValidationClass(yamlLoader.getUserValidations(),
-					getClassName())) {
+		if (instrumentMapreduceUserdefinedValidation && 
+				validateUserValidationClass(yamlLoader.getUserValidations(),getClassName())) {
 				validators[keyIndex] = keyValidationClass;
 				validators[valueIndex] = valueValidationClass;
 
@@ -201,25 +206,29 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 						isValidated[index] = true;
 						patternValidationInsnList
 								.add(validateUsingUserDefinedValidation(
-										insBean, methodName, isKey, validator));
+										insBean, methodNode, isKey, validator));
 					}
 					index++;
 				}
 			
 		}
 
-		addRegexValidations(patternValidationInsnList, insBean, methodName, instrumentMapreduceRegex, isValidated);
+		addRegexValidations(patternValidationInsnList, insBean, methodNode,
+				instrumentMapreduceRegex, isValidated);
 
 	}
 	
-	private void addRegexValidations(InsnList patternValidationInsnList, InstructionsBean insBean, String methodName,
+	private void addRegexValidations(InsnList patternValidationInsnList,
+			InstructionsBean insBean, MethodNode methodNode,
 			boolean instrumentMapreduceRegex, boolean[] isValidated) {
+		
 		YamlLoader yamlLoader = (YamlLoader)getLoader();
 		String keyRegex = yamlLoader.getMapReduceKeyRegex(getClassName());
 		String valueRegex = yamlLoader.getMapReduceValueRegex(getClassName());
 		int keyIndex = 0;
 		int valueIndex = 1;
-		if (instrumentMapreduceRegex && validateRegexValidationClass(yamlLoader.getRegex(), getClassName())) {
+		if (instrumentMapreduceRegex && 
+				validateRegexValidationClass(yamlLoader.getRegex(), getClassName())) {
 				// Fetching regEx for validating key/value
 				String[] validators=new String[2];
 				validators[keyIndex] = keyRegex;
@@ -236,7 +245,7 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 							isKey = false;
 						}
 						patternValidationInsnList.add(addCallForPatternMatcher(
-								methodName, insBean, isKey,
+								methodNode, insBean, isKey,
 								validators[index]));
 					}
 					index++;
@@ -300,15 +309,15 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 	 * This method add calls to LogUtil. taking message which contains a call to
 	 * PatternMatcher class and will match key/value to given regular expression
 	 * 
-	 * @param methodName
-	 *            - name of the method which is currently being traversed
+	 * @param methodNode
+	 *            - method which is currently being traversed
 	 * @param insBean
 	 *            - the InstructionBean holds the index of variables in which
 	 *            key/value is temporarily saved
 	 * @return - InstructionList containing instruction set for matching
 	 *         key/value against regular expression and logging the same
 	 */
-	private InsnList addCallForPatternMatcher(String methodName,
+	private InsnList addCallForPatternMatcher(MethodNode methodNode,
 			InstructionsBean insBean,boolean isKey,
 			String regEx) {
 
@@ -317,7 +326,7 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 		if (!isKey) {
 			varIndex = 1;
 		}
-		LogInfoBean bean = new LogInfoBean(getLogClazzName(), methodName,
+		LogInfoBean bean = new LogInfoBean(getLogClazzName(), methodNode.name,
 				validateingMessage, null);
 		InsnList patternMatcherInsnList = new InsnList();
 
@@ -326,11 +335,11 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 		// Adding call for Key regular Expression
 		if (isNullString(regEx)) {
 			prepareInsnListForRegEx(patternMatcherInsnList, isKey, bean,
-					insBean, true);
+					insBean, true, methodNode);
 		} else if (!CollectionUtil.isNullOrEmpty(regEx)
 				&& (insBean.getTemporaryVariablesIndexList().get(varIndex) != InstrumentConstants.PARAMETER_NULL_INDEX)) {
 			prepareInsnListForRegEx(patternMatcherInsnList, isKey, bean,
-					insBean, false);
+					insBean, false, methodNode);
 		}
 
 		return patternMatcherInsnList;
@@ -343,18 +352,18 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 	 * 
 	 * @param min
 	 * @param insBean
-	 * @param methodName
+	 * @param methodNode
 	 * @param isKey
 	 * @param patternValidatorClass
 	 * @return
 	 */
 	private InsnList validateUsingUserDefinedValidation(
-			InstructionsBean insBean, String methodName, boolean isKey,
+			InstructionsBean insBean, MethodNode methodNode, boolean isKey,
 			String patternValidatorClass) {
 		int variableIndex = 0;
 		String validatorFieldName = null;
 
-		LogInfoBean lBean = new LogInfoBean(getLogClazzName(), methodName,
+		LogInfoBean lBean = new LogInfoBean(getLogClazzName(), methodNode.name,
 				validateingMessage, null);
 
 		InsnList validatingInsnList = new InsnList();
@@ -372,8 +381,8 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 			validatingInsnList.add(InstrumentUtil
 					.addLoggerWithClassMethodCall(lBean, insBean
 							.getTemporaryVariablesIndexList()
-							.get(variableIndex), validatorFieldName,
-							patternValidatorClass, getClassName()));
+							.get(variableIndex), validatorFieldName, patternValidatorClass,
+							getClassName(), methodNode, logKeyValues));
 		}
 
 		return validatingInsnList;
@@ -388,10 +397,11 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 	 * @param bean
 	 * @param insBean
 	 * @param isRegExNull
+	 * @param methodNode
 	 */
 	private void prepareInsnListForRegEx(InsnList patternMatcherInsnList,
 			boolean isKey, LogInfoBean bean, InstructionsBean insBean,
-			boolean isRegExNull) {
+			boolean isRegExNull, MethodNode methodNode) {
 		int variableIndex = 0;
 		String pattern = null;
 
@@ -407,13 +417,13 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 			patternMatcherInsnList.add(InstrumentUtil
 					.addRegExMatcherClassCall(bean, insBean
 							.getTemporaryVariablesIndexList()
-							.get(variableIndex)));
+							.get(variableIndex), methodNode, logKeyValues));
 		} else if (insBean.getTemporaryVariablesIndexList().get(variableIndex) != InstrumentConstants.PARAMETER_NULL_INDEX) {
 			// Add logging only when null is not passed in context.write
 			patternMatcherInsnList.add(InstrumentUtil
 					.addRegExMatcherClassCall(bean, insBean
 							.getTemporaryVariablesIndexList()
-							.get(variableIndex), pattern, getClassName()));
+							.get(variableIndex), pattern, getClassName(), methodNode, logKeyValues));
 		}
 	}
 

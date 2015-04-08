@@ -1,18 +1,26 @@
 package org.jumbune.debugger.log.processing;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Stack;
 
+import org.jumbune.common.beans.Validation;
+import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.common.yaml.config.YamlConfig;
+import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.debugger.instrumentation.utils.InstrumentConstants;
-
-
+import org.jumbune.utils.ExportUtil;
+import org.jumbune.utils.beans.Worksheet;
 
 
 /**
@@ -25,7 +33,7 @@ public class LogAnalyzer {
 	 * logMap - Map to store the final cluster-wide result of log analysis.
 	 */
 	private Map<String, JobBean> logMap = new HashMap<String, JobBean>();
-
+	
 	/**
 	 * nodeIP - IP address of the node whose log files are to be analyzed.
 	 */
@@ -81,8 +89,14 @@ public class LogAnalyzer {
 	/**
 	 * currentMethod - The name of the current method.
 	 */
-	private String currentMethod = LPConstants.NOT_AVAILABLE;;
-
+	private String currentMethod = LPConstants.NOT_AVAILABLE;
+	
+	private boolean writeKeyValue;
+	
+	private String blockName = null;
+	
+	private String lineNumber = null;
+	
 	/**
 	 * Analyzes logs and return the analysis result for the node
 	 * 
@@ -92,51 +106,195 @@ public class LogAnalyzer {
 	 * @throws IOException
 	 */
 	public Map<String, JobBean> analyzeLogs(final String nodeIP,
-			final Map<String, List<String>> fileListMap) throws IOException {
+			final Map<String, List<String>> fileListMap, Loader loader) throws IOException {
+		
 		if (fileListMap == null){
 			return logMap;
 		}
 		this.nodeIP = nodeIP;
-
+		
 		Properties props = LogAnalyzerUtil.getSystemTable();
+		YamlLoader yamlLoader = (YamlLoader) loader;
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		boolean logKeyValues = yamlConfig.getLogKeyValues().getEnumValue();
+		
 		BufferedReader bufferedReader = null;
+		List<String> validationClassSymbols = null;
+		
+		if (logKeyValues) {
+			validationClassSymbols = getValidationClassSymbol(props, yamlLoader);
+		}
 
 		for (Map.Entry<String, List<String>> pairs : fileListMap.entrySet()) {
-
 			List<String> fileList = pairs.getValue();
-
-			for (String fileName : fileList) {
-				bufferedReader = new BufferedReader(new FileReader(fileName));
-				String line = null;
-
-				while ((line = bufferedReader.readLine()) != null) {
-
-					// parses the line and stores the result in lineMap
-					if(line==null || line.trim().isEmpty()){
-						continue;
+			try {
+				for (String fileName : fileList) {
+					bufferedReader = new BufferedReader(new FileReader(fileName));
+					String line = null;
+					
+					if ( logKeyValues == false ||
+							(logKeyValues && ! isValidationClassFile(fileName, validationClassSymbols)) ) {
+						while ((line = bufferedReader.readLine()) != null) {
+							// parses the line and stores the result in lineMap
+							if(line==null || line.trim().isEmpty()){
+								continue;
+							}
+							parseLine(line,props);
+							if ((LPConstants.NOT_AVAILABLE.equals(currentExpCounter))
+									&& (!LPConstants.METHODS_CHECK_LIST
+											.contains(message))) {
+								continue;
+							}
+							// process the line and add the result to logMap
+							processLine();
+						}
 					}
-					parseLine(line,props);
-
-					if ((LPConstants.NOT_AVAILABLE.equals(currentExpCounter))
-							&& (!LPConstants.METHODS_CHECK_LIST
-									.contains(message))) {
-						continue;
-					}
-
-					// process the line and add the result to logMap
-					processLine();
-
+					
+					addRecursiveCounters();
 				}
-
-				addRecursiveCounters();
-
-			}
-
-			if (bufferedReader != null) {
-				bufferedReader.close();
+			} finally {
+				if (bufferedReader != null) {
+					bufferedReader.close();
+				}
 			}
 		}
+		if (logKeyValues) {
+			analyzeLogsAndWriteToExcel(fileListMap, props, validationClassSymbols);
+		}
 		return logMap;
+	}
+	
+/**
+ * Analyzes logs and write unmatched key/value to excel sheet
+ * @param fileListMap the map of lists of different log files for the node
+ * @param props
+ * @param validationClassSymbols
+ * @throws IOException
+ */
+	public void analyzeLogsAndWriteToExcel(
+			final Map<String, List<String>> fileListMap, Properties props,
+			List<String> validationClassSymbols) throws IOException {
+
+		BufferedReader bufferedReader = null;
+		FileOutputStream out = null;
+		String[] tuples, temp;
+		String excelFileLoc = null;
+		Stack<String[]> stack = null;
+		Worksheet worksheet = ExportUtil.getUnmatchedKeyValuesDebuggerWorksheet(
+				validationClassSymbols, props);
+
+		writeKeyValue = false;
+		for (Map.Entry<String, List<String>> pairs : fileListMap.entrySet()) {
+			List<String> fileList = pairs.getValue();
+			try {
+				for (String fileName : fileList) {
+					bufferedReader = new BufferedReader(new FileReader(fileName));
+					String line = null;
+					
+					if (isValidationClassFile(fileName,validationClassSymbols )) {
+						excelFileLoc = fileName;		
+						stack = new Stack<String[]>();
+						
+						while ((line = bufferedReader.readLine()) != null) {
+							// parses the line and stores the result in lineMap
+							if(line==null || line.trim().isEmpty()){
+								continue;
+							}
+							parseLine(line,props);
+							if ((LPConstants.NOT_AVAILABLE.equals(currentExpCounter))
+									&& (!LPConstants.METHODS_CHECK_LIST
+											.contains(message))) {
+								continue;
+							}
+							// process the line and add the result to logMap
+							processLine();
+							
+							tuples = line.split(LPConstants.PIPE_SEPARATOR, InstrumentConstants.SIX);
+							
+							if (tuples[2].endsWith("En")) {
+								stack.push(tuples);
+							} else if (tuples[2].endsWith("Ex")) {
+								stack.pop();
+							}
+							if (writeKeyValue == true) {
+								writeKeyValue = false;
+								temp = stack.peek();
+								temp[2] = blockName;
+								temp[3] = lineNumber;
+								ExportUtil.addUnmatchedKeyValuesRow(worksheet, temp, tuples, props);
+							}
+						}							
+						addRecursiveCounters();
+					} 	
+				}
+			} finally {
+				if (bufferedReader != null) {
+					bufferedReader.close();
+				}
+			}
+		}
+		if (excelFileLoc != null) {
+			String dir = excelFileLoc.substring(0,excelFileLoc.lastIndexOf("/")+1);
+			excelFileLoc = dir + "Unmatched_Keys_and_Values.xls";
+			try {
+				out = new FileOutputStream(new File(excelFileLoc));
+				ExportUtil.writeWorksheet(worksheet, out);
+			} finally {
+				if (out != null) {
+					out.close();
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Getting symbols of validation classes
+	 * @param props properties
+	 * @param yamlLoader yaml loader
+	 * @return list of symbols of classes for validation
+	 */
+	public List<String> getValidationClassSymbol(Properties props, YamlLoader yamlLoader) {
+		
+		List<Validation> validationClassesList = new ArrayList<Validation>();
+		validationClassesList.addAll(yamlLoader.getRegex());
+		validationClassesList.addAll(yamlLoader.getUserValidations());
+		
+		HashMap<String, String> newProps = new HashMap<String, String>();
+		for(String key : props.stringPropertyNames()) {
+			newProps.put(props.getProperty(key), key);
+		}
+		String className;
+		List<String> classSymbols = new ArrayList<String>();
+		
+		Iterator<Validation> it = validationClassesList.iterator();
+		while (it.hasNext()) {
+			className = it.next().getClassname();
+			classSymbols.add(newProps.get(className));
+		}
+		return classSymbols;
+	}
+	
+	/**
+	 * Check if the file needs to be validated to not
+	 * @param fileName
+	 * @param validationClassSymbols list containing symbols of classes that
+	 * 	needs to be validated
+	 * @return
+	 * @throws IOException
+	 */
+	private boolean isValidationClassFile(String fileName, 
+			List<String> validationClassSymbols) throws IOException {
+		BufferedReader bufferedReader = null;
+		String line;
+		bufferedReader = new BufferedReader(new FileReader(fileName));
+		line = bufferedReader.readLine();
+		bufferedReader.close();
+		line = line.substring(0, line.indexOf("|"));
+		if (validationClassSymbols.contains(line)) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	/**
@@ -538,6 +696,7 @@ public class LogAnalyzer {
 	}
 	private int checkTotalUnmatchedKeyValue(final int totalUnmatchedValues) {
 		int tempTotalUnmatchedValues=totalUnmatchedValues;
+		
 		if (tempTotalUnmatchedValues > 0) {
 			tempTotalUnmatchedValues++;
 		} else if (tempTotalUnmatchedValues == -1) {
@@ -572,16 +731,11 @@ public class LogAnalyzer {
 			totalContextWrites++;
 			break;
 		case InstrumentConstants.THREE:
-			if (keyValue.equalsIgnoreCase(LPConstants.FALSE)) {
-				if (keyType.equalsIgnoreCase(LPConstants.KEY)) {
-
-					totalUnmatchedKeys=checkTotalUnmatchedKeyValue(totalUnmatchedKeys);
-
-				} else {
-
-					totalUnmatchedValues=checkTotalUnmatchedKeyValue(totalUnmatchedValues);
-
-				}
+			writeKeyValue = true;
+			if (keyType.equalsIgnoreCase(LPConstants.KEY)) {
+				totalUnmatchedKeys=checkTotalUnmatchedKeyValue(totalUnmatchedKeys);
+			} else {
+				totalUnmatchedValues=checkTotalUnmatchedKeyValue(totalUnmatchedValues);
 			}
 			break;
 		case InstrumentConstants.FOUR:
@@ -722,7 +876,8 @@ public class LogAnalyzer {
 		default:
 			break;
 		}
-
+		blockName = currCounter;
+		lineNumber = keyType;
 		// if already existing or not
 		if (counterMap != null) {
 			ExpressionCounterBean ctrBean = counterMap

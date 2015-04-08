@@ -279,6 +279,7 @@ public class JarInstrumenter extends Instrumenter {
 			}
 
 		}
+
 		// Step 10: Handling Chained tasks
 		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
