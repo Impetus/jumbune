@@ -14,7 +14,7 @@ public abstract class AbstractDistributionLocator implements
 
 	public static final Logger LOGGER = LogManager
 			.getLogger(AbstractDistributionLocator.class);
-	private static final String ECHO_HADOOP_HOME = "echo $HADOOP_HOME \n \n ";
+	protected static final String ECHO_HADOOP_HOME = "echo $HADOOP_HOME \n \n ";
 	private static final String LS_POSTFIX_PART = " -Rl | grep /";
 	protected static final String LS_PREFIX_PART = "ls ";
 	protected static final String WHEREIS_HADOOP = "whereis hadoop";

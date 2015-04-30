@@ -144,7 +144,7 @@ public class ValidateInput {
 		     else
 		     {
 		    	 failedCases.put(inputFile,
-			    			errorMessages.get(ErrorMessages.SUPPLIED_JAR_INVALID));
+			    			errorMessages.get(ErrorMessages.BASIC_INPUT_PATH_EMPTY));
 			     	failedValidation.put("M/R-Jobs", failedCases);
 		     }
 		}
@@ -262,10 +262,10 @@ public class ValidateInput {
 		}
 		*/
 		YamlConfig yamlConfig = (YamlConfig)config;
-		if (!ifDebuggerValidationsEnabled(config)) {
-			failedDebug.put("debuggerConf.logLevel.instrumentRegex",
-					errorMessages
-							.get(ErrorMessages.BOTH_DEBUGGER_VALIDATIONS_NULL));
+		
+		if(!ifDebuggerValidationsEnabled(config))
+		{
+			failedDebug.put("debuggerConf.logLevel.instrumentRegex", errorMessages.get(ErrorMessages.BOTH_DEBUGGER_VALIDATIONS_NULL));
 		}
 		if (yamlLoader.isInstrumentEnabled(Constants.DEBUG_INSTR_REGEX_KEY)) {
 			if (!yamlConfig.getRegexValidations().isEmpty()) {
@@ -288,25 +288,22 @@ public class ValidateInput {
 		addToValidationList(Constants.DEBUGGER_VALIDATION, failedDebug, suggestionDebug);
 	}
 
-	/**
-	 * This method checks if one of the validations (User or Regex) are enabled
-	 * while running debugger.
-	 * 
-	 * @param config
-	 * @param failedDebug
-	 * @return true if one of the validations (User or Regex) are enabled.
-	 */
-	private boolean ifDebuggerValidationsEnabled(Config config) {
-		YamlConfig yamlConfig = (YamlConfig) config;
-		Map<String, LogLevel> logLevelMap = yamlConfig.getDebuggerConf()
-				.getLogLevel();
-		final String REGEXKEY = "instrumentRegex";
-		final String USERVALIDATEKEY = "instrumentUserDefValidate";
-
-		if ((logLevelMap.containsKey(USERVALIDATEKEY) && logLevelMap
-				.get(USERVALIDATEKEY).toString().equalsIgnoreCase("TRUE"))
-				|| (logLevelMap.containsKey(REGEXKEY) && logLevelMap
-						.get(REGEXKEY).toString().equalsIgnoreCase("TRUE"))) {
+/**   
+ *  This method checks if one of the validations (User or Regex) are enabled while running debugger.
+ * 
+ * @param config
+ * @param failedDebug
+ * @return true if one of the validations (User or Regex) are enabled.
+ */
+	private boolean ifDebuggerValidationsEnabled(Config config)
+	{  
+		YamlConfig yamlConfig = (YamlConfig)config;
+		Map <String,LogLevel> logLevelMap =yamlConfig.getDebuggerConf().getLogLevel();
+		final String REGEXKEY="instrumentRegex";
+		final String USERVALIDATEKEY="instrumentUserDefValidate";
+		
+		if((logLevelMap.containsKey(USERVALIDATEKEY)&&logLevelMap.get(USERVALIDATEKEY).toString().equalsIgnoreCase("TRUE"))||(logLevelMap.containsKey(REGEXKEY)&&logLevelMap.get(REGEXKEY).toString().equalsIgnoreCase("TRUE")))
+		{
 			return true;
 		}
 		return false;
@@ -530,7 +527,7 @@ public class ValidateInput {
 		Map<String,String> failedCases=new HashMap<String, String>();
 		Map<String,String> suggetion=new HashMap<String, String>();
 		YamlConfig yamlConfig = (YamlConfig)config;
-		if (isEnable(yamlConfig.getEnableStaticJobProfiling()) || yamlConfig.getDebugAnalysis().getEnumValue()) {
+		if (!isEnable(yamlConfig.getEnableStaticJobProfiling()) || yamlConfig.getDebugAnalysis().getEnumValue()) {
 			checkNullEmptyAndMessage(failedCases, yamlConfig.getInputFile(), ErrorMessages.BASIC_INPUT_PATH_EMPTY,"inputFile");
 			validateJobs(config,failedCases,suggetion);
 		}

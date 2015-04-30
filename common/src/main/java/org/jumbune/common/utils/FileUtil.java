@@ -9,15 +9,12 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.util.Properties;
 
-import org.jumbune.common.yaml.config.Loader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-
+import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.common.yaml.config.YamlLoader;
 /**
  * Utility apis related to a file.
- * 
- * 
  */
 public final class FileUtil {
 	
@@ -96,7 +93,18 @@ public final class FileUtil {
 			}
 			return properties.getProperty(propertyKey);
 	}
-
+	
+	/**
+	 * Utility method, this method extracts out the given property from the <Jumbune Home>/jobjars/jobname/cluster-configuration.properties file.
+	 * @param loader
+	 * @param propertyKey
+	 * @return
+	 */
+	public static String getClusterDetail(Loader loader, String propertyKey){
+		YamlLoader yamlLoader = (YamlLoader) loader;
+		String expectedLocation = new StringBuilder().append(yamlLoader.getjHome()).append(File.separator).append(Constants.JOB_JARS_LOC).append(yamlLoader.getJumbuneJobName()).append("cluster-configuration.properties").toString();
+		return getPropertyFromFile(expectedLocation, propertyKey);
+	}
 
 
 }
