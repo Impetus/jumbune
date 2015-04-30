@@ -1,37 +1,52 @@
 package org.jumbune.common.utils.locators;
 
+import java.io.File;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.common.yaml.config.YamlConfig;
-import java.io.File;
 
 public class CDHLocator extends AbstractDistributionLocator {
 
 	private static final String error_message = "Failed to detect Hadoop! Did you miss setting some environment variables?";
 	
-	private static final String LS_CDH_POSTFIX_PART = "ls /etc/hadoop -Rl | grep 'conf ->'";
+	private static final String LS_CDH_POSTFIX_PART = " -Rl | grep 'conf ->'";
+	
+	private static final String expectedConf = "/etc/hadoop";
+	
+	public static final Logger LOGGER = LogManager
+			.getLogger(CDHLocator.class);
 
 	@Override
 	public String getHadoopConfDirPath(YamlConfig config) {
-		String possibleDirList = RemotingUtil.executeCommand(config, WHEREIS_HADOOP);
-		checkEmptyDir(possibleDirList);
-		String[] splittedDirList = possibleDirList.split("\\s+");
+		/*
+		 * String possibleDirList = RemotingUtil.executeCommand(config,
+		 * WHEREIS_HADOOP); if(checkEmptyDir(possibleDirList)){ possibleDirList
+		 * = RemotingUtil.executeCommand(config, ECHO_HADOOP_HOME); } String[]
+		 * splittedDirList = possibleDirList.split("\\s+"); String
+		 * absoluteDirPath = null; for (int index = 2; index <
+		 * splittedDirList.length; index++) { absoluteDirPath =
+		 * getAbsoluteConfDirPath(splittedDirList[index], config);
+		 */
 		String absoluteDirPath = null;
-		for (int index = 1; index < splittedDirList.length; index++) {
-			absoluteDirPath = getAbsoluteConfDirPath(splittedDirList[index],
-					config);
-			if (absoluteDirPath != null && !absoluteDirPath.isEmpty()) {
-				break;
-			}
+		absoluteDirPath = getAbsoluteConfDirPath(expectedConf, config);
+		if (absoluteDirPath == null || absoluteDirPath.isEmpty()) {
+			throw new IllegalArgumentException(
+					"Failed to get configuration directory. Expected to get a linked configuration from "
+							+ expectedConf);
 		}
+		LOGGER.debug("Final linked Hadoop conf path:" + absoluteDirPath);
 		absoluteDirPath = absoluteDirPath.trim();
 		checkEmptyDir(absoluteDirPath);
 		return absoluteDirPath;
 	}
 
-	private void checkEmptyDir(String possibleDirList) {
+	private boolean checkEmptyDir(String possibleDirList) {
 		if (possibleDirList == null || possibleDirList.isEmpty()) {
-			throw new IllegalArgumentException(error_message);
+			return true;
 		}
+		return false;
 	}
 
 	private String getAbsoluteConfDirPath(String dir, YamlConfig config) {
@@ -41,13 +56,18 @@ public class CDHLocator extends AbstractDistributionLocator {
 		}
 		response = RemotingUtil.executeCommand(config, LS_PREFIX_PART + dir
 				+ LS_CDH_POSTFIX_PART);
-		if (response != null || !response.isEmpty()) {
+		if (response != null && !response.isEmpty() && response.indexOf(">")!=-1) {
 	    result = response.substring((response.indexOf(">") + 1),
 					response.length());
+		result = result.endsWith(File.separator)?result:result.trim()+File.separator;
 		}
-
-           result = result.endsWith(File.separator)?result:result.trim()+File.separator;
-
+		LOGGER.debug("Found linked Hadoop conf path:"+result);
+		if(result!=null){
+			String recursiveResponse = getAbsoluteConfDirPath(result, config);
+			if(recursiveResponse!=null){
+				result = recursiveResponse;
+			}
+		}
 		return result;
 	}
 

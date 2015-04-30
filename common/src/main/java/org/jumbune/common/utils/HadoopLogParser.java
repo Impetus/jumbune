@@ -206,7 +206,7 @@ public class HadoopLogParser {
 				method = yarnJobStatsUtility.getDeclaredMethod(YARN_JOB_STATS_UTILITY_CLASS_PARSE_METHOD, String.class);
 				return 	(JobOutput) method.invoke(yarnJobStatsUtility.newInstance(), localPath);
 			} catch (Exception e) {
-				LOGGER.error("Error while instanting class", e.getCause());
+				LOGGER.error("Error while instanting class", e);
 			}
 			}
 			return null;

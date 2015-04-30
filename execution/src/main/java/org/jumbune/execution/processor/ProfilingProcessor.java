@@ -71,33 +71,36 @@ public class ProfilingProcessor extends BaseProcessor {
 		// if main class is not defined in jar manifest, then only traverse the
 		// jar for main classes
 		YamlLoader yamlLoader = (YamlLoader) super.getLoader();
-		if (!yamlLoader.isMainClassDefinedInJobJar()) {
-			try {
-				jarJobList = tra.getAlljobs(yamlLoader.getInputFile());
-			} catch (IOException ioe) {
-				LOGGER.error("Not able to get jobs list from jar.", ioe);
-				return false;
+		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		if (!yamlLoader.isMainClassDefinedInJobJar()){
+			if(Enable.TRUE.equals(yamlConfig.getEnableStaticJobProfiling())
+					&& Enable.TRUE.equals(yamlConfig.getRunJobFromJumbune())){
+				try {
+					jarJobList = tra.getAlljobs(yamlLoader.getInputFile());
+				} catch (IOException ioe) {
+					LOGGER.error("Not able to get jobs list from jar.", ioe);
+					return false;
+				}
 			}
 		}
 
 		executeForCommandBased(scanner);
-
 		// if main class is not defined in jar manifest, matching the yaml jobs
 		// classes with main classes in jar
 		checkJobClassesInJar(jarJobList);
 
 		String pureJarPath = yamlLoader.getInputFile();
-		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		
 		boolean isYarn = yamlConfig.getEnableYarn().equals(Enable.TRUE);
-
+		ResourceUsageCollector collector = new ResourceUsageCollector(
+				super.getLoader());
 		Enable runFromJumbune = yamlConfig.getRunJobFromJumbune();
 		LOGGER.debug("Pure MapReduce jar path :" + pureJarPath);
 		JobOutput jobOutput = null;
 		String jobID = null;
 		try {
 			if (!isYarn) {
-				ResourceUsageCollector collector = new ResourceUsageCollector(
-						super.getLoader());
+				
 				if (runFromJumbune.getEnumValue()) {
 					LOGGER.debug("Fired top command on Workers");
 					String receiveDir = fireTopOnSlaves(collector);
@@ -120,15 +123,23 @@ public class ProfilingProcessor extends BaseProcessor {
 					jobID = yamlConfig.getExistingJobName();
 					// rumen processing
 					jobOutput = getJobOutput(jobID.trim());
-					collector.addPhaseResourceUsageFromRumen(jobOutput, jobID);
+					collector.addPhaseResourceUsageForHistoricalJob(jobOutput, jobID);
 				}
 			} else {
 				if (runFromJumbune.getEnumValue()) {
+					LOGGER.debug("Fired top command on Workers");
+					String receiveDir = fireTopOnSlaves(collector);
 					Map<String, Map<String, String>> jobsCounterMap = processHelper
 							.executeJar(pureJarPath, super.isCommandBased(),
 									super.getLoader(), false);
 					jobID = getJobIdfromJobCountersMap(jobsCounterMap);
+					collector.shutTopCmdOnSlaves(receiveDir);
+					LOGGER.debug("Stopped top command on Workers");
 					jobOutput = getJobOutput(jobID.trim());
+					List<String> selectedHosts = collector.getNodesForJob(jobOutput);
+					collector.processTopDumpFile(receiveDir, selectedHosts);
+					calcStatsFromLogConsolidationInfo(jobOutput, collector);
+					LOGGER.debug("Profiling final JSON [" + jobOutput + "]");
 				} else {
 					YamlConfig yConfig = (YamlConfig) ((YamlLoader) super
 							.getLoader()).getYamlConfiguration();
@@ -152,6 +163,7 @@ public class ProfilingProcessor extends BaseProcessor {
 		}
 		LOGGER.info("Exited from [Profiling] processor...");
 		return true;
+		
 	}
 
 	private void calcStatsFromLogConsolidationInfo(JobOutput jobOutput,

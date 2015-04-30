@@ -16,7 +16,7 @@ public class ObjectResponseHandler extends SimpleChannelInboundHandler<Object> {
 	
 	/** The logger. */
 	private static Logger logger = LogManager
-			.getLogger(IdleResponseHandler.class);
+			.getLogger(ObjectResponseHandler.class);
 
 	/** The barrier. */
 	private CyclicBarrier barrier;
@@ -38,10 +38,12 @@ public class ObjectResponseHandler extends SimpleChannelInboundHandler<Object> {
 			Object msg) throws Exception {
 		this.responseObject = msg;
 		if(responseObject==null){
+			logger.warn("Received a null response for the command. Reseting the barrier, other waiting parties will get BrokenBarrierException");
 			barrier.reset();
 		}
 		if(responseObject instanceof String && ((String)responseObject).trim().length()==0){
-			barrier.reset();
+			logger.warn("Received a empty string response for the command. Skipping reseting of the barrier. The caller of fireAndGetCommandAsResponse should explicitly handle empty String response now.");
+			//barrier.reset();
 		}
 		try {
 			barrier.await();

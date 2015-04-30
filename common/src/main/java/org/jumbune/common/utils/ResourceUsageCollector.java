@@ -246,7 +246,7 @@ public class ResourceUsageCollector {
 	}
 
 	
-	public void addPhaseResourceUsageFromRumen(JobOutput jobOutput, String jobID) throws IOException{
+	public void addPhaseResourceUsageForHistoricalJob(JobOutput jobOutput, String jobID) throws IOException{
 		long totalTime = jobOutput.getTotalTime();
 		PhaseOutput po = jobOutput.getPhaseOutput();
 		Map<Long, IntervalStats> statsMap = new HashMap<Long, IntervalStats>();
@@ -448,8 +448,9 @@ public class ResourceUsageCollector {
 		
 		builder.addCommand(command, false, null, CommandType.FS).setApiInvokeHints(ApiInvokeHintsEnum.GET_HADOOP_CONFIG);
 		String configFilePath = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
-		
-		String destinationReceiveDir = RemotingUtil.copyAndGetHadoopConfigurationFilePath(configFilePath, loader);
+		String fileName = configFilePath.substring(configFilePath.lastIndexOf(File.separator)+1);
+		configFilePath = configFilePath.substring(0, configFilePath.lastIndexOf(File.separator)+1);
+		String configurationFilePath = RemotingUtil.copyAndGetConfigurationFilePath(loader, configFilePath, fileName)+File.separator+fileName;
 		for (TaskOutputDetails tod : taskDetails) {
 			String location = convertHostNameToIP(tod.getLocation());
 			float mem = tod.getResourceUsageMetrics().getPhysicalMemoryUsage();
@@ -462,14 +463,14 @@ public class ResourceUsageCollector {
 					
 			String jvmChildOpts = null;
 			if(PhaseType.REDUCE.equals(phase)){
-				jvmChildOpts = RemotingUtil.parseConfiguration(destinationReceiveDir, "mapred.reduce.child.java.opts");
+				jvmChildOpts = RemotingUtil.parseConfiguration(configurationFilePath, "mapred.reduce.child.java.opts");
 				if(jvmChildOpts == null){
-					jvmChildOpts = RemotingUtil.parseConfiguration( destinationReceiveDir, "mapred.child.java.opts");
+					jvmChildOpts = RemotingUtil.parseConfiguration( configurationFilePath, "mapred.child.java.opts");
 				}
 			}else{
-				jvmChildOpts = RemotingUtil.parseConfiguration(destinationReceiveDir, "mapred.map.child.java.opts");
+				jvmChildOpts = RemotingUtil.parseConfiguration(configurationFilePath, "mapred.map.child.java.opts");
 				if(jvmChildOpts == null){
-					jvmChildOpts = RemotingUtil.parseConfiguration(destinationReceiveDir, "mapred.child.java.opts");
+					jvmChildOpts = RemotingUtil.parseConfiguration(configurationFilePath, "mapred.child.java.opts");
 				}
 			}
 			if(jvmChildOpts!= null){

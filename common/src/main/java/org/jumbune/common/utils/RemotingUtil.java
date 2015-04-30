@@ -180,10 +180,11 @@ public final class RemotingUtil {
 		try {
 			
 			if(StringUtil.emptyOrNull(jobTrackerURI)){
+				LOGGER.debug("No Job Tracker configuration found in mapred-site.xml, attempting to create job client with default uri");
 				client = new JobClient(new InetSocketAddress("0:0:0:0", 8032), config);
 			}else {
-				client = new JobClient(new InetSocketAddress(jobTrackerURI.split(":")[0], Integer.parseInt(jobTrackerURI.split(":")[1])), config);
-			}
+			client = new JobClient(new InetSocketAddress(jobTrackerURI.split(":")[0], Integer.parseInt(jobTrackerURI.split(":")[1])), config);
+ 			}
 
 		} catch (Exception e) {
 			LOGGER.error(e);
@@ -271,7 +272,8 @@ public final class RemotingUtil {
 	 * @return configuration value.
 	 */
 	public static String getHadoopConfigurationValue(Loader loader, String hadoopConfigurationFile, String configurationToGet) {
-		String destinationReceiveDir = copyAndGetHadoopConfigurationFilePath(loader, hadoopConfigurationFile);
+		String hadoopConfDir = RemotingUtil.getHadoopConfigurationDirPath(loader);
+		String destinationReceiveDir = copyAndGetConfigurationFilePath(loader, hadoopConfDir, hadoopConfigurationFile);
 		return parseConfiguration(destinationReceiveDir + "/" + hadoopConfigurationFile, configurationToGet);
 	}
 		
@@ -299,18 +301,56 @@ public final class RemotingUtil {
 	 * @param hadoopConfigurationFile which we wants to receive the path of.
 	 * @return the string
 	 */
+	@Deprecated
 	public static String copyAndGetHadoopConfigurationFilePath(Loader loader, String hadoopConfigurationFile) {
-
 		YamlLoader yamlLoader = (YamlLoader)loader;
 		String jumbuneHome = yamlLoader.getjHome();
+		YamlConfig yamlConfig= (YamlConfig)yamlLoader.getYamlConfiguration();
+		String jumbuneJobName = yamlLoader.getJumbuneJobName() + File.separator;
 		String dirInJumbuneHome = jumbuneHome + File.separator + Constants.JOB_JARS_LOC + yamlLoader.getJumbuneJobName();
 		File dir = new File(dirInJumbuneHome);
 		if (!dir.exists()) {
 			dir.mkdirs();
 		}
-		YamlConfig yamlConfig= (YamlConfig)yamlLoader.getYamlConfiguration();
 		HadoopDistributionLocator hadoopUtility = getDistributionLocator(getHadoopVersion(yamlConfig));
 		String hadoopConfDir = hadoopUtility.getHadoopConfDirPath(yamlConfig);
+		
+		jumbuneHome = new String(jumbuneHome+File.separator);
+		String destinationReceiveDir = jumbuneHome + Constants.JOB_JARS_LOC  + jumbuneJobName;
+		Remoter remoter = getRemoter(yamlConfig, jumbuneHome);
+		String copyCommand = new StringBuilder().append("cp ").append(hadoopConfDir).append(hadoopConfigurationFile).append(" ").append(getAgentHome(yamlConfig)).append("/jobJars/").append(jumbuneJobName).toString();
+		CommandWritableBuilder builder = new CommandWritableBuilder();
+		builder.addCommand(MAKE_JOBJARS_DIR_ON_AGENT + jumbuneJobName, false, null,CommandType.FS)
+		.addCommand(copyCommand, false, null, CommandType.FS);
+		remoter.fireAndForgetCommand(builder.getCommandWritable());
+		//If execution happended to fast, we won't be able to get a directory to find files for next command
+		remoter.receiveLogFiles(File.separator + Constants.JOB_JARS_LOC  + jumbuneJobName, File.separator + Constants.JOB_JARS_LOC + jumbuneJobName + hadoopConfigurationFile);
+		return destinationReceiveDir;
+	}
+	
+	
+	
+	
+	/**
+	 * 
+	 * This method returns the absoluate path of a given configuration file on the remote HADOOP machine. This expects that the given configuration
+	 * file name to be correct and the file resides in <HADOOP_HOME>/conf directory.
+	 * 
+	 * This method is different overridden copyAndGetHadoopConfigurationFilePath(Loader loader, String hadoopConfigurationFile) as this method
+	 * assumes that we already know the configuration dir which is passed as an argument, get's appended to the hadoop configuration file argument.
+	 * 
+	 * This is helpful to use in cases where we require to fetch multiple configuration files, since all of them reside in the same configuration 
+	 * directory, it makes more sense to not to re-discover the configuration directory again and again. 
+	 *
+	 * @param loader the loader
+	 * @param hadoopConfDir, the hadoop configuration dir path
+	 * @param hadoopConfigurationFile which we wants to receive the path of.
+	 * @return the string
+	 */
+	public static String copyAndGetConfigurationFilePath(Loader loader, String hadoopConfDir, String hadoopConfigurationFile) {
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		String jumbuneHome = yamlLoader.getjHome();
+		YamlConfig yamlConfig= (YamlConfig)yamlLoader.getYamlConfiguration();
 		String jumbuneJobName = yamlLoader.getJumbuneJobName() + File.separator;
 		
 		jumbuneHome = new String(jumbuneHome+File.separator);
@@ -326,7 +366,27 @@ public final class RemotingUtil {
 		return destinationReceiveDir;
 	}
 	
-	public static String copyAndGetHadoopConfigurationFilePath(String remoteAbsolutePath, Loader loader){
+	/**
+	 * This method is helpful to retrieve hadoop configuration directory in advance and can be helpful to 
+	 * methods like, RemotingUtil.copyAndGetHadoopConfigurationFilePath(Loader loader, String hadoopConfDir, String hadoopConfigurationFile) 
+	 * @param loader, the yaml loader instance
+	 * @return
+	 */
+	public static String getHadoopConfigurationDirPath(Loader loader){
+		YamlLoader yamlLoader = (YamlLoader)loader;
+		YamlConfig yamlConfig= (YamlConfig)yamlLoader.getYamlConfiguration();
+		String jumbuneHome = yamlLoader.getjHome();
+		String dirInJumbuneHome = jumbuneHome + File.separator + Constants.JOB_JARS_LOC + yamlLoader.getJumbuneJobName();
+		File dir = new File(dirInJumbuneHome);
+		if (!dir.exists()) {
+			dir.mkdirs();
+		}
+		HadoopDistributionLocator hadoopUtility = getDistributionLocator(getHadoopVersion(yamlConfig));
+		return hadoopUtility.getHadoopConfDirPath(yamlConfig);
+	}
+	
+	@Deprecated
+	public static String copyAndGetRemoteFileWithAbsolutePath(Loader loader, String remoteAbsolutePath){
 		
 		YamlLoader yamlLoader = (YamlLoader)loader;
 		String jumbuneHome = yamlLoader.getjHome();
