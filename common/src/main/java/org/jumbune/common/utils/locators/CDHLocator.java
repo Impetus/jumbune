@@ -20,15 +20,6 @@ public class CDHLocator extends AbstractDistributionLocator {
 
 	@Override
 	public String getHadoopConfDirPath(YamlConfig config) {
-		/*
-		 * String possibleDirList = RemotingUtil.executeCommand(config,
-		 * WHEREIS_HADOOP); if(checkEmptyDir(possibleDirList)){ possibleDirList
-		 * = RemotingUtil.executeCommand(config, ECHO_HADOOP_HOME); } String[]
-		 * splittedDirList = possibleDirList.split("\\s+"); String
-		 * absoluteDirPath = null; for (int index = 2; index <
-		 * splittedDirList.length; index++) { absoluteDirPath =
-		 * getAbsoluteConfDirPath(splittedDirList[index], config);
-		 */
 		String absoluteDirPath = null;
 		absoluteDirPath = getAbsoluteConfDirPath(expectedConf, config);
 		if (absoluteDirPath == null || absoluteDirPath.isEmpty()) {
@@ -56,8 +47,9 @@ public class CDHLocator extends AbstractDistributionLocator {
 		}
 		response = RemotingUtil.executeCommand(config, LS_PREFIX_PART + dir
 				+ LS_CDH_POSTFIX_PART);
-		if (response != null && !response.isEmpty() && response.indexOf(">")!=-1) {
-	    result = response.substring((response.indexOf(">") + 1),
+		int responseIndex=response.indexOf(">");
+		if (response != null && !response.isEmpty() && responseIndex!=-1) {
+	    result = response.substring((responseIndex + 1),
 					response.length());
 		result = result.endsWith(File.separator)?result:result.trim()+File.separator;
 		}

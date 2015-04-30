@@ -90,7 +90,6 @@ public class YarnJobStatsUtility {
 		long timeInMilliSec = (finishTime - startTime);
 		long totalTimeInSecs = timeInMilliSec / CONVERSION_FACTOR_MILLISECS_TO_SECS;
 		jobOutput.setTotalTime(totalTimeInSecs);
-		LOGGER.info("Job total time" + jobOutput.getTotalTime());
 		jobOutput.setTotalTimeInMilliSec(timeInMilliSec);
 		PhaseOutput phaseOutput = new PhaseOutput();
 		PhaseDetails mapPhaseDetails = new PhaseDetails();
@@ -158,22 +157,16 @@ public class YarnJobStatsUtility {
 		long shuffleStartTime = (taskAttemptInfo.getStartTime()- referencedZeroTime)/CONVERSION_FACTOR_MILLISECS_TO_SECS;
 		taskOutputDetails.setStartPoint(shuffleStartTime);
 		taskOutputDetails.setShuffleStart(shuffleStartTime);
-		LOGGER.info("shuffle start time" + taskOutputDetails.getShuffleStart());
 		long shuffleEnd = ((taskAttemptInfo.getShuffleFinishTime()-referencedZeroTime)/CONVERSION_FACTOR_MILLISECS_TO_SECS);
 		taskOutputDetails.setShuffleEnd(shuffleEnd);
-		LOGGER.info("shuffle end time" + taskOutputDetails.getShuffleEnd());
 		taskOutputDetails.setSortStart(shuffleEnd);
 		long sortEnd = (taskAttemptInfo.getSortFinishTime()-referencedZeroTime)/CONVERSION_FACTOR_MILLISECS_TO_SECS;
 		taskOutputDetails.setSortEnd(sortEnd);
-		
-		LOGGER.info("sort end time" + taskOutputDetails.getSortEnd());
 		taskOutputDetails.setReduceStart(sortEnd);
 		taskOutputDetails.setReduceEnd((taskAttemptInfo.getFinishTime()-referencedZeroTime)/CONVERSION_FACTOR_MILLISECS_TO_SECS);
 		taskOutputDetails.setEndPoint(taskOutputDetails.getReduceEnd());
-		LOGGER.info("Reduce end time" + taskOutputDetails.getReduceEnd());
 		long dataFlowRate = reduceOutputBytes.getValue() / (taskOutputDetails.getReduceEnd()-shuffleStartTime);
-		taskOutputDetails.setDataFlowRate(dataFlowRate);
-		
+		taskOutputDetails.setDataFlowRate(dataFlowRate);		
 		Counter physicalMemoryBytes = mapReduceTaskCounters.findCounter("PHYSICAL_MEMORY_BYTES");		
 		ResourceUsageMetrics rum = new ResourceUsageMetrics();
 		rum.setPhysicalMemoryUsage(physicalMemoryBytes.getValue());
@@ -227,10 +220,8 @@ public class YarnJobStatsUtility {
 		}
 		long startPoint = getMaxReduceTime(tasks,jobInfo.getSubmitTime());
 		taskOutputDetails.setStartPoint(startPoint);
-		LOGGER.info("Clean up start time" + taskOutputDetails.getStartPoint());
 		long endPoint = (jobInfo.getFinishTime() - jobInfo.getSubmitTime())/CONVERSION_FACTOR_MILLISECS_TO_SECS;
 		taskOutputDetails.setEndPoint(endPoint);
-		LOGGER.info("Clean up end time" + taskOutputDetails.getEndPoint());
 		taskOutputDetails.setDataFlowRate(0);
 		cleanupTaskOuptputDetails.add(taskOutputDetails);
 		phaseDetails.setTaskOutputDetails(cleanupTaskOuptputDetails);
@@ -274,12 +265,9 @@ public class YarnJobStatsUtility {
 			taskOutputDetails.setTaskID(taskAttemptInfo.getAttemptId().getTaskID().toString());
 			long startPoint = (taskAttemptInfo.getStartTime() - referencedZeroTime) / CONVERSION_FACTOR_MILLISECS_TO_SECS;
 			taskOutputDetails.setStartPoint(startPoint);
-			LOGGER.info("Map Start time" + taskOutputDetails.getStartPoint());
 			long endPoint = (taskAttemptInfo.getMapFinishTime() - referencedZeroTime) / CONVERSION_FACTOR_MILLISECS_TO_SECS;
 			taskOutputDetails.setEndPoint(endPoint);
-			LOGGER.info("Map End time" + taskOutputDetails.getEndPoint());
 			taskOutputDetails.setTimeTaken(endPoint - startPoint);
-			LOGGER.info("Map time" + taskOutputDetails.getTimeTaken());
 			taskOutputDetails.setLocation(taskAttemptInfo.getHostname());
 			Counters counters = taskAttemptInfo.getCounters();
 			CounterGroup fileSystemCounters = counters.getGroup("org.apache.hadoop.mapreduce.FileSystemCounter");
