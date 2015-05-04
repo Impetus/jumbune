@@ -6,13 +6,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Set;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -22,12 +22,12 @@ import java.util.concurrent.Future;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.JobCounterBean;
-import org.jumbune.common.utils.Constants;
-import org.jumbune.common.utils.HadoopJobCounters;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlLoader;
 import org.jumbune.common.beans.Validation;
 import org.jumbune.common.utils.ConfigurationUtil;
+import org.jumbune.common.utils.Constants;
+import org.jumbune.common.utils.HadoopJobCounters;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.debugger.instrumentation.utils.InstrumentConstants;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
 import org.jumbune.utils.exception.JumbuneException;
@@ -53,7 +53,7 @@ public class LogAnalyzerUtil {
 	/** The LOGGER. */
 	private static final Logger LOGGER = LogManager
 			.getLogger(LogAnalyzerUtil.class);
-
+	
 	/**
 	 * nodeFileMap - Map to store list of log files of various types
 	 * corresponding to various nodes.
@@ -73,14 +73,15 @@ public class LogAnalyzerUtil {
 	/**
 	 * maxNumOfThreads - Maximum number of threads to be spawned
 	 */
-	private int maxNumOfThreads;
+	private int maxNumOfThreads = 0;
 
 	private int numOfReducers;
 
 	private int totalReducerInputKeys;
 
-	public List<String> userDefValidationClasses = new ArrayList<String>();
-	public List<String> regexValidationsClasses = new ArrayList<String>();
+	public  List<String> userDefValidationClasses=new ArrayList<String>();
+    public  List<String> regexValidationsClasses=new ArrayList<String>();
+	
 	
 	/**
 	 * This constructor takes input to set maximum number of threads to be
@@ -89,8 +90,7 @@ public class LogAnalyzerUtil {
 	 * @param maxNumOfThreads
 	 *            the maximum number of threads to be spawned
 	 */
-	public LogAnalyzerUtil(final int maxNumOfThreads) {
-		this.maxNumOfThreads = maxNumOfThreads;
+	public LogAnalyzerUtil() {
 	}
 
 	/**
@@ -131,6 +131,8 @@ public class LogAnalyzerUtil {
 					ErrorCodesAndMessages.DIRECTORY_PATH_NOT_CORRECT);
 		}
 
+	
+		
 		return mrChainSortedMap;
 
 	}
@@ -149,7 +151,7 @@ public class LogAnalyzerUtil {
 	 * @throws IOException
 	 */
 	public final String processLogs(final String dirPath,
-			boolean isPartitionerEnabled, Loader loader, HadoopJobCounters hadoopJobCounters) throws JumbuneException,
+			boolean isPartitionerEnabled, Config config, HadoopJobCounters hadoopJobCounters) throws JumbuneException,
 			InterruptedException, ExecutionException, IOException {
 		InputStream in = ConfigurationUtil.readFile(dirPath.substring(0, dirPath.indexOf("consolidated"))+SYMBOL_TABLE_NAME);
 		if(in == null){
@@ -178,7 +180,7 @@ public class LogAnalyzerUtil {
 			for (Map.Entry<String, Map<String, List<String>>> nodeFilePairs : nodeFileMap
 					.entrySet()) {
 				nodeAnalysisTask = new LogAnalyzerCallable(
-						nodeFilePairs.getKey(), nodeFilePairs.getValue(), loader);
+						nodeFilePairs.getKey(), nodeFilePairs.getValue(), config);
 				analysisResults.add(pool.submit(nodeAnalysisTask));
 			}
 
@@ -228,15 +230,15 @@ public class LogAnalyzerUtil {
 			Map<String, List<PartitionerInfoBean>> partitionerMap = getPartitionCounters(mrChainSortedMap);
 			debugAnalysisBean.setPartitionerMap(partitionerMap);
           	}
-		YamlLoader yamlLoader = (YamlLoader) loader;
+		JobConfig jobConfig = (JobConfig) config;
 		// getting all regex validations
-		List<Validation> validations = yamlLoader.getRegex();
+		List<Validation> validations = jobConfig.getRegex();
 		for (Validation validation : validations) {
 			regexValidationsClasses.add(validation.getClassname());
 		}
 
 		// getting all user validations
-		validations = yamlLoader.getUserValidations();
+		validations = jobConfig.getUserValidations();
 		for (Validation validation : validations) {
 			userDefValidationClasses.add(validation.getClassname());
 		}
@@ -390,7 +392,7 @@ public class LogAnalyzerUtil {
 				if(bufferedReader!=null){
 					bufferedReader.close();
 				}
-				return returnedMRChainSortedMap;
+					return returnedMRChainSortedMap;
 			}
 		}
 
@@ -407,6 +409,7 @@ public class LogAnalyzerUtil {
 		fileList.add(filePath);
 		fileListMap.put(mapReduceInstanceId, fileList);
 		nodeFileMap.put(nodeName, fileListMap);
+
 		return returnedMRChainSortedMap;
 
 	}
@@ -439,10 +442,13 @@ public class LogAnalyzerUtil {
 		}
 
 		List<String> chainList = jobDetails.get(key);
-
+				
 		if (chainList == null) {
 			chainList = new ArrayList<String>();
 		}
+		
+	
+	
 
 		BufferedReader bufferedReader = new BufferedReader(
 				new FileReader(filePath));
@@ -461,6 +467,7 @@ public class LogAnalyzerUtil {
 			bufferedReader.close();
 		}
 
+	  
 		jobDetails.put(key, chainList);
 		returnedMRChainSortedMap.put(jobId, jobDetails);
 		return returnedMRChainSortedMap;
@@ -713,6 +720,8 @@ public class LogAnalyzerUtil {
 				mapChainList = jobDetails.get(LPConstants.MAP_METHOD);
 				reduceChainList = jobDetails.get(LPConstants.REDUCE_METHOD);
 
+			
+			
 				if (mrChain == null) {
 					mrChain = new HashMap<String, Map<String, List<ChainingInfoBean>>>();
 				}

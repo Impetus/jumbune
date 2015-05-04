@@ -17,9 +17,8 @@ import javax.servlet.http.HttpSession;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.Constants;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlLoader;
-import org.jumbune.utils.YamlUtil;
+import org.jumbune.common.job.JobConfig;
+import org.jumbune.utils.JobUtil;
 import org.jumbune.web.utils.WebConstants;
 
 import com.google.gson.Gson;
@@ -58,8 +57,8 @@ public class DVReportServlet extends HttpServlet {
 	protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		LOGGER.info("Start to process Data Validation report");
 		HttpSession session = request.getSession();
-		// Getting yamlloader stored in session.
-		YamlLoader loader = (YamlLoader) session.getAttribute("loader");
+		// Getting JobConfig stored in session.
+		JobConfig jobConfig = (JobConfig) session.getAttribute("config");
 		String fileName = request.getParameter(WebConstants.FILE_NAME);
 		String dvType = request.getParameter(WebConstants.DV_TYPE);
 		String pageNum = request.getParameter(WebConstants.PAGE_NUMBER);
@@ -80,9 +79,9 @@ public class DVReportServlet extends HttpServlet {
 		}
 		
 		StringBuilder stringBuilder = new StringBuilder();
-		stringBuilder.append(YamlLoader.getjHome()).append(JOB_JAR_LOCATION).append(loader.getJumbuneJobName()).append(DV_FOLDER_LOCATION);
+		stringBuilder.append(JobConfig.getJumbuneHome()).append(JOB_JAR_LOCATION).append(jobConfig.getFormattedJumbuneJobName()).append(DV_FOLDER_LOCATION);
 		String dir = stringBuilder.toString();
-		StringBuffer sb = new StringBuffer(YamlUtil.getAndReplaceHolders(dir));
+		StringBuffer sb = new StringBuffer(JobUtil.getAndReplaceHolders(dir));
 		LOGGER.debug("datavalidation folder path ----> [" + dir + "]");
 		sb.append(dvType).append(Constants.FORWARD_SLASH).append(fileName);
 		List<DVFileReport> fileReport = new ArrayList<DVFileReport>();
@@ -112,12 +111,12 @@ public class DVReportServlet extends HttpServlet {
 		int totalPgCount = 0;
 		String line;
 		String[] lineValue;
-		BufferedReader br = null;
+		BufferedReader bufferedReader = null;
 		PrintWriter out = null;
 
 		try {
-			br = new BufferedReader(new FileReader(sb.toString()));
-			while (((line = br.readLine()) != null)) {
+			bufferedReader = new BufferedReader(new FileReader(sb.toString()));
+			while (((line = bufferedReader.readLine()) != null)) {
 				if ((totalRecords >= startRow) && (totalRecords < endRow)) {
 					dvFileReport = new DVFileReport();
 					lineValue = line.split("\\|");
@@ -153,8 +152,8 @@ public class DVReportServlet extends HttpServlet {
 			if(out!=null){
 				out.close();
 			}
-			if(br!=null){
-				br.close();
+			if(bufferedReader!=null){
+				bufferedReader.close();
 			}
 		}
 	}

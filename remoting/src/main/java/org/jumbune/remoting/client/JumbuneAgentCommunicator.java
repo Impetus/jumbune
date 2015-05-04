@@ -46,15 +46,7 @@ public final class JumbuneAgentCommunicator {
 	}
 
 	/**
-	 * Release bootstrap resources.
-	 * @throws InterruptedException 
-	 */
-	public void releaseBootstrapResources() throws InterruptedException {
-//		group.shutdownGracefully();
-	}
-
-	/**
-	 * Creates the future.
+	 * Creates the future. This is used for each of the Remoter instance command. We are initializing event group only once. 
 	 *
 	 * @param channelPipelineFactory the channel pipeline factory
 	 * @return the channel future
@@ -81,5 +73,4 @@ public final class JumbuneAgentCommunicator {
         future = bootstrap.connect(host, port).sync();
         return future;
 	}
-
 }

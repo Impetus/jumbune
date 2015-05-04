@@ -9,7 +9,7 @@ import org.jumbune.common.beans.Module;
 import org.jumbune.common.beans.ReportsBean;
 import org.jumbune.common.beans.ServiceInfo;
 import org.jumbune.common.utils.MessageLoader;
-import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.common.job.Config;
 import org.jumbune.execution.beans.Parameters;
 import org.jumbune.execution.utils.ProcessHelper;
 import org.jumbune.utils.exception.JumbuneException;
@@ -31,10 +31,10 @@ public abstract class BaseProcessor implements Processor {
 	protected static final MessageLoader MESSAGES = MessageLoader.getInstance();
 
 	private Processor next;
-	private Loader loader;
 	private ReportsBean reports;
 	protected ServiceInfo serviceInfo;
 	private boolean isCommandBased;
+	private Config config;
 	
 	
 
@@ -42,14 +42,15 @@ public abstract class BaseProcessor implements Processor {
 		this.isCommandBased = isCommandBased;
 	}
 
-	
-	protected Loader getLoader() {
-		return loader;
+		
+	protected Config getConfig() {
+		return config;
 	}
 
-	protected void setLoader(Loader loader) {
-		this.loader = loader;
+	protected void setConfig(Config config) {
+		this.config = config;
 	}
+	
 
 	protected ReportsBean getReports() {
 		return reports;
@@ -76,10 +77,10 @@ public abstract class BaseProcessor implements Processor {
 	}
 
 	@Override
-	public void process(Loader loader, ReportsBean reports,
+	public void process(Config config,ReportsBean reports,
 			Map<Parameters, String> params) throws JumbuneException {
-		this.loader = loader;
 		this.reports = reports;
+		this.config = config;
 		Map<Parameters, String> paramsTmp = params;
 		if (paramsTmp == null){
 			paramsTmp = new HashMap<Parameters, String>();
@@ -114,7 +115,7 @@ public abstract class BaseProcessor implements Processor {
 		}
 
 		if (next != null && executed && !reports.isExectutionStopped()) {
-			next.process(loader, reports, paramsTmp);
+			next.process( config, reports, paramsTmp);
 		}
 	}
 
@@ -147,7 +148,7 @@ public abstract class BaseProcessor implements Processor {
 
 	/**
 	 * This is main execution method of any processor and it should contain
-	 * complete processing logic for the process. PRocessor can use the params
+	 * complete processing logic for the process. Processor can use the params
 	 * for inter process communication. After completing the process the
 	 * processor should populate the respective report in reportsBean and should
 	 * mark the report as complete so as to show them on UI ( if applicable ).

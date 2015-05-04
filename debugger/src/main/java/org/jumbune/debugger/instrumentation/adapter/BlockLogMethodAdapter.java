@@ -5,8 +5,8 @@ import java.text.MessageFormat;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.CollectionUtil;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.debugger.instrumentation.utils.Environment;
 import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
 import org.jumbune.debugger.instrumentation.utils.InstrumentationMessageLoader;
@@ -53,8 +53,8 @@ public class BlockLogMethodAdapter extends BaseMethodAdpater {
 	private AbstractInsnNode ifStmtNodeTemp = null;
 	private AbstractInsnNode currentInsnNode = null;
 	private boolean isVariableAdded = false;
-	YamlLoader yamlLoader = (YamlLoader)getLoader();
-	private int maxNestingLevel = yamlLoader.getMaxIfBlockNestingLevel();
+	JobConfig jobConfig = (JobConfig)getConfig();
+	private int maxNestingLevel = jobConfig.getMaxIfBlockNestingLevel();
 	// variables to hold values for each nesting level
 	private int[] currentScanIndexForIf = new int[maxNestingLevel];
 	private int[] currentIfCount = new int[maxNestingLevel];
@@ -80,10 +80,10 @@ public class BlockLogMethodAdapter extends BaseMethodAdpater {
 	 * @param className
 	 * @param logClassName
 	 */
-	public BlockLogMethodAdapter(Loader loader, int access, String name,
+	public BlockLogMethodAdapter(Config config, int access, String name,
 			String desc, String signature, String[] exceptions,
 			MethodVisitor mv, String className, String logClassName) {
-		super(loader, access, name, desc, signature, exceptions, mv, className,
+		super(config, access, name, desc, signature, exceptions, mv, className,
 				logClassName);
 		this.mv = mv;
 }
@@ -101,10 +101,10 @@ public class BlockLogMethodAdapter extends BaseMethodAdpater {
 	 * @param logClassName
 	 * @param env
 	 */
-	public BlockLogMethodAdapter(Loader loader, int access, String name,
+	public BlockLogMethodAdapter(Config config, int access, String name,
 			String desc, String signature, String[] exceptions,
 			MethodVisitor mv, String className, String logClassName,Environment env) {
-		super(loader, access, name, desc, signature, exceptions, mv, className,
+		super(config, access, name, desc, signature, exceptions, mv, className,
 				logClassName);
 		this.mv = mv;
 		this.env = env;

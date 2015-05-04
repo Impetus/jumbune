@@ -13,7 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.LogConsolidationInfo;
 import org.jumbune.common.utils.RemoteFileUtil;
-import org.jumbune.utils.YamlUtil;
+
 
 import com.google.gson.Gson;
 
@@ -74,7 +74,7 @@ public class ClearLogsServlet extends HttpServlet {
 		try {
 			out = response.getWriter();
 
-			final String logLocationJson = org.jumbune.common.utils.YamlConfigUtil.getServiceJsonPath();
+			final String logLocationJson = org.jumbune.common.utils.JobConfigUtil.getServiceJsonPath();
 			LogConsolidationInfo logCollection = gson.fromJson(logLocationJson, LogConsolidationInfo.class);
 			RemoteFileUtil remoteFileUtil = new RemoteFileUtil();
 			remoteFileUtil.clearAllLogFiles(logCollection);

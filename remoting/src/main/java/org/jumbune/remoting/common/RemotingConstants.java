@@ -13,8 +13,10 @@ import io.netty.util.AttributeKey;
  */
 public interface RemotingConstants {
 
+	/** The barrier key. */
 	AttributeKey<CyclicBarrier> barrierKey = AttributeKey.valueOf("barrier");
 	
+	/** The handler key. */
 	AttributeKey<ChannelInboundHandler> handlerKey = AttributeKey.valueOf("handler");
 	
 	/** The command channel. */
@@ -207,39 +209,56 @@ public interface RemotingConstants {
 	
 	/** The job jars loc. */
 	String JOB_JARS_LOC = "jobJars/";
-
+	
+	/** The three. */
 	int THREE = 3;
 	
+	/** The zero cross ff. */
 	int ZERO_CROSS_FF = 0xFF;
 	
+	/** The eight. */
 	int EIGHT = 8 ;
 	
+	/** The twenty four. */
 	int TWENTY_FOUR= 24;
 
+	/** The sixteen. */
 	int SIXTEEN = 16;
 	
+	/** The two. */
 	int TWO = 2;
 
+	/** The one zero two four. */
 	int ONE_ZERO_TWO_FOUR = 1024;
 
+	/** The five. */
 	int FIVE = 5;
 
+	/** The ten. */
 	int TEN = 10 ;
 	
+	/** The thousand. */
 	int THOUSAND = 1000;
 	
+	/** The twenty two. */
 	int TWENTY_TWO= 22;
 
+	/** The seven. */
 	int SEVEN = 7;
 
+	/** The six. */
 	int SIX = 6;
 
+	/** The four. */
 	int FOUR = 4;
 
+	/** The eight one nine two. */
 	int EIGHT_ONE_NINE_TWO = 8192;
 
+	/** The eight zero nine six zero. */
 	int EIGHT_ZERO_NINE_SIX_ZERO = 80960;
 
+	/** The remove. */
 	String REMOVE = "rm";
 
 }

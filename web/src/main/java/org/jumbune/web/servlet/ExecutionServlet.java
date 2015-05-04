@@ -50,13 +50,10 @@ import org.jumbune.common.beans.UnavailableHost;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.RemotingUtil;
-import org.jumbune.common.utils.HadoopJobCounters;
 import org.jumbune.common.utils.ValidateInput;
-import org.jumbune.common.utils.YamlConfigUtil;
-import org.jumbune.common.yaml.config.Config;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlConfig;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.utils.JobConfigUtil;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.execution.service.HttpExecutorService;
 import org.jumbune.profiling.beans.CategoryInfo;
 import org.jumbune.profiling.beans.ClusterWideInfo;
@@ -64,7 +61,6 @@ import org.jumbune.profiling.beans.JMXDeamons;
 import org.jumbune.profiling.beans.NonYarnCategoryInfo;
 import org.jumbune.profiling.beans.SystemStats;
 import org.jumbune.profiling.beans.WorkerJMXInfo;
-import org.jumbune.profiling.utils.JMXConnectorCache;
 import org.jumbune.profiling.utils.ProfilerConstants;
 import org.jumbune.profiling.utils.ProfilerJMXDump;
 import org.jumbune.profiling.yarn.beans.YarnCategoryInfo;
@@ -100,7 +96,7 @@ public class ExecutionServlet extends HttpServlet {
 
 	private final String TABS = "tabs";
 
-	private final String LOADER = "loader";
+	private final String CONFIG = "config";
 	
 	private boolean isYarnEnable = false;	
 
@@ -146,16 +142,15 @@ public class ExecutionServlet extends HttpServlet {
 		HttpReportsBean reports = new HttpReportsBean();
 		HttpSession session = request.getSession();
 		LOG.info("\n\n *************************** NEW REQUEST ************************* \n\n");
-
-
+		
 		try {
 			HttpExecutorService service = new HttpExecutorService();
 
 			if (ServletFileUpload.isMultipartContent(request)) {
 				config = saveUsersResources(request);
-				YamlConfig yamlConfig = (YamlConfig)config;
-				saveJsonToJumbuneHome(yamlConfig);
-				String agentHome = RemotingUtil.getAgentHome(yamlConfig);
+				JobConfig jobConfig = (JobConfig)config;
+				saveJsonToJumbuneHome(jobConfig);
+				String agentHome = RemotingUtil.getAgentHome(jobConfig);
 
 				WebUtil util = new WebUtil();
 				ClasspathElement cse = ConfigurationUtil.loadJumbuneSuppliedJarList();
@@ -163,25 +158,25 @@ public class ExecutionServlet extends HttpServlet {
 
 				// place where list of dependent jars' path for instrumented job
 				// jar are getting created.
-				yamlConfig.getClasspath().setJumbuneSupplied(cse);
+				jobConfig.getClasspath().setJumbuneSupplied(cse);
 				// sends user uploaded MR job jars on agent
-				String jarFilePath = YamlLoader.getjHome() + "/" + Constants.JOB_JARS_LOC + yamlConfig.getFormattedJumbuneJobName()
+				String jarFilePath = JobConfig.getJumbuneHome() + File.separator + Constants.JOB_JARS_LOC + jobConfig.getFormattedJumbuneJobName()
 						+ Constants.MR_RESOURCES;
 
-				checkAndSendMrJobJarOnAgent(yamlConfig, jarFilePath);
-				LOG.debug("Configuration received ["+yamlConfig+"]");
-				modifyDebugParameters(yamlConfig);
-				modifyProfilingParameters(yamlConfig);
-				setInputFileInConfig(yamlConfig);
+				checkAndSendMrJobJarOnAgent(jobConfig, jarFilePath);
+				LOG.debug("Configuration received ["+jobConfig+"]");
+				modifyDebugParameters(jobConfig);
+				modifyProfilingParameters(jobConfig);
+				setInputFileInConfig(jobConfig);
 				
 				session.setAttribute(REPORTS_BEAN, reports);
 				request.setAttribute(STATS_INTERVAL, Constants.TEN_THOUSAND);
-				String tabs = util.getTabsInformation(yamlConfig);
-				request.setAttribute(JOB_NAME, yamlConfig.getJumbuneJobName());
-				Loader loader = service.runInSeperateThread(yamlConfig, reports);
+				String tabs = util.getTabsInformation(jobConfig);
+				request.setAttribute(JOB_NAME, jobConfig.getJumbuneJobName());
+				config = service.runInSeperateThread(jobConfig, reports);
 				session.setAttribute("ExecutorServReference",service);
-				setClusterProfilingAttributes(request, yamlConfig, loader);
-				session.setAttribute(LOADER, loader);
+				setClusterProfilingAttributes(request, jobConfig);
+				session.setAttribute(CONFIG, config);
 				request.setAttribute(JOB_JSON, this.jsonString);
 				request.setAttribute(TABS, tabs);
 
@@ -200,8 +195,6 @@ public class ExecutionServlet extends HttpServlet {
 		}
 	}
 
-
-
 	/**
 	 * @param request
 	 * @param config
@@ -214,14 +207,14 @@ public class ExecutionServlet extends HttpServlet {
 	 * @throws IOException
 	 */
 	private void setClusterProfilingAttributes(HttpServletRequest request,
-			Config config, Loader loader)
+			Config config)
 			throws AttributeNotFoundException, InstanceNotFoundException,
 			IntrospectionException, MBeanException, ReflectionException,
 			IOException {
-		YamlConfig yamlConfig = (YamlConfig)config;
-		if (yamlConfig.getHadoopJobProfile().equals(Enable.TRUE)) {
-		    isYarnEnable= yamlConfig.getEnableYarn().equals(Enable.TRUE)?true:false;
-			request.setAttribute("clusterProfilerCategoriesJson", getProfilerCategoryJson(loader));
+		JobConfig jobConfig = (JobConfig)config;
+		if (jobConfig.getHadoopJobProfile().equals(Enable.TRUE)) {
+		    isYarnEnable= jobConfig.getEnableYarn().equals(Enable.TRUE)?true:false;
+			request.setAttribute("clusterProfilerCategoriesJson", getProfilerCategoryJson(config));
 			request.setAttribute(STATS_INTERVAL, Constants.FIVE_THOUNSAND);
 
 		}
@@ -231,9 +224,9 @@ public class ExecutionServlet extends HttpServlet {
 	 * @param config this method modifies the parameters needed for debugger.
 	 */
 	private void modifyDebugParameters(Config config) {
-		YamlConfig yamlConfig = (YamlConfig)config;
-		yamlConfig.setPartitionerSampleInterval(Constants.FIFTY);
-		DebuggerConf debugConf = yamlConfig.getDebuggerConf();
+		JobConfig jobConfig = (JobConfig)config;
+		jobConfig.setPartitionerSampleInterval(Constants.FIFTY);
+		DebuggerConf debugConf = jobConfig.getDebuggerConf();
 		debugConf.setMaxIfBlockNestingLevel(Constants.FOUR);
 		Map<String, LogLevel> logLevel = debugConf.getLogLevel();
 		if (logLevel == null) {
@@ -241,7 +234,7 @@ public class ExecutionServlet extends HttpServlet {
 		}
 
 		logLevel.put("ifblock", LogLevel.TRUE);
-		yamlConfig.getDebuggerConf().setMaxIfBlockNestingLevel(2);
+		jobConfig.getDebuggerConf().setMaxIfBlockNestingLevel(2);
 		logLevel.put("switchcase", LogLevel.TRUE);
 		logLevel.put("partitioner", LogLevel.FALSE);
 	}
@@ -250,21 +243,21 @@ public class ExecutionServlet extends HttpServlet {
 	 * @param config this method sets the input file in config
 	 */
 	private void setInputFileInConfig(Config config) {
-		YamlConfig yamlConfig = (YamlConfig)config;
-		if ((yamlConfig.getInputFile() != null) && (!yamlConfig.getInputFile().contains(FORWARD_SLASH))) {
-			String jarName = YamlLoader.getJobJarLoc() + yamlConfig.getFormattedJumbuneJobName() + yamlConfig.getInputFile();
-			yamlConfig.setInputFile(jarName);
+		JobConfig jobConfig = (JobConfig)config;
+		if ((jobConfig.getInputFile() != null) && (!jobConfig.getInputFile().contains(FORWARD_SLASH))) {
+			String jarName = jobConfig.getJobJarLoc() + jobConfig.getFormattedJumbuneJobName() + jobConfig.getInputFile();
+			jobConfig.setInputFile(jarName);
 		}
 	}
 
 	/**
-	 * @param config bean for the yaml file
+	 * @param config bean for the json file
 	 * @param jarFilePath refers to the path of the jar to be sent on agent 
 	 */
 	private void checkAndSendMrJobJarOnAgent(Config config,
 			String jarFilePath) {
-		if (YamlConfigUtil.isMRJobJarPresent(config, jarFilePath)) {
-			YamlConfigUtil.sendMRJobJarOnAgent(config, jarFilePath);
+		if (JobConfigUtil.isMRJobJarPresent(config, jarFilePath)) {
+			JobConfigUtil.sendMRJobJarOnAgent(config, jarFilePath);
 		}
 	}
 
@@ -273,12 +266,12 @@ public class ExecutionServlet extends HttpServlet {
 	 */
 	private void modifyProfilingParameters(Config config) {
 		ProfilingParam param = new ProfilingParam();
-		YamlConfig yamlConfig = (YamlConfig)config;
-		if (yamlConfig.getHadoopJobProfile().getEnumValue()) {
+		JobConfig jobConfig = (JobConfig)config;
+		if (jobConfig.getHadoopJobProfile().getEnumValue()) {
 			param.setReducers("0-1");
 			param.setMapers("0-1");
 			param.setStatsInterval(Constants.FIVE_THOUNSAND);
-			yamlConfig.setProfilingParams(param);
+			jobConfig.setProfilingParams(param);
 		}
 	}
 
@@ -287,7 +280,7 @@ public class ExecutionServlet extends HttpServlet {
      * This method return all categories of hadoop jmx exposed by hadoop cluster in form of json
      * string.
      * 
-     * @param loader YamlLoader instance
+     * @param Config config instance
      * @return hadoop jmx categories in form of json String .
      * 
      * @throws AttributeNotFoundException
@@ -297,14 +290,13 @@ public class ExecutionServlet extends HttpServlet {
      * @throws ReflectionException
      * @throws IOException
      */
-    private String getProfilerCategoryJson(Loader loader) throws AttributeNotFoundException,
+    private String getProfilerCategoryJson(Config config) throws AttributeNotFoundException,
         InstanceNotFoundException, IntrospectionException, MBeanException, ReflectionException,
         IOException {
       Gson gson = new Gson();
-      YamlLoader yamlLoader = (YamlLoader) loader;
-      YamlConfig yamlConfig = (YamlConfig) ((YamlLoader)loader).getYamlConfiguration();
-      YarnSlaveParam slave =  yamlConfig.getSlaveParam();
-      YarnMaster master = yamlConfig.getMaster();
+      JobConfig jobConfig = (JobConfig) config;
+      YarnSlaveParam slave =  jobConfig.getSlaveParam();
+      YarnMaster master = jobConfig.getMaster();
       CategoryInfo categoryInfo = null;
       if(isYarnEnable){
         categoryInfo = new YarnCategoryInfo();
@@ -312,7 +304,7 @@ public class ExecutionServlet extends HttpServlet {
         categoryInfo = new NonYarnCategoryInfo();
       }
       SupportedHadoopDistributions hadoopVersion =
-          RemotingUtil.getHadoopVersion(yamlLoader.getYamlConfiguration());
+          RemotingUtil.getHadoopVersion(config);
       WorkerJMXInfo levelJMXInfo =null;
       ClusterWideInfo clusterWideInfo = new ClusterWideInfo();
       if(isYarnEnable){
@@ -325,7 +317,7 @@ public class ExecutionServlet extends HttpServlet {
       ProfilerJMXDump dump = new ProfilerJMXDump();
       
       setClusterLevelDaemons(master, clusterWideInfo, hadoopVersion, dump);
-      setNodeLevelDaemons(yamlLoader, master, slave, hadoopVersion, dump, levelJMXInfo);
+      setNodeLevelDaemons(jobConfig, master, slave, hadoopVersion, dump, levelJMXInfo);
       String systemStatsJson =
           WebUtil.getPropertyFromResource(WebConstants.PROFILING_PROPERTY_FILE,
               WebConstants.PROFILING_SYSTEM_JSON);
@@ -338,12 +330,11 @@ public class ExecutionServlet extends HttpServlet {
     }
 
 
-    private void setNodeLevelDaemons(YamlLoader loader, YarnMaster master, YarnSlaveParam slave,
+    private void setNodeLevelDaemons(JobConfig jobConfig, YarnMaster master, YarnSlaveParam slave,
         SupportedHadoopDistributions hadoopVersion, ProfilerJMXDump dump, WorkerJMXInfo levelJMXInfo)
         throws IOException, AttributeNotFoundException, InstanceNotFoundException, MBeanException,
         ReflectionException, IntrospectionException {
-    	YamlConfig yamlConfig = (YamlConfig) ((YamlLoader)loader).getYamlConfiguration();
-      for (Slave slaves : yamlConfig.getSlaves()) {
+    for (Slave slaves : jobConfig.getSlaves()) {
         for (String slaveIp : slaves.getHosts()) {
           if (master.getHost().equalsIgnoreCase(slaveIp)) {
             setYarnAndNonYarnDaemons(master.getHost(), slave, hadoopVersion, dump, levelJMXInfo);
@@ -381,8 +372,8 @@ public class ExecutionServlet extends HttpServlet {
 				JMXDeamons.NAME_NODE, hadoopVersion, master.getHost(),
 				master.getNameNodeJmxPort()));
 		if (isYarnEnable) {
-			YarnClusterWideInfo ycwi = (YarnClusterWideInfo) clusterWideInfo;
-			ycwi.setResourceManager(dump.getAllJMXAttribute(
+			YarnClusterWideInfo yarnClusterWideInfo = (YarnClusterWideInfo) clusterWideInfo;
+			yarnClusterWideInfo.setResourceManager(dump.getAllJMXAttribute(
 					JMXDeamons.RESOURCE_MANAGER, hadoopVersion,
 					master.getHost(), master.getResourceManagerJmxPort()));
 		} else {
@@ -410,18 +401,18 @@ public class ExecutionServlet extends HttpServlet {
 	}
 
 	/**
-	 * Save yaml to jumbune home.
+	 * Save job to jumbune home.
 	 * 
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	private void saveJsonToJumbuneHome(YamlConfig config) throws IOException {
+	private void saveJsonToJumbuneHome(JobConfig config) throws IOException {
 		Gson gson = new Gson();
 		String jsonDir = System.getenv("JUMBUNE_HOME") + "/jsonrepo/";
 		String fileName = config.getJumbuneJobName() + ".json";
-		File yamlDirectory = new File(jsonDir);
-		if (!yamlDirectory.exists()) {
-			yamlDirectory.mkdir();
+		File jsonDirectory = new File(jsonDir);
+		if (!jsonDirectory.exists()) {
+			jsonDirectory.mkdir();
 		}
 		String json = this.jsonString;
 		ClasspathElement classpathElement = config.getClasspath().getUserSupplied();
@@ -430,49 +421,53 @@ public class ExecutionServlet extends HttpServlet {
 			JsonObject jsonObject = (JsonObject) new JsonParser().parse(json);
 			resources = WebUtil.jsonValueOfMasterMachineField(WebConstants.DEPENDENT_JAR_MASTER_MACHINE_PATH, jsonObject);
 			if (resources != null) {
-				String[] path = YamlConfigUtil.replaceJumbuneHome(resources);
+				String[] path = JobConfigUtil.replaceJumbuneHome(resources);
 				classpathElement.setFolders(path);
 			}
 			resources = WebUtil.jsonValueOfMasterMachineField(WebConstants.DEPENDENT_JAR_INCLUDE, jsonObject);
 			if (resources != null) {
-				String[] path = YamlConfigUtil.replaceJumbuneHome(resources);
+				String[] path = JobConfigUtil.replaceJumbuneHome(resources);
 				classpathElement.setFiles(path);
 			}
 			resources = WebUtil.jsonValueOfMasterMachineField(WebConstants.DEPENDENT_JAR_EXCLUDE, jsonObject);
 			if (resources != null) {
-				String[] path = YamlConfigUtil.replaceJumbuneHome(resources);
+				String[] path = JobConfigUtil.replaceJumbuneHome(resources);
 				classpathElement.setExcludes(path);
 			}
 		}
-		String jsonData = gson.toJson(config,YamlConfig.class);
+		String jsonData = gson.toJson(config,JobConfig.class);
 		jsonDir = jsonDir + fileName;
 		File file = new File(jsonDir);
-		BufferedWriter bw = new BufferedWriter(new FileWriter(file));
-		bw.write(jsonData);
-		bw.flush();
-		bw.close();
-		LOG.debug("Persisted YamlWizard configuration [" + jsonData + "]");
+		BufferedWriter bufferedWriter = null;
+		try{
+			bufferedWriter = new BufferedWriter(new FileWriter(file));
+			bufferedWriter.write(jsonData);
+			bufferedWriter.flush();
+		}finally{
+			if(bufferedWriter!=null){
+				bufferedWriter.close();
+			}
+		}
+		LOG.debug("Persisted JsonWizard configuration [" + jsonData + "]");
 
 	}
 
-	
-
 	/**
-	 * This method performs following steps: 1) Reads yamlConfig json and creates and object of YamlConfig 2) Reads the jumbuneJobName from this
-	 * yamlConfig 3) Creates various directories of jumbune under folder jHome/jobJars/<jumbuneJobName>/logs or profiling or jars 4) Saves user jar in
+	 * This method performs following steps: 1) Reads jobConfig json and creates and object of JobConfig 2) Reads the jumbuneJobName from this
+	 * jobConfig 3) Creates various directories of jumbune under folder jHome/jobJars/<jumbuneJobName>/logs or profiling or jars 4) Saves user jar in
 	 * the pre-defined directory structure 5) Delete temporary files.
 	 * 
 	 * @param request
 	 *            the request
-	 * @return the yaml config
+	 * @return the job config
 	 * @throws JumbuneException
 	 *             the hTF exception
 	 */
 	private Config saveUsersResources(HttpServletRequest request) throws JumbuneException {
-		String yamlData = null;
-		String yamlTempLoc = TEMP_DIR + FORWARD_SLASH + System.currentTimeMillis();
-		File repository = new File(YamlLoader.getjHome() + yamlTempLoc);
-
+		String jsonData = null;
+		String jsonTempLoc = TEMP_DIR + FORWARD_SLASH + System.currentTimeMillis();
+		File repository = new File(JobConfig.getJumbuneHome() + jsonTempLoc);
+		Config config=null;
 		makeDirectories(repository);
 
 		DiskFileItemFactory factory = new DiskFileItemFactory();
@@ -480,7 +475,7 @@ public class ExecutionServlet extends HttpServlet {
 		factory.setSizeThreshold(-1);
 		ServletFileUpload upload = new ServletFileUpload(factory);
 
-		Config config = null;
+		
 
 		try {
 			List<FileItem> uploadedItems = upload.parseRequest(request);
@@ -490,15 +485,15 @@ public class ExecutionServlet extends HttpServlet {
 				if (fileItem.getFieldName().equals("jsonData")) {
 					StringWriter writer = new StringWriter();
 					IOUtils.copy(fileItem.getInputStream(), writer);
-					yamlData = writer.toString();
-					this.jsonString = yamlData;
-					config = WebUtil.prepareYamlConfig(yamlData);
+					jsonData = writer.toString();
+					this.jsonString = jsonData;
+					config = WebUtil.prepareJobConfig(jsonData);
 					if (config == null) {
 						return null;
 					}
-					YamlConfig yamlConfig = (YamlConfig) config;
-					isYarnEnable= yamlConfig.getEnableYarn().equals(Enable.TRUE);
-					YamlConfigUtil.checkIfJumbuneHomeEndsWithSlash(config);
+					JobConfig jobConfig = (JobConfig) config;
+					isYarnEnable= jobConfig.getEnableYarn().equals(Enable.TRUE);
+					JobConfigUtil.checkIfJumbuneHomeEndsWithSlash(config);
 
 				}
 
@@ -509,12 +504,12 @@ public class ExecutionServlet extends HttpServlet {
 
 			if (config != null) {
 				checkAvailableNodes(config);
-				YamlLoader loader = new YamlLoader(config);
-				YamlConfig yamlConfig = (YamlConfig)config;
-				ClasspathElement classpathElement = yamlConfig.getClasspath().getUserSupplied();
+				JobConfig jobConfig = (JobConfig)config;
+				ClasspathElement classpathElement = jobConfig.getClasspath().getUserSupplied();
 		
-				saveUserSuppliedJar(yamlData, config, classpathElement);
-				loader.createJumbuneDirectories();
+				saveUserSuppliedJar(jsonData, config, classpathElement);
+				JobConfigUtil jobConfigUtil = new JobConfigUtil(config);
+				jobConfigUtil.createJumbuneDirectories();
 				writeUploadedFileToFileItem(config, jarFileItem);
 			}
 			// Once the data has been collected on delete this temp file
@@ -524,7 +519,7 @@ public class ExecutionServlet extends HttpServlet {
 			LOG.error("Could not find given jar file ", e);
 			throw JumbuneRuntimeException.throwFileNotLoadedException(e.getStackTrace());
 		} catch (IOException e) {
-			LOG.error("Could not find given jar/yaml file ", e);
+			LOG.error("Could not find given jar/json file ", e);
 			throw JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace());
 		}  catch (Exception e) {
 			LOG.error("Unable to create jumbune directories ", e);
@@ -539,11 +534,11 @@ public class ExecutionServlet extends HttpServlet {
 	 */
 	private void writeUploadedFileToFileItem(Config config,
 			FileItem jarFileItem) {
-		YamlConfig yamlConfig = (YamlConfig)config;
-		if (yamlConfig.getInputFile() != null) {
+		JobConfig jobConfig = (JobConfig)config;
+		if (jobConfig.getInputFile() != null) {
 			// Remove the / from name
-			String fileName = yamlConfig.getInputFile().substring(yamlConfig.getInputFile().lastIndexOf(FORWARD_SLASH) + 1);
-			String newJarFileLoc = YamlLoader.getJobJarLoc() + yamlConfig.getFormattedJumbuneJobName() + fileName;
+			String fileName = jobConfig.getInputFile().substring(jobConfig.getInputFile().lastIndexOf(FORWARD_SLASH) + 1);
+			String newJarFileLoc = jobConfig.getJobJarLoc() + jobConfig.getFormattedJumbuneJobName() + fileName;
 			LOG.debug("Job jar's newly located path ["  + newJarFileLoc+"]");
 			File uploadedFile = new File(newJarFileLoc);
 			try {
@@ -574,25 +569,25 @@ public class ExecutionServlet extends HttpServlet {
 	private void saveUserSuppliedJar(String yamlData, Config config,
 			ClasspathElement classpathElement) {
 		String[] resources= null;
-		YamlConfig yamlConfig = (YamlConfig)config;
+		JobConfig jobConfig = (JobConfig)config;
 		if (WebConstants.MASTER_MACHINE_PATH_OPTION == classpathElement.getSource() && WebUtil.isRequiredModuleEnable(config)) {
-			String filePath = YamlLoader.getJobJarLoc() + yamlConfig.getFormattedJumbuneJobName() + WebConstants.DEPENDNET_JAR_RESOURCES_DIR;
+			String filePath = jobConfig.getJobJarLoc() + jobConfig.getFormattedJumbuneJobName() + WebConstants.DEPENDNET_JAR_RESOURCES_DIR;
 			JsonObject json = (JsonObject) new JsonParser().parse(yamlData);
 			resources = WebUtil.jsonValueOfMasterMachineField(WebConstants.DEPENDENT_JAR_MASTER_MACHINE_PATH, json);
 			if (resources != null) {
-				String[] path  = YamlConfigUtil.replaceJumbuneHome(resources);
+				String[] path  = JobConfigUtil.replaceJumbuneHome(resources);
 				classpathElement.setFolders(path);
 				WebUtil.getLastIndexOfArray(resources, (filePath + WebConstants.DEPENDENT_JAR_MASTER_DIR));
 			}
 			resources = WebUtil.jsonValueOfMasterMachineField(WebConstants.DEPENDENT_JAR_INCLUDE, json);
 			if (resources != null) {
-				String[] path = YamlConfigUtil.replaceJumbuneHome(resources);
+				String[] path = JobConfigUtil.replaceJumbuneHome(resources);
 				classpathElement.setFiles(path);
 				WebUtil.getLastIndexOfArray(resources, (filePath + WebConstants.DEPENDENT_JAR_INCLUDE_DIR));
 			}
 			resources = WebUtil.jsonValueOfMasterMachineField(WebConstants.DEPENDENT_JAR_EXCLUDE, json);
 			if (resources != null) {
-				String[] path = YamlConfigUtil.replaceJumbuneHome(resources);
+				String[] path = JobConfigUtil.replaceJumbuneHome(resources);
 				classpathElement.setExcludes(path);
 				WebUtil.getLastIndexOfArray(resources, (filePath + WebConstants.DEPENDENT_JAR_EXCLUDE_DIR));
 			}
@@ -621,14 +616,14 @@ public class ExecutionServlet extends HttpServlet {
 	 * This method performs following steps: 1) Reads profilingParams and creates object of profilingParams 2) Reads the DataNode and TaskTracker from
 	 * ProfilingParams and check the availability of nodes. 3) Saves UnavialableHost and removes that Host from config.
 	 * 
-	 * @param conf
-	 *            the conf
+	 * @param config
+	 *            the config
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 * @throws MessagingException
 	 *             the messaging exception
 	 */
-		public void checkAvailableNodes(Config conf) throws IOException, MessagingException {
+		public void checkAvailableNodes(Config config) throws IOException, MessagingException {
 		boolean isDNAvailable;
 		boolean isWorkerDaemonAvailable;
 		String dataNodePort = null;
@@ -639,16 +634,16 @@ public class ExecutionServlet extends HttpServlet {
 		String nodeIp;
 		String message = null;
 		ValidateInput validate = new ValidateInput();
-		YamlConfig yamlConfig = (YamlConfig)conf;
-		boolean isProfilingEnabled = yamlConfig.getHadoopJobProfile().getEnumValue();
-		YarnSlaveParam ysp = yamlConfig.getSlaveParam();
+		JobConfig jobConfig = (JobConfig)config;
+		boolean isProfilingEnabled = jobConfig.getHadoopJobProfile().getEnumValue();
+		YarnSlaveParam yarnSlaveParam = jobConfig.getSlaveParam();
 		if (isProfilingEnabled) {
-			dataNodePort = yamlConfig.getSlaveParam().getDataNodeJmxPort();
-			workerDaemonPort = isYarnEnable? ysp.getNodeManagerJmxPort():ysp.getTaskTrackerJmxPort();
+			dataNodePort = jobConfig.getSlaveParam().getDataNodeJmxPort();
+			workerDaemonPort = isYarnEnable? yarnSlaveParam.getNodeManagerJmxPort():yarnSlaveParam.getTaskTrackerJmxPort();
 			dnPort = Integer.parseInt(dataNodePort);
 			wdPort = Integer.parseInt(workerDaemonPort);
 		}
-		for (Slave slave : yamlConfig.getSlaves()) {
+		for (Slave slave : jobConfig.getSlaves()) {
 			List<UnavailableHost> unavailableHosts = null;
 			List<String> hosts = new ArrayList<String>(Arrays.asList(slave.getHosts()));
 			if (Constants.ON.equalsIgnoreCase(slave.getEnableHostRange())) {
@@ -703,12 +698,12 @@ public class ExecutionServlet extends HttpServlet {
 	 * @param nodeIp denotes the ip of the host node
 	 * @param message denotes whether the datanode or tasktracker or both are not reachable
 	 * @param unavailableHosts containing the list of nodes which are unavailable
-	 * @param it contains a list of hosts.
+	 * @param iterator contains a list of hosts.
 	 * @return a list containing a list of unavailable nodes.
 	 */
 	private List<UnavailableHost> removeUnavailableHosts(
 			boolean isNodeAvailable, String nodeIp, String message,
-			final List<UnavailableHost> unavailableHosts, Iterator<String> it) {
+			final List<UnavailableHost> unavailableHosts, Iterator<String> iterator) {
 		UnavailableHost unavailableHost;
 		List<UnavailableHost> unavailHost = unavailableHosts;
 		if (!isNodeAvailable) {
@@ -721,7 +716,7 @@ public class ExecutionServlet extends HttpServlet {
 			unavailHost.add(unavailableHost);
 
 			LOG.info(message);
-			it.remove();
+			iterator.remove();
 		}
 		return unavailHost;
 	}

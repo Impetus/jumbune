@@ -44,6 +44,8 @@ public final class DataValidationJobExecutor {
 	/** The Constant LOGGER. */
 	private static final Logger LOGGER = LogManager.getLogger(DataValidationJobExecutor.class);
 	
+	
+	
 	/**
 	 * Instantiates a new data validation job executor.
 	 */
@@ -92,7 +94,7 @@ public final class DataValidationJobExecutor {
 		job.setInputFormatClass(DataValidationInputFormat.class);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 		job.setMapOutputKeyClass(Text.class);
-		job.setMapOutputValueClass(ObjectWritable.class);
+		job.setMapOutputValueClass(DataDiscrepanciesArrayWritable.class);
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(DataViolationWritable.class);
 		DataValidationInputFormat.addInputPath(job, new Path(inputPath));
@@ -147,7 +149,8 @@ public final class DataValidationJobExecutor {
 				key = new Text();
 				value = new DataViolationWritable();
 				while (reader.next(key, value)) {
-
+					int dirtyTuple = value.getDirtyTuple();
+					int cleanTuple = value.getCleanTuple();
 					int totalViolations = value.getTotalViolations();
 					dvaw = value.getDataViolationArrayWritable();
 					fieldMap = new HashMap<Integer, Integer>();
@@ -161,7 +164,6 @@ public final class DataValidationJobExecutor {
 						}
 
 					}
-
 					violationList = new ArrayList<FileViolationsWritable>();
 				    FileViolationsWritable bean = null;
 					Writable[] arr = dvaw.get();
@@ -174,6 +176,8 @@ public final class DataValidationJobExecutor {
 					}
 
 					report = new DataValidationReport();
+					report.setDirtyTuple(dirtyTuple);
+					report.setCleanTuple(cleanTuple);
 					report.setTotalViolations(totalViolations);
 					report.setFieldMap(fieldMap);
 					report.setViolationList(violationList);

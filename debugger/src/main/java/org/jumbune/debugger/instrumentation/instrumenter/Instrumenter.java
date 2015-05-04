@@ -11,7 +11,7 @@ import java.util.zip.ZipOutputStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.common.job.Config;
 import org.jumbune.debugger.instrumentation.utils.InstrumentConstants;
 import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
 import org.jumbune.debugger.instrumentation.utils.InstrumentationMessageLoader;
@@ -32,24 +32,18 @@ import org.jumbune.debugger.instrumentation.utils.MessageConstants;
 public abstract class Instrumenter {
 	private static final Logger LOGGER = LogManager
 			.getLogger(Instrumenter.class);
-	private Loader loader;
+	private Config config;
 
 	/**
 	 * <p>
 	 * Create a new instance of Instrumenter.
 	 * </p>
 	 */
-	public Instrumenter(Loader loader) {
-		this.loader=loader;
+	public Instrumenter(Config config) {
+		this.config=config;
 	}
-
-	/**
-	 * <p>
-	 * Gets the yaml loader
-	 * </p>
-	 * 
-	 * @return YamlLoader
-	 */
+	
+	
 
 	/**
 	 * This method instruments a jar file. The source and destination files are
@@ -196,14 +190,15 @@ public abstract class Instrumenter {
 		while ((entry = zis.getNextEntry()) != null) {
 			outputBytes = InstrumentUtil.getEntryBytesFromZip(zis);
 
+			
 			// instrument if and only if it is a class file
 			if (entry.getName().endsWith(
-					InstrumentConstants.CLASS_FILE_EXTENSION)) {
-				currentlyInstrumentingClass = entry.getName().replace('/', '.');
-				currentlyInstrumentingClass = currentlyInstrumentingClass
-						.substring(0,currentlyInstrumentingClass.indexOf(".class"));
+					InstrumentConstants.CLASS_FILE_EXTENSION)) {				
+				currentlyInstrumentingClass=entry.getName().replace('/', '.');
+				currentlyInstrumentingClass=currentlyInstrumentingClass.substring(0,currentlyInstrumentingClass.indexOf(".class"));				
+
 				outputBytes = instrumentEntry(outputBytes);
-			}
+							}
 
 			// create a new entry and write the bytes obtained above
 			ZipEntry outputEntry = new ZipEntry(entry.getName());
@@ -220,17 +215,17 @@ public abstract class Instrumenter {
 		addAdditionalFiles(zos);
 	}
 
-	/**
-	 * @param loader the loader to set
-	 */
-	public void setLoader(Loader loader) {
-		this.loader = loader;
+	
+	
+	
+	public void setConfig(Config config) {
+		this.config = config;
 	}
 
 	/**
-	 * @return the loader
+	 * @return the config
 	 */
-	protected Loader getLoader() {
-		return loader;
+	protected Config getConfig() {
+		return config;
 	}
 }

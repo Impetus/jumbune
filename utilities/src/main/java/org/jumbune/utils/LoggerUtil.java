@@ -168,7 +168,7 @@ public final class LoggerUtil {
 	
 	private static MemoryMappedFileAppender createMemoryMappedFileAppender(Configuration config,
 			String appenderName, String logFileDir, String taskAttemptID, Object loggerNumber) {
-			  StringBuilder logFileName = new StringBuilder(YamlUtil.getAndReplaceHolders(logFileDir));
+			  StringBuilder logFileName = new StringBuilder(JobUtil.getAndReplaceHolders(logFileDir));
 		      
 		      if (!(loggerNumber instanceof Integer && (Integer) loggerNumber == 0)) {
 		          logFileName.append(loggerNumber).append("-");
@@ -179,8 +179,8 @@ public final class LoggerUtil {
 		      return MemoryMappedFileAppender.createAppender(logFileName.toString(), "append", appenderName, "false", "33554432", null, pl, null, null, null, config);
 	}
 
-
-  /**
+	
+	/**
 	 * This method gets the chain loggger.
 	 *
 	 * @return the chain loggger

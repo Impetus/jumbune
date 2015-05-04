@@ -52,10 +52,8 @@ import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.RemoteFileUtil;
 import org.jumbune.common.utils.RemoteFileUtil.JumbuneUserInfo;
-import org.jumbune.common.yaml.config.Config;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlConfig;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.profiling.beans.JMXDeamons;
 import org.jumbune.profiling.beans.NodeInfo;
 import org.jumbune.profiling.healthview.AdjacencyInfo;
@@ -383,15 +381,15 @@ public class ProfilerJMXDump {
 		Channel channel = getChannel(session, VMSTAT_COMMAND);
 		String line;
 		String lineArray[];
-		InputStream in = null;
-		BufferedReader br = null;
+		InputStream inputStream = null;
+		BufferedReader bufferReader = null;
 		Map<String, String> vmStats = null;
 
 		try {
-			in = channel.getInputStream();
-			br = new BufferedReader(new InputStreamReader(in));
+			inputStream = channel.getInputStream();
+			bufferReader = new BufferedReader(new InputStreamReader(inputStream));
 			vmStats = new HashMap<String, String>();
-			while ((line = br.readLine()) != null) {
+			while ((line = bufferReader.readLine()) != null) {
 				line = line.trim();
 				lineArray = line.split(" ");
 				int len = lineArray.length;
@@ -408,11 +406,8 @@ public class ProfilerJMXDump {
 				}
 			}
 		} finally {
-			if (in != null) {
-				in.close();
-			}
-			if (br != null) {
-				br.close();
+			if (bufferReader != null) {
+				bufferReader.close();
 			}
 			channel.disconnect();
 			session.disconnect();
@@ -547,11 +542,11 @@ public class ProfilerJMXDump {
 	 */
 	public Map<String, String> getMemoryUtilisation(Config config, String nodeIp) throws JSchException, IOException {
 		
-		YamlConfig yamlConfig = (YamlConfig)config;
-		Slave slave = RemoteFileUtil.findSlave(nodeIp, yamlConfig.getSlaves());
+		JobConfig jobConfig = (JobConfig)config;
+		Slave slave = RemoteFileUtil.findSlave(nodeIp, jobConfig.getSlaves());
 		String user = slave.getUser();
-		String rsaFilePath = yamlConfig.getMaster().getRsaFile();
-		String dsaFilePath = yamlConfig.getMaster().getDsaFile();
+		String rsaFilePath = jobConfig.getMaster().getRsaFile();
+		String dsaFilePath = jobConfig.getMaster().getDsaFile();
 		Session session = null;
 		Map<String, String> vmStats = null;
 		try {
@@ -583,20 +578,20 @@ public class ProfilerJMXDump {
 
 		Slave slave;
 		String[] hosts;
-		YamlConfig yamlConfig = (YamlConfig)config;
+		JobConfig jobConfig = (JobConfig)config;
 		if (nodeIp == null) {
-			slave = yamlConfig.getSlaves().get(0);
+			slave = jobConfig.getFirstUserWorker();
 			hosts = slave.getHosts();
 		} else {
-			slave = RemoteFileUtil.findSlave(nodeIp, yamlConfig.getSlaves());
+			slave = RemoteFileUtil.findSlave(nodeIp, jobConfig.getSlaves());
 			hosts = new String[1];
 			hosts[0] = nodeIp;
 		}
 		Map<String, String> vmStats = null;
 
 		Remoter remoter = null;
-		remoter = new Remoter(yamlConfig.getMaster().getHost(), Integer.valueOf(yamlConfig.getMaster().getAgentPort()),
-				yamlConfig.getFormattedJumbuneJobName());
+		remoter = new Remoter(jobConfig.getMaster().getHost(), Integer.valueOf(jobConfig.getMaster().getAgentPort()),
+				jobConfig.getFormattedJumbuneJobName());
 
 		for (String host : hosts) {
 			
@@ -632,20 +627,20 @@ public class ProfilerJMXDump {
 	@Deprecated
 	public List<ResultInfo> getPartitionEfficiency(Config config, String nodeIp) throws JSchException, IOException {
 
-		YamlConfig yamlConfig = (YamlConfig)config;
+		JobConfig jobConfig = (JobConfig)config;
 		Slave slave;
 		String[] hosts;
 		if (nodeIp == null) {
-			slave = yamlConfig.getSlaves().get(0);
+			slave = jobConfig.getFirstUserWorker();
 			hosts = slave.getHosts();
 		} else {
-			slave = RemoteFileUtil.findSlave(nodeIp, yamlConfig.getSlaves());
+			slave = RemoteFileUtil.findSlave(nodeIp, jobConfig.getSlaves());
 			hosts = new String[1];
 			hosts[0] = nodeIp;
 		}
 		String user = slave.getUser();
-		String rsaFilePath = yamlConfig.getMaster().getRsaFile();
-		String dsaFilePath = yamlConfig.getMaster().getDsaFile();
+		String rsaFilePath = jobConfig.getMaster().getRsaFile();
+		String dsaFilePath = jobConfig.getMaster().getDsaFile();
 		Session session = null;
 		UserInfo ui;
 		NodeDiskPartitionsInfo ndpi = null;
@@ -691,12 +686,12 @@ public class ProfilerJMXDump {
 
 		Slave slave;
 		String[] hosts;
-		YamlConfig yamlConfig = (YamlConfig)config;
+		JobConfig jobConfig = (JobConfig)config;
 		if (nodeIp == null) {
-			slave = yamlConfig.getSlaves().get(0);
+			slave = jobConfig.getFirstUserWorker();
 			hosts = slave.getHosts();
 		} else {
-			slave = RemoteFileUtil.findSlave(nodeIp, yamlConfig.getSlaves());
+			slave = RemoteFileUtil.findSlave(nodeIp, jobConfig.getSlaves());
 			hosts = new String[1];
 			hosts[0] = nodeIp;
 		}
@@ -729,14 +724,14 @@ public class ProfilerJMXDump {
 	public List<ResultInfo> getNodeThroughput(Config config, SupportedHadoopDistributions version, String nodeIp) throws AttributeNotFoundException,
 			InstanceNotFoundException, IntrospectionException, MBeanException, ReflectionException, IOException {
 
-		YamlConfig yamlConfig = (YamlConfig)config;
+		JobConfig jobConfig = (JobConfig)config;
 		Slave slave;
 		String[] hosts;
 		if (nodeIp == null) {
-			slave = yamlConfig.getSlaves().get(0);
+			slave = jobConfig.getFirstUserWorker();
 			hosts = slave.getHosts();
 		} else {
-			slave = RemoteFileUtil.findSlave(nodeIp, yamlConfig.getSlaves());
+			slave = RemoteFileUtil.findSlave(nodeIp, jobConfig.getSlaves());
 			hosts = new String[1];
 			hosts[0] = nodeIp;
 		}
@@ -746,10 +741,10 @@ public class ProfilerJMXDump {
 
 		for (String host : hosts) {
 			throughput = new NodeThroughputInfo();
-			allJmxStats = getAllJMXStats(JMXDeamons.DATA_NODE, version, host, yamlConfig.getProfilingParams().getDataNodeJmxPort());
+			allJmxStats = getAllJMXStats(JMXDeamons.DATA_NODE, version, host, jobConfig.getProfilingParams().getDataNodeJmxPort());
 			throughput.setReadThroughput(Integer.parseInt(allJmxStats.get(READ_BLOCK_OP_MAX_TIME)));
 			throughput.setWriteThroughput(Integer.parseInt(allJmxStats.get(WRITE_BLOCK_OP_MAX_TIME)));
-			allJmxStats = getAllJMXStats(JMXDeamons.TASK_TRACKER, version, host, yamlConfig.getProfilingParams().getTaskTrackerJmxPort());
+			allJmxStats = getAllJMXStats(JMXDeamons.TASK_TRACKER, version, host, jobConfig.getProfilingParams().getTaskTrackerJmxPort());
 			throughput.setProcessingThroughput(Integer.parseInt(allJmxStats.get(RPC_PROCESSING_MAX_TIME)));
 			nodesThroughput.add(throughput);
 		}
@@ -784,8 +779,8 @@ public class ProfilerJMXDump {
 		long remoteReads;
 		double localDataUsage;
 		Map<String, String> allJmxStats;
-		YamlConfig yamlConfig = (YamlConfig)config;
-		allJmxStats = getAllJmxStats(nodeIp, yamlConfig.getProfilingParams().getDataNodeJmxPort(), DATANODE);
+		JobConfig jobConfig = (JobConfig)config;
+		allJmxStats = getAllJmxStats(nodeIp, jobConfig.getProfilingParams().getDataNodeJmxPort(), DATANODE);
 		localReads = Long.parseLong(allJmxStats.get(READS_FROM_LOCAL_CLIENT));
 		remoteReads = Long.parseLong(allJmxStats.get(READS_FROM_REMOTE_CLIENT));
 		if ((remoteReads == 0) && (localReads == 0)) {
@@ -820,11 +815,10 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public double getDataLoadonNodes(String nodeIp, NodeInfo node, Loader loader) throws AttributeNotFoundException,
+	public double getDataLoadonNodes(String nodeIp, NodeInfo node, Config config) throws AttributeNotFoundException,
 			InstanceNotFoundException, IntrospectionException, MBeanException, ReflectionException, IOException {
 		
-		YamlLoader yamlLoader = (YamlLoader)loader;
-		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		JobConfig jobConfig = (JobConfig)config;
 		int length = 0;
 		long offsetData = 0;
 		long avgDfsUsedOnNode = 0;
@@ -833,10 +827,10 @@ public class ProfilerJMXDump {
 		long totalDfsUsed = 0;
 		long localDfsUsed = 0;
 		double dataLoad = 0;
-		Slave slave = yamlConfig.getSlaves().get(0);
+		Slave slave = jobConfig.getFirstUserWorker();
 		String[] hosts = slave.getHosts();
 		Map<String, String> allStats;
-		String[] commandResult = ProfilerUtil.getDFSAdminReportCommandResult(loader);
+		String[] commandResult = ProfilerUtil.getDFSAdminReportCommandResult(config);
 
 		allStats = parseInformationFromNodes(nodeIp, commandResult);
 		totalDfsUsed = Long.parseLong(allStats.get("TotalDfsUsed"));
@@ -925,11 +919,11 @@ public class ProfilerJMXDump {
 	public Map<String, String> getCPUStats(Config config, String nodeIp) throws AttributeNotFoundException, InstanceNotFoundException,
 			IntrospectionException, MBeanException, ReflectionException, IOException, JSchException {
 
-		YamlConfig yamlConfig = (YamlConfig)config;
-		Slave slave = RemoteFileUtil.findSlave(nodeIp, yamlConfig.getSlaves());
+		JobConfig jobConfig = (JobConfig)config;
+		Slave slave = RemoteFileUtil.findSlave(nodeIp, jobConfig.getSlaves());
 		String user = slave.getUser();
-		String rsaFilePath = yamlConfig.getMaster().getRsaFile();
-		String dsaFilePath = yamlConfig.getMaster().getDsaFile();
+		String rsaFilePath = jobConfig.getMaster().getRsaFile();
+		String dsaFilePath = jobConfig.getMaster().getDsaFile();
 		Session session = null;
 		Map<String, String> cpuStats = new HashMap<String, String>();
 		try {
@@ -978,13 +972,13 @@ public class ProfilerJMXDump {
 
 		Slave slave;
 		String[] hosts;
-		YamlConfig yamlConfig = (YamlConfig) config;
+		JobConfig jobConfig = (JobConfig) config;
 		
 		if (nodeIp == null) {
-			slave = yamlConfig.getSlaves().get(0);
+			slave = jobConfig.getFirstUserWorker();
 			hosts = slave.getHosts();
 		} else {
-			slave = RemoteFileUtil.findSlave(nodeIp, yamlConfig.getSlaves());
+			slave = RemoteFileUtil.findSlave(nodeIp, jobConfig.getSlaves());
 			hosts = new String[1];
 			hosts[0] = nodeIp;
 		}
@@ -994,8 +988,8 @@ public class ProfilerJMXDump {
 		Map<String, String> cpuStats = null;
 		Remoter remoter = null;
 		String response = null;
-		remoter = new Remoter(yamlConfig.getMaster().getHost(), Integer.valueOf(yamlConfig.getMaster().getAgentPort()),
-				yamlConfig.getFormattedJumbuneJobName());
+		remoter = new Remoter(jobConfig.getMaster().getHost(), Integer.valueOf(jobConfig.getMaster().getAgentPort()),
+				jobConfig.getFormattedJumbuneJobName());
 		
 		for (String host : hosts) {
 			
@@ -1100,9 +1094,9 @@ public class ProfilerJMXDump {
 			throws JSchException, IOException {
 
 		List<Integer> cpuStats = null;
-		YamlConfig yamlConfig = (YamlConfig)config;
-		Remoter remoter = new Remoter(yamlConfig.getMaster().getHost(), Integer.valueOf(yamlConfig.getMaster().getAgentPort()),
-				yamlConfig.getFormattedJumbuneJobName());
+		JobConfig jobConfig = (JobConfig)config;
+		Remoter remoter = new Remoter(jobConfig.getMaster().getHost(), Integer.valueOf(jobConfig.getMaster().getAgentPort()),
+				jobConfig.getFormattedJumbuneJobName());
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand("cat /proc/cpuinfo", false, null, CommandType.FS).populate(config, host);
 		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
@@ -1155,12 +1149,12 @@ public class ProfilerJMXDump {
 
 		// TODO: support for slaves with different user names
 		LOGGER.debug("inside getNetworkLatencyForSelectedNodes method");
-		YamlConfig yamlConfig = (YamlConfig)config;
-		Slave slave = yamlConfig.getSlaves().get(0);
+		JobConfig jobConfig = (JobConfig)config;
+		Slave slave = jobConfig.getSlaves().get(0);
 		String user = slave.getUser();
 		LOGGER.debug("user is:" + user);
-		String rsaFilePath = yamlConfig.getMaster().getRsaFile();
-		String dsaFilePath = yamlConfig.getMaster().getDsaFile();
+		String rsaFilePath = jobConfig.getMaster().getRsaFile();
+		String dsaFilePath = jobConfig.getMaster().getDsaFile();
 		Session session = null;
 		UserInfo ui;
 
@@ -1453,9 +1447,9 @@ public class ProfilerJMXDump {
 			throws JSchException, IOException {
 
 		float latency;
-		YamlConfig yamlConfig = (YamlConfig)config;
-		Remoter remoter = new Remoter(yamlConfig.getMaster().getHost(), Integer.valueOf(yamlConfig.getMaster().getAgentPort()),
-				yamlConfig.getFormattedJumbuneJobName());
+		JobConfig jobConfig = (JobConfig)config;
+		Remoter remoter = new Remoter(jobConfig.getMaster().getHost(), Integer.valueOf(jobConfig.getMaster().getAgentPort()),
+				jobConfig.getFormattedJumbuneJobName());
 		StringBuilder sb = new StringBuilder();
 				sb.append(NETWORK_LATENCY_COMMAND).append(" ").append(node2);
 		CommandWritableBuilder builder = new CommandWritableBuilder();

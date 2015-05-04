@@ -2,7 +2,7 @@ package org.jumbune.common.beans;
 
 import java.util.Arrays;
 
-import org.jumbune.utils.YamlUtil;
+import org.jumbune.utils.JobUtil;
 
 
 
@@ -56,7 +56,7 @@ public class ClasspathElement {
 	 * @param folders the new folders
 	 */
 	public void setFolders(String[] folders) {
-		this.folders = YamlUtil.getAndReplaceHolders(folders);
+		this.folders = JobUtil.getAndReplaceHolders(folders);
 	}
 
 	/**
@@ -79,7 +79,7 @@ public class ClasspathElement {
 	 *            The resources to set.
 	 */
 	public final void setFiles(String[] files) {
-		this.files = YamlUtil.getAndReplaceHolders(files);
+		this.files = JobUtil.getAndReplaceHolders(files);
 	}
 
 	/**
@@ -102,7 +102,7 @@ public class ClasspathElement {
 	 *            The excludes to set.
 	 */
 	public void setExcludes(String[] excludes) {
-		this.excludes = YamlUtil.getAndReplaceHolders(excludes);
+		this.excludes = JobUtil.getAndReplaceHolders(excludes);
 	}
 
 	/**

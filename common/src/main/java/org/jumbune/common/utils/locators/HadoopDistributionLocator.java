@@ -1,23 +1,23 @@
 package org.jumbune.common.utils.locators;
 
-import org.jumbune.common.yaml.config.YamlConfig;
+import org.jumbune.common.job.JobConfig;
 
 public interface HadoopDistributionLocator {
 
   /***
    * Gets the hadoop configuration directory path
    * 
-   * @param config
+   * @param jobConfig
    * @return String directory location of hadoop configurations
    */
-  String getHadoopConfDirPath(YamlConfig config);
+  String getHadoopConfDirPath(JobConfig jobConfig);
 
   /***
    * Gets the hadoop configuration directory path
    * 
-   * @param config
+   * @param jobConfig
    * @return String directory location of hadoop configurations
    */
-  String getHadoopHomeDirPath(YamlConfig config);
+  String getHadoopHomeDirPath(JobConfig jobConfig);
 
 }

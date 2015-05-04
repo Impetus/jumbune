@@ -516,4 +516,3 @@ public class LoggedTaskAttempt implements DeepCompare {
     compare1(location, other.location, loc, "location");
   }
 }
-

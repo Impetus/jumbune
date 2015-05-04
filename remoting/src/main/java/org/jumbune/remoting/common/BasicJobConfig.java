@@ -2,10 +2,10 @@ package org.jumbune.remoting.common;
 
 /**
  * 
- * The class BasicYamlConfig represents a light weight version of YamlConfig for agent.
+ * The class BasicJobConfig represents a light weight version of JobConfig for agent.
  *
  */
-public class BasicYamlConfig implements java.io.Serializable{
+public class BasicJobConfig implements java.io.Serializable{
 	/**
 	 * 
 	 */
@@ -41,7 +41,7 @@ public class BasicYamlConfig implements java.io.Serializable{
 	 * @param host
 	 * @param port
 	 */
-	public BasicYamlConfig(String jumbuneJobName, String host, String port){
+	public BasicJobConfig(String jumbuneJobName, String host, String port){
 		this.jumbuneJobName = jumbuneJobName;
 		this.host = host;
 		this.port = port;
@@ -184,7 +184,7 @@ public class BasicYamlConfig implements java.io.Serializable{
 	 */
 	@Override
 	public String toString() {
-		return "YamlConfigAgent [jumbuneJobName="+jumbuneJobName+
+		return "JobConfigAgent [jumbuneJobName="+jumbuneJobName+
 		", slaves="+slaves+ ", tmpDir="+tmpDir+", host="+host+", port="+port+", rsaFile="+rsaFile+", dsaFile="+dsaFile+
 		", user="+user+" ]";
 	}

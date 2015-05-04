@@ -7,8 +7,8 @@ import java.util.List;
 import org.jumbune.common.beans.LogConsolidationInfo;
 import org.jumbune.common.beans.Master;
 import org.jumbune.common.beans.Slave;
-import org.jumbune.common.yaml.config.Config;
-import org.jumbune.common.yaml.config.YamlConfig;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemoterUtility;
@@ -42,8 +42,8 @@ public class CommandWritableBuilder {
 	 * @return
 	 */
 	public CommandWritableBuilder populate(Config config, String slaveHost) {
-		YamlConfig yamlConfig = (YamlConfig)config;
-		Master master = yamlConfig.getMaster();
+		JobConfig jobConfig = (JobConfig)config;
+		Master master = jobConfig.getMaster();
 		getCommandWritable().setAuthenticationRequired(true);
 		boolean isCommandForMaster = false;
 		
@@ -65,7 +65,7 @@ public class CommandWritableBuilder {
 			getCommandWritable().setUsername(master.getUser());
 		} else {
 			getCommandWritable().setCommandForMaster(false);
-			Slave slave = yamlConfig.getSlaves().get(0);
+			Slave slave = jobConfig.getFirstUserWorker();
 			getCommandWritable().setSlaveHost(slaveHost);
 			getCommandWritable().setUsername(slave.getUser());		
 		}

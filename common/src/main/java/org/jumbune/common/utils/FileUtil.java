@@ -11,8 +11,9 @@ import java.util.Properties;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
+
 /**
  * Utility apis related to a file.
  */
@@ -37,9 +38,9 @@ public final class FileUtil {
 	public static String readFileIntoString(String path) throws IOException {
 		FileInputStream stream = new FileInputStream(new File(path));
 		try {
-			FileChannel fc = stream.getChannel();
-			MappedByteBuffer mbb = fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size());
-			return Charset.defaultCharset().decode(mbb).toString();
+			FileChannel fileChannel = stream.getChannel();
+			MappedByteBuffer mappedByteBuffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileChannel.size());		
+			return Charset.defaultCharset().decode(mappedByteBuffer).toString();
 		} finally {
 			if(stream != null){
 			stream.close();
@@ -53,18 +54,18 @@ public final class FileUtil {
 	 * on master.
 	 * </p>
 	 *
-	 * @param loader Yaml loader
+	 * @param Config config 
 	 * @throws InterruptedException If an error occurs
 	 * @throws IOException If an IO error occurs during the operation
 	 * @see Constants#USER_LIB_LOC
-	 * @see Loader#getUserLibLocatinAtMaster()
+	 * @see Loader#getUserLibLocationAtMaster()
 	 */
-	public static void copyLibFilesToMaster(Loader loader) throws InterruptedException, IOException {
-		RemoteFileUtil cu = new RemoteFileUtil();
+	public static void copyLibFilesToMaster(Config config) throws InterruptedException, IOException {
+		RemoteFileUtil remoteFileUtil = new RemoteFileUtil();
 	
-		cu.copyRemoteLibFilesToMaster(loader);
+		remoteFileUtil.copyRemoteLibFilesToMaster(config);
 	}
-	
+
 
 	/**
 	 * Extracts the property value from Properties instance from the given file instance
@@ -73,21 +74,21 @@ public final class FileUtil {
 	 * @return the populated property value as String
 	 */
 	public static String getPropertyFromFile(String file, String propertyKey){
-		Properties properties;
-			properties = new Properties();
+		Properties properties = new Properties();
+			
 			File filePath = new File(file);
 			FileReader fileReader = null;
 			try{
 				fileReader = new FileReader(filePath);
 				properties.load(fileReader);
 			} catch (IOException e) {
-				LOGGER.warn("This is unexpected! Configuration file doesn't exist");
+				LOGGER.error("This is unexpected! Configuration file ["+file+"] doesn't exist", e);
 			}finally{
 				if(fileReader != null){
 					try {
 						fileReader.close();
 					} catch (IOException e) {
-						LOGGER.error("Unable to close File Reader instance."+e);
+						LOGGER.error("Unable to close File Reader instance.", e);
 					}
 				}
 			}
@@ -100,9 +101,9 @@ public final class FileUtil {
 	 * @param propertyKey
 	 * @return
 	 */
-	public static String getClusterDetail(Loader loader, String propertyKey){
-		YamlLoader yamlLoader = (YamlLoader) loader;
-		String expectedLocation = new StringBuilder().append(yamlLoader.getjHome()).append(File.separator).append(Constants.JOB_JARS_LOC).append(yamlLoader.getJumbuneJobName()).append("cluster-configuration.properties").toString();
+	public static String getClusterDetail(Config config, String propertyKey){
+		JobConfig jobConfig = (JobConfig)config;
+		String expectedLocation = new StringBuilder().append(JobConfig.getJumbuneHome()).append(File.separator).append(Constants.JOB_JARS_LOC).append(jobConfig.getFormattedJumbuneJobName()).append("cluster-configuration.properties").toString();
 		return getPropertyFromFile(expectedLocation, propertyKey);
 	}
 

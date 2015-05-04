@@ -3,7 +3,7 @@ package org.jumbune.common.beans;
 import java.util.Arrays;
 import java.util.List;
 
-import org.jumbune.utils.YamlUtil;
+import org.jumbune.utils.JobUtil;
 
 
 
@@ -90,8 +90,8 @@ public class Slave {
 	public final void setLocation(final String location) {
 		String locationTemp =location;
 		if (locationTemp != null) {
-			locationTemp = YamlUtil.getAndReplaceHolders(locationTemp);
-			if (!YamlUtil.validateFileSystemLocation(locationTemp)) {
+			locationTemp = JobUtil.getAndReplaceHolders(locationTemp);
+			if (!JobUtil.validateFileSystemLocation(locationTemp)) {
 				throw new IllegalArgumentException(
 						"Location provided in Slave is not in correct format!!");
 			}
@@ -114,7 +114,7 @@ public class Slave {
 	 * @param user the new user
 	 */
 	public final void setUser(String user) {
-		this.user = YamlUtil.getAndReplaceHolders(user);
+		this.user = JobUtil.getAndReplaceHolders(user);
 	}
 
 	

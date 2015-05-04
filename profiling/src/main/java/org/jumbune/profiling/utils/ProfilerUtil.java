@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -17,26 +16,21 @@ import java.util.TreeMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.beans.JobOutput;
 import org.jumbune.common.beans.SupportedHadoopDistributions;
-import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.MessageLoader;
 import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.common.utils.ValidateInput;
-import org.jumbune.common.yaml.config.Config;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlConfig;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.profiling.beans.JMXDeamons;
 import org.jumbune.profiling.hprof.BinaryHprofReader;
 import org.jumbune.profiling.hprof.CPUSamplesBean;
 import org.jumbune.profiling.hprof.HeapAllocSitesBean;
 import org.jumbune.profiling.hprof.HprofData;
 import org.jumbune.profiling.hprof.CPUSamplesBean.SampleDescriptor;
-import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.utils.exception.JumbuneException;
 
@@ -56,7 +50,7 @@ public class ProfilerUtil {
 	private static final String HPROF_SUMMARY = "HPROF_PROFILER_SUMMERY";
 	/** MessageLoader used to load messages from a properties file. */
 	private MessageLoader messageLoader = MessageLoader.getInstance();
-	private YamlLoader loader;
+	private JobConfig jobconfig;
 
 	private static final String HADOOP = "Hadoop";
 	
@@ -67,8 +61,8 @@ public class ProfilerUtil {
 	 * @throws JumbuneException
 	 *             - If messages file is corrupt and unable to load it in MessageLoader
 	 */
-	public ProfilerUtil(Loader loader) {
-		this.loader = (YamlLoader) loader;
+	public ProfilerUtil(Config config) {
+		this.jobconfig = (JobConfig) config;
 		try {
 			initializeMessageLoader();
 		} catch (JumbuneException e) {
@@ -126,34 +120,34 @@ public class ProfilerUtil {
 	 *             - If unable to read current file
 	 */
 	private ProfilerBean readFileAndGetTopNSamples(final File filepath) throws IOException {
-		FileInputStream fs = null;
-		final ProfilerBean pBean = new ProfilerBean();
-		BufferedInputStream bis = null;
+		FileInputStream fileInputStream = null;
+		final ProfilerBean profilerBean = new ProfilerBean();
+		BufferedInputStream bufferedInputStream = null;
 		try {
-			fs = new FileInputStream(filepath);
+			fileInputStream = new FileInputStream(filepath);
 			LOGGER.debug("Currently reading file " + filepath);
-			bis = new BufferedInputStream(fs);
-			final BinaryHprofReader reader = new BinaryHprofReader(bis);
+			bufferedInputStream = new BufferedInputStream(fileInputStream);
+			final BinaryHprofReader reader = new BinaryHprofReader(bufferedInputStream);
 			reader.setStrict(false);
 			reader.read();
 
-			pBean.setHeapAllocation(getTopNHeapMap(reader.getHeapBean(), reader));
-			pBean.setCpuSample(getTopNCPUSample(reader.getCPUSamples()));
+			profilerBean.setHeapAllocation(getTopNHeapMap(reader.getHeapBean(), reader));
+			profilerBean.setCpuSample(getTopNCPUSample(reader.getCPUSamples()));
 
 		} catch (final IOException ie) {
 			LOGGER.error("Error reading profiling file.", ie);
 			throw ie;
 		} finally {
 			try {
-				if(bis!=null){
-					bis.close();
+				if(bufferedInputStream!=null){
+					bufferedInputStream.close();
 				}
 			} catch (final IOException e) {
 				LOGGER.error("Error closing stream.", e);
 				throw e;
 			}
 		}
-		return pBean;
+		return profilerBean;
 	}
 
 	/**
@@ -169,8 +163,9 @@ public class ProfilerUtil {
 		final List<CPUSamplesBean.SampleDescriptor> completeCPUSampleList = cpuBean.getSampleDescriptorList();
 		int lowestCountInList = 0;
 		int currentCount = 0;
-
-		final int maxCPUSampleCount = loader.getProfilingMaxCPUSampleCount();
+		
+		
+		final int maxCPUSampleCount = Constants.PROFILING_MAX_CPU_SAMPLE_COUNT;;
 
 		for (SampleDescriptor sample : completeCPUSampleList) {
 			currentCount = sample.getCount();
@@ -231,14 +226,13 @@ public class ProfilerUtil {
 		final Map<Integer, HprofData.StackTrace> idToStackTrace = reader.getIdToStackTrace();
 		final Map<Integer, HTFHeapAllocStackTraceBean> heapAllocStackTraceMap = new TreeMap<Integer, HTFHeapAllocStackTraceBean>();
 
-		Config config = loader.getYamlConfiguration();
 		String[] profilingPackages = null;
-		YamlConfig yamlConfig = (YamlConfig)config;
-		List<JobDefinition> jobList = yamlConfig.getJobs();
-		if (!ValidateInput.isEnable(yamlConfig.getIncludeClassJar())) {
+		JobConfig jobConfig = (JobConfig)jobconfig;
+		List<JobDefinition> jobList = jobConfig.getJobs();
+		if (!ValidateInput.isEnable(jobConfig.getIncludeClassJar())) {
 			profilingPackages = getProfilingPackages(profilingPackages, jobList);
 		}
-		final int maxHeapSampleCount = loader.getProfilingMaxHeapSampleCount();
+		final int maxHeapSampleCount = Constants.PROFILING_MAX_HEAP_SAMPLE_COUNT;;
 
 		boolean showTraceOfAllPackages = false;
 		showTraceOfAllPackages = applyShowTraceOfPackages(profilingPackages,
@@ -556,10 +550,9 @@ public class ProfilerUtil {
 	 * @param loader the loader
 	 * @return the dFS admin report command result
 	 */
-	public static String[] getDFSAdminReportCommandResult(Loader loader) {
-		YamlLoader yamlLoader = (YamlLoader)loader;
-		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
-		String response = RemotingUtil.fireCommandAsHadoopDistribution( yamlConfig, DFS_ADMIN_COMMAND, CommandType.HADOOP_FS);
+	public static String[] getDFSAdminReportCommandResult(Config config) {
+		JobConfig jobConfig = (JobConfig)config;
+		String response = RemotingUtil.fireCommandAsHadoopDistribution( jobConfig, DFS_ADMIN_COMMAND, CommandType.HADOOP_FS);
 		return response.split("\n");
 	}
 
@@ -570,14 +563,13 @@ public class ProfilerUtil {
 	 *            the loader
 	 * @return the block status command result
 	 */
-	public static String getBlockStatusCommandResult(Loader loader,
+	public static String getBlockStatusCommandResult(Config config,
 			String hdfsFilePath) {
-		YamlLoader yamlLoader = (YamlLoader)loader;
-		YamlConfig yamlConfig = (YamlConfig)yamlLoader.getYamlConfiguration();
+		JobConfig jobConfig = (JobConfig)config;
 		StringBuilder sbReport = new StringBuilder();
 		sbReport.append(" fsck ").append(hdfsFilePath)
 			.append(" ").append("-files -blocks -locations ");
-		return RemotingUtil.fireCommandAsHadoopDistribution(yamlConfig, sbReport.toString(), CommandType.HADOOP_FS);
+		return RemotingUtil.fireCommandAsHadoopDistribution(jobConfig, sbReport.toString(), CommandType.HADOOP_FS);
 		
 	}	
 	/***

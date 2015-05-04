@@ -6,9 +6,9 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.text.MessageFormat;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -18,8 +18,8 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Validation;
 import org.jumbune.common.utils.ClasspathUtil;
 import org.jumbune.common.utils.ConfigurationUtil;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.debugger.instrumentation.adapter.BlockLogAdapter;
 import org.jumbune.debugger.instrumentation.adapter.CaseAdapter;
 import org.jumbune.debugger.instrumentation.adapter.ChainedTaskClassAdapter;
@@ -69,14 +69,14 @@ public class JarInstrumenter extends Instrumenter {
 
 	public List<String> userDefValidationsClasses = new ArrayList<String>();
 	public List<String> regexValidationsClasses = new ArrayList<String>();
-	
+
 	/**
 	 * <p>
 	 * Create a new instance of JarInstrumenter.
 	 * </p>
-	 */
-	public JarInstrumenter(Loader loader) {
-		super(loader);
+	 */	public JarInstrumenter(Config config) {
+		super(config);
+
 		env = new Environment();
 	}
 
@@ -88,18 +88,18 @@ public class JarInstrumenter extends Instrumenter {
 	 * @see org.jumbune.debugger.instrumentation.instrumenter.Instrumenter#instrumentJar()
 	 */
 	public void instrumentJar() throws IOException {
-		YamlLoader yamlLoader = (YamlLoader)getLoader();
-		File fin = new File(yamlLoader.getInputFile());
-		File fout = new File(yamlLoader.getInstrumentOutputFile());
+		JobConfig jobConfig = (JobConfig)getConfig();
+		File fin = new File(jobConfig.getInputFile());
+		File fout = new File(jobConfig.getInstrumentOutputFile());
 		instrumentJar(fin, fout);
-		createSymbolTableFile(yamlLoader,env);
+		createSymbolTableFile(getConfig(),env);
 	}
 
-	private void createSymbolTableFile(Loader loader , Environment env) throws IOException {
+	private void createSymbolTableFile(Config config , Environment env) throws IOException {
 		FileWriter fw = null;
 		try {
-			YamlLoader yamlLoader = (YamlLoader)loader;
-			String absFilePath = yamlLoader.getJumbuneJobLoc()+"/logs/symbolTable.log";
+			JobConfig jobConfig = (JobConfig)config;
+			String absFilePath = jobConfig.getJumbuneJobLoc()+"/logs/symbolTable.log";
 			fw = new FileWriter(absFilePath);
 			Map<String,String> map = env.getSymbolTable();
 			for (Map.Entry<String, String> entry : map.entrySet()) {
@@ -135,21 +135,21 @@ public class JarInstrumenter extends Instrumenter {
 	 */
 	public byte[] instrumentEntry(final byte[] bytes) throws IOException {
 		byte [] instrumentBytes=bytes;
-		YamlLoader yamlLoader = (YamlLoader)getLoader();
-		boolean instrumentIfBlock = yamlLoader.isInstrumentEnabled("ifblock");
-		boolean instrumentSwitchCase = yamlLoader
+		JobConfig jobConfig = (JobConfig)getConfig();
+		boolean instrumentIfBlock = jobConfig.isInstrumentEnabled("ifblock");
+		boolean instrumentSwitchCase = jobConfig
 				.isInstrumentEnabled("switchcase");
-		boolean instrumentMapreduceRegex = yamlLoader
+		boolean instrumentMapreduceRegex = jobConfig
 				.isInstrumentEnabled("instrumentRegex");
-		boolean instrumentMapreduceUserDefinedValidation = yamlLoader
+		boolean instrumentMapreduceUserDefinedValidation = jobConfig
 				.isInstrumentEnabled("instrumentUserDefValidate");
-		boolean instrumentJobPartitioner = yamlLoader
+		boolean instrumentJobPartitioner = jobConfig
 				.isInstrumentEnabled("partitioner");
 
 		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
 		// Step 1: check if already instrumented or is an interface
-		InstrumentValidator ic = new InstrumentValidator(getLoader(), cw);
+		InstrumentValidator ic = new InstrumentValidator(getConfig(), cw);
 		instrumentBytes = InstrumentUtil.instrumentBytes(bytes, ic, cw);
 
 		// Check if user defined commanded not to instrument this class
@@ -163,7 +163,7 @@ public class JarInstrumenter extends Instrumenter {
 
 		// Step 2: check if the classes mentioned for userDefined validations
 		// actually implement Jumbune PatternValidator
-		UDVPatternValidator patternValidator = new UDVPatternValidator(getLoader(),
+		UDVPatternValidator patternValidator = new UDVPatternValidator(getConfig(),
 				cw);
 
 		// Whether the user defined validation class has implemented the
@@ -174,6 +174,7 @@ public class JarInstrumenter extends Instrumenter {
 		// if the class has not been already instrumented
 		if (!ic.getAlreadyInstrumented() && !ic.getInterface()) {
 
+		
 			instrumentBytes = processNonInstrumentatedClass(instrumentBytes,
 					instrumentIfBlock, instrumentSwitchCase,
 					instrumentMapreduceRegex,
@@ -190,18 +191,18 @@ public class JarInstrumenter extends Instrumenter {
 			boolean instrumentMapreduceRegex,
 			boolean instrumentMapreduceUserDefinedValidation,
 			boolean instrumentJobPartitioner) throws IOException {
-		
-		YamlLoader loader = (YamlLoader) getLoader();
+
+		JobConfig jobConfig = (JobConfig) getConfig();
 
 		// getting all regex validations
-		List<Validation> validations = loader.getRegex();
+		List<Validation> validations = jobConfig.getRegex();
 
 		for (Validation validation : validations) {
 			regexValidationsClasses.add(validation.getClassname());
 		}
 
 		// getting all user validations
-		validations = loader.getUserValidations();
+		validations = jobConfig.getUserValidations();
 
 		for (Validation validation : validations) {
 			userDefValidationsClasses.add(validation.getClassname());
@@ -215,96 +216,93 @@ public class JarInstrumenter extends Instrumenter {
 		ClassWriter cw;
 		byte[] instrumentBytesTmp = instrumentBytes;
 		
-
 		//add logging only if validations are enabled on a particular class. 
 		if(isRegexValidationClass||isUserDefValidationClass)
 	{	
-		
 		// Step 2: Handling for regex and user validations
 		if (instrumentMapreduceRegex
 				|| instrumentMapreduceUserDefinedValidation) {
 			cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 			instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
-					new ContextWriteValidationAdapter(getLoader(), cw), cw);
+					new ContextWriteValidationAdapter(getConfig(), cw), cw);
 		}
-
+ 
+	
 		// Step 3: Add logging for map/reduce entry/exit
 		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
-				new MREntryExitAdapter(getLoader(), cw,env), cw);
+				new MREntryExitAdapter(getConfig(), cw,env), cw);
 
 		// Step 4: Add logging for map/reduce entry/exit
 		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
-				new MethodEntryExitAdapter(getLoader(), cw,env), cw);
+				new MethodEntryExitAdapter(getConfig(), cw,env), cw);
 
 		// Step 5: Add logging for Switch cases execution counters
 		if (instrumentSwitchCase) {
 			cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 			instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp, new CaseAdapter(
-					getLoader(), cw,env), cw);
+					getConfig(), cw,env), cw);
 		}
 
 		// Step 6: Add logging for if blocks, loop execution counters
 		if (instrumentIfBlock) {
 			cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 			instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
-					new BlockLogAdapter(getLoader(), cw,env), cw);
+					new BlockLogAdapter(getConfig(), cw,env), cw);
 		}
+
 	}
-		
 		// Step 7: Partitioner handler
 		if (instrumentJobPartitioner) {
 			cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 			instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
-					new PartitionerAdapter(getLoader(), cw), cw);
+					new PartitionerAdapter(getConfig(), cw), cw);
 		}
 
+			
 		// Step 8: Add logging for map/reduce execution counters
 		if (InstrumentConfig.INSTRUMENT_MAPREDUCE_EXECUTION) {
 			cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 			instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
-					new ConfigureMapReduceAdapter(getLoader(), cw,env), cw);
+					new ConfigureMapReduceAdapter(getConfig(), cw,env), cw);
 		}
 
-		// add logging only if validations are enabled on a particular class.
-		if (isRegexValidationClass || isUserDefValidationClass) {
-
-			// Step 9: Add logging for map/reduce context.write method calls
-			if (InstrumentConfig.INSTRUMENT_CONTEXT_WRITE) {
-				cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-				instrumentBytesTmp = InstrumentUtil.instrumentBytes(
-						instrumentBytesTmp, new ContextWriteLogAdapter(
-								getLoader(), cw), cw);
-			}
-
+		//add logging only if validations are enabled on a particular class. 
+				if(isRegexValidationClass||isUserDefValidationClass)
+			{	
+		// Step 9: Add logging for map/reduce context.write method calls
+		if (InstrumentConfig.INSTRUMENT_CONTEXT_WRITE) {
+			cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+			instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
+					new ContextWriteLogAdapter(getConfig(), cw), cw);
 		}
-
+			}	
 		// Step 10: Handling Chained tasks
 		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
-				new ChainedTaskClassAdapter(getLoader(), cw), cw);
+				new ChainedTaskClassAdapter(getConfig(), cw), cw);
 
 		// Step 11: Add class loading at runtime in main methods
 		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp, new MainAdapter(
-				getLoader(), cw), cw);
+				getConfig(), cw), cw);
 
 		// Step 12: for Handling Job.submit case for new API.
 		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
-				new SubmitCaseAdapter(getLoader(), cw), cw);
+				new SubmitCaseAdapter(getConfig(), cw), cw);
 
 		// Step 13: Modify the job output path
 		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp, new JobAdapter(
-				getLoader(), cw), cw);
+				getConfig(), cw), cw);
 
 		// Step 14: Marking the class as instrumented. It won't be
 		// instrumented again.
 		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
-				new InstrumentFinalizer(getLoader(), cw,env), cw);
+				new InstrumentFinalizer(getConfig(), cw,env), cw);
 
 		resetContextWriteParams();
 		return instrumentBytesTmp;
@@ -351,7 +349,7 @@ public class JarInstrumenter extends Instrumenter {
 		// adding util classes to the jar file
 		ZipEntry xmlFileEntry = new ZipEntry(LOG4J_CONF_FILE);
 		zos.putNextEntry(xmlFileEntry);
-		String filePath = YamlLoader.getjHome() + LOG4J_FILE_PATH;
+		String filePath = JobConfig.getJumbuneHome() + LOG4J_FILE_PATH;
 		byte[] buffer = new byte[InstrumentConstants.FOUR_ZERO_NINE_SIX];
 		InputStream is = new FileInputStream(filePath);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -362,7 +360,7 @@ public class JarInstrumenter extends Instrumenter {
 		zos.write(baos.toByteArray());
 		zos.closeEntry();
 
-		addUtilClasses(getLoader(), zos);
+		addUtilClasses(getConfig(), zos);
 	} 
 	/**
 	 * <p>
@@ -376,9 +374,9 @@ public class JarInstrumenter extends Instrumenter {
 	 * @throws IOException
 	 *             If any error occurred
 	 */
-	public static void addUtilClasses(Loader loader, ZipOutputStream zos)
+	public static void addUtilClasses(Config config, ZipOutputStream zipOutputStream)
 			throws IOException {
-		if (FileUtil.getJumbuneClassPathType(loader) == ClasspathUtil.CLASSPATH_TYPE_LIBJARS) {
+		if (FileUtil.getJumbuneClassPathType(config) == ClasspathUtil.CLASSPATH_TYPE_LIBJARS) {
 			String[] classes = new String[] { ClassLoaderUtil.class.getName(),
 					Instrumented.class.getName() };
 
@@ -386,17 +384,17 @@ public class JarInstrumenter extends Instrumenter {
 				LOGGER.debug(MessageFormat.format(InstrumentationMessageLoader
 						.getMessage(MessageConstants.ADDING_CLASS_TO_ARCHIVE),
 						clazz));
-				ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-				DoNotDisturbAdapter dnd = new DoNotDisturbAdapter(loader, cw);
+				ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+				DoNotDisturbAdapter doNotDistrubAdapter = new DoNotDisturbAdapter(config, classWriter);
 
-				byte[] bytes = InstrumentUtil.instrumentBytes(clazz, dnd, cw);
+				byte[] bytes = InstrumentUtil.instrumentBytes(clazz, doNotDistrubAdapter, classWriter);
 
 				ZipEntry outputEntry = new ZipEntry(
 						ConfigurationUtil.convertQualifiedClassNameToInternalName(clazz)
 								+ InstrumentConstants.CLASS_FILE_EXTENSION);
-				zos.putNextEntry(outputEntry);
-				zos.write(bytes);
-				zos.closeEntry();
+				zipOutputStream.putNextEntry(outputEntry);
+				zipOutputStream.write(bytes);
+				zipOutputStream.closeEntry();
 			}
 		}
 	}

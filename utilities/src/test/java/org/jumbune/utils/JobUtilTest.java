@@ -5,36 +5,36 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
-import org.jumbune.utils.YamlUtil;
+import org.jumbune.utils.JobUtil;
 import org.junit.Test;
 
-public class YamlUtilTest {
+public class JobUtilTest {
 
 	Object obj;
 
 	@Test
 	public void testGetPlaceHolder() throws IOException {
-		int[] value = YamlUtil.getPlaceHolder(UtilitiesConstantsTestInterface.STR, 0);
+		int[] value = JobUtil.getPlaceHolder(UtilitiesConstantsTestInterface.STR, 0);
 		boolean check = value != null;
 		assertTrue(check);
 	}
 
 	@Test
 	public void testGetPlaceHolderNull() throws IOException {
-		int[] value = YamlUtil.getPlaceHolder(UtilitiesConstantsTestInterface.STRING, 0);
+		int[] value = JobUtil.getPlaceHolder(UtilitiesConstantsTestInterface.STRING, 0);
 		assertEquals(value, null);
 	}
 
 	@Test
 	public void testGetPlaceHolders() {
-		String[] array = YamlUtil.getPlaceHolders(UtilitiesConstantsTestInterface.STR);
+		String[] array = JobUtil.getPlaceHolders(UtilitiesConstantsTestInterface.STR);
 		boolean check = array != null;
 		assertTrue(check);
 	}
 
 	@Test
 	public void testGetPlaceHoldersNull() {
-		String[] array = YamlUtil.getPlaceHolders(UtilitiesConstantsTestInterface.STRING);
+		String[] array = JobUtil.getPlaceHolders(UtilitiesConstantsTestInterface.STRING);
 		boolean check = array == null;
 		assertTrue(check);
 	}
@@ -42,7 +42,7 @@ public class YamlUtilTest {
 	@Test
 	public void testGetAndReplacereplaceHolder() {
 		String[] strArray = new String[] { UtilitiesConstantsTestInterface.REGEX, UtilitiesConstantsTestInterface.REG };
-		String[] array = YamlUtil.getAndReplaceHolders(strArray);
+		String[] array = JobUtil.getAndReplaceHolders(strArray);
 
 		assertTrue(array != null);
 
@@ -50,7 +50,7 @@ public class YamlUtilTest {
 
 	@Test
 	public void testValidateIPAddress() {
-		assertTrue(YamlUtil.validateIPAddress(UtilitiesConstantsTestInterface.VALIDIPADDRRESS));
+		assertTrue(JobUtil.validateIPAddress(UtilitiesConstantsTestInterface.VALIDIPADDRRESS));
 	}
 
 }

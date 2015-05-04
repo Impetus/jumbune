@@ -24,15 +24,15 @@ public final class ErrorMessageLoader {
 	private static final Logger LOGGER = LogManager.getLogger(ErrorMessageLoader.class);
 	
 	/** The instance. */
-	private static ErrorMessageLoader instance;
+	private static ErrorMessageLoader errorMessageLoader;
 	
 	/** The properties. */
 	private Properties properties;
 
 	/** message file which containing all the messages. */
-	private static final String INPUT_VALIDATION_MESSAGE_FILE = "inputyaml.error";
-
-/** Input validation Messages file name*/
+	private static final String INPUT_VALIDATION_MESSAGE_FILE = "inputjson.error";
+ 
+	/** Input validation Messages file name*/
 	private static String inputValidationMessageFile=INPUT_VALIDATION_MESSAGE_FILE;
 	
 	/** setter for inputValidationMessageFile to override the default. */
@@ -40,7 +40,6 @@ public final class ErrorMessageLoader {
 			String inputValidationMessageFile) {
 		ErrorMessageLoader.inputValidationMessageFile = inputValidationMessageFile;
 	}
-
 
 	/**
 	 * *
@@ -50,11 +49,11 @@ public final class ErrorMessageLoader {
 	 * @return single instance of ErrorMessageLoader
 	 */
 	public static ErrorMessageLoader getInstance() {
-		if (instance == null) {
+		if (errorMessageLoader == null) {
 			final String messageFileName = inputValidationMessageFile;
 			final InputStream msgStream = ErrorMessageLoader.class.getClassLoader().getResourceAsStream(messageFileName);
 			try {
-				instance = new ErrorMessageLoader(msgStream);
+				errorMessageLoader = new ErrorMessageLoader(msgStream);
 			} catch (JumbuneException e) {
 				LOGGER.error(e);
 			} finally {
@@ -68,7 +67,7 @@ public final class ErrorMessageLoader {
 			}
 		}
 
-		return instance;
+		return errorMessageLoader;
 	}
 
 	/**

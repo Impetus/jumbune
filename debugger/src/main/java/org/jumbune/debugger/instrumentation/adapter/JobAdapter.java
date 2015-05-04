@@ -7,7 +7,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.CollectionUtil;
-import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.common.job.Config;
 import org.jumbune.debugger.instrumentation.utils.EnumJobSubmitMethods;
 import org.jumbune.debugger.instrumentation.utils.FileUtil;
 import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
@@ -44,8 +44,8 @@ public class JobAdapter extends BaseAdapter {
 	 * @param loader the loader
 	 * @param cv Class visitor
 	 */
-	public JobAdapter(Loader loader, ClassVisitor cv) {
-		super(loader, Opcodes.ASM4);
+	public JobAdapter(Config config, ClassVisitor cv) {
+		super(config, Opcodes.ASM4);
 		this.cv = cv;
 	}
 
@@ -190,7 +190,7 @@ public class JobAdapter extends BaseAdapter {
 
 		List<List<String>> jarsAndResources = FileUtil
 				.getJarsAndResources(FileUtil
-						.getClassPathFilesForThinJar(getLoader()));
+						.getClassPathFilesForThinJar(getConfig()));
 
 		InsnList il = new InsnList();
 		il.add(new LabelNode());

@@ -1,6 +1,3 @@
-/*
- * 
- */
 package org.jumbune.common.utils;
 
 import static org.jumbune.common.utils.Constants.COLON;
@@ -24,10 +21,8 @@ import org.jumbune.common.beans.PhaseOutput;
 import org.jumbune.common.beans.SupportedHadoopDistributions;
 import org.jumbune.common.beans.TaskDetails;
 import org.jumbune.common.beans.TaskOutputDetails;
-import org.jumbune.common.yaml.config.Config;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlConfig;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.CommandType;
@@ -98,7 +93,11 @@ public class HadoopLogParser {
 	
 	private static final String HISTORY_INT_DIR_SUFFIX_YARN = "/tmp/hadoop-yarn/staging/history/done_intermediate/*/";
 	
-	private static final String HISTORY_DIR_SUFFIX_YARN = "/tmp/hadoop-yarn/staging/history/done/*/*/*/*/";
+	private static String HISTORY_DIR_SUFFIX_YARN = "/tmp/hadoop-yarn/staging/history/done/*/*/*/*/";
+	
+	private static String USER_INT_HISTORY_DIR_SUFFIX = "/history/done_intermediate/*/";
+	
+	private static String USER_HISTORY_DIR_SUFFIX = "/history/done/*/*/*/*/";
 		
 	private static final String HDFS_FILE_GET_COMMAND = "/bin/hadoop fs -get";
 	
@@ -106,8 +105,6 @@ public class HadoopLogParser {
 	private static final String WILDCARD="/*";
 
 	private static final String CHMOD_CMD = "chmod o+w ";
-
-	private static final String HDFS_FILE_EXISTS = " fs -ls";
 
 	/**
 	 * Gets the job details.
@@ -118,27 +115,26 @@ public class HadoopLogParser {
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws ClassNotFoundException 
 	 */
-	public JobOutput getJobDetails(Loader loader, String jobID) throws IOException{
-		YamlLoader yamlLoader = (YamlLoader)loader;
-		String appHome = yamlLoader.getjHome() + File.separator;
-		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
-		String agentHome = RemotingUtil.getAgentHome(yamlConfig);
-		Remoter remoter = RemotingUtil.getRemoter(yamlLoader, appHome);
+	public JobOutput getJobDetails(Config config, String jobID) throws IOException{
+		JobConfig jobConfig = (JobConfig) config;
+		String appHome = JobConfig.getJumbuneHome() + File.separator;
+		String agentHome = RemotingUtil.getAgentHome(jobConfig);
+		Remoter remoter = RemotingUtil.getRemoter(jobConfig, appHome);
 		String logsHistory = null;
-		SupportedHadoopDistributions hadoopVersion = RemotingUtil.getHadoopVersion(yamlConfig);
-		String user = yamlConfig.getMaster().getUser();
+		SupportedHadoopDistributions hadoopVersion = RemotingUtil.getHadoopVersion(jobConfig);
+		String user = jobConfig.getMaster().getUser();
 		logsHistory = changeLogHistoryPathAccToHadoopVersion(HADOOP_HOME,
 				hadoopVersion, user);
 		
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		
-		boolean isYarn = yamlConfig.getEnableYarn().equals(Enable.TRUE);
+		boolean isYarn = jobConfig.getEnableYarn().equals(Enable.TRUE);
 		String logfilePath = null ;
 		String relLocalPath = null;
 		if(!isYarn){
 			logfilePath = getLogFilePath(jobID, remoter, logsHistory,
 					builder);
-		relLocalPath  = Constants.JOB_JARS_LOC + yamlLoader.getJumbuneJobName();
+		relLocalPath  = Constants.JOB_JARS_LOC + jobConfig.getFormattedJumbuneJobName();
 		String relRemotePath = relLocalPath + RUMEN;
 		StringBuilder stringAppender = new StringBuilder(agentHome);
 		stringAppender.append(File.separator).append(relRemotePath).append(File.separator);
@@ -179,7 +175,7 @@ public class HadoopLogParser {
 				jacksonMapperAslJar, jacksonMapperCoreJar, rumenJar, sb);
 		LOGGER.debug("Rumen processing command [" + sb.toString()+"]");
 		startRumenProcessing(remoter, relLocalPath, relRemotePath, sb);
-		remoter = RemotingUtil.getRemoter(yamlLoader, appHome);
+		remoter = RemotingUtil.getRemoter(jobConfig, appHome);
 		remoter.receiveLogFiles(relLocalPath, relRemotePath);
 		LOGGER.debug("Received log files from:"+ relRemotePath);
 		// process json
@@ -188,13 +184,13 @@ public class HadoopLogParser {
 		return convertToFinalOutput(jobDetails);
 		}else{
 	 		
-			String relativeRemotePath = Constants.JOB_JARS_LOC + yamlLoader.getJumbuneJobName() + File.separator + jobID;
+			String relativeRemotePath = Constants.JOB_JARS_LOC + jobConfig.getJumbuneJobName() + File.separator + jobID;
 			String remotePath = agentHome + relativeRemotePath;
 			builder.addCommand(MKDIR_CMD + remotePath, false, null, CommandType.FS);
 			builder.addCommand(CHMOD_CMD + remotePath, false, null, CommandType.FS);
 			remoter.fireAndForgetCommand(builder.getCommandWritable());
-			checkAndgetCurrentLogFilePathForYarn(remoter, logsHistory,yamlLoader.getYamlConfiguration(),agentHome,remotePath,jobID);
-			relLocalPath  = Constants.JOB_JARS_LOC + yamlLoader.getJumbuneJobName();
+			checkAndgetCurrentLogFilePathForYarn(remoter,logsHistory,remotePath,jobID,config);
+			relLocalPath  = Constants.JOB_JARS_LOC + jobConfig.getFormattedJumbuneJobName();
 			remoter.receiveLogFiles(relLocalPath, relativeRemotePath);
 			String absolutePath = appHome + relLocalPath + jobID + File.separator;
 			String fileName = checkAndGetHistFile(absolutePath);
@@ -237,32 +233,34 @@ public class HadoopLogParser {
 	 * @param remoter the remoter
 	 * @param logsHistory the logs history is the location of the .hist files on hdfs
 	 * @param builder the builder
-	 * @param yamlConfig the yaml config
+	 * @param JobConfig the job config
 	 * @param agentHome the agent home
 	 * @param relRemotePath the rel remote path
 	 * @return the log file path for yarn
 	 * @throws FileNotFoundException 
 	 */
 	private void checkAndgetCurrentLogFilePathForYarn(Remoter remoter,
-			String logsHistory,Config config, String agentHome,String relRemotePath,String jobID){
-		YamlConfig yamlConfig = (YamlConfig)config;
-			
+			String logsHistory,String relRemotePath,String jobID,Config config){
+			JobConfig jobConfig = (JobConfig)config ;
+			String historyLocation = RemotingUtil.getHadoopConfigurationValue(config,"mapred-site.xml","yarn.app.mapreduce.am.staging-dir");
+			if(historyLocation!=null && !historyLocation.isEmpty()){
+				LOGGER.debug("Log history location" + historyLocation);
+				logsHistory = historyLocation + USER_INT_HISTORY_DIR_SUFFIX ; 
+				HISTORY_DIR_SUFFIX_YARN = historyLocation + USER_HISTORY_DIR_SUFFIX ;
+			}
 			
 			CommandWritableBuilder fsGetBuilder = new CommandWritableBuilder();
 			StringBuffer commandToExecute = new StringBuffer().append(Constants.HADOOP_HOME).append(HDFS_FILE_GET_COMMAND).append(Constants.SPACE).append(logsHistory)
 			.append(jobID).append("*").append(Constants.SPACE).append(relRemotePath);
 			LOGGER.debug("File get Command" + commandToExecute.toString());
-			fsGetBuilder.addCommand(commandToExecute.toString(),false, null, CommandType.MAPRED).populate(yamlConfig, null);
-			remoter = RemotingUtil.getRemoter(yamlConfig, "");
-			
+			fsGetBuilder.addCommand(commandToExecute.toString(),false, null, CommandType.MAPRED).populate(jobConfig, null);
+			remoter = RemotingUtil.getRemoter(jobConfig, "");
 			
 			commandToExecute = new StringBuffer().append(Constants.HADOOP_HOME).append(HDFS_FILE_GET_COMMAND).append(Constants.SPACE).append(HISTORY_DIR_SUFFIX_YARN)
- 			.append(jobID).append("*").append(Constants.SPACE).append(relRemotePath);
+			.append(jobID).append("*").append(Constants.SPACE).append(relRemotePath);
 			LOGGER.debug("File get Command" + commandToExecute.toString());
-			fsGetBuilder.addCommand(commandToExecute.toString(),false, null, CommandType.MAPRED).populate(yamlConfig, null);
-		
+			fsGetBuilder.addCommand(commandToExecute.toString(),false, null, CommandType.MAPRED).populate(jobConfig, null);
 			remoter.fireAndForgetCommand(fsGetBuilder.getCommandWritable());
-	
 	}
 
 	private String getLogFilePath(String jobID, Remoter remoter,
@@ -312,7 +310,7 @@ public class HadoopLogParser {
 	 * @return the job details
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	private JobDetails extractJobDetails(String appHome, String relLocalPath,
+	private JobDetails extractJobDetails(String appHome,  String relLocalPath,
 			Gson gson) throws IOException {
 		StringBuilder localJsonPath = new StringBuilder(appHome);
 		localJsonPath.append(File.separator).append(relLocalPath).append(RUMEN).append(File.separator).append(JSON_FILE);

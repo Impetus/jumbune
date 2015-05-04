@@ -25,7 +25,7 @@ import org.jumbune.common.utils.Constants;
 import org.jumbune.profiling.utils.JMXConnectorCache;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.client.SingleNIOEventGroup;
-import org.jumbune.remoting.common.BasicYamlConfig;
+import org.jumbune.remoting.common.BasicJobConfig;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.remoting.writable.CommandWritable;
@@ -38,7 +38,7 @@ import org.jumbune.web.utils.WebConstants;
 @SuppressWarnings("serial")
 public class HomeServlet extends HttpServlet {
 
-	private static final String YAML_FILE = "/yamlInfo.ser";
+	private static final String JSON_FILE = "/jsonInfo.ser";
 
 	/** The Constant CAT_CMD. */
 	private static final String CAT_CMD = "cat";
@@ -56,18 +56,18 @@ public class HomeServlet extends HttpServlet {
 
 			@Override
 			public void run() {
-				String jHome = System.getenv("JUMBUNE_HOME");
+				String jumbuneHome = System.getenv("JUMBUNE_HOME");
 				ObjectInputStream objectInputStream = null;
 				InputStream streamIn = null;
 				try {
 					JMXConnectorCache jmxConnectorCache = JMXConnectorCache.getJMXCacheInstance();
 					jmxConnectorCache.clear();
-					String yamlFile = jHome + YAML_FILE;
+					String yamlFile = jumbuneHome + JSON_FILE;
 					File file = new File(yamlFile);
 					if (file.exists()) {
 						streamIn = new FileInputStream(yamlFile);
 						objectInputStream = new ObjectInputStream(streamIn);
-						BasicYamlConfig config = (BasicYamlConfig) objectInputStream
+						BasicJobConfig config = (BasicJobConfig) objectInputStream
 								.readObject();
 						shutTopCmdOnSlaves(config);
 						shutDownNettyEventLoopGroup();
@@ -142,12 +142,12 @@ public class HomeServlet extends HttpServlet {
 				
 				JMXConnectorCache.getJMXCacheInstance().clear();
 
-				String yamlFile = jHome + YAML_FILE;
+				String yamlFile = jHome + JSON_FILE;
 				File jHomeYamlFile = new File(yamlFile);
 				if (jHomeYamlFile.exists()) {
 					streamIn = new FileInputStream(jHomeYamlFile);
 					objectinputstream = new ObjectInputStream(streamIn);
-					BasicYamlConfig config = (BasicYamlConfig) objectinputstream
+					BasicJobConfig config = (BasicJobConfig) objectinputstream
 							.readObject();
 					cleanUpJumbuneAgentCurrentJobFolder(config);
 				}
@@ -183,7 +183,7 @@ public class HomeServlet extends HttpServlet {
 	 * Kills the proces on each node which dumps top result to a file.
 	 *
 	 */
-	private static void shutTopCmdOnSlaves(BasicYamlConfig config) {
+	private static void shutTopCmdOnSlaves(BasicJobConfig config) {
 		String slaveTmpDir = config.getTmpDir();
 		StringBuilder command = new StringBuilder();
 		command.append(CAT_CMD).append(SPACE).append(slaveTmpDir)
@@ -218,12 +218,12 @@ public class HomeServlet extends HttpServlet {
 	}
 
 	private static void cleanUpJumbuneAgentCurrentJobFolder(
-			BasicYamlConfig basicYamlConfig) {
+			BasicJobConfig basicJobConfig) {
 		// Remove Agent Home/Job jar/Jobname folder
 
-		String hostMaster = basicYamlConfig.getHost();
+		String hostMaster = basicJobConfig.getHost();
 		Remoter remoter = new Remoter(hostMaster,
-				Integer.valueOf(basicYamlConfig.getPort()));
+				Integer.valueOf(basicJobConfig.getPort()));
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 
 		StringBuilder cleanLocationAgentStrBuilder = new StringBuilder()
@@ -231,7 +231,7 @@ public class HomeServlet extends HttpServlet {
 				.append(Constants.WHITE_SPACE)
 				.append(Constants.AGENT_ENV_VAR_NAME)
 				.append(Constants.JOB_JARS_LOC)
-				.append(basicYamlConfig.getJumbuneJobName());
+				.append(basicJobConfig.getJumbuneJobName());
 		LOGGER.info("Cleanup agent temporary directories command ["
 				+ cleanLocationAgentStrBuilder + "]");
 

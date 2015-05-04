@@ -17,7 +17,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -213,11 +212,11 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 	private String extractLineBreaker(String command) {
 		String lineBreaker = null;
 		if (command.contains("echo $AGENT")) {
-			lineBreaker = "$ echo $AGENT_HOME";
+			lineBreaker = "echo $AGENT_HOME";
 		} else if (command.contains("echo $HADOOP_CONF_DIR")) {
-			lineBreaker = "$ echo $HADOOP_CONF_DIR";
-                } else if (command.contains("echo $HADOOP")) {
-			lineBreaker = "$ echo $HADOOP_HOME";
+			lineBreaker = "echo $HADOOP_CONF_DIR";
+		} else if (command.contains("echo $HADOOP")) {
+			lineBreaker = "echo $HADOOP_HOME";
 		} else if (command.contains("free -m")) {
 			lineBreaker = "Swap:";
 		}
@@ -262,32 +261,32 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 	 * @return the string response of the command in string format
 	 */
 	private static String execute(String... commands) throws IOException{
-		ProcessBuilder pb = new ProcessBuilder(commands);
+		ProcessBuilder processBuilder = new ProcessBuilder(commands);
 		String agentHome = System.getenv(RemotingConstants.AGENT_HOME);
-		pb.directory(new File(agentHome));
-		pb.redirectErrorStream(true);
-		Process p = null;
-		InputStream is = null;
-		BufferedReader br = null;
-		StringBuilder sb = new StringBuilder();
+		processBuilder.directory(new File(agentHome));
+		processBuilder.redirectErrorStream(true);
+		Process process = null;
+		InputStream inputStream = null;
+		BufferedReader bufferedReader = null;
+		StringBuilder stringBuilder = new StringBuilder();
 		try {
-			p = pb.start();
-			is = p.getInputStream();
-			if (is != null) {
-				br = new BufferedReader(new InputStreamReader(is));
-				String line = br.readLine();
+			process = processBuilder.start();
+			inputStream = process.getInputStream();
+			if (inputStream != null) {
+				bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+				String line = bufferedReader.readLine();
 				while (line != null) {
-					sb.append(line).append(RemotingConstants.NEW_LINE);
-					line = br.readLine();
+					stringBuilder.append(line).append(RemotingConstants.NEW_LINE);
+					line = bufferedReader.readLine();
 				}
 			}
 		}  finally {
-				if (br != null) {
-					br.close();
+				if (bufferedReader != null) {
+					bufferedReader.close();
 				}
 		}
-		LOGGER.debug("Executed command ["+Arrays.toString(commands) +"], sending back response ["+sb.toString()+"]");
-		return sb.toString();
+		LOGGER.debug("Executed command ["+Arrays.toString(commands) +"], sending back response ["+stringBuilder.toString()+"]");
+		return stringBuilder.toString();
 	}
 
 	/**
@@ -303,8 +302,8 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 	 */
 	private String executeCommand(String[] commandWithParams, String jarLocation, String dirLocation) throws IOException{
 		String agentHome = System.getenv(RemotingConstants.AGENT_HOME);
-		if (!agentHome.endsWith("/")) {
-			agentHome += "/";
+		if (!agentHome.endsWith(File.separator)) {
+			agentHome += File.separator;
 		}
 /*		String hadoopHome=RemoterUtility.getHadoopHome();
 		for(int i=0;i<commandWithParams.length;i++){
@@ -353,15 +352,15 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 
 	private String executeJob(String[] commands) throws IOException {
 		String hadoopHome = System.getenv("HADOOP_HOME");
-		ProcessBuilder pb = new ProcessBuilder(commands);
-		pb.directory(new File(hadoopHome));
-		pb.redirectErrorStream(true);
+		ProcessBuilder processBuilder = new ProcessBuilder(commands);
+		processBuilder.directory(new File(hadoopHome));
+		processBuilder.redirectErrorStream(true);
 		Process p = null;
 		InputStream is = null;
 		BufferedReader br = null;
 		StringBuilder sb = new StringBuilder();
 		try {
-			p = pb.start();
+			p = processBuilder.start();
 			is = p.getInputStream();
 			if (is != null) {
 				sb.append(convertToString(is));

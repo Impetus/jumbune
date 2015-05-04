@@ -2,8 +2,8 @@ package org.jumbune.debugger.instrumentation.adapter;
 
 import org.jumbune.common.utils.CollectionUtil;
 import org.jumbune.common.utils.ConfigurationUtil;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.debugger.instrumentation.utils.InstrumentConstants;
 import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
 import org.objectweb.asm.ClassVisitor;
@@ -23,12 +23,14 @@ public class BaseAdapter extends ClassNode implements InstrumentConstants {
 	private boolean isMapperClazz = false;
 	private boolean isReducerClazz = false;
 	private boolean isOldApiClazz = false;
-	private final Loader yLoader;
+	private Config config;
+	
 
-	protected Loader getLoader() {
-		return yLoader;
+
+	protected Config getConfig(){
+		return config;
 	}
-
+	
 	protected static final int CONTEXT_VARIABLE_IN_MAPREDUCE = 3;
 
 	/**
@@ -39,9 +41,9 @@ public class BaseAdapter extends ClassNode implements InstrumentConstants {
 	 * @param api
 	 *            API version of ASM
 	 */
-	public BaseAdapter(Loader loader, int api) {
+	public BaseAdapter(Config config, int api) {
 		super(api);
-		this.yLoader = loader;
+		this.config = config;
 	}
 
 	/**
@@ -51,10 +53,10 @@ public class BaseAdapter extends ClassNode implements InstrumentConstants {
 	 * 
 	 * @param cv
 	 */
-	public BaseAdapter(Loader loader, ClassVisitor cv) {
+	public BaseAdapter(Config config, ClassVisitor cv) {
 		super(Opcodes.ASM4);
 		this.cv = cv;
-		this.yLoader = loader;
+		this.config = config;
 	}
 
 	/**
@@ -65,10 +67,10 @@ public class BaseAdapter extends ClassNode implements InstrumentConstants {
 	 * @param api
 	 * @param cv
 	 */
-	public BaseAdapter(Loader loader, int api, ClassVisitor cv) {
+	public BaseAdapter(Config config, int api, ClassVisitor cv) {
 		super(api);
 		this.cv = cv;
-		this.yLoader = loader;
+		this.config = config;
 	}
 
 	/**
@@ -186,10 +188,10 @@ public class BaseAdapter extends ClassNode implements InstrumentConstants {
 		setOldApiClazz(superName, interfaces);
 
 		// User provided classes
-		YamlLoader yamlLoader = (YamlLoader)yLoader;
-		if (yamlLoader.getMapperSuperClasses() != null && CollectionUtil.arrayContains(yamlLoader.getMapperSuperClasses(), superName)) {
+		JobConfig jobConfig = (JobConfig)config; 
+		if (jobConfig.getMapperSuperClasses() != null && CollectionUtil.arrayContains(jobConfig.getMapperSuperClasses(), superName)) {
 			setMapperClass(true);
-		} else if (yamlLoader.getReducerSuperClasses() != null && CollectionUtil.arrayContains(yamlLoader.getReducerSuperClasses(), superName)) {
+		} else if (jobConfig.getReducerSuperClasses() != null && CollectionUtil.arrayContains(jobConfig.getReducerSuperClasses(), superName)) {
 			setReducerClass(true);
 		}
 

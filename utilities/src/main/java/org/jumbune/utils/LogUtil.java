@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
  * its methods are injected in compiled classes so these methods will be called
  * from instrumented jar
  */
+@SuppressWarnings("deprecation")
 public final class LogUtil {
 	private static final String MAPRED_COUNTER = "org.apache.hadoop.mapred.Task$Counter";
 	private static final String MAP_INPUT_RECORDS = "MAP_INPUT_RECORDS";
@@ -260,8 +261,8 @@ public final class LogUtil {
 	 * @param result the result
 	 * @return the reg ex info
 	 */
- 	public static void getRegExInfo(String className, String methodName,
- 			String message1, String message2, boolean result) {
+	public static void getRegExInfo(String className, String methodName,
+			String message1, String message2, boolean result) {
 		if (result == false) {
 			getLogMsg(className, methodName, message1, message2, "");
 		}
@@ -285,7 +286,7 @@ public final class LogUtil {
 		if (result == false) {
 			getLogMsg(className, methodName, message1, message2, outputValue, inputKey);
 		}
- 	}
+	}
 
 	/**
 	 * Based on the logLevel select appropriate logMethod to log this message
@@ -297,34 +298,6 @@ public final class LogUtil {
 		if (logMessage != null) {
 			logger.info(logMessage);
 		}
-	}
-
-	/**
-	 * <p>
-	 * This method appends a separator to the given message.
-	 * </p>
-	 * 
-	 * @param msg
-	 *            Given message
-	 * @return Modified message
-	 */
-	private static String separateMessage(Object msg) {
-		return separateMessage(msg, DEFAULT_MESSAGE_SEPARATOR);
-	}
-
-	/**
-	 * <p>
-	 * This method appends a separator to the given message.
-	 * </p>
-	 * 
-	 * @param msg
-	 *            Given message
-	 * @param separator
-	 *            Given separated to be appended
-	 * @return Modified message
-	 */
-	private static String separateMessage(Object msg, char separator) {
-		return new StringBuilder().append(separator).append(msg).toString();
 	}
 
 	/**

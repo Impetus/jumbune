@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.jumbune.profiling.service;
 
 import static org.jumbune.profiling.utils.ProfilerConstants.DATANODE;
@@ -33,9 +30,8 @@ import org.jumbune.common.beans.UnavailableHost;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.RemoteFileUtil;
 import org.jumbune.common.utils.RemotingUtil;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlConfig;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.yarn.beans.YarnMaster;
 import org.jumbune.common.yarn.beans.YarnSlaveParam;
 import org.jumbune.profiling.beans.CategoryInfo;
@@ -75,7 +71,7 @@ import org.jumbune.profiling.utils.ViewHelper;
  * Service to prepare various cluster view.
  */
 public class ClusterViewServiceImpl implements ProfilingViewService {
-	private Loader loader = null;
+	private Config config;
 	private SupportedHadoopDistributions hadoopVersions = null;
 	private boolean isYarnEnable = false;	
 	private static final Logger LOGGER = LogManager
@@ -87,11 +83,10 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 * @param yamlLoader
 	 *            the yaml loader
 	 */
-    public ClusterViewServiceImpl(Loader loader) {
-      this.loader = loader;
-	  YamlLoader yamlLoader = (YamlLoader)loader;
-      YamlConfig config = (YamlConfig)yamlLoader.getYamlConfiguration();
-      isYarnEnable = Enable.TRUE.equals(config.getEnableYarn());
+    public ClusterViewServiceImpl(Config config) {
+      this.config = config;
+	  JobConfig jobConfig = (JobConfig)config;
+      isYarnEnable = Enable.TRUE.equals(jobConfig.getEnableYarn());
       this.hadoopVersions = RemotingUtil.getHadoopVersion(config);
     }
 
@@ -105,9 +100,8 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	@Override
 	public ClusterInfo getMainView(List<PerformanceStats> genSettings,
 			String viewName) throws JumbuneRuntimeException, HTFProfilingException {
-		YamlLoader yamlLoader = (YamlLoader)loader;
-		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
-		ViewHelper viewHelper = new ViewHelper();
+		JobConfig jobConfig = (JobConfig)config;
+	    ViewHelper viewHelper = new ViewHelper();
 		ClusterInfo clusterInfo = new ClusterInfo();
 		DataDistributionStats dataDistributionStats = null;
 		String dcId;
@@ -115,9 +109,9 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 		String clusterId = null;
 		HashMap<String, DataCenterInfo> dataCenters = new HashMap<String, DataCenterInfo>();
 		HashMap<String, RackInfo> racks = new HashMap<String, RackInfo>();
-		ProfilerStats pfStats = new ProfilerStats(yamlConfig);
-		YarnSlaveParam slaveParam = yamlConfig.getSlaveParam();
-		YarnMaster master = yamlConfig.getMaster();
+		ProfilerStats pfStats = new ProfilerStats(jobConfig);
+		YarnSlaveParam slaveParam = jobConfig.getSlaveParam();
+		YarnMaster master = jobConfig.getMaster();
 		String masterIp = master.getHost();
 		String dataNodePort = slaveParam.getDataNodeJmxPort();
 		String workerDaemonPort = isYarnEnable? slaveParam.getNodeManagerJmxPort():slaveParam.getTaskTrackerJmxPort();
@@ -130,7 +124,7 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 		JMXConnector workerDaemonInstance = null;
 		UnavailableHost unavailableHost;
 		if (viewName.equals("DATA_DISTRIBUTION_VIEW")) {
-			dataDistributionStats = new DataDistributionStats(yamlLoader);
+			dataDistributionStats = new DataDistributionStats(jobConfig);
 			try {
 				clusterInfo.setDistributedDataInfo(dataDistributionStats.calculateBlockReport());
 			} catch (Exception e) {
@@ -158,7 +152,7 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 			}
 		}
 	
-		for (Slave slave : yamlConfig.getSlaves()) {
+		for (Slave slave : jobConfig.getSlaves()) {
 			for (String slaveIp : slave.getHosts()) {
 				boolean isUnavailable = false;
 				if (!StringUtils.isBlank(slaveIp)) {
@@ -200,7 +194,7 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 						if (viewName.equals("DATALOAD_VIEW")) {
 							node.setDataLoadStats(pfStats
 									.getDataLoadPartitionStats(slaveIp, node,
-											yamlLoader));
+											jobConfig));
 						}
 						if (viewName.equals("DATA_DISTRIBUTION_VIEW")) {
 							if (dataDistributionStats.getNodeWeight()
@@ -321,10 +315,9 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	@Override
 	public NodeStats getNodeView(NodeConfig nodeConfig,
 			List<PerformanceStats> clrSettings) throws HTFProfilingException {
-		YamlLoader yamlLoader = (YamlLoader)loader;
-		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
+		JobConfig jobConfig = (JobConfig)config;
 		String nodeIp = nodeConfig.getNodeIp();
-		ProfilerStats pfStats = new ProfilerStats(yamlConfig, nodeIp,
+		ProfilerStats pfStats = new ProfilerStats(jobConfig, nodeIp,
 				hadoopVersions);
 		CategoryInfo favourities = nodeConfig.getFavourities();
 		CategoryInfo trends = nodeConfig.getTrends();

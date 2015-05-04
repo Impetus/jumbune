@@ -25,10 +25,8 @@ import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.common.utils.ResourceUsageCollector;
-import org.jumbune.common.yaml.config.Config;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlConfig;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.execution.service.HttpExecutorService;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.CommandType;
@@ -41,7 +39,6 @@ import com.google.gson.Gson;
  * The Class ResultServlet is responsible for displaying the reports on the UI.
  */
 public class ResultServlet extends HttpServlet {
-	private  final String JOBJARS = "/jobJars/";
 	private final String BIN_HADOOP = "/bin/hadoop";
 	private final String RUNNING_JOB = "Running job:";
 	private final String JOB_KILL = "job -kill ";
@@ -89,7 +86,7 @@ public class ResultServlet extends HttpServlet {
 			try {
 				if("TRUE".equals(request.getParameter("killJob"))){
 					HttpExecutorService service = null;
-					YamlLoader yamlLoader = null;
+					JobConfig jobConfig = null;
 					synchronized (session) {
 						service=(HttpExecutorService) session.getAttribute("ExecutorServReference");
 						session.removeAttribute("ExecutorServReference");
@@ -99,17 +96,16 @@ public class ResultServlet extends HttpServlet {
 								.append(WebConstants.TMP_DIR_PATH)
 								.append(WebConstants.JUMBUNE_STATE_FILE);
 						File file = new File(sb.toString());
-						yamlLoader =(YamlLoader) session.getAttribute("loader");
-						YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
-						Remoter remoter = RemotingUtil.getRemoter(yamlConfig, "");
-						String relativePath =  File.separator+Constants.JOB_JARS_LOC +yamlLoader.getJumbuneJobName();
+						jobConfig =(JobConfig) session.getAttribute("config");
+						Remoter remoter = RemotingUtil.getRemoter(jobConfig, "");
+						String relativePath =  File.separator+Constants.JOB_JARS_LOC +jobConfig.getJumbuneJobName();
 						remoter.receiveLogFiles(relativePath, relativePath+File.separator+EXECUTED_HADOOP_JOB_INFO);
-						File hadoopJobStateFile=new File(YamlLoader.getjHome()+File.separator+relativePath+File.separator+EXECUTED_HADOOP_JOB_INFO);
+						File hadoopJobStateFile=new File(JobConfig.getJumbuneHome()+File.separator+relativePath+File.separator+EXECUTED_HADOOP_JOB_INFO);
 						if(hadoopJobStateFile.exists()){
-							readHadoopJobIDAndKillJob(yamlLoader, hadoopJobStateFile);
+							readHadoopJobIDAndKillJob(jobConfig, hadoopJobStateFile);
 						}
 						file.delete();
-						ResourceUsageCollector collector = new ResourceUsageCollector(yamlLoader);
+						ResourceUsageCollector collector = new ResourceUsageCollector(jobConfig);
 						collector.shutTopCmdOnSlaves(null);
 				}
 					final RequestDispatcher rd = getServletContext().getRequestDispatcher(
@@ -140,29 +136,31 @@ public class ResultServlet extends HttpServlet {
 			}
 		}
 
-	private void readHadoopJobIDAndKillJob(Loader loader,
+	private void readHadoopJobIDAndKillJob(Config config,
 			File hadoopJobStateFile) throws IOException {
-		BufferedReader br=new BufferedReader(new InputStreamReader(new FileInputStream(hadoopJobStateFile)));
+		BufferedReader bufferedReader=new BufferedReader(new InputStreamReader(new FileInputStream(hadoopJobStateFile)));
 		String line=null,jobName=null;
-		while((line=br.readLine())!=null){
-			if(line.contains(HADOOP_JOB_COMPLETED)){
-				return;
+		try {
+			while ((line = bufferedReader.readLine()) != null) {
+				if (line.contains(HADOOP_JOB_COMPLETED)) {
+					return;
+				}
+				if (line.contains(RUNNING_JOB)) {
+					jobName = line.split(RUNNING_JOB)[1].trim();
+				}
 			}
-			if(line.contains(RUNNING_JOB)){
-				jobName=line.split(RUNNING_JOB)[1].trim();
+		} finally {
+			if (bufferedReader != null) {
+				bufferedReader.close();
 			}
 		}
-		if(br!=null){
-			br.close();
-		}
-		Remoter remoter = RemotingUtil.getRemoter(loader, "");
-		YamlLoader yamlLoader = (YamlLoader)loader;
+		Remoter remoter = RemotingUtil.getRemoter(config, "");
 		StringBuilder sbReport = new StringBuilder();
-		sbReport.append(yamlLoader.getHadoopHome(loader)).append(BIN_HADOOP).append(" ").append(JOB_KILL)
+		sbReport.append(RemotingUtil.getHadoopHome(config)).append(BIN_HADOOP).append(" ").append(JOB_KILL)
 				.append(" ").append(jobName);
 		
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(sbReport.toString(), false, null, CommandType.HADOOP_JOB).populate(yamlLoader.getYamlConfiguration(), null);
+		builder.addCommand(sbReport.toString(), false, null, CommandType.HADOOP_JOB).populate(config, null);
 		String commandResponse = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		LOG.info("Hadoop Job has been killed ["+jobName+"]");
 		LOG.debug("Killed Hadoop Job command response ["+commandResponse+"]");

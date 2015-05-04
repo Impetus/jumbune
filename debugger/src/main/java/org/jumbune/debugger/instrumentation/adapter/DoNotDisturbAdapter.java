@@ -1,6 +1,6 @@
 package org.jumbune.debugger.instrumentation.adapter;
 
-import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.common.job.Config;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -19,8 +19,8 @@ public class DoNotDisturbAdapter extends BaseAdapter {
 	 * @param cv
 	 *            Class Visitor
 	 */
-	public DoNotDisturbAdapter(Loader loader, ClassVisitor cv) {
-		super(loader, Opcodes.ASM4);
+	public DoNotDisturbAdapter(Config config, ClassVisitor cv) {
+		super(config, Opcodes.ASM4);
 		this.cv = cv;
 	}
 }

@@ -51,8 +51,8 @@ import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.utils.CollectionUtil;
 import org.jumbune.common.utils.ConsoleLogUtil;
 import org.jumbune.common.utils.MessageLoader;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.execution.beans.YesNo;
 import org.jumbune.utils.beans.LogLevel;
 
@@ -247,9 +247,9 @@ public final class ExecutionUtil {
 	 * @param loader
 	 * @param index
 	 */
-	public static void excludeJobs(Loader loader, String[] index) {
-		YamlLoader yamlLoader = (YamlLoader)loader;
-		List<JobDefinition> jobList = yamlLoader.getJobDefinitionList();
+	public static void excludeJobs(Config config, String[] index) {
+		JobConfig jobConfig = (JobConfig)config;
+		List<JobDefinition> jobList = jobConfig.getJobs();
 		excludeJobs(jobList, index);
 	}
 

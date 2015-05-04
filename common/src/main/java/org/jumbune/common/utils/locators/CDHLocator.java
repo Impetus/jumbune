@@ -4,8 +4,8 @@ import java.io.File;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.RemotingUtil;
-import org.jumbune.common.yaml.config.YamlConfig;
 
 public class CDHLocator extends AbstractDistributionLocator {
 
@@ -19,9 +19,10 @@ public class CDHLocator extends AbstractDistributionLocator {
 			.getLogger(CDHLocator.class);
 
 	@Override
-	public String getHadoopConfDirPath(YamlConfig config) {
+	public String getHadoopConfDirPath(JobConfig jobConfig) {
+
 		String absoluteDirPath = null;
-		absoluteDirPath = getAbsoluteConfDirPath(expectedConf, config);
+		absoluteDirPath = getAbsoluteConfDirPath(expectedConf, jobConfig);
 		if (absoluteDirPath == null || absoluteDirPath.isEmpty()) {
 			throw new IllegalArgumentException(
 					"Failed to get configuration directory. Expected to get a linked configuration from "
@@ -40,22 +41,21 @@ public class CDHLocator extends AbstractDistributionLocator {
 		return false;
 	}
 
-	private String getAbsoluteConfDirPath(String dir, YamlConfig config) {
+	private String getAbsoluteConfDirPath(String dir, JobConfig jobConfig) {
 		String result = null, response = null;
 		if (dir == null || dir.trim().isEmpty() || !dir.contains("/")) {
 			throw new IllegalArgumentException(error_message);
 		}
-		response = RemotingUtil.executeCommand(config, LS_PREFIX_PART + dir
+		response = RemotingUtil.executeCommand(jobConfig, LS_PREFIX_PART + dir
 				+ LS_CDH_POSTFIX_PART);
-		int responseIndex=response.indexOf(">");
-		if (response != null && !response.isEmpty() && responseIndex!=-1) {
-	    result = response.substring((responseIndex + 1),
+		if (response != null && !response.isEmpty() && response.indexOf(">")!=-1) {
+	    result = response.substring((response.indexOf(">") + 1),
 					response.length());
 		result = result.endsWith(File.separator)?result:result.trim()+File.separator;
 		}
 		LOGGER.debug("Found linked Hadoop conf path:"+result);
 		if(result!=null){
-			String recursiveResponse = getAbsoluteConfDirPath(result, config);
+			String recursiveResponse = getAbsoluteConfDirPath(result, jobConfig);
 			if(recursiveResponse!=null){
 				result = recursiveResponse;
 			}

@@ -3,7 +3,7 @@
  */
 package org.jumbune.common.beans;
 
-import org.jumbune.utils.YamlUtil;
+import org.jumbune.utils.JobUtil;
 
 
 /**
@@ -41,7 +41,7 @@ public class LogSummaryLocation {
 	 * @param profilingFilesLocation the new profiling files location
 	 */
 	public final void setProfilingFilesLocation(String profilingFilesLocation) {
-		this.profilingFilesLocation = YamlUtil.getAndReplaceHolders(profilingFilesLocation);
+		this.profilingFilesLocation = JobUtil.getAndReplaceHolders(profilingFilesLocation);
 	}
 
 	/**
@@ -59,7 +59,7 @@ public class LogSummaryLocation {
 	 * @param pureJarCounterLocation the new pure jar counter location
 	 */
 	public final void setPureJarCounterLocation(String pureJarCounterLocation) {
-		this.pureJarCounterLocation = YamlUtil.getAndReplaceHolders(pureJarCounterLocation);
+		this.pureJarCounterLocation = JobUtil.getAndReplaceHolders(pureJarCounterLocation);
 	}
 
 	/**
@@ -77,7 +77,7 @@ public class LogSummaryLocation {
 	 * @param pureJarProfilingCountersLocation the new pure jar profiling counters location
 	 */
 	public final void setPureJarProfilingCountersLocation(String pureJarProfilingCountersLocation) {
-		this.pureJarProfilingCountersLocation = YamlUtil.getAndReplaceHolders(pureJarProfilingCountersLocation);
+		this.pureJarProfilingCountersLocation = JobUtil.getAndReplaceHolders(pureJarProfilingCountersLocation);
 	}
 
 	/**
@@ -95,7 +95,7 @@ public class LogSummaryLocation {
 	 * @param instrumentedJarCountersLocation the new instrumented jar counters location
 	 */
 	public final void setInstrumentedJarCountersLocation(String instrumentedJarCountersLocation) {
-		this.instrumentedJarCountersLocation = YamlUtil.getAndReplaceHolders(instrumentedJarCountersLocation);
+		this.instrumentedJarCountersLocation = JobUtil.getAndReplaceHolders(instrumentedJarCountersLocation);
 	}
 
 	/**
@@ -113,6 +113,6 @@ public class LogSummaryLocation {
 	 * @param logsConsolidatedSummaryLocation the new logs consolidated summary location
 	 */
 	public final void setLogsConsolidatedSummaryLocation(String logsConsolidatedSummaryLocation) {
-		this.logsConsolidatedSummaryLocation = YamlUtil.getAndReplaceHolders(logsConsolidatedSummaryLocation);
+		this.logsConsolidatedSummaryLocation = JobUtil.getAndReplaceHolders(logsConsolidatedSummaryLocation);
 	}
 }

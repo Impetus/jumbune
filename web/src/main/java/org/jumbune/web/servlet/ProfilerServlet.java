@@ -18,9 +18,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Enable;
-import org.jumbune.common.yaml.config.Config;
-import org.jumbune.common.yaml.config.YamlConfig;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.profiling.beans.ClusterInfo;
 import org.jumbune.profiling.beans.NodeConfig;
 import org.jumbune.profiling.beans.NodeStats;
@@ -105,8 +104,7 @@ public class ProfilerServlet extends HttpServlet {
 	protected void service(HttpServletRequest request,
 		HttpServletResponse response) throws ServletException, IOException {
 		HttpSession session = request.getSession();
-		// Getting yaml loader stored in session.
-		YamlLoader yamlLoader = (YamlLoader) session.getAttribute("loader");
+		JobConfig jobConfig = (JobConfig) session.getAttribute("config");
 		String isNameNodeRequired = request.getParameter("NAME_NODE");
 		boolean addNameNodeIP = checkIfNameNodeIsRequired(isNameNodeRequired,
 				false);
@@ -114,14 +112,13 @@ public class ProfilerServlet extends HttpServlet {
 		viewName = setDefaultView(viewName);
 		Gson gson = new Gson();
 
-		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();		
-		if(Enable.TRUE.equals(yamlConfig.getEnableYarn())){
+		if(Enable.TRUE.equals(jobConfig.getEnableYarn())){
 		  isYarnEnable = true;
 		}
 		
 		
 		ProfilingViewService profilingViewService = new ClusterViewServiceImpl(
-				yamlLoader);
+				jobConfig);
 		boolean isNodeView = false;
 		String json = null;
 		generalSettings = request.getParameter(GENERAL_SETTINGS);
@@ -130,7 +127,7 @@ public class ProfilerServlet extends HttpServlet {
 					|| (NETWORK_LATENCY_VIEW.equals(viewName))) {
 				generalSettings = setGeneralSettings();
 				json = getClusterAndNetWorkLatencyViewJson(addNameNodeIP,
-						viewName, gson, yamlConfig, profilingViewService);
+						viewName, gson, jobConfig, profilingViewService);
 			} else if (NODE_VIEW.equals(viewName)) {
 				isNodeView = true;
 				List<PerformanceStats> perfStats = null;
@@ -143,7 +140,7 @@ public class ProfilerServlet extends HttpServlet {
 				String nodeList = request.getParameter(NODE_LIST);
 				isNodeView = true;
 				ViewHelper viewHelper = new ViewHelper();
-				json = getNetworkLatencyJson(gson, yamlConfig, nodeList, viewHelper);
+				json = getNetworkLatencyJson(gson, jobConfig, nodeList, viewHelper);
 			} else if (DATALOAD_VIEW.equals(viewName)) {
 				json = createDataloadAndDistributionViewJson(viewName, gson,
 						profilingViewService);
@@ -152,14 +149,14 @@ public class ProfilerServlet extends HttpServlet {
 				String nodeIP = request.getParameter("NODE_IP");
 				if (nodeIP != null) {
 					viewName = DATA_DISTRIBUTION_VIEW + "_NODE";
-					DataDistributionStats dataDistributionStats = new DataDistributionStats(yamlLoader);
+					DataDistributionStats dataDistributionStats = new DataDistributionStats(jobConfig);
 					try {
 						json = dataDistributionStats.getNodeStats(nodeIP);
 					} catch (Exception e) {
 						LOGGER.error(e);
 					}
 				} else {
-					json = setDataDistributionView(viewName, gson, yamlConfig,
+					json = setDataDistributionView(viewName, gson, jobConfig,
 							profilingViewService, dataPath);
 				}
 			}
@@ -205,8 +202,8 @@ public class ProfilerServlet extends HttpServlet {
 	private String setDataDistributionView(String viewName, Gson gson,
 			Config config, ProfilingViewService profilingViewService,
 			String dataPath) throws HTFProfilingException {
-		YamlConfig yamlConfig = (YamlConfig)config;
-		yamlConfig.setDistributedHDFSPath(dataPath);
+		JobConfig jobConfig = (JobConfig)config;
+		jobConfig.setDistributedHDFSPath(dataPath);
 		return createDataloadAndDistributionViewJson(viewName, gson,
 				profilingViewService);
 		
@@ -320,9 +317,9 @@ public class ProfilerServlet extends HttpServlet {
 		ClusterInfo clusterInfo = profilingViewService.getMainView(
 				perfStats, viewName);
 		json = gson.toJson(clusterInfo);
-		YamlConfig yamlConfig = (YamlConfig)config;
+		JobConfig jobConfig = (JobConfig)config;
 		if (addNameNodeIP) {
-			clusterInfo.setNameNodeIP(yamlConfig.getMaster().getHost());
+			clusterInfo.setNameNodeIP(jobConfig.getMaster().getHost());
 			json = gson.toJson(clusterInfo);
 		}
 		return json;

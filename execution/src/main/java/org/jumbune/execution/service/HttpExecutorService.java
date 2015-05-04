@@ -13,11 +13,10 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.HttpReportsBean;
 import org.jumbune.common.beans.ReportsBean;
 import org.jumbune.common.beans.ServiceInfo;
+import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.ValidateInput;
-import org.jumbune.common.yaml.config.Config;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlConfig;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.execution.beans.Parameters;
 import org.jumbune.execution.processor.Processor;
 import org.jumbune.execution.utils.ExecutionConstants;
@@ -84,38 +83,38 @@ public class HttpExecutorService extends CoreExecutorService {
 	 * 
 	 * @param config
 	 * @param reports
-	 * @return YamlLoader
+	 * @return JobConfig
 	 * @throws JumbuneException
 	 */
-	public Loader runInSeperateThread(Config config,
+	public Config runInSeperateThread(Config config,
 			HttpReportsBean reports) throws JumbuneException {
 		List<Processor> processors;
-		YamlConfig yamlConfig = (YamlConfig)config;
-		if (ValidateInput.isEnable(yamlConfig.getEnableStaticJobProfiling()) && !checkProfilingState()) {
+		JobConfig jobConfig = (JobConfig)config;
+		if (ValidateInput.isEnable(jobConfig.getEnableStaticJobProfiling()) && !checkProfilingState()) {
 			throw new JumbuneException(ErrorCodesAndMessages.COULD_NOT_EXECUTE_PROGRAM);
 		}
 		this.reports = reports;
 
-		YamlLoader loader = new YamlLoader(config);
-		processors = getProcessorChain(config, reports, HTTP_BASED);
-		createJobJarFolderOnAgent(loader);
+		
+		processors = getProcessorChain(jobConfig, reports, HTTP_BASED);
+		createJobJarFolderOnAgent(jobConfig);
 		ServiceInfo serviceInfo = new ServiceInfo();
-		serviceInfo.setRootDirectory(loader.getRootDirectoryName());
-		serviceInfo.setJumbuneHome(loader.getjHome());
-		serviceInfo.setJumbuneJobName(yamlConfig
+		serviceInfo.setRootDirectory(Constants.JOB_JARS_LOC);
+		serviceInfo.setJumbuneHome(JobConfig.getJumbuneHome());
+		serviceInfo.setJumbuneJobName(jobConfig
 				.getFormattedJumbuneJobName());
-		if (yamlConfig.getsJumbuneHome() != null){
-			serviceInfo.setSlaveJumbuneHome(yamlConfig
-					.getsJumbuneHome());
+		if (jobConfig.getSlaveWorkingDirectory() != null){
+			serviceInfo.setSlaveJumbuneHome(jobConfig
+					.getSlaveWorkingDirectory());
 		}
-		if (loader.getMasterInfo() != null){
-			serviceInfo.setMaster(loader.getMasterInfo());
+		if (jobConfig.getMaster() != null){
+			serviceInfo.setMaster(jobConfig.getMaster());
 		}
-		if (loader.getSlavesInfo() != null){
-			serviceInfo.setSlaves(loader.getSlavesInfo());
+		if (jobConfig.getSlaves() != null){
+			serviceInfo.setSlaves(jobConfig.getSlaves());
 		}
 		try {
-			persistYamlInfoForShutdownHook(loader,loader.getjHome());
+			persistJsonInfoForShutdownHook(config,JobConfig.getJumbuneHome());
 		} catch (IOException e) {
 			LOGGER.error(e.getMessage(),e);
 		}
@@ -126,7 +125,8 @@ public class HttpExecutorService extends CoreExecutorService {
 			for (Processor p : processors) {
 				String processName = "PROCESS" + (index++);
 				reports.addInitialStatus(processName);
-				Handler handler = new Handler(p, loader, reports, processName);
+				
+				Handler handler = new Handler(p, config, reports, processName);
 
 				// setting handler to stop services after execution
 				handler.setProcessCompletionHandler(new Thread() {
@@ -140,7 +140,7 @@ public class HttpExecutorService extends CoreExecutorService {
 		} else {
 			LOGGER.error("No processors identified to execute");			
 		}
-		return loader;
+		return config;
 	}
 
 	/**
@@ -152,10 +152,10 @@ public class HttpExecutorService extends CoreExecutorService {
 	private class Handler implements Runnable {
 
 		private Processor processor;
-		private Loader loader;
 		private ReportsBean reports;
 		private String processName;
 		private Runnable processCompletionHandler;
+		private Config config;
 
 		/**
 		 * Constructor for Handler
@@ -164,10 +164,10 @@ public class HttpExecutorService extends CoreExecutorService {
 		 * @param reports
 		 * @param name
 		 */
-		public Handler(Processor processor, Loader loader,
+		public Handler(Processor processor, Config config,
 				ReportsBean reports, String name) {
 			this.processor = processor;
-			this.loader = loader;
+			this.config = config;
 			this.reports = reports;
 			this.processName = name;	
 		}
@@ -185,7 +185,7 @@ public class HttpExecutorService extends CoreExecutorService {
 			try {
 				Map<Parameters, String> params = new HashMap<Parameters, String>();
 				params.put(Parameters.PROCESSOR_KEY, processName);
-				processor.process(loader, reports, params);
+				processor.process(config, reports, params);
 			} catch (JumbuneException e) {
 				LOGGER.error(processName + " completed with errors !!!", e);
 			} finally {
@@ -199,8 +199,8 @@ public class HttpExecutorService extends CoreExecutorService {
 				}
 				try {
 					stopExecution();
-					cleanUpJumbuneAgentCurrentJobFolder(loader);
-					cleanUpSlavesTempFldr(loader);
+					cleanUpJumbuneAgentCurrentJobFolder(config);
+					cleanUpSlavesTempFldr(config);
 					LOGGER.info("Completed worker node cleanup");
 				} catch (Exception e) {
 					LOGGER.error("An exception occurred: "+e);

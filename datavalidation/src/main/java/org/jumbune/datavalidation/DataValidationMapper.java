@@ -1,20 +1,20 @@
 package org.jumbune.datavalidation;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.jumbune.common.beans.DataValidationBean;
 import org.jumbune.common.beans.FieldValidationBean;
 import org.jumbune.common.utils.Constants;
-
+import org.jumbune.utils.JobUtil;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -25,7 +25,12 @@ import com.google.gson.reflect.TypeToken;
 
  * 
  */
-public class DataValidationMapper extends Mapper<Object, Text, Text, ObjectWritable> {
+public class DataValidationMapper extends Mapper<Object, Text, Text, DataDiscrepanciesArrayWritable> {
+	
+	/** No of records processed by a single mapper **/ 
+	private long noOfToupleProcessd;
+	
+	private long cleanTupleCounter;
 
 	/** The expected num of fields. */
 	private int expectedNumOfFields;
@@ -41,13 +46,22 @@ public class DataValidationMapper extends Mapper<Object, Text, Text, ObjectWrita
 	
 	/** The field validation list. */
 	private List<FieldValidationBean> fieldValidationList;
+	
+	private String contextKey = null;
+	
+	/** The slave file loc. */
+	String SLAVE_FILE_LOC = "slaveFileLoc";
 
 	/* (non-Javadoc)
 	 * @see org.apache.hadoop.mapreduce.Mapper#setup(org.apache.hadoop.mapreduce.Mapper.Context)
 	 */
 	@SuppressWarnings("rawtypes")
 	protected void setup(Mapper.Context context) throws IOException, InterruptedException {
-
+		noOfToupleProcessd = 0l;
+		cleanTupleCounter=0l;
+		contextKey = new StringBuffer().append(DataValidationConstants.NUM_OF_FIELDS_CHECK).append("|").append(DataValidationConstants.USER_DEFINED_NULL_CHECK)
+					.append("|").append(DataValidationConstants.USER_DEFINED_DATA_TYPE).append("|").append(DataValidationConstants.USER_DEFINED_REGEX_CHECK).toString();
+				
 		// populating data validation parameters
 		String dvBeanString = context.getConfiguration().get(DataValidationConstants.DATA_VALIDATION_BEAN_STRING);
 		Gson gson = new Gson();
@@ -74,81 +88,74 @@ public class DataValidationMapper extends Mapper<Object, Text, Text, ObjectWrita
 	 * and writes <data violation type,data violation bean> as output.
 	 */
 	public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
-
-		
-
+		noOfToupleProcessd = noOfToupleProcessd +1;
 		String recordValue = value.toString();
 		String[] fields = recordValue.split(fieldSeparator);
 		int actualNumOfFields = fields.length;
-
-		// validating the number of fields in the record
-		validateNumberOfFields(key, context, actualNumOfFields);
-
-		checkFieldValidationListNullOrEmpty();
 		String actualFieldValue = null;
-		boolean isValid = true;
 		int fieldNumber = 0;
 		String nullCheck = null;
 		String dataType = null;
 		String regex = null;
-		int validationCheckNum = 0;
-		String validationCheckName = null;
-		String expectedValue = null;
+		
+		DataDiscrepanciesArrayWritable dataValidatoinDiscripancies = new DataDiscrepanciesArrayWritable();
+		List<DataViolationWritableBean> dataValidationWritableBeanList = new ArrayList<DataViolationWritableBean>();
+		
+		// validating the number of fields in the record
+		validateNumberOfFields(key, context, actualNumOfFields, dataValidationWritableBeanList);
+		
 		for (FieldValidationBean fieldValidationBean : fieldValidationList) {
 			fieldNumber = fieldValidationBean.getFieldNumber();
 			actualFieldValue = fields[fieldNumber];
 			nullCheck = fieldValidationBean.getNullCheck();
 			dataType = fieldValidationBean.getDataType();
 			regex = fieldValidationBean.getRegex();
-			for (Map.Entry<Integer, String> fieldValidationEntry : DataValidationConstants.VALIDATION_CHECK_MAP.entrySet()) {
-				validationCheckNum = fieldValidationEntry.getKey();
-				validationCheckName = fieldValidationEntry.getValue();
-
-				// if none of the violation has failed
-				if (isValid) {
-					switch (validationCheckNum) {
-					case 1:
-						expectedValue = nullCheck;
-						if (validate(expectedValue)) {
-							isValid = applyNullCheck(expectedValue, actualFieldValue);
-						}
-
-						break;
-					case 2:
-						expectedValue = dataType;
-						if (validate(expectedValue)) {
-							isValid = applyDataTypeCheck(expectedValue, actualFieldValue);
-						}
-						break;
-					case DataValidationConstants.THREE:
-						expectedValue = regex;
-						if (validate(expectedValue)) {
-							isValid = applyRegexCheck(expectedValue, actualFieldValue);
-						}
-
-						break;
-					default:
-						break;
-					}
-
-					// if any of the validation check has failed,write to the
-					// output
-					isValid = writeFailedValidationToOutput(key, context,
-							actualFieldValue, isValid, fieldNumber,
-							validationCheckName, expectedValue);
+				if(validate(nullCheck) && !applyNullCheck(nullCheck, actualFieldValue)){
+					writeFailedValidationToOutput(key, context,
+						actualFieldValue, fieldNumber,
+						DataValidationConstants.USER_DEFINED_NULL_CHECK, nullCheck,dataValidationWritableBeanList);
 				}
+			if(validate(dataType) && !applyDataTypeCheck(dataType, actualFieldValue)){
+				writeFailedValidationToOutput(key, context,
+						actualFieldValue, fieldNumber,
+						DataValidationConstants.USER_DEFINED_DATA_TYPE, dataType,dataValidationWritableBeanList);
+				
 			}
-
+			if(validate(regex) && !applyRegexCheck(regex, actualFieldValue)){
+				writeFailedValidationToOutput(key, context,
+						actualFieldValue, fieldNumber,
+						DataValidationConstants.USER_DEFINED_REGEX_CHECK, regex,dataValidationWritableBeanList);
+				
+			}
+				}
+		if(!dataValidationWritableBeanList.isEmpty()){
+			dataValidatoinDiscripancies.setFileName(fileName);
+			dataValidatoinDiscripancies.set( dataValidationWritableBeanList.toArray(new DataViolationWritableBean[dataValidationWritableBeanList.size()]));
+			context.write(new Text(contextKey), dataValidatoinDiscripancies);
+		}else{
+			cleanTupleCounter++;
 		}
 	}
-
-	/**
-	 * Check field validation list null or empty.
-	 */
-	private void checkFieldValidationListNullOrEmpty() {
-		if (fieldValidationList == null || fieldValidationList.isEmpty()) {
-			return;
+	
+	@Override
+	protected void cleanup(
+			Mapper<Object, Text, Text, DataDiscrepanciesArrayWritable>.Context context)
+			throws IOException, InterruptedException {
+		super.cleanup(context);
+		String dir = context.getConfiguration().get(SLAVE_FILE_LOC);
+		String dirPath = JobUtil.getAndReplaceHolders(dir);
+		dirPath = dirPath +File.separator+"tuple"+File.separator;
+		new File(dirPath).mkdirs();
+		FileWriter fileWriter =null;
+		try{
+			fileWriter = new FileWriter(new File(dirPath, context.getTaskAttemptID().getTaskID().toString()));
+			fileWriter.write(Long.toString(noOfToupleProcessd)+"\n"+Long.toString(cleanTupleCounter));
+		}finally{
+			if(fileWriter!= null){
+				fileWriter.close();
+			}
 		}
+				
 	}
 
 	/**
@@ -157,33 +164,35 @@ public class DataValidationMapper extends Mapper<Object, Text, Text, ObjectWrita
 	 * @param key refers to the record number in the file present on HDFS.
 	 * @param context is used to write the data violation that are present in the file.
 	 * @param actualFieldValue refers to the actual value of the field that is present on HDFS.
-	 * @param isValid flag denotes whether there are violations present to be written to the output.
 	 * @param fieldNumber refers to the number of the field that is present in the file on HDFS.
 	 * @param validationCheckName  refers to null,regex and data type violations name.
 	 * @param expectedValue refers to what the value of the field on HDFS should be.
-	 * @return true, if successful
+	 * @param dataValidationWritableBeanList is an array which holds all the violations for a tuple. 
+	 * @return
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws InterruptedException the interrupted exception
 	 */
-	private boolean writeFailedValidationToOutput(Object key, Context context,
-			String actualFieldValue, final boolean isValid, int fieldNumber,
-			String validationCheckName, String expectedValue)
+	private void writeFailedValidationToOutput(Object key, Context context,
+			String actualFieldValue, int fieldNumber,
+			String validationCheckName, String expectedValue, List<DataViolationWritableBean> dataValidationWritableBeanList)
 			throws IOException, InterruptedException {
 		DataViolationWritableBean dataViolationWritableBean = null;
-		boolean isItValid = isValid;
-		if (!isValid) {
 			dataViolationType.set(validationCheckName);
 			dataViolationWritableBean = new DataViolationWritableBean();
 			dataViolationWritableBean.setExpectedValue(expectedValue);
 			dataViolationWritableBean.setActualValue(actualFieldValue);
 			dataViolationWritableBean.setFieldNumber(fieldNumber + 1);
 			dataViolationWritableBean.setLineNumber(Integer.parseInt(key.toString()));
-			dataViolationWritableBean.setFileName(fileName);
-			context.write(dataViolationType, new ObjectWritable(DataViolationWritableBean.class, dataViolationWritableBean));
-			// reset the flag
-			isItValid = true;
-		}
-		return isItValid;
+			if(DataValidationConstants.USER_DEFINED_REGEX_CHECK.equals(validationCheckName)){
+				dataViolationWritableBean.setViolationType(DataValidationConstants.USER_DEFINED_REGEX_CHECK);
+				dataValidationWritableBeanList.add(dataViolationWritableBean);
+			}else if(DataValidationConstants.USER_DEFINED_NULL_CHECK.equals(validationCheckName)){
+				dataViolationWritableBean.setViolationType(DataValidationConstants.USER_DEFINED_NULL_CHECK);
+				dataValidationWritableBeanList.add(dataViolationWritableBean);
+			}else if(DataValidationConstants.USER_DEFINED_DATA_TYPE.equals(validationCheckName)){
+				dataViolationWritableBean.setViolationType(DataValidationConstants.USER_DEFINED_DATA_TYPE);
+				dataValidationWritableBeanList.add(dataViolationWritableBean);
+			}
 	}
 
 	/**
@@ -192,11 +201,12 @@ public class DataValidationMapper extends Mapper<Object, Text, Text, ObjectWrita
 	 * @param key refers to the record number in the file present on HDFS.
 	 * @param context is used to write the data violation that are present in the file.
 	 * @param actualNumOfFields denotes the number of fields that are present in the file on the HDFS.
+	 * @param dataValidationWritableBeanList 
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws InterruptedException the interrupted exception
 	 */
 	private void validateNumberOfFields(Object key, Context context,
-			int actualNumOfFields) throws IOException, InterruptedException {
+			int actualNumOfFields, List<DataViolationWritableBean> dataValidationWritableBeanList) throws IOException, InterruptedException {
 		DataViolationWritableBean dataViolationWritableBean;
 		if (expectedNumOfFields != actualNumOfFields) {
 			dataViolationWritableBean = new DataViolationWritableBean();
@@ -204,9 +214,9 @@ public class DataValidationMapper extends Mapper<Object, Text, Text, ObjectWrita
 			dataViolationWritableBean.setActualValue(Integer.toString(actualNumOfFields));
 			dataViolationWritableBean.setFieldNumber(DataValidationConstants.MINUS_ONE);
 			dataViolationWritableBean.setLineNumber(Integer.parseInt(key.toString()));
-			dataViolationWritableBean.setFileName(fileName);
 			dataViolationType.set(DataValidationConstants.NUM_OF_FIELDS_CHECK);
-			context.write(dataViolationType, new ObjectWritable(DataViolationWritableBean.class, dataViolationWritableBean));
+			dataViolationWritableBean.setViolationType(DataValidationConstants.NUM_OF_FIELDS_CHECK);
+			dataValidationWritableBeanList.add(dataViolationWritableBean);
 			return;
 		}
 	}

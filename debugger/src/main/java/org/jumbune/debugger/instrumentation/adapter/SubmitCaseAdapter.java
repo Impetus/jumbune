@@ -4,7 +4,7 @@ import java.text.MessageFormat;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.common.job.Config;
 import org.jumbune.debugger.instrumentation.utils.EnumJobSubmitMethods;
 import org.jumbune.debugger.instrumentation.utils.InstrumentConstants;
 import org.jumbune.debugger.instrumentation.utils.InstrumentationMessageLoader;
@@ -46,8 +46,8 @@ public class SubmitCaseAdapter extends BaseAdapter {
 	 * @param loader the loader
 	 * @param cv Class visitor
 	 */
-	public SubmitCaseAdapter(Loader loader, ClassVisitor cv) {
-		super(loader, Opcodes.ASM4);
+	public SubmitCaseAdapter(Config config, ClassVisitor cv) {
+		super(config, Opcodes.ASM4);
 		this.cv = cv;
 	}
 

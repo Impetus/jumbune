@@ -34,7 +34,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
-import org.jumbune.remoting.common.BasicYamlConfig;
+import org.jumbune.remoting.common.BasicJobConfig;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.JschUtil;
 import org.jumbune.remoting.common.RemotingConstants;
@@ -95,7 +95,7 @@ public final class JumbuneAgent {
 
 	private static final String SPACE = " ";
 	
-	private static final String YAML_INFO = "/yamlInfo.ser";
+	private static final String JSON_INFO = "/jsonInfo.ser";
 	
     private static EventLoopGroup bossGroup;
     
@@ -197,12 +197,12 @@ public final class JumbuneAgent {
 				ObjectInputStream objectinputstream = null;
 				InputStream streamIn = null;
 				 try {
-					File file = new File(agentHome+YAML_INFO);
+					File file = new File(agentHome+JSON_INFO);
 				 	if(file.exists()){
-					 	streamIn = new FileInputStream(agentHome+YAML_INFO);
+					 	streamIn = new FileInputStream(agentHome+JSON_INFO);
 				        objectinputstream= new ObjectInputStream(streamIn);
-				        BasicYamlConfig config = (BasicYamlConfig) objectinputstream.readObject();
-				        shutTopCmdOnSlaves(config);
+				        BasicJobConfig basicJobConfig = (BasicJobConfig) objectinputstream.readObject();
+				        shutTopCmdOnSlaves(basicJobConfig);
 				 	}
 			    }finally {
 			        if(objectinputstream != null){
@@ -548,15 +548,15 @@ public final class JumbuneAgent {
 		p.destroy();
 	}
 
-	private static void shutTopCmdOnSlaves(BasicYamlConfig config) {
-		String slaveTmpDir = config.getTmpDir();
+	private static void shutTopCmdOnSlaves(BasicJobConfig basicJobConfig) {
+		String slaveTmpDir = basicJobConfig.getTmpDir();
 		StringBuilder command = new StringBuilder();
 		command.append(CAT_CMD).append(SPACE).append(slaveTmpDir).append(File.separator).append(PID_FILE);
 		try{
 		List<String> params = new ArrayList<String>(1);
 		params.add(slaveTmpDir);
 		
-		for (String host : config.getSlaves()) {
+		for (String host : basicJobConfig.getSlaves()) {
 			CommandWritable commandWritable = new CommandWritable();	
 			CommandWritable.Command cmd = new CommandWritable.Command();
 			List<Command> commands= new ArrayList<Command>(1);
@@ -569,9 +569,9 @@ public final class JumbuneAgent {
 			commandWritable.setBatchedCommands(commands);
 			commandWritable.setAuthenticationRequired(true);
 			commandWritable.setCommandForMaster(false);
-			commandWritable.setDsaFilePath(config.getDsaFile());
-			commandWritable.setUsername(config.getUser());
-			commandWritable.setRsaFilePath(config.getRsaFile());
+			commandWritable.setDsaFilePath(basicJobConfig.getDsaFile());
+			commandWritable.setUsername(basicJobConfig.getUser());
+			commandWritable.setRsaFilePath(basicJobConfig.getRsaFile());
 			commandWritable.setSlaveHost(host);
 			commandWritable.setCommandType(CommandType.FS);
 			CommandDelegator cmdDelegator = new CommandDelegator();

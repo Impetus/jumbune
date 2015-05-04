@@ -18,8 +18,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.ClasspathElement;
 import org.jumbune.common.utils.Constants;
-import org.jumbune.common.utils.YamlConfigUtil;
-import org.jumbune.common.yaml.config.YamlConfig;
+import org.jumbune.common.utils.JobConfigUtil;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.web.utils.WebConstants;
 import org.jumbune.web.utils.WebUtil;
 
@@ -75,12 +75,12 @@ public class SaveJSONServlet extends HttpServlet {
         String json = (String) request.getParameter("saveJsonData");
         LOGGER.debug("Received JSON [" + json+"]");
         Gson gson = new Gson();
-        YamlConfig config = gson.fromJson(json, YamlConfig.class);
+        JobConfig config = gson.fromJson(json, JobConfig.class);
         ClasspathElement classpathElement = config.getClasspath()
                 .getUserSupplied();
         addUserSuppliedJars(json, classpathElement);
         
-        String jsonString = gson.toJson(config,YamlConfig.class);
+        String jsonString = gson.toJson(config,JobConfig.class);
         
 
         File file = new File(jsonFolder + fileName);
@@ -130,19 +130,19 @@ public class SaveJSONServlet extends HttpServlet {
             resources = WebUtil.jsonValueOfMasterMachineField(
                     WebConstants.DEPENDENT_JAR_MASTER_MACHINE_PATH, jsonObject);
             if (resources != null) {
-                String[] path = YamlConfigUtil.replaceJumbuneHome(resources);
+                String[] path = JobConfigUtil.replaceJumbuneHome(resources);
                 classpathElement.setFolders(path);
             }
             resources = WebUtil.jsonValueOfMasterMachineField(
                     WebConstants.DEPENDENT_JAR_INCLUDE, jsonObject);
             if (resources != null) {
-                String[] path = YamlConfigUtil.replaceJumbuneHome(resources);
+                String[] path = JobConfigUtil.replaceJumbuneHome(resources);
                 classpathElement.setFiles(path);
             }
             resources = WebUtil.jsonValueOfMasterMachineField(
                     WebConstants.DEPENDENT_JAR_EXCLUDE, jsonObject);
             if (resources != null) {
-                String[] path = YamlConfigUtil.replaceJumbuneHome(resources);
+                String[] path = JobConfigUtil.replaceJumbuneHome(resources);
                 classpathElement.setExcludes(path);
             }
         }

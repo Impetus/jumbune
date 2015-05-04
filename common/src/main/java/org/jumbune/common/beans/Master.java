@@ -1,6 +1,6 @@
 package org.jumbune.common.beans;
 
-import org.jumbune.utils.YamlUtil;
+import org.jumbune.utils.JobUtil;
 
 
 
@@ -91,7 +91,7 @@ public class Master {
 	 * @param user the new user
 	 */
 	public void setUser(String user) {
-		this.user = YamlUtil.getAndReplaceHolders(user);
+		this.user = JobUtil.getAndReplaceHolders(user);
 	}
 
 	/**
@@ -129,8 +129,8 @@ public class Master {
 	public final void setLocation(final String location) {
 		String locationTemp =location;
 		if (locationTemp != null) {
-			locationTemp = YamlUtil.getAndReplaceHolders(locationTemp);
-			if (!YamlUtil.validateFileSystemLocation(locationTemp)) {
+			locationTemp = JobUtil.getAndReplaceHolders(locationTemp);
+			if (!JobUtil.validateFileSystemLocation(locationTemp)) {
 				throw new IllegalArgumentException("Location provided in Master is not in correct format!!");
 			}
 			this.location = locationTemp;
@@ -157,7 +157,7 @@ public class Master {
 	 *            The rsaFile to set.
 	 */
 	public final void setRsaFile(String rsaFile) {
-		this.rsaFile = YamlUtil.getAndReplaceHolders(rsaFile);
+		this.rsaFile = JobUtil.getAndReplaceHolders(rsaFile);
 	}
 
 	/**
@@ -180,7 +180,7 @@ public class Master {
 	 *            The dsaFile to set.
 	 */
 	public final void setDsaFile(String dsaFile) {
-		this.dsaFile = YamlUtil.getAndReplaceHolders(dsaFile);
+		this.dsaFile = JobUtil.getAndReplaceHolders(dsaFile);
 	}
 
 	/**

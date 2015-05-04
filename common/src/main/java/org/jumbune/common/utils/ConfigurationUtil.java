@@ -294,7 +294,7 @@ public class ConfigurationUtil {
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public static void copyFileToDestinationLocation(String sourceFilePath, String destinationLoc) throws IOException {
-		LOGGER.debug("Copying yaml file to destination folder " + sourceFilePath + " destination path " + destinationLoc);
+		LOGGER.debug("Copying json file to destination folder " + sourceFilePath + " destination path " + destinationLoc);
 		String fileName = sourceFilePath.substring(sourceFilePath.lastIndexOf('/') + 1);
 		File destinationFolder = new File(destinationLoc, fileName);
 		InputStream inputStream = null;

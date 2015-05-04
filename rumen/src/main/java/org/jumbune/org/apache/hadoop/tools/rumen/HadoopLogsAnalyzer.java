@@ -1862,4 +1862,3 @@ public class HadoopLogsAnalyzer extends Configured implements Tool {
     }
   }
 }
-

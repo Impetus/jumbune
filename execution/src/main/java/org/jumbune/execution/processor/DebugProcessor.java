@@ -12,9 +12,8 @@ import org.jumbune.common.utils.ClasspathUtil;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.FileUtil;
 import org.jumbune.common.utils.RemoteFileUtil;
-import org.jumbune.common.yaml.config.Config;
-import org.jumbune.common.yaml.config.YamlConfig;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.debugger.instrumentation.instrumenter.Instrumenter;
 import org.jumbune.debugger.instrumentation.instrumenter.JarInstrumenter;
 import org.jumbune.debugger.log.processing.LogAnalyzerUtil;
@@ -63,12 +62,12 @@ public class DebugProcessor extends BaseProcessor {
 			throws JumbuneException {
 		super.preExecute(params);
 
-		YamlLoader yamlLoader = (YamlLoader)super.getLoader();
+		JobConfig jobConfig = (JobConfig)super.getConfig();
 		// copying user lib files to master from slave
-		if (yamlLoader.getClasspath().getUserSupplied().getSource() == ClasspathUtil.SOURCE_TYPE_SLAVES) {
+		if (jobConfig.getClasspath().getUserSupplied().getSource() == ClasspathUtil.SOURCE_TYPE_SLAVES) {
 			
 				try {
-					FileUtil.copyLibFilesToMaster(super.getLoader());
+					FileUtil.copyLibFilesToMaster(super.getConfig());
 				} catch (InterruptedException e) {
 					LOGGER.error("InterruptedException: " + e);
 				} catch (IOException e) {
@@ -89,31 +88,30 @@ public class DebugProcessor extends BaseProcessor {
 
 		try {
 			LOGGER.info("Executing [Debug] Processor...");
-			YamlLoader yamlLoader = (YamlLoader)super.getLoader();
-			YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
-			yamlConfig.getDebuggerConf().getLogLevel().put("ifblock", LogLevel.TRUE);
-			yamlConfig.getDebuggerConf().setMaxIfBlockNestingLevel(2);
-			String instrumentedJarPath = yamlLoader.getInstrumentOutputFile();
-			String locationOfLogFiles = yamlLoader.getLogMaster().getLocation();
+			JobConfig jobConfig = (JobConfig)super.getConfig();
+			jobConfig.getDebuggerConf().getLogLevel().put("ifblock", LogLevel.TRUE);
+			jobConfig.getDebuggerConf().setMaxIfBlockNestingLevel(2);
+			String instrumentedJarPath = jobConfig.getInstrumentOutputFile();
+			String locationOfLogFiles = jobConfig.getLogMaster().getLocation();
 			// Instrument the pure jar
-			Instrumenter instrumenter = new JarInstrumenter(super.getLoader());
+			Instrumenter instrumenter = new JarInstrumenter(super.getConfig());
 			instrumenter.instrumentJar();
-			processHelper.executeJar(instrumentedJarPath, super.isCommandBased(), super.getLoader(), true);
+			processHelper.executeJar(instrumentedJarPath, super.isCommandBased(), super.getConfig(), true);
+			
 			// marking report as complete
 			// Copy logs from slaves only when there are slaves if there are no
 			// slaves then don't go for copying
-			if (yamlConfig.getSlaves() != null
-					&& yamlConfig.getSlaves().size() > 0) {
+			if (jobConfig.getSlaves() != null
+					&& jobConfig.getSlaves().size() > 0) {
 				RemoteFileUtil remoteFileUtil = new RemoteFileUtil();
-				remoteFileUtil.copyDBLogFilesToMaster(yamlLoader.getLogDefinition());
+				remoteFileUtil.copyDBLogFilesToMaster(jobConfig.getLogDefinition());
 			}
 
-			LogAnalyzerUtil logUtil = new LogAnalyzerUtil(
-					yamlLoader.getLogProcessMaxThreads());
+			LogAnalyzerUtil logUtil = new LogAnalyzerUtil();
 			LOGGER.debug("Consolidate logs files kept on master at ["+ locationOfLogFiles+"]");
 			debugAnalyserReport = logUtil.processLogs(locationOfLogFiles,
-					yamlLoader.isInstrumentEnabled("partitioner"),super.getLoader(),processHelper.getHadoopJobCounters());
-
+					jobConfig.isInstrumentEnabled("partitioner"),super.getConfig(),processHelper.getHadoopJobCounters());
+		
 		} catch (IOException e) {
 			debugAnalyserReport =  Constants.LOG_PROCESSOR_ERROR;
 			LOGGER.error(e);
@@ -145,8 +143,8 @@ public class DebugProcessor extends BaseProcessor {
 			throws JumbuneException {
 
 		if (serviceInfo != null) {
-			YamlLoader yamlLoader = (YamlLoader)super.getLoader();
-			serviceInfo.setInstrumentedJarCountersLocation(yamlLoader
+			JobConfig jobConfig = (JobConfig)super.getConfig();
+			serviceInfo.setInstrumentedJarCountersLocation(jobConfig
 					.getLogDefinition().getLogSummaryLocation()
 					.getInstrumentedJarCountersLocation());
 		}
