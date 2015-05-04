@@ -17,8 +17,7 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.ClasspathElement;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.RemoteFileUtil;
-import org.jumbune.common.yaml.config.YamlConfig;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.web.utils.WebConstants;
 import org.jumbune.web.utils.WebUtil;
 
@@ -65,9 +64,9 @@ public class JumbuneHistoryJobPickerServlet extends HttpServlet {
         Gson gson = new Gson();
         if (actionResult.equals("TRUE")) {
             
-            String yamlFileLocation = YamlLoader.getjHome() + JSON_FILE_LOCATION;
+            String jobFileLocation = JobConfig.getJumbuneHome() + JSON_FILE_LOCATION;
                 
-            List<String> responseList = RemoteFileUtil.executeResponseList(Constants.SORT_COMMAND.split(" "), yamlFileLocation);
+            List<String> responseList = RemoteFileUtil.executeResponseList(Constants.SORT_COMMAND.split(" "), jobFileLocation);
             String returnJsonString = gson.toJson(responseList);
             
             returnJsonString = returnJsonString.replaceAll("\\[", "");
@@ -92,18 +91,18 @@ public class JumbuneHistoryJobPickerServlet extends HttpServlet {
             }
         } else {
             String jsonFileName = request.getParameter("selectedJsonFileName");
-            StringBuilder sb = new StringBuilder().append(YamlLoader.getjHome()).append(JSON_FILE_LOCATION).append(jsonFileName);
-            jsonFileName = sb.toString();
+            StringBuilder stringBuilder = new StringBuilder().append(JobConfig.getJumbuneHome()).append(JSON_FILE_LOCATION).append(jsonFileName);
+            jsonFileName = stringBuilder.toString();
             InputStream input = null;
             PrintWriter out = null;
 			try {
 				input = new FileInputStream(jsonFileName);
-				YamlConfig conf = gson.fromJson(new InputStreamReader(input),
-						YamlConfig.class);
-				ClasspathElement classpathElement = conf.getClasspath()
+				JobConfig jobConfig = gson.fromJson(new InputStreamReader(input),
+						JobConfig.class);
+				ClasspathElement classpathElement = jobConfig.getClasspath()
 						.getUserSupplied();
-				JsonObject jsonObject = gson.toJsonTree(conf).getAsJsonObject();
-				checkUserSuppliedJar(conf, classpathElement, jsonObject);
+				JsonObject jsonObject = gson.toJsonTree(jobConfig).getAsJsonObject();
+				checkUserSuppliedJar(jobConfig, classpathElement, jsonObject);
 				String jsonString = new Gson().toJson(jsonObject);
 				response.setContentType("text/html");
 				out = response.getWriter();
@@ -126,14 +125,14 @@ public class JumbuneHistoryJobPickerServlet extends HttpServlet {
     /**
      * Check user supplied jar.
      *
-     * @param conf bean for the yaml file
+     * @param jobConfig bean for the yaml file
      * @param classpathElement bean for the classpath elements
      * @param jsonObject the json object
      */
-    private void checkUserSuppliedJar(YamlConfig conf,
+    private void checkUserSuppliedJar(JobConfig jobConfig,
             ClasspathElement classpathElement, JsonObject jsonObject) {
         String[] resources;
-        if (conf.getClasspath().getUserSupplied().getSource() == WebConstants.MASTER_MACHINE_PATH_OPTION) {
+        if (jobConfig.getClasspath().getUserSupplied().getSource() == WebConstants.MASTER_MACHINE_PATH_OPTION) {
             JsonObject tempObject = null;
             tempObject = ((JsonObject) jsonObject.get("classpath")).get("userSupplied").getAsJsonObject();
             resources = classpathElement.getExcludes();

@@ -4,8 +4,8 @@ import java.io.File;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.RemotingUtil;
-import org.jumbune.common.yaml.config.YamlConfig;
 
 public class ApacheYarnLocator extends AbstractDistributionLocator {
 
@@ -15,15 +15,15 @@ public class ApacheYarnLocator extends AbstractDistributionLocator {
 	public static final Logger LOGGER = LogManager.getLogger(ApacheYarnLocator.class);
 
 	@Override
-	public String getHadoopConfDirPath(YamlConfig config) {
+	public String getHadoopConfDirPath(JobConfig jobConfig) {
 		StringBuilder responseAppender = new StringBuilder();
-		String response = RemotingUtil.executeCommand(config, ECHO_HADOOP_CONF_DIR);
+		String response = RemotingUtil.executeCommand(jobConfig, ECHO_HADOOP_CONF_DIR);
 		LOGGER.info("Response for hadoop conf" + response);
 		if (response != null && !response.trim().isEmpty()) {
 			return response;
 		}
 		responseAppender = responseAppender
-				.append(getHadoopHomeDirPath(config)).append(File.separator)
+				.append(getHadoopHomeDirPath(jobConfig)).append(File.separator)
 				.append(CONF_DIR);
 
 		return responseAppender.toString();

@@ -5,8 +5,8 @@ import java.text.MessageFormat;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.debugger.instrumentation.utils.EnumJobSubmitMethods;
 import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
 import org.jumbune.debugger.instrumentation.utils.InstrumentationMessageLoader;
@@ -41,8 +41,8 @@ public class ProfileAdapter extends BaseAdapter {
 	 * @param cv
 	 *            Class visitor
 	 */
-	public ProfileAdapter(Loader loader, ClassVisitor cv) {
-		super(loader, Opcodes.ASM4);
+	public ProfileAdapter(Config config, ClassVisitor cv) {
+		super(config, Opcodes.ASM4);
 		this.cv = cv;
 	}
 
@@ -139,9 +139,9 @@ public class ProfileAdapter extends BaseAdapter {
 	 * @return Instructions
 	 */
 	private InsnList addProfiling(int jobVariableIndex) {
-		YamlLoader yamlLoader = (YamlLoader)getLoader();
-		boolean iSHadoopJobProfiling = yamlLoader.isHadoopJobProfileEnabled();
-		String hadoopJobProfilingParams = yamlLoader.getHadoopJobProfileParams();
+		JobConfig jobConfig = (JobConfig)getConfig();
+		boolean iSHadoopJobProfiling = jobConfig.isHadoopJobProfileEnabled();
+		String hadoopJobProfilingParams = jobConfig.getHadoopJobProfileParams();
 		String hadoopJobProfilingMaps = PROFILING_MAPPERS_INSTANCES;
 		String hadoopJobProfilingReduces = PROFILING_REDUCER_INSTANCES;
 
@@ -220,9 +220,9 @@ public class ProfileAdapter extends BaseAdapter {
 	 * @return Instructions
 	 */
 	private InsnList addProfilingForOldAPI(int jobVariableIndex) {
-		YamlLoader yamlLoader = (YamlLoader)getLoader();
-		boolean isHadoopJobProfiling = yamlLoader.isHadoopJobProfileEnabled();
-		String hadoopJobProfilingParams = yamlLoader.getHadoopJobProfileParams();
+		JobConfig jobConfig = (JobConfig)getConfig();
+		boolean isHadoopJobProfiling = jobConfig.isHadoopJobProfileEnabled();
+		String hadoopJobProfilingParams = jobConfig.getHadoopJobProfileParams();
 		String hadoopJobProfilingMaps = PROFILING_MAPPERS_INSTANCES;
 		String hadoopJobProfilingReduces = PROFILING_REDUCER_INSTANCES ;
 

@@ -15,9 +15,8 @@ import java.util.Properties;
 import java.util.Stack;
 
 import org.jumbune.common.beans.Validation;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlConfig;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.debugger.instrumentation.utils.InstrumentConstants;
 import org.jumbune.utils.ExportUtil;
 import org.jumbune.utils.beans.Worksheet;
@@ -106,7 +105,7 @@ public class LogAnalyzer {
 	 * @throws IOException
 	 */
 	public Map<String, JobBean> analyzeLogs(final String nodeIP,
-			final Map<String, List<String>> fileListMap, Loader loader) throws IOException {
+			final Map<String, List<String>> fileListMap, Config config) throws IOException {
 		
 		if (fileListMap == null){
 			return logMap;
@@ -114,15 +113,15 @@ public class LogAnalyzer {
 		this.nodeIP = nodeIP;
 		
 		Properties props = LogAnalyzerUtil.getSystemTable();
-		YamlLoader yamlLoader = (YamlLoader) loader;
-		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
-		boolean logKeyValues = yamlConfig.getLogKeyValues().getEnumValue();
+		JobConfig jobConfig = (JobConfig)config;
+		
+		boolean logKeyValues = jobConfig.getLogKeyValues().getEnumValue();
 		
 		BufferedReader bufferedReader = null;
 		List<String> validationClassSymbols = null;
 		
 		if (logKeyValues) {
-			validationClassSymbols = getValidationClassSymbol(props, yamlLoader);
+			validationClassSymbols = getValidationClassSymbol(props, jobConfig);
 		}
 
 		for (Map.Entry<String, List<String>> pairs : fileListMap.entrySet()) {
@@ -250,14 +249,14 @@ public class LogAnalyzer {
 	/**
 	 * Getting symbols of validation classes
 	 * @param props properties
-	 * @param yamlLoader yaml loader
+	 * @param jobConfig job Config
 	 * @return list of symbols of classes for validation
 	 */
-	public List<String> getValidationClassSymbol(Properties props, YamlLoader yamlLoader) {
+	public List<String> getValidationClassSymbol(Properties props, JobConfig jobConfig) {
 		
 		List<Validation> validationClassesList = new ArrayList<Validation>();
-		validationClassesList.addAll(yamlLoader.getRegex());
-		validationClassesList.addAll(yamlLoader.getUserValidations());
+		validationClassesList.addAll(jobConfig.getRegex());
+		validationClassesList.addAll(jobConfig.getUserValidations());
 		
 		HashMap<String, String> newProps = new HashMap<String, String>();
 		for(String key : props.stringPropertyNames()) {

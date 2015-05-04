@@ -5,7 +5,7 @@ import java.text.MessageFormat;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.CollectionUtil;
-import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.common.job.Config;
 import org.jumbune.debugger.instrumentation.utils.FileUtil;
 import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
 import org.jumbune.debugger.instrumentation.utils.InstrumentationMessageLoader;
@@ -37,8 +37,8 @@ public class MainAdapter extends BaseAdapter {
 	 * @param cv
 	 *            Class visitor
 	 */
-	public MainAdapter(Loader loader, ClassVisitor cv) {
-		super(loader, Opcodes.ASM4);
+	public MainAdapter(Config config, ClassVisitor cv) {
+		super(config, Opcodes.ASM4);
 		this.cv = cv;
 	}
 
@@ -84,7 +84,7 @@ public class MainAdapter extends BaseAdapter {
 		InsnList il = new InsnList();
 		il.add(new LabelNode());
 		il.add(new LdcInsnNode(CollectionUtil.createStringFromList(FileUtil
-				.getClassPathFileList(getLoader()))));
+				.getClassPathFileList(getConfig()))));
 		il.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
 				CLASSNAME_CLASSLOADER_UTIL, "loadClasses", Type
 						.getMethodDescriptor(Type.VOID_TYPE, TYPE_STRING)));

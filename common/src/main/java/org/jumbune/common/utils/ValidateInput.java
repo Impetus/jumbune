@@ -13,10 +13,8 @@ import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.beans.ClasspathElement;
 import org.jumbune.common.beans.DataValidationBean;
 import org.jumbune.common.beans.Enable;
-import org.jumbune.utils.beans.LogLevel;
 import org.jumbune.common.beans.FieldValidationBean;
 import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.beans.Master;
@@ -24,14 +22,13 @@ import org.jumbune.common.beans.ProfilingParam;
 import org.jumbune.common.beans.Slave;
 import org.jumbune.common.beans.SupportedHadoopDistributions;
 import org.jumbune.common.beans.Validation;
-import org.jumbune.common.yaml.config.Config;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlConfig;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.CommandType;
-import org.jumbune.utils.beans.VirtualFileSystem;
+import org.jumbune.utils.beans.LogLevel;
 import org.jumbune.utils.exception.JumbuneException;
+
 
 
 
@@ -49,7 +46,7 @@ public class ValidateInput {
 	private ErrorMessageLoader errorMessages = null;
 
 	/** The j home. */
-	private String jHome = null;
+	private String jumbuneHome = null;
 	
 	/** The Constant REPORT_FROM_CLUSTER. */
 	private static final String REPORT_FROM_CLUSTER = " dfsadmin -report | grep Name";
@@ -88,24 +85,24 @@ public class ValidateInput {
 	 * @param config object of yamlConfig class
 	 * @return map containing failed and suggestion to given to user
 	 */
-	public Map<String, Map<String, Map<String, String>>> validateYaml(Config config) {
+	public Map<String, Map<String, Map<String, String>>> validateJson(Config config) {
 		Map<String, Map<String, Map<String,String>>> validateInput = new HashMap<String, Map<String, Map<String,String>>>();
 		
-		YamlConfig yamlConfig = (YamlConfig)config;
+		JobConfig jobConfig = (JobConfig)config;
 		if (intialSettingsValidation(config)) {
 			validateBasicField(config);
 
-			if (isEnable(yamlConfig.getEnableDataValidation())) {
+			if (isEnable(jobConfig.getEnableDataValidation())) {
 				validateDataValidation(config);
 			}
 
-			if (isEnable(yamlConfig.getDebugAnalysis())) {
+			if (isEnable(jobConfig.getDebugAnalysis())) {
 				validateDebugField(config);
 			}
-			if(isEnable(yamlConfig.getEnableStaticJobProfiling())){
+			if(isEnable(jobConfig.getEnableStaticJobProfiling())){
 				validateProfilingField(config);
 			}
-			validateJarPath(yamlConfig);
+			validateJarPath(jobConfig);
 		
 		}
 		if (!failedValidation.isEmpty()) {
@@ -121,16 +118,16 @@ public class ValidateInput {
 	 * This method checks whether the jar location given corresponds to a valid
 	 * jar file or not.
 	 * 
-	 * @param yamlConfig
+	 * @param jobConfig
 	 */
-	public void validateJarPath(YamlConfig yamlConfig) {
+	public void validateJarPath(JobConfig jobConfig) {
 	
 		//validation to be done only when flow debugging and job profiling (only "Run from jumbune" option) are enabled. 
-		if(isEnable(yamlConfig.getDebugAnalysis())||(isEnable(yamlConfig.getEnableStaticJobProfiling())&&isEnable(yamlConfig.getRunJobFromJumbune())))
+		if(isEnable(jobConfig.getDebugAnalysis())||(isEnable(jobConfig.getEnableStaticJobProfiling())&&isEnable(jobConfig.getRunJobFromJumbune())))
     	{	    
-		     String inputFile = yamlConfig.getInputFile();
+		     String inputFile = jobConfig.getInputFile();
 		     Map<String, String> failedCases = new HashMap<String, String>();
-		     boolean isLocalSystemJar = isEnable(yamlConfig.getIsLocalSystemJar());
+		     boolean isLocalSystemJar = isEnable(jobConfig.getIsLocalSystemJar());
 		     if(inputFile!=null)
 		     {   
 		    	 boolean endsWithJar=inputFile.trim().endsWith(".jar");
@@ -154,13 +151,13 @@ public class ValidateInput {
 	private void validateProfilingField(Config config) {
 		Map<String,String> failedCases = new HashMap<String,String>();
 		Map<String,String> suggestionList = new HashMap<String,String>();
-		YamlConfig yamlConfig = (YamlConfig)config;
-		if(Enable.FALSE.equals(yamlConfig.getRunJobFromJumbune())){
-			String existingJobId = yamlConfig.getExistingJobName();
+		JobConfig jobConfig = (JobConfig)config;
+		if(Enable.FALSE.equals(jobConfig.getRunJobFromJumbune())){
+			String existingJobId = jobConfig.getExistingJobName();
 			if(!isNullOrEmpty(existingJobId)){
 				
-				Remoter remoter = new Remoter(yamlConfig.getMaster().getHost(), Integer.valueOf(yamlConfig.getMaster().getAgentPort()));
-				String response = RemotingUtil.fireCommandAsHadoopDistribution(yamlConfig,  "job -status "+existingJobId, CommandType.HADOOP_JOB);				
+				Remoter remoter = new Remoter(jobConfig.getMaster().getHost(), Integer.valueOf(jobConfig.getMaster().getAgentPort()));
+				String response = RemotingUtil.fireCommandAsHadoopDistribution(jobConfig,  "job -status "+existingJobId, CommandType.HADOOP_JOB);				
 
 				//checks for a completed hadoop job
 				if(!response.contains("Counters:")){
@@ -186,18 +183,18 @@ public class ValidateInput {
 		Map<String, String> listOfErrors = new HashMap<String, String>();
 		boolean result = false;
 		if (config != null) {
-			jHome = YamlLoader.getjHome();
+			jumbuneHome = JobConfig.getJumbuneHome();
 			if (!isAtleastOneModuleEnabled(config)) {
 				listOfErrors.put("NO_MODULE_SELECT", errorMessages.get(ErrorMessages.NO_MODULE_SELECT));
 			} else {
-				if (!checkNullEmptyAndMessage(listOfErrors, jHome, ErrorMessages.JUMBUNE_HOME_NOT_SET, "JUMBUNE_HOME")
-						&& checkFileOrDirExist(listOfErrors, jHome, ErrorMessages.JUMBUNE_HOME_NOT_SET, "JUMBUNE_HOME")) {
+				if (!checkNullEmptyAndMessage(listOfErrors, jumbuneHome, ErrorMessages.JUMBUNE_HOME_NOT_SET, "JUMBUNE_HOME")
+						&& checkFileOrDirExist(listOfErrors, jumbuneHome, ErrorMessages.JUMBUNE_HOME_NOT_SET, "JUMBUNE_HOME")) {
 					result = checkProfilerState(config, listOfErrors);
 				}
 
 			}
 		} else {
-			listOfErrors.put("INVALID_YAML", errorMessages.get(ErrorMessages.INVALID_YAML));
+			listOfErrors.put("INVALID_YAML", errorMessages.get(ErrorMessages.INVALID_JSON));
 		}
 		if (!listOfErrors.isEmpty()) {
 			failedValidation.put(Constants.BASIC_VALIDATION, listOfErrors);
@@ -214,9 +211,9 @@ public class ValidateInput {
 	 */
 	private boolean checkProfilerState(Config config, Map<String, String> listOfErrors) {
 		boolean result = true;
-		YamlConfig yamlConfig = (YamlConfig)config;
-		if (isEnable(yamlConfig.getEnableStaticJobProfiling())) {
-			String tokenFilePath = jHome + TEMP_DIR + TOKEN_FILE;
+		JobConfig jobConfig = (JobConfig)config;
+		if (isEnable(jobConfig.getEnableStaticJobProfiling())) {
+			String tokenFilePath = jumbuneHome + TEMP_DIR + TOKEN_FILE;
 			File fToken = new File(tokenFilePath);
 			if (fToken.exists()) {
 				result = false;
@@ -247,7 +244,6 @@ public class ValidateInput {
 	 * @param config the config
 	 */
 	private void validateDebugField(Config config) {
-		YamlLoader yamlLoader = new YamlLoader(config);
 		Map<String,String> failedDebug = new HashMap<String,String>();
 		Map<String,String> suggestionDebug = new HashMap<String,String>();
 		/**
@@ -261,24 +257,24 @@ public class ValidateInput {
 			listofFailedDebug.add(errorMessages.get(ErrorMessages.DEBUG_PARTITION_LEVEL_INVALID));
 		}
 		*/
-		YamlConfig yamlConfig = (YamlConfig)config;
-		
+		JobConfig jobConfig = (JobConfig)config;
 		if(!ifDebuggerValidationsEnabled(config))
 		{
 			failedDebug.put("debuggerConf.logLevel.instrumentRegex", errorMessages.get(ErrorMessages.BOTH_DEBUGGER_VALIDATIONS_NULL));
 		}
-		if (yamlLoader.isInstrumentEnabled(Constants.DEBUG_INSTR_REGEX_KEY)) {
-			if (!yamlConfig.getRegexValidations().isEmpty()) {
-				checkFieldsValue(yamlConfig.getRegexValidations(), ErrorMessages.DEBUG_REGEX_CLASS_INVALID, ErrorMessages.DEBUG_REGEX_KEY_INVALID,
+		
+		if (jobConfig.isInstrumentEnabled(Constants.DEBUG_INSTR_REGEX_KEY)) {
+			if (!jobConfig.getRegexValidations().isEmpty()) {
+				checkFieldsValue(jobConfig.getRegexValidations(), ErrorMessages.DEBUG_REGEX_CLASS_INVALID, ErrorMessages.DEBUG_REGEX_KEY_INVALID,
 						failedDebug,"regexValidations[");
 			} else {
 				failedDebug.put("debuggerConf.regexValidations",errorMessages.get(ErrorMessages.DEBUG_REGEX_VALIDATION_EMPTY));
 			}
 
 		}
-		if (yamlLoader.isInstrumentEnabled(Constants.DEBUG_INST_USER_KEY)) {
-			if (!yamlConfig.getUserValidations().isEmpty()) {
-				checkFieldsValue(yamlConfig.getUserValidations(), ErrorMessages.DEBUG_INST_REGEX_INVALID, ErrorMessages.DEBUG_INST_KEY_INVALID,
+		if (jobConfig.isInstrumentEnabled(Constants.DEBUG_INST_USER_KEY)) {
+			if (!jobConfig.getUserValidations().isEmpty()) {
+				checkFieldsValue(jobConfig.getUserValidations(), ErrorMessages.DEBUG_INST_REGEX_INVALID, ErrorMessages.DEBUG_INST_KEY_INVALID,
 						failedDebug,"regexValidations[");
 			} else {
 				failedDebug.put("debuggerConf.userValidations",errorMessages.get(ErrorMessages.DEBUG_USERDEFINE_VALIDATION_EMPTY));
@@ -297,8 +293,8 @@ public class ValidateInput {
  */
 	private boolean ifDebuggerValidationsEnabled(Config config)
 	{  
-		YamlConfig yamlConfig = (YamlConfig)config;
-		Map <String,LogLevel> logLevelMap =yamlConfig.getDebuggerConf().getLogLevel();
+		JobConfig jobConfig = (JobConfig)config;
+		Map <String,LogLevel> logLevelMap =jobConfig.getDebuggerConf().getLogLevel();
 		final String REGEXKEY="instrumentRegex";
 		final String USERVALIDATEKEY="instrumentUserDefValidate";
 		
@@ -307,7 +303,7 @@ public class ValidateInput {
 			return true;
 		}
 		return false;
-	}	
+	}
 	
 	
 	/**
@@ -345,8 +341,8 @@ public class ValidateInput {
 	private void validateDataValidation(Config config) {
 		Map<String,String> failedDataValidation = new HashMap<String,String>();
 		Map<String,String> listOfSuggestions = new HashMap<String,String>();
-		YamlConfig yamlConfig = (YamlConfig)config;
-		if (yamlConfig.getDataValidation() != null) {
+		JobConfig jobConfig = (JobConfig)config;
+		if (jobConfig.getDataValidation() != null) {
 			DataValidationBean dataValidationBean = checkAndValidateHdfsPath(
 					config, failedDataValidation);
 
@@ -355,7 +351,7 @@ public class ValidateInput {
 					dataValidationBean);
 			int countForFieldValidation = 0;
 			// TODO:  if fieldvalidation list is empty
-			List<FieldValidationBean> bean = yamlConfig.getDataValidation().getFieldValidationList();
+			List<FieldValidationBean> bean = jobConfig.getDataValidation().getFieldValidationList();
 			if (bean != null) {
 				for (FieldValidationBean fielValidationBean : bean) {
 					if (fielValidationBean.getFieldNumber() >= Constants.ZERO) {
@@ -417,9 +413,9 @@ public class ValidateInput {
 	 */
 	private DataValidationBean checkAndValidateHdfsPath(Config config,
 			Map<String,String> listOfFailedValidation) {
-		YamlConfig yamlConfig = (YamlConfig)config;
-		DataValidationBean dataValidationBean = yamlConfig.getDataValidation();
-		String hadoopInputPath = yamlConfig.getHdfsInputPath();
+		JobConfig jobConfig = (JobConfig)config;
+		DataValidationBean dataValidationBean = jobConfig.getDataValidation();
+		String hadoopInputPath = jobConfig.getHdfsInputPath();
 		if (!checkNullEmptyAndMessage(listOfFailedValidation, hadoopInputPath, ErrorMessages.HDFS_FIELD_INVALID,"hdfsInputPath")) {
 			try {
 				if (!isHadoopInputPath(hadoopInputPath, config)) {
@@ -442,13 +438,13 @@ public class ValidateInput {
 	protected void validateJobs(Config config,Map<String,String> failedCases,Map<String,String> suggestion) {
 
 		int countForJobJar = 0;
-		YamlConfig yamlConfig = (YamlConfig)config;
+		JobConfig jobConfig = (JobConfig)config;
 		// TODO:  - what if jobs are null!!
-		if (!yamlConfig.getJobs().isEmpty()) {
-			for (JobDefinition jobDefinition : yamlConfig.getJobs()) {
+		if (!jobConfig.getJobs().isEmpty()) {
+			for (JobDefinition jobDefinition : jobConfig.getJobs()) {
 
 				countForJobJar++;
-				if (!isEnable(yamlConfig.getIncludeClassJar())) {
+				if (!isEnable(jobConfig.getIncludeClassJar())) {
 					checkEmptyAndShowMessage(failedCases, jobDefinition.getJobClass(), ErrorMessages.JOB_CLASS_NAME_INVALID, countForJobJar,"jobs["+countForJobJar+"].jobClass");
 				}
 				checkEmptyAndShowMessage(failedCases, jobDefinition.getName(), ErrorMessages.JOB_JAR_NAME_INVALID, countForJobJar,"jobs["+countForJobJar+"].name");
@@ -473,19 +469,19 @@ public class ValidateInput {
 		Map<String,String> suggestionList = new HashMap<String,String>();
 		
 		checkIfJumbuneJobEmptyOrNot(config, failedCases,"jumbuneJobName");
-		YamlConfig yamlConfig = (YamlConfig)config;
-		if (isEnable(yamlConfig.getDebugAnalysis()) || isEnable(yamlConfig.getEnableStaticJobProfiling())) {
+		JobConfig jobConfig = (JobConfig)config;
+		if (isEnable(jobConfig.getDebugAnalysis()) || isEnable(jobConfig.getEnableStaticJobProfiling())) {
 			/**
 			 * check if slave jumbune home is empty
 			 */
 
-			checkNullEmptyAndMessage(failedCases, yamlConfig.getsJumbuneHome(), ErrorMessages.BASIC_SLAVE_HOME_EMPTY,"");
+			checkNullEmptyAndMessage(failedCases, jobConfig.getSlaveWorkingDirectory(), ErrorMessages.BASIC_SLAVE_HOME_EMPTY,"");
 			/**
 			 * check master host user name is nulll or conatain space
 			 */
-			Master master = yamlConfig.getMaster();
+			Master master = jobConfig.getMaster();
 			checkMasterNodeValidation(failedCases, master);
-			if (!yamlConfig.getSlaves().isEmpty() && !failedCases.containsValue(errorMessages.get(ErrorMessages.RSA_DSA_INVALID))) {
+			if (!jobConfig.getSlaves().isEmpty() && !failedCases.containsValue(errorMessages.get(ErrorMessages.RSA_DSA_INVALID))) {
 				validateSlaveField(failedCases, config);
 			}
 			checkMrJobField(config);
@@ -526,9 +522,9 @@ public class ValidateInput {
 	protected void checkMrJobField(Config config) {
 		Map<String,String> failedCases=new HashMap<String, String>();
 		Map<String,String> suggetion=new HashMap<String, String>();
-		YamlConfig yamlConfig = (YamlConfig)config;
-		if (!isEnable(yamlConfig.getEnableStaticJobProfiling()) || yamlConfig.getDebugAnalysis().getEnumValue()) {
-			checkNullEmptyAndMessage(failedCases, yamlConfig.getInputFile(), ErrorMessages.BASIC_INPUT_PATH_EMPTY,"inputFile");
+		JobConfig jobConfig = (JobConfig)config;
+		if (!isEnable(jobConfig.getEnableStaticJobProfiling()) || jobConfig.getDebugAnalysis().getEnumValue()) {
+			checkNullEmptyAndMessage(failedCases, jobConfig.getInputFile(), ErrorMessages.BASIC_INPUT_PATH_EMPTY,"inputFile");
 			validateJobs(config,failedCases,suggetion);
 		}
 		addToValidationList(Constants.JOBS_VALIDATION,failedCases,suggetion );
@@ -579,9 +575,9 @@ public class ValidateInput {
 		/**
 		 * check if jumbune job name is empty or not
 		 */
-		YamlConfig yamlConfig = (YamlConfig)config;
-		if (!checkNullEmptyAndMessage(failedCases, yamlConfig.getFormattedJumbuneJobName(), ErrorMessages.JUMBUNE_JOB_NAME_BLANK,fieldValue)) {
-			String jumbuneJobDirectoryPath = YamlLoader.getJobJarLoc() + yamlConfig.getFormattedJumbuneJobName() + "/logs/";
+		JobConfig jobConfig = (JobConfig)config;
+		if (!checkNullEmptyAndMessage(failedCases, jobConfig.getFormattedJumbuneJobName(), ErrorMessages.JUMBUNE_JOB_NAME_BLANK,fieldValue)) {
+			String jumbuneJobDirectoryPath = jobConfig.getJobJarLoc() + jobConfig.getFormattedJumbuneJobName() + "/logs/";
 			if (new File(jumbuneJobDirectoryPath).exists()) {
 				failedCases.put(fieldValue,errorMessages.get(ErrorMessages.BASIC_JOB_NAME_EXIST));
 			}
@@ -597,9 +593,9 @@ public class ValidateInput {
 	private void validateSlaveField(Map<String,String> failedCases, Config config) {
 		int count = 0;
 		List<String> listOfValidDataNode = new ArrayList<String>();
-		YamlConfig yamlConfig = (YamlConfig)config;
-		List<Slave> slaves = yamlConfig.getSlaves();
-		SupportedHadoopDistributions hadoopVersion = RemotingUtil.getHadoopVersion(yamlConfig);
+		JobConfig jobConfig = (JobConfig)config;
+		List<Slave> slaves = jobConfig.getSlaves();
+		SupportedHadoopDistributions hadoopVersion = RemotingUtil.getHadoopVersion(jobConfig);
 		if(SupportedHadoopDistributions.HADOOP_MAPR.equals(hadoopVersion)){
 			StringBuilder commandBuilder = new StringBuilder().append(MAPR_DATANODE_IP);
 			Remoter remoter = RemotingUtil.getRemoter(config,"");
@@ -784,9 +780,9 @@ public class ValidateInput {
 	 */
 	protected boolean isAtleastOneModuleEnabled(Config config) {
 		boolean result = false;
-		YamlConfig yamlConfig = (YamlConfig)config;
+		JobConfig jobConfig = (JobConfig)config;
 		boolean isProfiling = isProfilingModuleEnabled(config);
-		if (isEnable(yamlConfig.getEnableDataValidation()) || isEnable(yamlConfig.getHadoopJobProfile()) || isEnable(yamlConfig.getDebugAnalysis())
+		if (isEnable(jobConfig.getEnableDataValidation()) || isEnable(jobConfig.getHadoopJobProfile()) || isEnable(jobConfig.getDebugAnalysis())
 				|| isProfiling) {
 			result = true;
 		}
@@ -802,8 +798,8 @@ public class ValidateInput {
 	 */
 	protected boolean isProfilingModuleEnabled(Config config) {
 		boolean result = false;
-		YamlConfig yamlConfig = (YamlConfig)config;
-		if (isEnable(yamlConfig.getEnableStaticJobProfiling())) {
+		JobConfig jobConfig = (JobConfig)config;
+		if (isEnable(jobConfig.getEnableStaticJobProfiling())) {
 			result = true;
 		}
 		return result;
@@ -843,8 +839,8 @@ public class ValidateInput {
 	 */
 	public boolean checkPortAvailablity(Config config, ProfilingParam profilingParam) {
 		int count = 0;
-		YamlConfig yamlConfig = (YamlConfig)config;
-		for (Slave slave : yamlConfig.getSlaves()) {
+		JobConfig jobConfig = (JobConfig)config;
+		for (Slave slave : jobConfig.getSlaves()) {
 			count=count+1;
 			if (slave.getHosts() != null) {
 				for (String slaveHost : slave.getHosts()) {
@@ -866,8 +862,8 @@ public class ValidateInput {
 	 */
 	public boolean checkPortAvailablityTask(Config config, ProfilingParam profilingParam) {
 		int count = 0;
-		YamlConfig yamlConfig = (YamlConfig)config;
-		for (Slave slave : yamlConfig.getSlaves()) {
+		JobConfig jobConfig = (JobConfig)config;
+		for (Slave slave : jobConfig.getSlaves()) {
 			count=count+1;
 			if (slave.getHosts() != null) {
 				for (String slaveHost : slave.getHosts()) {

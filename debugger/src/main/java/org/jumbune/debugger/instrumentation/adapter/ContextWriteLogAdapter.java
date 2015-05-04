@@ -5,7 +5,7 @@ import java.text.MessageFormat;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.ConfigurationUtil;
-import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.common.job.Config;
 import org.jumbune.debugger.instrumentation.utils.InstrumentConstants;
 import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
 import org.jumbune.debugger.instrumentation.utils.InstrumentationMessageLoader;
@@ -41,8 +41,8 @@ public class ContextWriteLogAdapter extends BaseAdapter {
 	 * @param cv
 	 *            Class visitor
 	 */
-	public ContextWriteLogAdapter(Loader loader, ClassVisitor cv) {
-		super(loader, Opcodes.ASM4);
+	public ContextWriteLogAdapter(Config config, ClassVisitor cv) {
+		super(config, Opcodes.ASM4);
 		this.cv = cv;
 	}
 

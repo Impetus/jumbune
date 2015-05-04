@@ -5,8 +5,8 @@ import java.util.List;
 
 import org.jumbune.common.utils.ClasspathUtil;
 import org.jumbune.common.utils.ConfigurationUtil;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 
 
 
@@ -28,11 +28,11 @@ public final class FileUtil {
 	 * @return list of all classpath files
 	 
 	 */
-	public static List<String> getClassPathFileList(Loader loader) {
-		List<String> listFiles = getJumbuneClasspathFileList(loader);
-		List<String> userSuppliedClasspathFileList = getUserClasspathFileList(loader);
+	public static List<String> getClassPathFileList(Config config) {
+		List<String> listFiles = getJumbuneClasspathFileList(config);
+		List<String> userSuppliedClasspathFileList = getUserClasspathFileList(config);
 		if (userSuppliedClasspathFileList != null) {
-			listFiles.addAll(getUserClasspathFileList(loader));
+			listFiles.addAll(getUserClasspathFileList(config));
 		}
 		return listFiles;
 	}
@@ -46,17 +46,17 @@ public final class FileUtil {
 	 *            Yaml loader
 	 * @return List<String> List of files
 	 */
-	private static List<String> getUserClasspathFileList(Loader loader) {
-		int userClassPathSource = getUserClassPathSource(loader);
+	private static List<String> getUserClasspathFileList(Config config) {
+		int userClassPathSource = getUserClassPathSource(config);
 
 		if (userClassPathSource == ClasspathUtil.SOURCE_TYPE_MASTER) {
 			// get the list as configured in yaml
-			return getClassPathFileList(loader, ClasspathUtil.USER_SUPPLIED);
+			return getClassPathFileList(config, ClasspathUtil.USER_SUPPLIED);
 		} else if (userClassPathSource == ClasspathUtil.SOURCE_TYPE_SLAVES) {
 			// get the list from userLib folder on master
-			YamlLoader yamlLoader = (YamlLoader)loader;
+			JobConfig jobConfig = (JobConfig)config;
 			return ConfigurationUtil
-					.getAllFileNamesInDir(yamlLoader.getUserLibLocatinAtMaster());
+					.getAllFileNamesInDir(jobConfig.getUserLibLocationAtMaster());
 		}
 
 		return null;
@@ -71,8 +71,8 @@ public final class FileUtil {
 	 *            Yaml loader
 	 * @return List<String> List of files
 	 */
-	private static List<String> getJumbuneClasspathFileList(Loader loader) {
-		List<String> listFiles = getClassPathFileList(loader,
+	private static List<String> getJumbuneClasspathFileList(Config config) {
+		List<String> listFiles = getClassPathFileList(config,
 				ClasspathUtil.JUMBUNE_SUPPLIED);
 
 		return listFiles;
@@ -88,13 +88,13 @@ public final class FileUtil {
 	 *            User suppplied or Jumbune supplied
 	 * @return List<String> List of lib files
 	 */
-	private static List<String> getClassPathFileList(Loader loader,
+	private static List<String> getClassPathFileList(Config config,
 			int classpathType) {
-		YamlLoader yamlLoader = (YamlLoader)loader;
+		JobConfig jobConfig = (JobConfig)config;
 		return ConfigurationUtil.getAllClasspathFiles(
-				yamlLoader.getClasspathFolders(classpathType),
-				yamlLoader.getClasspathExcludes(classpathType),
-				yamlLoader.getClasspathFiles(classpathType));
+				jobConfig.getClasspathFolders(classpathType),
+				jobConfig.getClasspathExcludes(classpathType),
+				jobConfig.getClasspathFiles(classpathType));
 	}
 
 	/**
@@ -106,18 +106,18 @@ public final class FileUtil {
 	 * 
 	 * @return List<String> List of jars
 	 */
-	public static List<String> getClassPathFilesForThinJar(Loader loader) {
-		int classpathTypeUser = getUserClassPathType(loader);
-		int classpathTypeFramework = getJumbuneClassPathType(loader);
+	public static List<String> getClassPathFilesForThinJar(Config config) {
+		int classpathTypeUser = getUserClassPathType(config);
+		int classpathTypeFramework = getJumbuneClassPathType(config);
 		List<String> listFiles = null;
 		if (classpathTypeFramework == ClasspathUtil.CLASSPATH_TYPE_LIBJARS) {
-			listFiles = getJumbuneClasspathFileList(loader);
+			listFiles = getJumbuneClasspathFileList(config);
 		}
 		if (classpathTypeUser == ClasspathUtil.CLASSPATH_TYPE_LIBJARS) {
 			if (listFiles == null) {
 				listFiles = new ArrayList<String>();
 			}
-			listFiles.addAll(getUserClasspathFileList(loader));
+			listFiles.addAll(getUserClasspathFileList(config));
 		}
 		return listFiles;
 	}
@@ -167,8 +167,8 @@ public final class FileUtil {
 	 *            Yaml loader
 	 * @return int Classpath type
 	 */
-	public static int getUserClassPathType(Loader loader) {
-		int classpathSourceUser = getUserClassPathSource(loader);
+	public static int getUserClassPathType(Config config) {
+		int classpathSourceUser = getUserClassPathSource(config);
 		return (classpathSourceUser == ClasspathUtil.SOURCE_TYPE_SLAVES || classpathSourceUser == ClasspathUtil.SOURCE_TYPE_MASTER) ? ClasspathUtil.CLASSPATH_TYPE_LIBJARS
 				: ClasspathUtil.CLASSPATH_TYPE_NONE;
 	}
@@ -184,7 +184,7 @@ public final class FileUtil {
 	 *            Yaml loader
 	 * @return int Classpath type
 	 */
-	public static int getJumbuneClassPathType(Loader loader) {
+	public static int getJumbuneClassPathType(Config config) {
 		return ClasspathUtil.CLASSPATH_TYPE_LIBJARS;
 	}
 
@@ -197,8 +197,8 @@ public final class FileUtil {
 	 *            Yaml loader
 	 * @return int source
 	 */
-	public static int getUserClassPathSource(Loader loader) {
-		YamlLoader yamlLoader = (YamlLoader)loader;
-		return yamlLoader.getClasspath().getUserSupplied().getSource();
+	public static int getUserClassPathSource(Config config) {
+		JobConfig jobConfig= (JobConfig)config;
+		return jobConfig.getClasspath().getUserSupplied().getSource();
 	}
 }

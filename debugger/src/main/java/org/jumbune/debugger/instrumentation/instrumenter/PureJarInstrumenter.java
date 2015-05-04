@@ -6,8 +6,8 @@ import java.util.zip.ZipOutputStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.debugger.instrumentation.adapter.InstrumentValidator;
 import org.jumbune.debugger.instrumentation.adapter.ProfileAdapter;
 import org.jumbune.debugger.instrumentation.adapter.SubmitCaseAdapter;
@@ -34,8 +34,8 @@ public class PureJarInstrumenter extends Instrumenter {
 	 * Create a new instance of ProfilingInstrumenter.
 	 * </p>
 	 */
-	public PureJarInstrumenter(Loader loader) {
-		super(loader);
+	public PureJarInstrumenter(Config config) {
+		super(config);
 	}
 
 	/**
@@ -45,9 +45,9 @@ public class PureJarInstrumenter extends Instrumenter {
 	 * @see org.jumbune.debugger.instrumentation.instrumenter.Instrumenter#instrumentJar()
 	 */
 	public void instrumentJar() throws IOException {
-		YamlLoader yamlLoader = (YamlLoader)getLoader();
-		File fin = new File(yamlLoader.getInputFile());
-		File fout = new File(yamlLoader.getProfiledOutputFile());
+		JobConfig jobConfig = (JobConfig)getConfig();
+		File fin = new File(jobConfig.getInputFile());
+		File fout = new File(jobConfig.getProfiledOutputFile());
 		instrumentJar(fin, fout);
 	}
 
@@ -65,23 +65,23 @@ public class PureJarInstrumenter extends Instrumenter {
 	public byte[] instrumentEntry(final byte[] bytes) throws IOException {
 		byte[] instrumentedBytes=bytes;
 		try {
-			ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+			ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
 			// Step 1: check if already instrumented or is an interface
-			InstrumentValidator ic = new InstrumentValidator(getLoader(), cw);
-			instrumentedBytes = InstrumentUtil.instrumentBytes(instrumentedBytes, ic, cw);
+			InstrumentValidator instrumentValidator = new InstrumentValidator(getConfig(), classWriter);
+			instrumentedBytes = InstrumentUtil.instrumentBytes(instrumentedBytes, instrumentValidator, classWriter);
 
 			// if the class has not been already instrumented
-			if (!ic.getAlreadyInstrumented() && !ic.getInterface()) {
-				YamlLoader yamlLoader = (YamlLoader)getLoader();
-				if (yamlLoader.isHadoopJobProfileEnabled()) {
-					cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+			if (!instrumentValidator.getAlreadyInstrumented() && !instrumentValidator.getInterface()) {
+				JobConfig jobConfig = (JobConfig)getConfig();
+				if (jobConfig.isHadoopJobProfileEnabled()) {
+					classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 					instrumentedBytes = InstrumentUtil.instrumentBytes(instrumentedBytes,
-							new ProfileAdapter(getLoader(), cw), cw);
+							new ProfileAdapter(getConfig(), classWriter), classWriter);
 				}
-				cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+				classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 				instrumentedBytes = InstrumentUtil.instrumentBytes(instrumentedBytes,
-						new SubmitCaseAdapter(getLoader(), cw), cw);
+						new SubmitCaseAdapter(getConfig(), classWriter), classWriter);
 			}
 
 			return instrumentedBytes;

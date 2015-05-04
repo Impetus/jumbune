@@ -8,8 +8,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.CollectionUtil;
 import org.jumbune.common.utils.ConfigurationUtil;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.debugger.instrumentation.utils.Environment;
 import org.jumbune.debugger.instrumentation.utils.InstrumentConstants;
 import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
@@ -65,8 +65,8 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 	 * @param loader the loader
 	 * @param cv Class visitor
 	 */
-	public ConfigureMapReduceAdapter(Loader loader, ClassVisitor cv) {
-		super(loader, Opcodes.ASM4);
+	public ConfigureMapReduceAdapter(Config config, ClassVisitor cv) {
+		super(config, Opcodes.ASM4);
 		this.cv = cv;
 	}
 
@@ -77,8 +77,8 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 	 * @param cv the cv
 	 * @param env the env
 	 */
-	public ConfigureMapReduceAdapter(Loader loader, ClassVisitor cv,Environment env) {
-		super(loader, Opcodes.ASM4);
+	public ConfigureMapReduceAdapter(Config config, ClassVisitor cv,Environment env) {
+		super(config, Opcodes.ASM4);
 		this.cv = cv;
 		this.env = env;
 	}
@@ -346,9 +346,9 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 	 * @return Instructions
 	 */
 	private InsnList addPatternCompiler() {
-		YamlLoader yamlLoader = (YamlLoader)getLoader();
-		String keyRegex = yamlLoader.getMapReduceKeyRegex(getClassName());
-		String valueRegex = yamlLoader.getMapReduceValueRegex(getClassName());
+		JobConfig jobConfig = (JobConfig)getConfig();
+		String keyRegex = jobConfig.getMapReduceKeyRegex(getClassName());
+		String valueRegex = jobConfig.getMapReduceValueRegex(getClassName());
 
 		InsnList il = new InsnList();
 
@@ -388,10 +388,10 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 	 * @return the insn list
 	 */
 	private InsnList addValidatorInitializationInstructions() {
-		YamlLoader yamlLoader = (YamlLoader)getLoader();
-		String keyValidationClass = yamlLoader
+		JobConfig jobConfig = (JobConfig)getConfig();
+		String keyValidationClass = jobConfig
 				.getMapReduceKeyValidator(getClassName());
-		String valueValidationClass = yamlLoader
+		String valueValidationClass = jobConfig
 				.getMapReduceValueValidator(getClassName());
 
 		InsnList il = null;
@@ -534,12 +534,12 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 	 */
 	private InsnList prepareMapReduceForJumbuneInstructions(boolean isSetup,
 			MethodNode methodNode) {
-		YamlLoader yamlLoader = (YamlLoader)getLoader();
-		boolean instrumentMapreduceRegex =  yamlLoader
+		JobConfig jobConfig = (JobConfig)getConfig();
+		boolean instrumentMapreduceRegex =  jobConfig
 				.isInstrumentEnabled("instrumentRegex");
-		boolean instrumentMapreduceUserDefinedValidation = yamlLoader
+		boolean instrumentMapreduceUserDefinedValidation = jobConfig
 				.isInstrumentEnabled("instrumentUserDefValidate");
-		boolean instrumentJobPartitioner = yamlLoader
+		boolean instrumentJobPartitioner = jobConfig
 				.isInstrumentEnabled("partitioner");
 
 		InsnList il = new InsnList();
@@ -695,11 +695,11 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 
 		InsnList il = new InsnList();
 		il.add(new LabelNode());
-		YamlLoader yamlLoader = (YamlLoader)getLoader();
-		String logFileDir = yamlLoader.getSlaveLogLocationWithPlaceHolder()
+		JobConfig jobConfig = (JobConfig)getConfig();
+		String logFileDir = jobConfig.getSlaveLogLocation()
 				.substring(
 						0,
-						yamlLoader.getSlaveLogLocationWithPlaceHolder()
+						jobConfig.getSlaveLogLocation()
 								.lastIndexOf('/') + 1);
 
 		// getting task attempt id

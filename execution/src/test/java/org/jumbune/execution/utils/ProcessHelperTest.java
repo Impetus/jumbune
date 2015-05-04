@@ -9,20 +9,20 @@ import junit.framework.Assert;
 import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.beans.ServiceInfo;
 import org.jumbune.execution.utils.ProcessHelper;
-import org.jumbune.common.yaml.config.YamlLoader;
-import org.jumbune.execution.YamlLoaderProviderTest;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.junit.Before;
 import org.junit.Test;
 
 
 public class ProcessHelperTest {
 	ProcessHelper pHelper;
-	YamlLoader testYamlLoader;
+	JobConfig testJobConfig;
 
 	@Before
 	public void setup() {
 		pHelper = new ProcessHelper();
-		testYamlLoader = (YamlLoader)YamlLoaderProviderTest.getYamlLoader();
+		testJobConfig = (JobConfig)getJobConfig();
 	}
 
 	@Test
@@ -64,6 +64,10 @@ public class ProcessHelperTest {
 		List<JobDefinition> yamlJobDefList = new ArrayList<JobDefinition>();
 		boolean check = pHelper.validateJobs(yamlJobDefList, null);
 		Assert.assertFalse(check);
+	}
+	
+	public Config getJobConfig() {
+		return testJobConfig;
 	}
 
 }

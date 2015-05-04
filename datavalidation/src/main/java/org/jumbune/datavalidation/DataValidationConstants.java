@@ -38,6 +38,15 @@ public interface DataValidationConstants {
 	/** The num of fields check. */
 	String NUM_OF_FIELDS_CHECK = "Number of Fields";
 	
+	/** User defined null check */
+	String USER_DEFINED_NULL_CHECK = "Null Check";
+	
+	/** User defined Data type check */
+	String USER_DEFINED_DATA_TYPE = "Data Type";
+	
+	/** User defined regular expression check */
+	String USER_DEFINED_REGEX_CHECK = "Regex";
+	
 	/** The skip check. */
 	String SKIP_CHECK = " ";
 	

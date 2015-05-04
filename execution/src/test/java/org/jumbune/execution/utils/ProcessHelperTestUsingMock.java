@@ -1,10 +1,10 @@
 package org.jumbune.execution.utils;
 
-import java.io.FileInputStream;
+
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
+
 
 import junit.framework.Assert;
 import mockit.Expectations;
@@ -12,7 +12,7 @@ import mockit.Mocked;
 
 import org.jumbune.common.beans.ServiceInfo;
 import org.jumbune.execution.utils.ProcessHelper;
-import org.jumbune.utils.YamlUtil;
+import org.jumbune.utils.JobUtil;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -21,7 +21,7 @@ import com.google.gson.Gson;
 
 public class ProcessHelperTestUsingMock {
 	@Mocked
-	YamlUtil yamlUtil;
+	JobUtil jobUtil;
 	ProcessHelper pHelper;
 
 	@Before
@@ -48,7 +48,7 @@ public class ProcessHelperTestUsingMock {
 		final ServiceInfo sInfo = new ServiceInfo();
 		final Gson gson = new Gson();
 		sInfo.setDataValidationResultLocation("home");
-		final String serviceJsonPath = org.jumbune.common.utils.YamlConfigUtil.getServiceJsonPath();
+		final String serviceJsonPath = org.jumbune.common.utils.JobConfigUtil.getServiceJsonPath();
 		new Expectations() {
 			{
 				gson.fromJson(new FileReader(serviceJsonPath),ServiceInfo.class);
@@ -65,7 +65,7 @@ public class ProcessHelperTestUsingMock {
 		final ServiceInfo sInfo = new ServiceInfo();
 		final Gson gson = new Gson();
 		sInfo.setDataValidationResultLocation("home");
-		final String serviceJsonPath = org.jumbune.common.utils.YamlConfigUtil.getServiceJsonPath();
+		final String serviceJsonPath = org.jumbune.common.utils.JobConfigUtil.getServiceJsonPath();
 		new Expectations() {
 			{
 				gson.fromJson(new FileReader(serviceJsonPath),ServiceInfo.class);

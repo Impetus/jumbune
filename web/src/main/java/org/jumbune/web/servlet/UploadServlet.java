@@ -13,10 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.Constants;
-import org.jumbune.common.yaml.config.Config;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlConfig;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.web.utils.WebUtil;
@@ -26,7 +23,7 @@ import com.google.gson.JsonObject;
 
 
 /**
- * This servlet is called when a YamlFile is uploaded from UI It saves the
+ * This servlet is called when a JsonFile is uploaded from UI It saves the
  * YamlFile at a predefined location for further use.
  *
 
@@ -83,7 +80,7 @@ public class UploadServlet extends HttpServlet {
 		try {
 			out = response.getWriter();
 		} catch (IOException e) {
-			LOG.error(ErrorCodesAndMessages.UNABLE_TO_LOAD_YAML, e);
+			LOG.error(ErrorCodesAndMessages.UNABLE_TO_LOAD_JSON, e);
 			throw new ServletException(e);
 		}
 
@@ -91,36 +88,36 @@ public class UploadServlet extends HttpServlet {
 
 			response.setContentType("text/html");
 
-			String filePath = YamlLoader.getjHome() + Constants.USER_JSON_LOC;
+			String filePath = JobConfig.getJumbuneHome() + Constants.USER_JSON_LOC;
 
-			LOG.debug("File path for uploding yaml file :: " + filePath);
-			WebUtil util = new WebUtil();
-			List<File> uploadedFiles = util.uploadFiles(request, filePath);
-			// Only one yaml file could be uploaded at a time
-			YamlConfig yamlConfig = (YamlConfig) util.getYamlConfFromFile(uploadedFiles.get(0));
+			LOG.debug("File path for uploding json file :: " + filePath);
+			WebUtil webUtil = new WebUtil();
+			List<File> uploadedFiles = webUtil.uploadFiles(request, filePath);
+			// Only one job file could be uploaded at a time
+			JobConfig jobConfig = (JobConfig) webUtil.getJobConfFromFile(uploadedFiles.get(0));
 			Gson gson = new Gson();
-			JsonObject jsonObject = gson.toJsonTree(yamlConfig).getAsJsonObject();
-			if(yamlConfig.getClasspath()!=null && yamlConfig.getClasspath().getUserSupplied()!=null){
+			JsonObject jsonObject = gson.toJsonTree(jobConfig).getAsJsonObject();
+			if(jobConfig.getClasspath()!=null && jobConfig.getClasspath().getUserSupplied()!=null){
 			
 			String[] resources = null;
 			}
 			String jsonString = gson.toJson(jsonObject);
 			out.println(jsonString);
-			LOG.debug("Created yaml object successfully and written it to writer "
+			LOG.debug("Created json object successfully and written it to writer "
 					+ jsonString + "\n");
 
 		} catch (IOException ie) {
-			LOG.error(ErrorCodesAndMessages.UNABLE_TO_LOAD_YAML, ie);
+			LOG.error(ErrorCodesAndMessages.UNABLE_TO_LOAD_JSON, ie);
 			out.println("{\"ErrorAndException\" : \"Could not read from the Yaml File\"}");
 			throw new ServletException(ie);
 		} catch (JumbuneException e) {
-			LOG.error(ErrorCodesAndMessages.UNABLE_TO_LOAD_YAML, e);
+			LOG.error(ErrorCodesAndMessages.UNABLE_TO_LOAD_JSON, e);
 			out.println("{\"ErrorAndException\" : \"Yaml File data is incorrect\"}");
 			throw new ServletException(e);
 		} catch (Exception e) {
-			LOG.error(ErrorCodesAndMessages.UNABLE_TO_LOAD_YAML, e);
+			LOG.error(ErrorCodesAndMessages.UNABLE_TO_LOAD_JSON, e);
 			out.println("{\"ErrorAndException\" : \""
-					+ ErrorCodesAndMessages.UNABLE_TO_LOAD_YAML + "\"}");
+					+ ErrorCodesAndMessages.UNABLE_TO_LOAD_JSON + "\"}");
 			throw new ServletException(e);
 		} finally {
 			if (out != null) {

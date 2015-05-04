@@ -4,21 +4,18 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.jumbune.common.utils.RemotingUtil;
-import org.jumbune.common.yaml.config.Config;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlConfig;
-import org.jumbune.common.yaml.config.YamlLoader;
+
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.profiling.beans.BlockInfo;
 import org.jumbune.profiling.beans.DistributedDataInfo;
 import org.jumbune.profiling.beans.NodeBlockStats;
-import org.jumbune.utils.beans.VirtualFileSystem;
+
 
 import com.google.gson.Gson;
 
@@ -29,7 +26,7 @@ import com.google.gson.Gson;
  */
 public class DataDistributionStats {
 	private static final String COPY = "copy";
-	private Loader loader = null;
+	private Config config;
 	private int noOfBlocks = 0;
 	private int underReplicatedBlocks = 0;
 	private int corruptedBlocks = 0;
@@ -43,24 +40,23 @@ public class DataDistributionStats {
 	 *
 	 * @param yamlLoader the yaml loader
 	 */
-	public DataDistributionStats(Loader loader) {
-		this.loader =  loader;
+	public DataDistributionStats(Config config) {
+		this.config =  config;
 	}
 
 	public DistributedDataInfo calculateBlockReport() {
-		YamlLoader yamlLoader = (YamlLoader)loader;
-		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
-
+		JobConfig jobConfig = (JobConfig)config;
+	
 		DistributedDataInfo distributedDataInfo = new DistributedDataInfo();
 		String pathOfFileInHadoop = null;
-		pathOfFileInHadoop = yamlConfig.getDistributedHDFSPath();
-		String commadResult = ProfilerUtil.getBlockStatusCommandResult(yamlLoader,
+		pathOfFileInHadoop = jobConfig.getDistributedHDFSPath();
+		String commadResult = ProfilerUtil.getBlockStatusCommandResult(jobConfig,
 				pathOfFileInHadoop);
-		populateBlockInformationReport(yamlConfig, commadResult, distributedDataInfo);
+		populateBlockInformationReport(jobConfig, commadResult, distributedDataInfo);
 		return distributedDataInfo;
 	}
 	
-	private void populateBlockInformationReport(YamlConfig config,
+	private void populateBlockInformationReport(JobConfig config,
 			String response, DistributedDataInfo distributedDataInfo) {
 		Long totlaDataOnNode = 0l;
 		nodeWeight = new HashMap<String, NodeBlockStats>();

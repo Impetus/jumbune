@@ -21,8 +21,8 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.LogConsolidationInfo;
 import org.jumbune.common.beans.Master;
 import org.jumbune.common.beans.Slave;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.CommandType;
@@ -202,7 +202,7 @@ public class RemoteFileUtil {
 		String locationMaster = master.getLocation();
 		String userMaster = master.getUser();
 		String hostMaster = master.getHost();
-		String appHome = YamlLoader.getjHome();
+		String appHome = JobConfig.getJumbuneHome();
 		String relativePath = locationMaster.substring(appHome.length() - 1, locationMaster.length());
 		Remoter remoter = new Remoter(hostMaster, Integer.valueOf(master.getAgentPort()));
 		String remoteMkdir = MKDIR_P_CMD + AGENT_HOME + relativePath;
@@ -257,7 +257,7 @@ public class RemoteFileUtil {
 		String locationMaster = master.getLocation();
 		String userMaster = master.getUser();
 		String hostMaster = master.getHost();
-		String appHome = YamlLoader.getjHome();
+		String appHome = JobConfig.getJumbuneHome();
 		String relativePath = locationMaster.substring(appHome.length() - 1, locationMaster.length());
 		Remoter remoter = new Remoter(hostMaster, Integer.valueOf(master.getAgentPort()));
 		String remoteMkdir = MKDIR_P_CMD + AGENT_HOME + relativePath;
@@ -312,19 +312,19 @@ public class RemoteFileUtil {
 	/**
 	 * Copy remote lib files to master.
 	 * 
-	 * @param loader
+	 * @param config
 	 *            the loader
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 * @throws InterruptedException
 	 *             the interrupted exception
 	 */
-	public void copyRemoteLibFilesToMaster(Loader loader) throws IOException, InterruptedException {
-		YamlLoader yamlLoader = (YamlLoader)loader;
-		String userLibLoc = yamlLoader.getUserLibLocatinAtMaster();
-		Master master = yamlLoader.getMasterInfo();
+	public void copyRemoteLibFilesToMaster(Config config) throws IOException, InterruptedException {
+		JobConfig jobConfig = (JobConfig)config;
+		String userLibLoc = jobConfig.getUserLibLocationAtMaster();
+		Master master = jobConfig.getMaster();
 
-		String jobName = yamlLoader.getJumbuneJobName();
+		String jobName = jobConfig.getJumbuneJobName();
 
 		Remoter remoter = new Remoter(master.getHost(), Integer.valueOf(master.getAgentPort()), jobName);
 		String mkdir = MKDIR_P_CMD + userLibLoc;
@@ -332,17 +332,17 @@ public class RemoteFileUtil {
 		builder.addCommand(mkdir, false, null, CommandType.FS);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 
-		Slave slave = yamlLoader.getSlavesInfo().get(0);
+		Slave slave = jobConfig.getFirstUserWorker();
 		String host = slave.getHosts()[0];
 
-		List<String> fileList = ConfigurationUtil.getAllClasspathFiles(yamlLoader.getClasspathFolders(ClasspathUtil.USER_SUPPLIED),
-				yamlLoader.getClasspathExcludes(ClasspathUtil.USER_SUPPLIED), yamlLoader.getClasspathFiles(ClasspathUtil.USER_SUPPLIED));
+		List<String> fileList = ConfigurationUtil.getAllClasspathFiles(jobConfig.getClasspathFolders(ClasspathUtil.USER_SUPPLIED),
+				jobConfig.getClasspathExcludes(ClasspathUtil.USER_SUPPLIED), jobConfig.getClasspathFiles(ClasspathUtil.USER_SUPPLIED));
 
 		for (String file : fileList) {
 			String command = "scp " + slave.getUser() + "@" + host + ":" + file + " " + master.getUser() + "@" + master.getHost() + ":" + userLibLoc;
 			LOGGER.debug("Executing the cmd: " + command);
 			builder.getCommandBatch().clear();
-			builder.addCommand(command, false, null, CommandType.FS).populate(yamlLoader.getYamlConfiguration(), null);
+			builder.addCommand(command, false, null, CommandType.FS).populate(config, null);
 			remoter.fireAndForgetCommand(builder.getCommandWritable());
 		}
 		remoter.close();
@@ -410,19 +410,19 @@ public class RemoteFileUtil {
 	 * @throws JumbuneException
 	 *             the hTF exception
 	 */
-	public static int getRemoteThreadsOrCore(Loader loader, String coreOrThread) throws JumbuneException {
+	public static int getRemoteThreadsOrCore(Config config, String coreOrThread) throws JumbuneException {
 
-		YamlLoader yamlLoader = (YamlLoader)loader;
-		Master master = yamlLoader.getLogMaster();
+		JobConfig jobConfig = (JobConfig)config;
+		Master master = jobConfig.getLogMaster();
 		String host = master.getHost();
 		Integer agentPort = Integer.valueOf(master.getAgentPort());
 
-		String jobName = yamlLoader.getJumbuneJobName();
+		String jobName = jobConfig.getJumbuneJobName();
 		String command = "lscpu | grep " + coreOrThread;
 		Remoter remoter = new Remoter(host, agentPort, jobName);
 
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(command, false, null, CommandType.FS).populate(yamlLoader.getYamlConfiguration(), null);
+		builder.addCommand(command, false, null, CommandType.FS).populate(config, null);
 		String line = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		remoter.close();
 		if (line == null || "".equals(line.trim())) {
@@ -504,23 +504,23 @@ public class RemoteFileUtil {
 	 */
 	private void execute(String[] commands, String directory) {
 
-		ProcessBuilder pb = new ProcessBuilder(commands);
+		ProcessBuilder processBuilder = new ProcessBuilder(commands);
 		if (directory != null && !directory.isEmpty()) {
-			pb.directory(new File(directory));
+			processBuilder.directory(new File(directory));
 		} else {
-			pb.directory(new File(YamlLoader.getjHome()));
+			processBuilder.directory(new File(JobConfig.getJumbuneHome()));
 		}
-		Process p = null;
-		InputStream is = null;
-		BufferedReader br = null;
+		Process process = null;
+		InputStream inputStream = null;
+		BufferedReader bufferReader = null;
 		try {
-			p = pb.start();
-			is = p.getInputStream();
-			if (is != null) {
-				br = new BufferedReader(new InputStreamReader(is));
-				String line = br.readLine();
+			process = processBuilder.start();
+			inputStream = process.getInputStream();
+			if (inputStream != null) {
+				bufferReader = new BufferedReader(new InputStreamReader(inputStream));
+				String line = bufferReader.readLine();
 				while (line != null) {
-					line = br.readLine();
+					line = bufferReader.readLine();
 				}
 			}
 
@@ -528,12 +528,9 @@ public class RemoteFileUtil {
 			LOGGER.error(e);
 		} finally {
 			try {
-				if (br != null) {
-					br.close();
-				}
-				if(is != null){
-					is.close();
-				}
+				if (bufferReader != null) {
+					bufferReader.close();
+				}	
 			} catch (IOException e) {
 				LOGGER.error(e);
 			}
@@ -552,24 +549,24 @@ public class RemoteFileUtil {
 	public static List<String> executeResponseList(String[] commands, String directory) {
 
 		List<String> responseList = new ArrayList<String>();
-		ProcessBuilder pb = new ProcessBuilder(commands);
+		ProcessBuilder processBuilder = new ProcessBuilder(commands);
 		if (directory != null && !directory.isEmpty()) {
-			pb.directory(new File(directory));
+			processBuilder.directory(new File(directory));
 		} else {
-			pb.directory(new File(YamlLoader.getjHome()));
+			processBuilder.directory(new File(JobConfig.getJumbuneHome()));
 		}
-		Process p = null;
-		InputStream is = null;
-		BufferedReader br = null;
+		Process process = null;
+		InputStream inputStream = null;
+		BufferedReader bufferReader = null;
 		try {
-			p = pb.start();
-			is = p.getInputStream();
-			if (is != null) {
-				br = new BufferedReader(new InputStreamReader(is));
-				String line = br.readLine();
+			process = processBuilder.start();
+			inputStream = process.getInputStream();
+			if (inputStream != null) {
+				bufferReader = new BufferedReader(new InputStreamReader(inputStream));
+				String line = bufferReader.readLine();
 				while (line != null) {
 					responseList.add(line);
-					line = br.readLine();
+					line = bufferReader.readLine();
 				}
 			}
 		  return responseList;
@@ -577,11 +574,11 @@ public class RemoteFileUtil {
 			LOGGER.error(e);
 		} finally {
 			try {
-				if (br != null) {
-					br.close();
+				if (bufferReader != null) {
+					bufferReader.close();
 				}
-				if(is != null){
-					is.close();
+				if(inputStream != null){
+					inputStream.close();
 				}
 			} catch (IOException e) {
 				LOGGER.error(e);
@@ -608,8 +605,7 @@ public class RemoteFileUtil {
 		String locationMaster = master.getLocation();
 		String userMaster = master.getUser();
 		String hostMaster = master.getHost();
-
-		String appHome = YamlLoader.getjHome();
+		String appHome = JobConfig.getJumbuneHome();
 		String relativePath = locationMaster.substring(appHome.length() - 1, locationMaster.length());
 		Remoter remoter = new Remoter(hostMaster, Integer.valueOf(master.getAgentPort()));
 		String remoteMkdir = MKDIR_P_CMD + AGENT_HOME + relativePath;

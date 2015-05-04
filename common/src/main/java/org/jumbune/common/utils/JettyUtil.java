@@ -17,7 +17,7 @@ import java.util.List;
 
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.client.SingleNIOEventGroup;
-import org.jumbune.remoting.common.BasicYamlConfig;
+import org.jumbune.remoting.common.BasicJobConfig;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.writable.CommandWritable;
 import org.jumbune.remoting.writable.CommandWritable.Command;
@@ -43,7 +43,7 @@ public final class JettyUtil {
 	/** The Constant PID_FILE. */
 	private static final String PID_FILE = "pid.txt";
 	
-	private static final String YAML_FILE = "/yamlInfo.ser";
+	private static final String JSON_FILE = "/jsonInfo.ser";
 	
 	/**
 	 * Utility class for performing jetty operations.
@@ -52,6 +52,8 @@ public final class JettyUtil {
 	 */
 	public static void main(String[] args) {
 
+		BufferedWriter bufferedWriter = null;
+	
 		try {
 
 			String command = null;
@@ -74,9 +76,8 @@ public final class JettyUtil {
 				shutDownNettyEventLoopGroup();
 				InetAddress host = InetAddress.getByName("127.0.0.1");
 				Socket socket = new Socket(host.getHostName(), stopPort);
-				BufferedWriter oos = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-				oos.write(stopKey + "\nstop");
-				oos.close();
+				bufferedWriter= new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+				bufferedWriter.write(stopKey + "\nstop");	
 				ConsoleLogUtil.CONSOLELOGGER.info(command + " Jumbune has been shutdown successfully.");
 
 			} else {
@@ -89,30 +90,35 @@ public final class JettyUtil {
 			ConsoleLogUtil.CONSOLELOGGER.error(e);
 		}catch (ClassNotFoundException e) {
 			ConsoleLogUtil.CONSOLELOGGER.error(e);
+		}finally{
+			try {
+				if(bufferedWriter!=null){
+					bufferedWriter.close();
+			    	  }
+					} catch (IOException e) {
+				ConsoleLogUtil.CONSOLELOGGER.error("Unable to close connection", e);
+			}
 		}
 	}
 
 
 	private static void performTopCommandCleanUp()
 			throws IOException, ClassNotFoundException {
-		String jHome = System.getenv("JUMBUNE_HOME");
+		String jumbuneHome = System.getenv("JUMBUNE_HOME");
 		ObjectInputStream objectinputstream = null;
 		InputStream streamIn = null;
 		 try {
-			 	File file = new File(jHome+YAML_FILE);
+			 	File file = new File(jumbuneHome+JSON_FILE);
 			 	if(file.exists()){
-				 	streamIn = new FileInputStream(jHome+YAML_FILE);
+				 	streamIn = new FileInputStream(jumbuneHome+JSON_FILE);
 			        objectinputstream= new ObjectInputStream(streamIn);
-			        BasicYamlConfig config = (BasicYamlConfig) objectinputstream.readObject();
-			        shutTopCmdOnSlaves(config);
+			        BasicJobConfig basicJobConfig = (BasicJobConfig) objectinputstream.readObject();
+			        shutTopCmdOnSlaves(basicJobConfig);
 			 	}
 		    }finally {
 		        if(objectinputstream != null){
 		            objectinputstream .close();
-		         } 
-		        if(streamIn!= null){
-		        	streamIn.close();
-		        }
+		         }
 		 }
 	}
 
@@ -143,7 +149,7 @@ public final class JettyUtil {
 	 */
 	public static void usage(String error) {
 		if (error != null){
-			ConsoleLogUtil.CONSOLELOGGER.error("ERROR: " + error);}
+		ConsoleLogUtil.CONSOLELOGGER.error("ERROR: " + error);}
 		ConsoleLogUtil.CONSOLELOGGER.error("Usage: java -class org.jumbune.common.util.jettyUtil [server opts] ");
 		ConsoleLogUtil.CONSOLELOGGER.error("Server Options:");
 		ConsoleLogUtil.CONSOLELOGGER.error(" --command                          - command to execute( at present 'stop' is supported");
@@ -156,7 +162,7 @@ public final class JettyUtil {
 	 * Kills the proces on each node which dumps top result to a file.
 	 *
 	 */
-	private static void shutTopCmdOnSlaves(BasicYamlConfig config) {
+	private static void shutTopCmdOnSlaves(BasicJobConfig config) {
 		String slaveTmpDir = config.getTmpDir();
 		StringBuilder command = new StringBuilder();
 		command.append(CAT_CMD).append(SPACE).append(slaveTmpDir).append(File.separator).append(PID_FILE);

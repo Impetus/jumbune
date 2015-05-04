@@ -10,9 +10,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Validation;
 import org.jumbune.common.utils.CollectionUtil;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlConfig;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.debugger.instrumentation.utils.ContextWriteParams;
 import org.jumbune.debugger.instrumentation.utils.InstrumentConstants;
 import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
@@ -46,14 +45,13 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 	 * @param loader
 	 * @param cv
 	 */
-	public ContextWriteValidationAdapter(Loader loader, ClassVisitor cv) {
-		super(loader, Opcodes.ASM4);
+	public ContextWriteValidationAdapter(Config config, ClassVisitor cv) {
+		super(config, Opcodes.ASM4);
 		this.cv = cv;
 		validateingMessage = InstrumentationMessageLoader
 				.getMessage(MessageConstants.VALIDATION_KEY_VALUE);
-		YamlLoader yamlLoader = (YamlLoader) getLoader();
-		YamlConfig yamlConfig = (YamlConfig) yamlLoader.getYamlConfiguration();
-		logKeyValues = yamlConfig.getLogKeyValues().getEnumValue();
+		JobConfig jobConfig = (JobConfig) getConfig();
+		logKeyValues = jobConfig.getLogKeyValues().getEnumValue();
 	}
 
 	/**
@@ -72,10 +70,10 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 	 */
 	@Override
 	public void visitEnd() {
-		YamlLoader yamlLoader = (YamlLoader)getLoader();
-		if (validateUserValidationClass(yamlLoader.getUserValidations(),
+		JobConfig jobConfig = (JobConfig)getConfig();
+		if (validateUserValidationClass(jobConfig.getUserValidations(),
 				getClassName())
-				|| validateRegexValidationClass(yamlLoader.getRegex(),
+				|| validateRegexValidationClass(jobConfig.getRegex(),
 						getClassName())) {
 			for (int i = 0; i < methods.size(); i++) {
 				MethodNode mn = (MethodNode) methods.get(i);
@@ -174,14 +172,14 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 	 */
 	private void addValidations(InsnList patternValidationInsnList, InstructionsBean insBean,
 			MethodNode methodNode) {
-		YamlLoader yamlLoader = (YamlLoader)getLoader();
-		String keyValidationClass = yamlLoader
+		JobConfig jobConfig = (JobConfig)getConfig();
+		String keyValidationClass = jobConfig
 				.getMapReduceKeyValidator(getClassName());
-		String valueValidationClass = yamlLoader
+		String valueValidationClass = jobConfig
 				.getMapReduceValueValidator(getClassName());
-		boolean instrumentMapreduceUserdefinedValidation = yamlLoader
+		boolean instrumentMapreduceUserdefinedValidation = jobConfig
 				.isInstrumentEnabled("instrumentUserDefValidate");
-		boolean instrumentMapreduceRegex = yamlLoader
+		boolean instrumentMapreduceRegex = jobConfig
 				.isInstrumentEnabled("instrumentRegex");
 
 		int keyIndex = 0;
@@ -191,7 +189,7 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 		String[] validators = new String[2];
 
 		if (instrumentMapreduceUserdefinedValidation && 
-				validateUserValidationClass(yamlLoader.getUserValidations(),getClassName())) {
+				validateUserValidationClass(jobConfig.getUserValidations(),getClassName())) {
 				validators[keyIndex] = keyValidationClass;
 				validators[valueIndex] = valueValidationClass;
 
@@ -222,13 +220,14 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 			InstructionsBean insBean, MethodNode methodNode,
 			boolean instrumentMapreduceRegex, boolean[] isValidated) {
 		
-		YamlLoader yamlLoader = (YamlLoader)getLoader();
-		String keyRegex = yamlLoader.getMapReduceKeyRegex(getClassName());
-		String valueRegex = yamlLoader.getMapReduceValueRegex(getClassName());
+		JobConfig jobConfig = (JobConfig)getConfig();
+		String keyRegex = jobConfig.getMapReduceKeyRegex(getClassName());
+		String valueRegex = jobConfig.getMapReduceValueRegex(getClassName());
+		
 		int keyIndex = 0;
 		int valueIndex = 1;
 		if (instrumentMapreduceRegex && 
-				validateRegexValidationClass(yamlLoader.getRegex(), getClassName())) {
+				validateRegexValidationClass(jobConfig.getRegex(), getClassName())) {
 				// Fetching regEx for validating key/value
 				String[] validators=new String[2];
 				validators[keyIndex] = keyRegex;

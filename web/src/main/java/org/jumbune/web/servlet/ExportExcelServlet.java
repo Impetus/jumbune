@@ -17,8 +17,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.HttpReportsBean;
 import org.jumbune.common.utils.Constants;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.execution.utils.ReportGenerator;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.web.utils.WebConstants;
@@ -63,17 +63,17 @@ public class ExportExcelServlet extends HttpServlet {
 		HttpReportsBean reports;
 		Map<String, String> map = null;
 		Map<String, String> reportsJson = null;
-		Loader loader = null;
+		Config config = null;
 		String jumbuneJobName = null;
 		try {
 
 			if (!(session.getAttribute(WebConstants.REPORTS_BEAN) == null )) {
 								 
 					reports = (HttpReportsBean) session.getAttribute(WebConstants.REPORTS_BEAN);
-					loader = (Loader) session.getAttribute("loader");
+					config = (Config) session.getAttribute("config");
 					map = reports.getAllReports();
 					reportsJson = (Map<String, String>) ((HashMap<String, String>) reports.getAllReports()).clone();
-				callTowriteToExcelFile(request, out, map, reportsJson, loader,
+				callTowriteToExcelFile(request, out, map, reportsJson, config,
 						jumbuneJobName);
 
 			} else {
@@ -111,20 +111,20 @@ public class ExportExcelServlet extends HttpServlet {
 	 */
 	private void callTowriteToExcelFile(HttpServletRequest request,
 			PrintWriter out, Map<String, String> map,
-			Map<String, String> reportsJson, Loader loader,
+			Map<String, String> reportsJson, Config config,
 			final String jumbuneJobName) throws FileNotFoundException, IOException,
 			JumbuneException {
 		String jobName = jumbuneJobName;
-		YamlLoader yamlLoader = (YamlLoader)loader;
-		if (loader != null){
-			jobName = yamlLoader.getJumbuneJobName().substring(0, (yamlLoader.getJumbuneJobName().length()) - 1);}
+		JobConfig jobConfig = (JobConfig)config;
+		if (config != null){
+			jobName = jobConfig.getJumbuneJobName().substring(0, (jobConfig.getJumbuneJobName().length()) - 1);}
 		String contextRealPath = request.getRealPath("");
 		String xlsFolder = WebConstants.REPORT_DIR;
 		String fileName = "/" + (jobName == null ? "Report" : jobName) + System.currentTimeMillis() + WebConstants.XLS_EXT;
 
 		File xlsDirectory = new File(contextRealPath + xlsFolder);
 		checkAndMakeExcelDirectory(xlsDirectory);
-		addDataValidationReportToMap(map, loader);
+		addDataValidationReportToMap(map, config);
 
 		ReportGenerator.writesToExcelFile(map, contextRealPath + xlsFolder + fileName, reportsJson);
 		LOG.info("Exported to Excel Successfully....");
@@ -150,10 +150,10 @@ public class ExportExcelServlet extends HttpServlet {
 	 * @param loader loads the yaml
 	 */
 	private void addDataValidationReportToMap(Map<String, String> map,
-			Loader loader) {
-		YamlLoader yamlLoader = (YamlLoader)loader;
-		if (map.containsKey(Constants.DATA_VALIDATION) && loader != null) {
-			map.put(Constants.DATA_VALIDATION, yamlLoader.getJumbuneJobLoc());
+			Config config) {
+		JobConfig jobConfig = (JobConfig)config;
+		if (map.containsKey(Constants.DATA_VALIDATION) && config != null) {
+			map.put(Constants.DATA_VALIDATION, jobConfig.getJumbuneJobLoc());
 		}
 	}
 
@@ -169,7 +169,5 @@ public class ExportExcelServlet extends HttpServlet {
 		return request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
 	}
 
-	
 
-	
 }

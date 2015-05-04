@@ -33,8 +33,8 @@ public interface ErrorMessages {
 	/** The message execution type. */
 	int MESSAGE_EXECUTION_TYPE = 2008;
 	
-	/** The message yaml path. */
-	int MESSAGE_YAML_PATH = 2009;
+	/** The message json path. */
+	int MESSAGE_JSON_PATH = 2009;
 	
 	/** The slave field num. */
 	int SLAVE_FIELD_NUM = 2010;
@@ -157,14 +157,14 @@ public interface ErrorMessages {
 	int SLAVE_USER_FIELD_NULL = 2057;
 	
 	/** The invalid yaml. */
-	int INVALID_YAML = 2058;
+	int INVALID_JSON = 2058;
 	
 	/** The profile empty. */
 	int PROFILE_EMPTY = 2059;
 	
 	/** The dvalid empty. */
 	int DVALID_EMPTY = 2060;
-	
+		
 	/** The master host user. */
 	int MASTER_HOST_USER = 2061;
 	
@@ -313,12 +313,12 @@ public interface ErrorMessages {
 	/** profiler is already runnig. */
 	int PROFILER_ALREADY_RUNNING = 2110;
 	
-	/**existing job name invalid */
+	/** existing job name invalid. */
 	int EXISTING_JOB_INVALID = 2111;
 	
-	/**existing job name invalid */
+	/** existing jar name invalid. */
 	int SUPPLIED_JAR_INVALID = 2112;
-	
+   
 	/** The both debugger validations null. */
-	int BOTH_DEBUGGER_VALIDATIONS_NULL = 2113;
+	int BOTH_DEBUGGER_VALIDATIONS_NULL=2113;
 }

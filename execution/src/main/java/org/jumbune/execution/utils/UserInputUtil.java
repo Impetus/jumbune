@@ -20,15 +20,15 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.DebuggerConf;
 import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.utils.MessageLoader;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.utils.beans.LogLevel;
 import org.jumbune.utils.exception.JumbuneException;
 
 
 /**
  * This class shows various options to user to change the properties mentioned
- * in his customized yaml file
+ * in his customized json file
  * 
  */
 public class UserInputUtil {
@@ -36,19 +36,19 @@ public class UserInputUtil {
 	private static final Logger LOGGER = LogManager
 			.getLogger(UserInputUtil.class);
 
-	private Loader loader;
 	private static final MessageLoader MESSAGES = MessageLoader.getInstance();
 	private static String validInput;
 	private Scanner scanner;
+	private Config config;
 
 	/**
 	 * public constructor for UserInputUtil
 	 * @param loader
 	 * @param scanner
 	 */
-	public UserInputUtil(Loader loader, Scanner scanner) {
+	public UserInputUtil(Scanner scanner, Config config) {
 		this.scanner = scanner;
-		this.loader = loader;
+		this.config = config;
 		validInput = MESSAGES.get(MESSAGE_VALID_INPUT);
 	}
 
@@ -89,8 +89,8 @@ public class UserInputUtil {
 					break;
 				}
 			}
-			YamlLoader yamlLoader = (YamlLoader)loader;
-			yamlLoader.setJobDefinitionList(jobDefList);
+			JobConfig jobConfig = (JobConfig)config;
+			jobConfig.setJobs(jobDefList);
 		}
 
 		String askForLoggingEnabled = MessageFormat.format(
@@ -100,8 +100,8 @@ public class UserInputUtil {
 		// Changing instrumentation enabling information
 		if (ExecutionUtil.askYesNoInfo(scanner, validInput,
 				askForLoggingEnabled)) {
-			YamlLoader yamlLoader = (YamlLoader)loader;
-			DebuggerConf instruDef = yamlLoader.getInstrumentation();
+			JobConfig jobConfig = (JobConfig)config;
+			DebuggerConf instruDef = jobConfig.getDebuggerConf();
 
 			Map<String, LogLevel> logLevelMap = instruDef.getLogLevel();
 

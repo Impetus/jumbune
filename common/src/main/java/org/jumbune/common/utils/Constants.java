@@ -9,12 +9,15 @@ public interface Constants {
 
 	/** The data validation. */
 	String DATA_VALIDATION = "DATA_VALIDATION";
+	
+	/** Data Quality Timeline module **/
+	String DATA_QUALITY_TIMELINE = "DATA_QUALITY_TIMELINE";
 
 	/** The h command. */
-	String H_COMMAND = "bin/hadoop";
+	String HADOOP_COMMAND = "bin/hadoop";
 	
 	/** The h command type. */
-	String H_COMMAND_TYPE = "jar";
+	String HADOOP_COMMAND_TYPE = "jar";
 	
 	/** The h profile param. */
 	String H_PROFILE_PARAM = "-agentlib:hprof=format=b,force=n,thread=y,verbose=n,file=%s";
@@ -103,7 +106,7 @@ public interface Constants {
 	/** The user yaml loc. */
 	String USER_YAML_LOC = "/yaml";
 	
-	/** The user yaml loc. */
+	/** The user json loc. */
     String USER_JSON_LOC = "/json";
     
 	/** The jar. */
@@ -353,75 +356,95 @@ public interface Constants {
 	/** The space separator. */
 	String SPACE_SEPARATOR = "SPACE_SEPARATOR";
 	
-	/**
-	 * String for ls command
-	 */
+	/** String for ls command. */
 	String LS_COMMAND = "ls";
 	
-	/**
-	 * The Pure Jar Counter String
-	 */
+	/** The Pure Jar Counter String. */
 	String PURE_JAR_COUNTER = "PURE_JAR_COUNTER";
 	
-	/**
-	 * The Pure Profiling String
-	 */
+	/** The Pure Profiling String. */
 	String PURE_PROFILING = "PURE_PROFILING";
 	
-	/**
-	 * The Instrumented jar Counter String
-	 */
+	/** The Instrumented jar Counter String. */
 	String INSTRUMENTED_JAR_COUNTER = "INSTRUMENTED_JAR_COUNTER";
 	
-	/**
-	 * The Debug Analyzer String
-	 */
+	/** The Debug Analyzer String. */
 	String DEBUG_ANALYZER = "DEBUG_ANALYZER";	
-
+	
 	/** The map input record. */
 	String MAP_INPUT_RECORD = "Map input records";
-
+	
 	/** The reduce output record. */
-	String REDUCE_OUTPUT_RECORD = "Reduce output records";
+	String REDUCE_OUTPUT_RECORD= "Reduce output records";
+	
+	/** The Constant ECHO_HADOOP_HOME. */
+	String ECHO_HADOOP_HOME = "echo $HADOOP_HOME \n \n";
 
+	/** The Constant SYSTEM_STATS_DIR. */
+	String SYSTEM_STATS_DIR = "SystemStats";
+	
+	/** The Constant MKDIR_P_CMD. */
+	String MKDIR_P_CMD = "mkdir -p ";
+
+	/** The Constant CHMOD_CMD. */
+	String CHMOD_CMD = "chmod -R o+w ";
+	
 	/*
 	 * Following are Number literals used in different classes, to avoid usage of magic numbers
 	 */
 	
+	/** The one zero two four. */
 	int ONE_ZERO_TWO_FOUR = 1024;	
 	
+	/** The five hundred. */
 	int FIVE_HUNDRED = 500;
 	
+	/** The twenty two. */
 	int TWENTY_TWO= 22;
 	 
+	/** The thousand. */
 	int THOUSAND = 1000;
 	
+	/** The three. */
 	int THREE = 3;
 	
+	/** The four. */
 	int FOUR = 4;
 	
+	/** The eight. */
 	int EIGHT = 8;
 	
+	/** The hundred. */
 	int HUNDRED = 100;
 	
+	/** The ten thousand. */
 	int TEN_THOUSAND = 10000;
 	
+	/** The five thousand. */
 	int FIVE_THOUNSAND = 5000;
 		
- 	int FIFTY = 50;
+ 	/** The fifty. */
+	 int FIFTY = 50;
 
+	/** The five. */
 	int FIVE = 5;
 	
+	/** The tenl. */
 	long TENL = 10L;
 
+	/** The zero cross zero a. */
 	byte ZERO_CROSS_ZERO_A = 0x0a;
 	
+	/** The nine. */
 	int NINE = 9;
 	
+	/** The four hundred fifty seven. */
 	int FOUR_HUNDERED_FIFTY_SEVEN = 457;
 	
+	/** The four hundred sixty one. */
 	int FOUR_HUNDERED_SIXTY_ONE = 461;
 	
+	/** The one three three. */
 	int ONE_THREE_THREE = 133;	
 	
 }

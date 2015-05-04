@@ -14,11 +14,13 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.commons.fileupload.FileUploadException;
 import org.jumbune.common.beans.ClasspathElement;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.ValidateInput;
-import org.jumbune.common.utils.YamlConfigUtil;
-import org.jumbune.common.yaml.config.YamlConfig;
+import org.jumbune.common.utils.JobConfigUtil;
+import org.jumbune.common.job.JobConfig;
+import org.jumbune.common.job.Config;
 import org.jumbune.web.utils.WebConstants;
 import org.jumbune.web.utils.WebUtil;
 
@@ -29,7 +31,7 @@ import com.google.gson.JsonSyntaxException;
 
 
 /**
- * Class which validates the yaml that is submitted by client.
+ * Class which validates the json that is submitted by client.
  */
 @WebServlet("/ValidateYamlServlet")
 public class ValidateServlet extends HttpServlet {
@@ -42,7 +44,7 @@ public class ValidateServlet extends HttpServlet {
             .getLogger(ValidateServlet.class);
 
     /**
-     * Instantiates a new validate yaml servlet.
+     * Instantiates a new validate json servlet.
      *
      * @see HttpServlet#HttpServlet()
      */
@@ -65,7 +67,7 @@ public class ValidateServlet extends HttpServlet {
         Map<String, Map<String, Map<String, String>>> validatedData = null;
         StringBuilder sBuilder = new StringBuilder();
         String validateString = null;
-        YamlConfig config = null;
+        JobConfig config = null;
         Gson gsonDV = new Gson();
         PrintWriter out = response.getWriter();
         BufferedReader br = request.getReader();
@@ -74,20 +76,20 @@ public class ValidateServlet extends HttpServlet {
             sBuilder.append(string);
         }
         try {
-            config = (YamlConfig) WebUtil.prepareYamlConfig(sBuilder.toString());
+            config = (JobConfig) WebUtil.prepareJobConfig(sBuilder.toString());
             ClasspathElement classpathElement = config.getClasspath()
                     .getUserSupplied();
 
             setUserSuppliedJarsIntoClasspathElement(sBuilder, config,
                     classpathElement);
-            validatedData = new ValidateInput().validateYaml(config);
+            validatedData = new ValidateInput().validateJson(config);
 
         }catch (IOException e) {
             validatedData = new HashMap<String, Map<String, Map<String,String>>>();
             Map<String, Map<String,String>> exceptionMap = new HashMap<String, Map<String,String>>();
             Map<String,String> exceptions = new HashMap<String,String>();
             exceptions
-                    .put("basic","Could not be parsed Yaml, fill the input Yaml Form again");
+                    .put("basic","Could not be parsed Json, fill the input Json Form again");
             exceptionMap.put(Constants.BASIC_VALIDATION, exceptions);
             validatedData.put(Constants.FAILURE_KEY, exceptionMap);
 
@@ -95,18 +97,18 @@ public class ValidateServlet extends HttpServlet {
             validatedData = new HashMap<String, Map<String, Map<String,String>>>();
             Map<String, Map<String,String>> exceptionMap = new HashMap<String, Map<String,String>>();
             Map<String,String> exceptionList = new HashMap<String,String>();
-            exceptionList.put("basic","Could not be parsed Yaml, fill the input Yaml Form again");
+            exceptionList.put("basic","Could not be parsed Json, fill the input Json Form again");
             exceptionMap.put(Constants.BASIC_VALIDATION, exceptionList);
             validatedData.put(Constants.FAILURE_KEY, exceptionMap);
 
         } catch (IllegalArgumentException e) {
-            LOGGER.error("YamlWizard has wrong input",e);
+            LOGGER.error("JsonWizard has wrong input",e);
         } catch (Exception e) {
             LOGGER.error("Internal error may cause issue",e);
         }
 
         validateString = gsonDV.toJson(validatedData);
-        LOGGER.info("Completed YamlForm validation.");
+        LOGGER.info("Completed JsonForm validation.");
         response.setContentType("application/json");
         out.print(validateString);
         out.flush();
@@ -119,11 +121,11 @@ public class ValidateServlet extends HttpServlet {
      * Sets the user supplied jars into classpath element.
      *
      * @param sBuilder the s builder
-     * @param config class is the bean for the yaml file
+     * @param config class is the bean for the json file
      * @param classpathElement class is the bean for the classpath elements
      */
     private void setUserSuppliedJarsIntoClasspathElement(
-            StringBuilder sBuilder, YamlConfig config,
+            StringBuilder sBuilder, JobConfig config,
             ClasspathElement classpathElement) {
         if (classpathElement.getSource() == Constants.MASTER_MAC_PATH
                 && WebUtil.isRequiredModuleEnable(config)) {
@@ -133,19 +135,19 @@ public class ValidateServlet extends HttpServlet {
             resources = WebUtil.jsonValueOfMasterMachineField(
                     WebConstants.DEPENDENT_JAR_MASTER_MACHINE_PATH, json);
             if (resources != null) {
-                String [] path = YamlConfigUtil.replaceJumbuneHome(resources);
+                String [] path = JobConfigUtil.replaceJumbuneHome(resources);
                 classpathElement.setFolders(path);
             }
             resources = WebUtil.jsonValueOfMasterMachineField(
                     WebConstants.DEPENDENT_JAR_INCLUDE, json);
             if (resources != null) {
-                String [] path = YamlConfigUtil.replaceJumbuneHome(resources);
+                String [] path = JobConfigUtil.replaceJumbuneHome(resources);
                 classpathElement.setFiles(path);
             }
             resources = WebUtil.jsonValueOfMasterMachineField(
                     WebConstants.DEPENDENT_JAR_EXCLUDE, json);
             if (resources != null) {
-                String [] path = YamlConfigUtil.replaceJumbuneHome(resources);
+                String [] path = JobConfigUtil.replaceJumbuneHome(resources);
                 classpathElement.setExcludes(path);
             }
 

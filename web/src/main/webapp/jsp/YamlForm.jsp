@@ -166,7 +166,7 @@ var uploader_mr;
 								<label>Work directory on worker nodes</label><span class="asterix"> </span>
 							</div>
 							<div class="fld">
-								<input type="text" name="sJumbuneHome" id="sJumbuneHome"
+								<input type="text" name="slaveWorkingDirectory" id="slaveWorkingDirectory"
 									class="inputbox" />
 							</div>
 						</div>
@@ -1619,9 +1619,9 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 							if (step_num == 6) {
 								$('#yaml-dialog-modal .actionBar a').hide();
 								if ( yamlValidate == true ) {
-									$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');	
+									$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Json</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');	
 								} else {
-									$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="disableNextStep buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="disableNextStep buttonPrevious" href="javascript:void(0);">Run</a>');	
+									$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="disableNextStep buttonPrevious" href="javascript:void(0);">Save Json</a><a id="runWizardBtn" class="disableNextStep buttonPrevious" href="javascript:void(0);">Run</a>');	
 								}
 								//$('#yaml-dialog-modal .actionBar a').hide('slow');
 								/*if ($('#yaml-dialog-modal .actionBar').find('a#validateWizardBtn').text() == "") {
@@ -1648,7 +1648,7 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 								if (step_num == 5) {
 									$('#yaml-dialog-modal .actionBar a').hide();
 									if ( yamlValidate == true ) {
-										$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');	
+										$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Json</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');	
 									} else {
 										$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="disableNextStep buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="disableNextStep buttonPrevious" href="javascript:void(0);">Run</a>');	
 									}
@@ -1793,7 +1793,7 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 														$('#yaml-dialog-modal .actionBar #saveYamlBtn').removeClass("disableNextStep").show();
 														$('#yaml-dialog-modal .actionBar #runWizardBtn').removeClass("disableNextStep").show();
 													} else {
-														$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');
+														$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Json</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');
 													}
 												}
 											} else if (key == "Failures") {
@@ -1816,7 +1816,7 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 														$('#yaml-dialog-modal .actionBar #saveYamlBtn').addClass("disableNextStep").show();
 														$('#yaml-dialog-modal .actionBar #runWizardBtn').addClass("disableNextStep").show();
 													} else {
-														$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');
+														$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Json</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');
 													}
 												}
 
@@ -1859,7 +1859,7 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 												$('#yaml-dialog-modal .actionBar #saveYamlBtn').removeClass("disableNextStep").show();
 												$('#yaml-dialog-modal .actionBar #runWizardBtn').removeClass("disableNextStep").show();
 											} else {
-												$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');
+												$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Json</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');
 											}
 										}
 									}
@@ -1893,7 +1893,7 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 														$('#yaml-dialog-modal .actionBar #saveYamlBtn').removeClass("disableNextStep").show();
 														$('#yaml-dialog-modal .actionBar #runWizardBtn').removeClass("disableNextStep").show();
 													} else {
-														$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');
+														$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Json</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');
 													}
 												}
 											} else if (key == "Failures") {
@@ -1916,7 +1916,7 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 														$('#yaml-dialog-modal .actionBar #saveYamlBtn').addClass("disableNextStep").show();
 														$('#yaml-dialog-modal .actionBar #runWizardBtn').addClass("disableNextStep").show();
 													} else {
-														$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');
+														$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Json</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');
 													}
 												}
 
@@ -1959,7 +1959,7 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 												$('#yaml-dialog-modal .actionBar #saveYamlBtn').removeClass("disableNextStep").show();
 												$('#yaml-dialog-modal .actionBar #runWizardBtn').removeClass("disableNextStep").show();
 											} else {
-												$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');
+												$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Json</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');
 											}
 										}
 									}

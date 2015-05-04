@@ -10,7 +10,7 @@ import junit.framework.Assert;
 
 import org.jumbune.common.utils.CollectionUtil;
 import org.jumbune.common.utils.ConfigurationUtil;
-import org.jumbune.common.utils.YamlConfigUtil;
+import org.jumbune.common.utils.JobConfigUtil;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -126,7 +126,7 @@ public class UtilTest {
 
 	//@Test
 	public void testgetServiceYamlPath() {
-		Assert.assertNotNull(YamlConfigUtil.getServiceJsonPath());
+		Assert.assertNotNull(JobConfigUtil.getServiceJsonPath());
 	}
 
 	@Test

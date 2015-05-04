@@ -1,23 +1,19 @@
 package org.jumbune.common.utils;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import org.jumbune.common.beans.JobCounterBean;
 import org.jumbune.common.beans.Master;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.remoting.client.Remoter;
@@ -53,29 +49,29 @@ public class HadoopJobCounters {
 	/**
 	 * Fetch cluster configuration properties.
 	 *
-	 * @param loader
+	 * @param config
 	 *            the loader
 	 * @return the string
 	 */
-	private String fetchClusterConfigurationProperties(Loader loader) {
-		YamlLoader yamlLoader = (YamlLoader) loader;
+	private String fetchClusterConfigurationProperties(Config config) {
+		JobConfig jobConfig = (JobConfig) config;
 		String expectedLocation = new StringBuilder()
-				.append(YamlLoader.getjHome()).append(File.separator)
+				.append(JobConfig.getJumbuneHome()).append(File.separator)
 				.append(Constants.JOB_JARS_LOC)
-				.append(yamlLoader.getJumbuneJobName())
+				.append(jobConfig.getJumbuneJobName()).append(File.separator)
 				.append("cluster-configuration.properties").toString();
 		File file = new File(expectedLocation);
 		if (!file.exists() || file.isDirectory()) {
-			Master master = yamlLoader.getMasterInfo();
+			Master master = jobConfig.getMaster();
 			Remoter remoter = new Remoter(master.getHost(),
 					Integer.valueOf(master.getAgentPort()));
 			String relativePath = File.separator + Constants.JOB_JARS_LOC
-					+ yamlLoader.getJumbuneJobName();
+					+ jobConfig.getJumbuneJobName();
 			remoter.receiveLogFiles(relativePath,
 					"cluster-configuration.properties");
 
 		}
-		return expectedLocation;
+	   return expectedLocation;
 	}
 
 	/**
@@ -94,14 +90,13 @@ public class HadoopJobCounters {
 	 *            the process name
 	 * @param response
 	 *            the response
-	 * @param loader
+	 * @param config
 	 *            the loader
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
 	public void setJobCounterBeans(String processName, String response,
-			Loader loader) throws IOException {
-		YamlLoader yamlLoader = (YamlLoader) loader;
+			Config config) throws IOException {
 		List<String> jobs = new LinkedList<String>();
 		Map<String, String> map = null;
 		BufferedReader reader = new BufferedReader(new StringReader(response));
@@ -110,7 +105,7 @@ public class HadoopJobCounters {
 		boolean isYarnJob = false;
 		JobCounterBean jobCounterBean = new JobCounterBean();
 		isYarnJob = FileUtil.getPropertyFromFile(
-				fetchClusterConfigurationProperties(loader), HADOOP_TYPE)
+				fetchClusterConfigurationProperties(config), HADOOP_TYPE)
 				.equalsIgnoreCase("yarn");
 		while (true) {
 			line = reader.readLine();
@@ -195,27 +190,27 @@ public class HadoopJobCounters {
 
 	}
 
-
 	/**
 	 * Gets the value by job name and property.
 	 *
-	 * @param jobList the job list
-	 * @param jobName the job name
-	 * @param property the property
+	 * @param jobList
+	 *            the job list
+	 * @param jobName
+	 *            the job name
+	 * @param property
+	 *            the property
 	 * @return the value by job name and property
 	 */
-	public String getValueByJobNameAndProperty(String jobName, String property)
-	{
-		
-		for(JobCounterBean bean:jobCounterBeans)
-		{   if(bean.getJobName().equalsIgnoreCase(jobName))
-		   {
-			return bean.getJobStatsMap().get(property);
-		   }
-			
+	public String getValueByJobNameAndProperty(String jobName, String property) {
+
+		for (JobCounterBean bean : jobCounterBeans) {
+			if (bean.getJobName().equalsIgnoreCase(jobName)) {
+				return bean.getJobStatsMap().get(property);
+			}
+
 		}
-			
-			return null;
+
+		return null;
 	}
-	
+
 }

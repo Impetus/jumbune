@@ -6,8 +6,8 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.CollectionUtil;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.debugger.instrumentation.utils.InstrumentationMessageLoader;
 import org.jumbune.debugger.instrumentation.utils.MessageConstants;
 import org.objectweb.asm.ClassVisitor;
@@ -29,8 +29,8 @@ public class InstrumentValidator extends BaseAdapter {
 	 * @param cv
 	 *            Class visitor
 	 */
-	public InstrumentValidator(Loader loader, ClassVisitor cv) {
-		super(loader, cv);
+	public InstrumentValidator(Config config, ClassVisitor cv) {
+		super(config, cv);
 		this.cv = cv;
 	}
 
@@ -126,10 +126,10 @@ public class InstrumentValidator extends BaseAdapter {
 
 	private boolean isExcludeClassFromInstrumentation(String name) {
 		
-		YamlLoader yamlLoader = (YamlLoader)getLoader();
-		List<String> doNotInstrumentList = yamlLoader
+		JobConfig jobConfig = (JobConfig)getConfig();
+		List<String> doNotInstrumentList = jobConfig
 				.getCompleteDoNotInstrumentList();
-		List<String> instrumentAnywaysList = yamlLoader.getIncludeAnywaysList();
+		List<String> instrumentAnywaysList = jobConfig.getIncludeAnywaysList();
 
 		if (instrumentAnywaysList != null) {
 			for (String includeList : instrumentAnywaysList) {

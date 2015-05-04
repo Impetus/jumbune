@@ -48,7 +48,7 @@
 2055=Basic Section- Slave Information- slave {0}  host {1} field is not valid
 2056=Basic Section- Slave  host field is left blank
 2057=Basic Validation- slave field is not define
-2058= Please provide valid yaml 
+2058= Please provide valid json 
 2059=Profile section is left blank
 2060=Data Validation section is left blank
 2061=Basic Section-In Master Information section User field is left blank

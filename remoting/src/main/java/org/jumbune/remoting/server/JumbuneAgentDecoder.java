@@ -221,14 +221,9 @@ public class JumbuneAgentDecoder extends ByteToMessageDecoder {
 	 */
 	private void invokeJarReceiveHandler(ChannelHandlerContext ctx) {
 		ChannelPipeline p = ctx.pipeline();
-
-        // Enable stream compression (you can remove these two if unnecessary)
-//        p.addLast(ZlibCodecFactory.newZlibEncoder(ZlibWrapper.GZIP));
-
 		
 		p.addLast("stringDecoder", new StringDecoder());
 		p.addLast("delegator", new Delegator(receiveDirectory));
-//		p.addLast("stringEncoder", new StringEncoder());
 		p.addLast("binaryEncoder", new ArchiveEncoder());
 		p.remove(this);
 	}
@@ -241,9 +236,6 @@ public class JumbuneAgentDecoder extends ByteToMessageDecoder {
 	 */
 	private void invokeJarSendHandler(ChannelHandlerContext ctx) {
 		ChannelPipeline p = ctx.pipeline();
-/*        // Enable stream compression (you can remove these two if unnecessary)
-        p.addLast(ZlibCodecFactory.newZlibDecoder(ZlibWrapper.GZIP));
-*/		
 		p.addLast(STREAMER, new ArchiveDecoder(10485760, receiveDirectory));
 		p.addLast(ACK_RESPONSER, new AckResponser());
 		p.addLast(ENCODER, new StringEncoder());
@@ -258,14 +250,6 @@ public class JumbuneAgentDecoder extends ByteToMessageDecoder {
 	 */
 	private void invokeLogFilesReceiveHandler(ChannelHandlerContext ctx) {
 		ChannelPipeline p = ctx.pipeline();
-		
-/*        // Enable stream compression (you can remove these two if unnecessary)
-        p.addLast(ZlibCodecFactory.newZlibEncoder(ZlibWrapper.GZIP));
-        p.addLast(ZlibCodecFactory.newZlibDecoder(ZlibWrapper.GZIP));
-*/
-        // Enable stream compression (you can remove these two if unnecessary)
-//        p.addLast(ZlibCodecFactory.newZlibEncoder(ZlibWrapper.GZIP));
-//        p.addLast(ZlibCodecFactory.newZlibDecoder(ZlibWrapper.GZIP));
 		
 		p.addLast("stringDecoder", new StringDecoder());
 		p.addLast("delegator", new Delegator(receiveDirectory));
@@ -283,9 +267,6 @@ public class JumbuneAgentDecoder extends ByteToMessageDecoder {
 	private void invokeLogFilesSendHandler(ChannelHandlerContext ctx) {
 		ChannelPipeline p = ctx.pipeline();
 		
-/*        // Enable stream compression (you can remove these two if unnecessary)
-        p.addLast(ZlibCodecFactory.newZlibDecoder(ZlibWrapper.GZIP));
-*/		
 		p.addLast(STREAMER, new LogFilesDecoder(receiveDirectory));
 		p.addLast(ACK_RESPONSER, new AckResponser());
 		p.addLast(ENCODER, new StringEncoder());

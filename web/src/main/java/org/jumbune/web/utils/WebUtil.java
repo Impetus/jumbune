@@ -26,8 +26,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Enable;
 import org.jumbune.common.utils.ValidateInput;
-import org.jumbune.common.yaml.config.Config;
-import org.jumbune.common.yaml.config.YamlConfig;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
@@ -107,29 +107,29 @@ public class WebUtil {
 
 	// TODO: this method should in some common utility class
 	/**
-	 * Gets the yaml conf from file.
+	 * Gets the job conf from file.
 	 *
 	 * @param file the file
-	 * @return the yaml conf from file
+	 * @return the job conf from file
 	 * @throws FileNotFoundException the file not found exception
 	 */
-	public Config getYamlConfFromFile(File file) throws FileNotFoundException {
+	public Config getJobConfFromFile(File file) throws FileNotFoundException {
 		Gson gson = new Gson();
-		InputStreamReader isr = null;
+		InputStreamReader inputStreamReader = null;
 		try {
-			isr = new InputStreamReader(new FileInputStream(file));
-			YamlConfig conf = gson.fromJson(isr, YamlConfig.class);
+			inputStreamReader = new InputStreamReader(new FileInputStream(file));
+			JobConfig jobConfig = gson.fromJson(inputStreamReader, JobConfig.class);
 			LOG.info("JSON loaded successfully from " + file.getAbsolutePath()
-					+ " conf " + conf);
-			return conf;
+					+ " conf " + jobConfig);
+			return jobConfig;
 
 		} catch (FileNotFoundException fne) {
-			LOG.error("Could not find YAML file : " + file.getAbsolutePath());
+			LOG.error("Could not find Job file : " + file.getAbsolutePath());
 			throw fne;
 		} finally {
-			if (isr != null) {
+			if (inputStreamReader != null) {
 				try {
-					isr.close();
+					inputStreamReader.close();
 				} catch (IOException ioe) {
 					LOG.error("Failed to close the File Reader instance", ioe);
 				}				
@@ -140,7 +140,7 @@ public class WebUtil {
 	/**
 	 * Gets the tabs information.
 	 *
-	 * @param config  bean for the yaml file
+	 * @param config  bean for the json file
 	 * @return it returns a list containing the tab information.
 	 */
 	public String getTabsInformation(Config config) {
@@ -148,20 +148,20 @@ public class WebUtil {
 		StringBuilder tabBuilder = new StringBuilder();
 
 		final char separator = ',';
-		YamlConfig yamlConfig = (YamlConfig)config;
-		if (yamlConfig.getEnableDataValidation().equals(Enable.TRUE)) {
+		JobConfig jobConfig = (JobConfig)config;
+		if (jobConfig.getEnableDataValidation().equals(Enable.TRUE)) {
 			tabBuilder.append("Data Validation");
 			isDashBoardNeeded = true;
 		}
 
-		if (yamlConfig.getHadoopJobProfile().equals(Enable.TRUE)) {
+		if (jobConfig.getHadoopJobProfile().equals(Enable.TRUE)) {
 			tabBuilder.append(separator).append("Cluster Profiling");
 		}
-		if (yamlConfig.getEnableStaticJobProfiling().equals(Enable.TRUE)) {
+		if (jobConfig.getEnableStaticJobProfiling().equals(Enable.TRUE)) {
 			tabBuilder.append(separator).append("Static Profiling");
 		}
 
-		if (yamlConfig.getDebugAnalysis().equals(Enable.TRUE)) {
+		if (jobConfig.getDebugAnalysis().equals(Enable.TRUE)) {
 			tabBuilder.append(separator).append("Debug Analysis");
 			isDashBoardNeeded = true;
 		}
@@ -169,6 +169,8 @@ public class WebUtil {
 		if (isDashBoardNeeded) {
 			tabBuilder.append(separator).append("Dashboard");
 		}
+		
+		
 		return tabBuilder.toString();
 	}
 
@@ -208,13 +210,13 @@ public class WebUtil {
 	 * @return true if at least one required module is enabled
 	 */
 	public static boolean isRequiredModuleEnable(Config config) {
-		YamlConfig yamlConfig = (YamlConfig)config;
-		return (ValidateInput.isEnable(yamlConfig.getHadoopJobProfile())  || ValidateInput
-				.isEnable(yamlConfig.getDebugAnalysis()));
+		JobConfig jobConfig = (JobConfig)config;
+		return (ValidateInput.isEnable(jobConfig.getHadoopJobProfile())  || ValidateInput
+				.isEnable(jobConfig.getDebugAnalysis()));
 	}
 
 	/**
-	 * This method split the Absolutepathname which is in string,and get the filename out of it.and save it to the folder which is specified in
+	 * This method split the Absolute path name which is in string,and get the filename out of it.and save it to the folder which is specified in
 	 * argument3
 	 *
 	 * @param resources array of resources which should be copy to the specified location
@@ -239,7 +241,7 @@ public class WebUtil {
 	}
 
 	/**
-	 * This method take master machine path fields of yaml config bean which is type of array and convert it into a string.while convert to String .it
+	 * This method take master machine path fields of job config bean which is type of array and convert it into a string.while convert to String .it
 	 * include \n in middle of two element .
 	 *
 	 * @param resourceArray the resource array
@@ -250,7 +252,7 @@ public class WebUtil {
 	}
 
 	/**
-	 * This method take master machine path fields of yaml config bean which is type of array and convert it into a string.while convert to String .it
+	 * This method take master machine path fields of job config bean which is type of array and convert it into a string.while convert to String .it
 	 * include separator provided in second argument on this function in middle of two element .
 	 * 
 	 * @param resourceArray
@@ -268,7 +270,7 @@ public class WebUtil {
 	}
 
 	/**
-	 * This method first remove a attribute in json provided in fi }rst argument and then replace with it new attribute .
+	 * This method first remove a attribute in json provided in first argument and then replace with it new attribute .
 	 * 
 	 * @param jsonObject
 	 *            json Object
@@ -303,21 +305,20 @@ public class WebUtil {
 
 	}
 	/**
-	 * Prepare yaml config.
+	 * Prepare job config.
 	 * 
 	 * @param data
 	 *            the data
-	 * @return the yaml config
+	 * @return the job config
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 * @throws FileUploadException
 	 *             the file upload exception
 	 */
-	public static Config prepareYamlConfig(String data) throws IOException, FileUploadException {
+	public static Config prepareJobConfig(String data) throws IOException, FileUploadException {
 		Gson gson = new Gson();
-		return gson.fromJson(data, YamlConfig.class);
+		return gson.fromJson(data, JobConfig.class);
 		
 	}
 	
 }
-

@@ -14,7 +14,10 @@ import org.apache.hadoop.io.WritableComparable;
  * 
  */
 public class DataViolationWritableBean implements WritableComparable<DataViolationWritableBean> {
-
+	
+	
+	private String violationType;
+	
 	/**
 	 * lineNumber - the line number in the file where the violation occurred.
 	 */
@@ -23,10 +26,6 @@ public class DataViolationWritableBean implements WritableComparable<DataViolati
 	 * fieldNumber - the field number of the record where the violation occurred.
 	 */
 	private Integer fieldNumber;
-	/**
-	 * fileName - the name of the file where the violation occurred.
-	 */
-	private String fileName;
 	/**
 	 * expectedValue - the expected value for the field.
 	 */
@@ -51,31 +50,31 @@ public class DataViolationWritableBean implements WritableComparable<DataViolati
 	public DataViolationWritableBean(DataViolationWritableBean dataViolationWritableBean) {
 		this.lineNumber = dataViolationWritableBean.getLineNumber();
 		this.fieldNumber = dataViolationWritableBean.getFieldNumber();
-		this.fileName = dataViolationWritableBean.getFileName();
 		this.expectedValue = dataViolationWritableBean.getExpectedValue();
 		this.actualValue = dataViolationWritableBean.getActualValue();
+		this.violationType = dataViolationWritableBean.getViolationType();
 	}
 
 	/**
 	 * writes data validation results to an output stream
 	 */
 	public void write(DataOutput out) throws IOException {
-		out.writeUTF(fileName);
 		out.writeInt(lineNumber);
 		out.writeInt(fieldNumber);
 		out.writeUTF(expectedValue);
 		out.writeUTF(actualValue);
+		out.writeUTF(violationType);
 	}
 
 	/**
 	 * reads data validation details from an input stream 
 	 */
 	public void readFields(DataInput in) throws IOException {
-		fileName = in.readUTF();
 		lineNumber = in.readInt();
 		fieldNumber = in.readInt();
 		expectedValue = in.readUTF();
 		actualValue = in.readUTF();
+		violationType = in.readUTF();
 	}
 
 	/**
@@ -124,28 +123,6 @@ public class DataViolationWritableBean implements WritableComparable<DataViolati
 		this.fieldNumber = fieldNumber;
 	}
 
-	/**
-	 * <p>
-	 * See {@link #setfileName(String)}
-	 * </p>.
-	 *
-	 * @return Returns the fileName.
-	 */
-	public String getFileName() {
-		return fileName;
-	}
-
-	/**
-	 * <p>
-	 * Set the value of <code>fileName</code>.
-	 * </p>
-	 * 
-	 * @param fileName
-	 *            The fileName to set.
-	 */
-	public void setFileName(String fileName) {
-		this.fileName = fileName;
-	}
 
 	/**
 	 * <p>
@@ -207,9 +184,23 @@ public class DataViolationWritableBean implements WritableComparable<DataViolati
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("{\"lineNumber\":").append(lineNumber).append(",\"fieldNumber\":").append(fieldNumber).append(",\"fileName\":").append(fileName)
+		sb.append("{\"lineNumber\":").append(lineNumber).append(",\"fieldNumber\":").append(fieldNumber)
 				.append(",\"expectedValue\":").append(expectedValue).append(",\"actualValue\":").append(actualValue).append("}");
 		return sb.toString();
+	}
+
+	/**
+	 * @return the violationType
+	 */
+	public String getViolationType() {
+		return violationType;
+	}
+
+	/**
+	 * @param violationType the violationType to set
+	 */
+	public void setViolationType(String violationType) {
+		this.violationType = violationType;
 	}
 
 }

@@ -13,8 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.Constants;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.web.utils.WebUtil;
@@ -78,8 +77,8 @@ public class UploadJobJarServlet extends HttpServlet{
 		
 		try{
 		String jobName = (String)request.getParameter("jobName");
-		String resourceFolder = System.getenv("JUMBUNE_HOME") + "/"+Constants.JOB_JARS_LOC+jobName+ Constants.MR_RESOURCES;
-		String filePath = YamlLoader.getjHome() +"/"+Constants.JOB_JARS_LOC+ jobName+ Constants.MR_RESOURCES;
+		String resourceFolder = System.getenv("JUMBUNE_HOME") + File.separator+Constants.JOB_JARS_LOC+jobName+ Constants.MR_RESOURCES;
+		String filePath = JobConfig.getJumbuneHome() +File.separator+Constants.JOB_JARS_LOC+ jobName+ Constants.MR_RESOURCES;
 		File resourceDir = new File(resourceFolder);
 		if (!resourceDir.exists()) {
 			resourceDir.mkdirs();
@@ -90,10 +89,10 @@ public class UploadJobJarServlet extends HttpServlet{
 		LOG.debug("uploadedFiles :: " + uploadedFiles);
 		
 		} catch (JumbuneException e) {
-			LOG.error(ErrorCodesAndMessages.UNABLE_TO_LOAD_YAML, e);
+			LOG.error(ErrorCodesAndMessages.UNABLE_TO_LOAD_JSON, e);
 			throw new ServletException(e);
 		} catch (Exception e) {
-			LOG.error(ErrorCodesAndMessages.UNABLE_TO_LOAD_YAML, e);
+			LOG.error(ErrorCodesAndMessages.UNABLE_TO_LOAD_JSON, e);
 			throw new ServletException(e);
 		} 
 		

@@ -5,13 +5,13 @@ package org.jumbune.debugger.instrumentation.adapter;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.beans.InstructionsBean;
 import org.jumbune.common.utils.ConfigurationUtil;
-import org.jumbune.common.yaml.config.Loader;
-import org.jumbune.common.yaml.config.YamlLoader;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.debugger.instrumentation.utils.ContextWriteParams;
 import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
 import org.jumbune.debugger.instrumentation.utils.MethodByteCodeUtil;
+import org.jumbune.common.beans.InstructionsBean;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -43,8 +43,8 @@ public class PartitionerAdapter extends BaseAdapter {
 	 * @param loader
 	 * @param cv
 	 */
-	public PartitionerAdapter(Loader loader, ClassVisitor cv) {
-		super(loader, Opcodes.ASM4);
+	public PartitionerAdapter(Config config, ClassVisitor cv) {
+		super(config, Opcodes.ASM4);
 		this.cv = cv;
 	}
 
@@ -164,8 +164,9 @@ public class PartitionerAdapter extends BaseAdapter {
 		il.add(new FieldInsnNode(Opcodes.GETFIELD, ConfigurationUtil
 				.convertQualifiedClassNameToInternalName(getClassName()),
 				MAP_REDUCE_COUNTER, Type.INT_TYPE.getDescriptor()));
-		YamlLoader yamlLoader = (YamlLoader)getLoader();
-		il.add(new IntInsnNode(Opcodes.BIPUSH, yamlLoader
+
+		JobConfig jobConfig = (JobConfig)getConfig();
+		il.add(new IntInsnNode(Opcodes.BIPUSH, jobConfig
 				.getPartitionerSampleInterval()));
 		il.add(new InsnNode(Opcodes.IREM));
 		il.add(new JumpInsnNode(Opcodes.IFNE, ifLabelNode));

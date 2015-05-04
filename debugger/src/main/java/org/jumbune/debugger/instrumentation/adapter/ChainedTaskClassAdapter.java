@@ -4,7 +4,7 @@ import java.text.MessageFormat;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.common.job.Config;
 import org.jumbune.debugger.instrumentation.utils.InstrumentationMessageLoader;
 import org.jumbune.debugger.instrumentation.utils.MessageConstants;
 import org.objectweb.asm.ClassVisitor;
@@ -31,8 +31,8 @@ public class ChainedTaskClassAdapter extends BaseAdapter {
 	 * 
 	 * @param cv
 	 */
-	public ChainedTaskClassAdapter(Loader loader, ClassVisitor cv) {
-		super(loader, Opcodes.ASM4);
+	public ChainedTaskClassAdapter(Config config, ClassVisitor cv) {
+		super(config, Opcodes.ASM4);
 		this.cv = cv;
 	}
 

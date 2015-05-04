@@ -11,6 +11,10 @@ public class DataValidationReport {
 
 	/** total number of violations for a particular type of check. */
 	private int totalViolations;
+	
+	private int dirtyTuple;
+	
+	private int cleanTuple;
 
 	/** Map containing number of violations corresponding each field for a particular data validation check. */
 	private Map<Integer, Integer> fieldMap;
@@ -70,6 +74,34 @@ public class DataValidationReport {
 	 */
 	public void setViolationList(List<FileViolationsWritable> violationList) {
 		this.violationList = violationList;
+	}
+
+	/**
+	 * @return the pureTuple
+	 */
+	public int getCleanTuple() {
+		return cleanTuple;
+	}
+
+	/**
+	 * @param cleanTuple the pureTuple to set
+	 */
+	public void setCleanTuple(int cleanTuple) {
+		this.cleanTuple = cleanTuple;
+	}
+
+	/**
+	 * @return the infectedTuple
+	 */
+	public int getDirtyTuple() {
+		return dirtyTuple;
+	}
+
+	/**
+	 * @param dirtyTuple the infectedTuple to set
+	 */
+	public void setDirtyTuple(int dirtyTuple) {
+		this.dirtyTuple = dirtyTuple;
 	}
 
 }

@@ -5,11 +5,10 @@ import java.util.Map;
 
 import org.jumbune.common.beans.Slave;
 import org.jumbune.common.beans.SupportedHadoopDistributions;
-import org.jumbune.common.yaml.config.Config;
-import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.common.job.Config;
 import org.jumbune.common.yarn.beans.YarnMaster;
 import org.jumbune.common.yarn.beans.YarnSlaveParam;
-import org.jumbune.common.yaml.config.YamlConfig;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.profiling.beans.JMXDeamons;
 import org.jumbune.profiling.beans.JumbuneInferredStats;
 import org.jumbune.profiling.beans.NodeInfo;
@@ -73,7 +72,7 @@ public class ProfilerStats {
 	private Map<String, String> rmStats;	 	
 
 	/** The config. */
-	private YamlConfig config;
+	private JobConfig jobConfig;
 
 	/** The profiler jmx dump. */
 	private ProfilerJMXDump profilerJMXDump;
@@ -97,7 +96,7 @@ public class ProfilerStats {
 	 *            the node ip
 	 */
 	public ProfilerStats(Config config, String nodeIp, SupportedHadoopDistributions version) {
-		this.config = (YamlConfig) config;
+		this.jobConfig = (JobConfig) config;
 		this.nodeIp = nodeIp;
 		profilerJMXDump = new ProfilerJMXDump();
 		this.version = version;
@@ -110,7 +109,7 @@ public class ProfilerStats {
 	 * @return the name node ip
 	 */
 	public String getNameNodeIP() {
-		return config.getMaster().getHost();
+		return jobConfig.getMaster().getHost();
 	}
 
 	/**
@@ -120,7 +119,7 @@ public class ProfilerStats {
 	 *            the config
 	 */
 	public ProfilerStats(Config config) {
-		this.config = (YamlConfig) config;
+		this.jobConfig = (JobConfig) config;
 		profilerJMXDump = new ProfilerJMXDump();
 	}
 
@@ -131,7 +130,7 @@ public class ProfilerStats {
 	 */
 	public String getDnPort() {
 		if (dnPort == null) {
-			dnPort = config.getSlaveParam().getDataNodeJmxPort();
+			dnPort = jobConfig.getSlaveParam().getDataNodeJmxPort();
 		}
 		return dnPort;
 	}
@@ -153,7 +152,7 @@ public class ProfilerStats {
 	 */
 	public String getTtPort() {
 		if (ttPort == null) {
-			ttPort = config.getSlaveParam().getTaskTrackerJmxPort();
+			ttPort = jobConfig.getSlaveParam().getTaskTrackerJmxPort();
 		}
 		return ttPort;
 	}
@@ -175,7 +174,7 @@ public class ProfilerStats {
 	 */
 	public String getNnPort() {
 		if (nnPort == null) {
-			nnPort = config.getMaster().getNameNodeJmxPort();
+			nnPort = jobConfig.getMaster().getNameNodeJmxPort();
 		}
 		return nnPort;
 	}
@@ -197,7 +196,7 @@ public class ProfilerStats {
 	 */
 	public String getJtPort() {
 		if (jtPort == null) {
-			jtPort = config.getMaster().getJobTrackerJmxPort();
+			jtPort = jobConfig.getMaster().getJobTrackerJmxPort();
 		}
 		return jtPort;
 	}
@@ -367,7 +366,7 @@ public class ProfilerStats {
 		try {
 			switch (jStat) {
 			case localDataUsage:
-				double localUsage = profilerJMXDump.getLocalDataUsage(config, nodeIp);
+				double localUsage = profilerJMXDump.getLocalDataUsage(jobConfig, nodeIp);
 				statValue = String.valueOf(localUsage);
 				break;
 			default:
@@ -397,11 +396,11 @@ public class ProfilerStats {
 	 * @throws HTFProfilingException
 	 *             the hTF profiling exception
 	 */
-	public String getDataLoadPartitionStats(String nodeIp, NodeInfo node, Loader loader) throws HTFProfilingException {
+	public String getDataLoadPartitionStats(String nodeIp, NodeInfo node, Config config) throws HTFProfilingException {
 		double dataLoad;
 		String statValue;
 		try {
-			dataLoad = profilerJMXDump.getDataLoadonNodes(nodeIp, node, loader);
+			dataLoad = profilerJMXDump.getDataLoadonNodes(nodeIp, node, config);
 			statValue = String.valueOf(dataLoad);
 		} catch (Exception e) {
 			/*
@@ -432,7 +431,7 @@ public class ProfilerStats {
 				String tempReduceSlot = null;
 				String tempMapRunning = null;
 				String tempReduceRuning = null;
-				for (Slave slave : config.getSlaves()) {
+				for (Slave slave : jobConfig.getSlaves()) {
 					for (String hostIp : slave.getHosts()) {
 						clusterWideStats = profilerJMXDump.getAllJMXStats(JMXDeamons.TASK_TRACKER, version, hostIp, getTtPort());
 						tempMapSlot = clusterWideStats.get("MapTaskSlots");
@@ -491,7 +490,7 @@ public class ProfilerStats {
 	public String getMemoryStats(String attribute) throws HTFProfilingException {
 		if ((memoryStats == null) || reset) {
 			try {
-				memoryStats = profilerJMXDump.getRemoteMemoryUtilisation(config, nodeIp);
+				memoryStats = profilerJMXDump.getRemoteMemoryUtilisation(jobConfig, nodeIp);
 
 			} catch (JSchException jsche) {
 				throw new HTFProfilingException("Unable to connect and make the session", jsche);
@@ -527,7 +526,7 @@ public class ProfilerStats {
 	public String getCpuStats(String attribute) throws HTFProfilingException {
 		if ((cpuStats == null) || reset) {
 			try {
-				cpuStats = profilerJMXDump.getRemoteCPUStats(config, nodeIp);
+				cpuStats = profilerJMXDump.getRemoteCPUStats(jobConfig, nodeIp);
 			} catch (Exception e) {
 				/*
 				 * Catching generic exception as profilerJMXDump.getCPUStats(...) throwing lots of exceptions.
@@ -637,7 +636,7 @@ public class ProfilerStats {
 	 */
 	public String getNmPort() {
 		if (nmPort == null) {
-			YarnSlaveParam ySlaveParam = config.getSlaveParam();
+			YarnSlaveParam ySlaveParam = jobConfig.getSlaveParam();
 			nmPort = ySlaveParam.getNodeManagerJmxPort();
 		}
 		return nmPort;
@@ -656,7 +655,7 @@ public class ProfilerStats {
 	 */
 	public String getRmPort() {
 		if (rmPort == null) {
-			YarnMaster yMaster = config.getMaster();
+			YarnMaster yMaster = jobConfig.getMaster();
 			rmPort = yMaster.getResourceManagerJmxPort();
 		}
 		return rmPort;

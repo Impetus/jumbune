@@ -150,6 +150,8 @@
 				});
 			});
 			
+			
+			
 			$("#displayFileUpload input[type='file']").live("change", function() {					
 					uploader.start();
 			});
@@ -178,7 +180,7 @@
 						}
 						
 						if(isBlank==true && yamlArr.length==1){
-							alert("No Yaml file found in repository! Please create or upload Yaml.")
+							alert("No Json file found in repository! Please create or upload Json.")
 							return;
 						}
 						

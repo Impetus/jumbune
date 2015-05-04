@@ -17,7 +17,13 @@ public class DataViolationWritable implements WritableComparable<DataViolationWr
 
 	/** total number of violations for a particular type of check. */
 	private int totalViolations;
-
+	
+	/** infected tuple for a perticular type of violation */
+	private int dirtyTuple;
+	
+	/** tuple which has no violation */
+	private int cleanTuple;
+	
 	/** Map containing number of violations corresponding each field for a particular data validation check. */
 	private MapWritable fieldMap;
 
@@ -91,6 +97,8 @@ public class DataViolationWritable implements WritableComparable<DataViolationWr
 	 */
 	public void write(DataOutput out) throws IOException {
 		out.writeInt(totalViolations);
+		out.writeInt(dirtyTuple);
+		out.writeInt(cleanTuple);
 		fieldMap.write(out);
 		dataViolationArrayWritable.write(out);
 	}
@@ -101,6 +109,8 @@ public class DataViolationWritable implements WritableComparable<DataViolationWr
 	 */
 	public void readFields(DataInput in) throws IOException {
 		totalViolations = in.readInt();
+		dirtyTuple = in.readInt();
+		cleanTuple = in.readInt();
 		fieldMap.readFields(in);
 		dataViolationArrayWritable.readFields(in);
 	}
@@ -112,6 +122,34 @@ public class DataViolationWritable implements WritableComparable<DataViolationWr
 	public int compareTo(DataViolationWritableBean arg0) {
 		// TODO Auto-generated method stub
 		return 0;
+	}
+
+	/**
+	 * @return the infectedTuple
+	 */
+	public int getDirtyTuple() {
+		return dirtyTuple;
+	}
+
+	/**
+	 * @param dirtyTuple the infectedTuple to set
+	 */
+	public void setDirtyTuple(int dirtyTuple) {
+		this.dirtyTuple = dirtyTuple;
+	}
+
+	/**
+	 * @return the pureTuple
+	 */
+	public int getCleanTuple() {
+		return cleanTuple;
+	}
+
+	/**
+	 * @param cleanTuple the pureTuple to set
+	 */
+	public void setCleanTuple(int cleanTuple) {
+		this.cleanTuple = cleanTuple;
 	}
 
 }

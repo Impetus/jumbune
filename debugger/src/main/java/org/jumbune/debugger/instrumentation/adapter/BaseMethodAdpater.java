@@ -1,6 +1,6 @@
 package org.jumbune.debugger.instrumentation.adapter;
 
-import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.common.job.Config;
 import org.jumbune.debugger.instrumentation.utils.InstrumentConstants;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -14,7 +14,7 @@ import org.objectweb.asm.tree.MethodNode;
  * 
  */
 public class BaseMethodAdpater extends MethodNode implements InstrumentConstants, Opcodes {
-	private  Loader loader = null;
+	private Config config;
 	private String clazzName;
 	private String logClazzName;
 
@@ -60,13 +60,13 @@ public class BaseMethodAdpater extends MethodNode implements InstrumentConstants
 	 * @param className
 	 * @param logClassName
 	 */
-	public BaseMethodAdpater(Loader loader, int access, String name, String desc, String signature, String[] exceptions, MethodVisitor mv,
+	public BaseMethodAdpater(Config config, int access, String name, String desc, String signature, String[] exceptions, MethodVisitor mv,
 			String className, String logClassName) {
 		super(ASM4, access, name, desc, signature, exceptions);
 		this.mv = mv;
 		this.clazzName = className;
 		this.logClazzName = logClassName;
-		this.loader=loader;
+		this.config = config;
 	}
 
 	/**
@@ -159,14 +159,14 @@ public class BaseMethodAdpater extends MethodNode implements InstrumentConstants
 	/**
 	 * @param loader the loader to set
 	 */
-	public void setLoader(Loader loader) {
-		this.loader = loader;
+	public void setConfig(Config config) {
+		this.config = config;
 	}
 
 	/**
 	 * @return the loader
 	 */
-	protected Loader getLoader() {
-		return loader;
+	protected Config getConfig() {
+		return config;
 	}
 }

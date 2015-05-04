@@ -2,7 +2,7 @@ package org.jumbune.debugger.instrumentation.adapter;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.yaml.config.Loader;
+import org.jumbune.common.job.Config;
 import org.jumbune.debugger.instrumentation.utils.Environment;
 import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
 import org.objectweb.asm.ClassVisitor;
@@ -32,8 +32,8 @@ public class ReturnAdapter extends BaseAdapter {
 	 * @param cv
 	 *            Class visitor
 	 */
-	public ReturnAdapter(Loader loader, ClassVisitor cv) {
-		super(loader, Opcodes.ASM4);
+	public ReturnAdapter(Config config, ClassVisitor cv) {
+		super(config, Opcodes.ASM4);
 		this.cv = cv;
 	}
 	
@@ -45,8 +45,8 @@ public class ReturnAdapter extends BaseAdapter {
 	 * @param cv
 	 * @param env
 	 */
-	public ReturnAdapter(Loader loader, ClassVisitor cv,Environment env) {
-		super(loader, Opcodes.ASM4);
+	public ReturnAdapter(Config config, ClassVisitor cv,Environment env) {
+		super(config, Opcodes.ASM4);
 		this.cv = cv;
 		this.env = env;
 	}

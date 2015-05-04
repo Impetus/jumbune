@@ -5,8 +5,8 @@ import java.util.Arrays;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.RemotingUtil;
-import org.jumbune.common.yaml.config.YamlConfig;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
 
 public abstract class AbstractDistributionLocator implements
@@ -23,22 +23,22 @@ public abstract class AbstractDistributionLocator implements
 	 * @see org.jumbune.common.utils.HadoopDistributionLocator#getHadoopHomeDirPath(org.jumbune.common.yaml.config.YamlConfig)
 	 */
 	@Override
-	public String getHadoopHomeDirPath(YamlConfig config) {
+	public String getHadoopHomeDirPath(JobConfig jobConfig) {
 		LOGGER.debug("Trying to locate Hadoop with echo $HADOOP_HOME");
-		String hadoopHome = RemotingUtil.executeCommand(config,
+		String hadoopHome = RemotingUtil.executeCommand(jobConfig,
 				ECHO_HADOOP_HOME);
 		LOGGER.debug("Hadoop location with echo $HADOOP_HOME " + hadoopHome);
 		if (hadoopHome == null || hadoopHome.trim().isEmpty()
 				|| !hadoopHome.contains(File.separator)) {
 			LOGGER.debug("Trying to locate Hadoop with where is hadoop");
-			String possibleHadoopHome = RemotingUtil.executeCommand(config,
+			String possibleHadoopHome = RemotingUtil.executeCommand(jobConfig,
 					WHEREIS_HADOOP);
 			validateHadoopLocation(possibleHadoopHome);
 			String[] hadoopSplits = possibleHadoopHome.split("\\s+");
 			LOGGER.debug("Found entries of whereis hadoop:"
 					+ Arrays.toString(hadoopSplits));
 			for (String split : hadoopSplits) {
-				if (split.contains("/lib/") && containsHadoopLib(split, config)) {
+				if (split.contains("/lib/") && containsHadoopLib(split, jobConfig)) {
 					hadoopHome = split;
 				}
 			}
@@ -56,9 +56,9 @@ public abstract class AbstractDistributionLocator implements
 		}
 	}
 
-	private boolean containsHadoopLib(String location, YamlConfig config) {
+	private boolean containsHadoopLib(String location, JobConfig jobConfig) {
 		boolean result = false;
-		String listedDirectory = RemotingUtil.executeCommand(config,
+		String listedDirectory = RemotingUtil.executeCommand(jobConfig,
 				LS_PREFIX_PART + location + LS_POSTFIX_PART);
 		if (listedDirectory != null && !listedDirectory.isEmpty()) {
 			String[] directoryList = listedDirectory.split("\n");
