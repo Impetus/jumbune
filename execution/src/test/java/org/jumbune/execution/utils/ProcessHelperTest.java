@@ -22,15 +22,8 @@ public class ProcessHelperTest {
 	@Before
 	public void setup() {
 		pHelper = new ProcessHelper();
-		testJobConfig = (JobConfig)getJobConfig();
+		
 	}
-
-	@Test
-	public void testWritetoServiceFile() {
-		ServiceInfo sInfo = new ServiceInfo();
-		Assert.assertTrue(pHelper.writetoServiceFile(sInfo));
-	}
-
 
 
 	@Test
@@ -66,8 +59,6 @@ public class ProcessHelperTest {
 		Assert.assertFalse(check);
 	}
 	
-	public Config getJobConfig() {
-		return testJobConfig;
-	}
+
 
 }
