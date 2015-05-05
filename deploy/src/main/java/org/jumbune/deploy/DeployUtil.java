@@ -142,14 +142,23 @@ public final class DeployUtil {
 			props.keySet();
 			String value = argMap.get(PROPERTY_FILE);
 			if (value.startsWith("\"") && value.endsWith("\"")) {
-				value= value.substring(1, value.length()-1);
+				value = value.substring(1, value.length() - 1);
 			}
-			FileInputStream in = new FileInputStream(argMap.get(PROPERTY_FILE));
-			props.load(in);
-			in.close();
-			for (Object propertyKeyObject : props.keySet() ){
-				String key =(String)propertyKeyObject;
-				if(argMap.get(key)==null){
+			FileInputStream in = null;
+			try {
+				in = new FileInputStream(argMap.get(PROPERTY_FILE));
+				props.load(in);
+			} catch (IOException e) {
+				LOGGER.error("Unable to read file "+argMap.get("propertyfilepath"));
+				exitVM(1);
+			} finally {
+				if (in != null) {
+					in.close();
+				}
+			}
+			for (Object propertyKeyObject : props.keySet() ) {
+				String key = (String) propertyKeyObject;
+				if (argMap.get(key) == null) {
 					argMap.put(key, props.getProperty(key));
 				}
 			}
@@ -265,12 +274,7 @@ public final class DeployUtil {
 			runEncryptionUtillity();
 		}
 		Map<String, String> argMap = getAndVerifyArguments(args);
-		try {
 		getArgumentsFromPropertyFile(argMap);
-		} catch (IOException e) {
-			LOGGER.error("Unable to read file "+argMap.get("propertyfilepath"));
-			exitVM(1);
-		}
 		removeDoubleQuotes(argMap);
 		if (argMap.get(PRIVATE_KEY_PATH) != null) {
 			File privateKeyFile = new File(argMap.get(PRIVATE_KEY_PATH));
