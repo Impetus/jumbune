@@ -2,14 +2,42 @@
 .dvrightdatabox {float:right;border-left:solid 1px #ccc;width:60%}
 #dvReportTablePager_left {width: 20px !important;}
 #dvReportTablePager_center {width: 250px !important;}
+
+#dqDataViolations table {
+	margin: 80px 0 0 30px
+}
+#dqDataViolations th, #dqDataViolations td{
+	font-size: 12px;
+	border-right: 1px solid #ccc;
+	border-bottom: 1px solid #ccc;
+	padding: 5px;
+}
+#dqDataViolations th.lastcol, #dqDataViolations td.lastcol{
+	border-right: none;
+}
+#dqDataViolations tr.lastrow td{
+	border-bottom: none;
+}
+
 </style>
 <div class="pageTopPane">
 	<h2 class="pageTitle">Data Violations</h2>
 	<div id="dataValidationErrorLinks" class="errorLinkBox"></div>
 </div>
 
+<div class="widget-container" id="dataQualityWrap">
+	<div class="widget-header"> Clean vs Violated data</div>
+	<div class="widget-body">
+		<div id="dqDataChart" class="dvdatabox"></div>
+		<div id="dqDataViolations" class="dvdatabox"></div>
+	</div>
+</div>
+
+
+<div style="clear:both"></div>
+
 <div class="widget-container" id="dataValidationWrap">
-	<div class="widget-header">Data Violations Chart</div>
+	<div class="widget-header">Data Violations </div>
 	<div class="widget-body">
 		<div id="dvDataChart" class="dvdatabox"></div>
 		<div id="dvDataViolations" class="dvdatabox"></div>
@@ -35,6 +63,109 @@
 
 <script type="text/javascript">
 
+
+//-----------------------------------------Data Quality Tab starts-----------------------------------------
+function displayDataQualityGraph(dqJSON) {
+    var dqArray;
+    var anomalies;
+    var cleanTuple;
+    var totalTupleProcessed;
+    var labels;
+    var colors1;
+    var cleanPer;
+    var anomaliesPer;
+    var dvGraphJSON;
+
+
+    dvGraphJSON = jQuery.parseJSON(dqJSON);
+    $.each(dvGraphJSON, function(key, val) {
+        $.each(val, function(JKEY, JVAL) {
+            if (JKEY == 'cleanTuple') {
+                cleanTuple = JVAL;
+            }
+            if (JKEY == 'totalTupleProcessed') {
+                totalTupleProcessed = JVAL;
+            }
+        });
+
+    });
+    anomalies = Number(totalTupleProcessed) - Number(cleanTuple);
+    dqArray = [
+        ['Clean Tuple', Number(cleanTuple)],
+        ['Violated Tuple', anomalies]
+    ];
+    cleanPer = (Number(cleanTuple) * 100) / Number(totalTupleProcessed);
+    anomaliesPer = (anomalies * 100) / Number(totalTupleProcessed);
+
+    labels = new Array();
+    labels.push(cleanPer);
+    labels.push(anomaliesPer);
+
+    colors1 = new Array();
+    colors1.push("#298A08");
+    colors1.push(colors[1]);
+
+    var chart1 = $.jqplot('dqDataChart', [dqArray], {
+        seriesColors: colors1,
+        grid: {
+            drawBorder: false,
+            shadow: false,
+            background: 'transparent'
+        },
+        seriesDefaults: {
+            // make this a donut chart.
+            renderer: $.jqplot.DonutRenderer,
+            shadow: false,
+            rendererOptions: {
+                diameter: undefined, // diameter of pie, auto computed by default.				
+                innerDiameter: 0,
+                padding: 20, // padding between pie and neighboring legend or plot margin.
+
+                sliceMargin: 1, // gap between slices.
+                fill: true, // render solid (filled) slices.				
+                shadowOffset: 2, // offset of the shadow from the chart.
+                shadowDepth: 5, // Number of strokes to make when drawing shadow.  Each stroke
+                // offset by shadowOffset from the last.
+                shadowAlpha: 0.07, // Opacity of the shadow
+                showDataLabels: true
+            }
+        },
+        series: [{
+            seriesColors: colors1,
+            rendererOptions: {
+                dataLabelPositionFactor: 1.4,
+                dataLabels: labels,
+                dataLabelFormatString: '%0.2f %'
+            }
+        }, ]
+    });
+
+    customJQPlotTooltip('donut', 'dqDataChart', chart1, '%');
+
+
+    var violationsTblObj1;
+    violationsTblObj1 = "<table cellspacing='0'>";
+    violationsTblObj1 += "<tr><th>&nbsp;</th><th>Type</th><th class='lastcol'>Number</th></tr>";
+    //clean tuples
+    violationsTblObj1 += "<tr>";
+    violationsTblObj1 += "<td><span style='background-color:" + colors1[0] + "; width:20px; height:12px;float:left;'></span></td>";
+    violationsTblObj1 += "<td>" + dqArray[0][0] + "</td>";
+    violationsTblObj1 += "<td align='center' class='lastcol'>" + dqArray[0][1] + "</td>";
+    violationsTblObj1 += "</tr>";
+    //anomlies
+    violationsTblObj1 += "<tr class='lastrow'>";
+    violationsTblObj1 += "<td><span style='background-color:" + colors1[1] + "; width:20px; height:12px;float:left;'></span></td>";
+    violationsTblObj1 += "<td>" + dqArray[1][0] + "</td>";
+    violationsTblObj1 += "<td align='center' class='lastcol'>" + dqArray[1][1] + "</td>";
+    violationsTblObj1 += "</tr>";
+
+    violationsTblObj1 += "</table>";
+    $("#dqDataViolations").html(violationsTblObj1);
+}
+
+//-----------------------------------------Data Quality Tab ends-----------------------------------------
+
+
 	//var chart;
 	var dataSum = 0;
 	var fieldSum = 0;
@@ -58,12 +189,16 @@
 	var fieldDataLabel = new Array();
 
 function enableDataValidationTab(dvJSON) {
-	
-	
-
-	dataValidationJSON = jQuery.parseJSON(dvJSON);	
-	console.log(dataValidationJSON);
-
+	var obj = jQuery.parseJSON(dvJSON);
+	$.each(obj, function(dqParsingJSONKey, dqParsingJSONValue) {
+		$.each(dqParsingJSONValue, function(jsonID, jsonVALUE) {
+		if(jsonID =='jsonReport'){
+			dataValidationJSON = jQuery.parseJSON(jsonVALUE);
+			console.log("json vlaue "+jsonVALUE);
+		}
+	});
+		
+	});
 if(dataValidationJSON["ErrorAndException"])
 			{			
 			$.each(dataValidationJSON, function(key, val) {	
@@ -263,6 +398,8 @@ else if(jQuery.isEmptyObject(dataValidationJSON["DVSUMMARY"]) == true || dataVal
 	}
 	// error grid table end
 	}
+		displayDataQualityGraph(dvJSON);
+
 	}
 
 $('#dataValidationErrortable tr:nth-child(even)').addClass("evenTableRow");
