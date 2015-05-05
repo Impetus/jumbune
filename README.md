@@ -33,6 +33,10 @@ _Deployment Planning guide at http://bit.ly/1oiXGk2_
 
 `java -jar <location of the distribution build jar>`
 
+- Deploying Jumbune (in verbose mode)
+
+`java -jar <location of the distribution build jar> -verbose`
+
 - Running Jumbune Agent
 
 `java -jar <jumbune agent jar> <port> <|verbose>`
@@ -44,6 +48,21 @@ _Deployment Planning guide at http://bit.ly/1oiXGk2_
 or
 
 `./runCli`
+
+## Docker Image
+
+- Building from root of the checked out repository
+`$ sudo docker build –t = "jumbune/pseudo-distributed:1.5.0" .`
+
+- Building from the github.com repository
+`$ sudo docker build –t = "jumbune/pseudo-distributed:1.5.0" github.com/impetus-opensource/jumbune/`
+
+- Getting the automated build from docker registry
+`https://registry.hub.docker.com/u/jumbune/jumbune/`
+
+- Running the built image
+`$ docker run -d --name="jumbune" -h "impetus-docker1" -p 8042 -p 8088:8088 -p 50070:50070 -p
+50075:50075 -p 50090:50090 -p 8080:8080 -p 5555 jumbune/pseudo-distributed:1.5.0`
 
 ## Code Examples
 
