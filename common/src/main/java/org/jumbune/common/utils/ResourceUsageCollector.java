@@ -36,9 +36,9 @@ import org.jumbune.common.beans.TaskOutputDetails;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.remoting.client.Remoter;
-import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
+import org.jumbune.remoting.common.RemotingMethodConstants;
 
 /**
  * Utility class to fetch system resource usage during the period of Job run.
@@ -496,7 +496,7 @@ public class ResourceUsageCollector {
 		String command = jobID + RemotingConstants.SINGLE_SPACE + logsHistory;
 
 		builder.addCommand(command, false, null, CommandType.FS)
-				.setApiInvokeHints(ApiInvokeHintsEnum.GET_HADOOP_CONFIG);
+		.setMethodToBeInvoked(RemotingMethodConstants.GET_HADOOP_CONFIG_FILE_FROM_JOBID);
 		String configFilePath = (String) remoter
 				.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		String fileName = configFilePath.substring(configFilePath

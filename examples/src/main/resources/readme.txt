@@ -42,9 +42,9 @@ To execute Jumbune sample examples (shipped along with the distribution), perfor
 
 	1. Navigate to the example folder you are wishing to run, go through the readme.txt
 
-	2. Upload the JSON from <Jumbune home>/examples/resources/sample JSON/ directory from the Open option on the Jumbune home page.
+	2. Upload the JSON from $JUMBUNE_HOME/examples/resources/sample_json/ directory from the Open option on the Jumbune home page.
 
-	3. The sample job jars are found in the <Jumbune home>/examples/example-distribution/ directory.
+	3. The sample job jars are found in the  $JUMBUNE_HOME/examples/example-distribution/ directory.
 
 
 Running the Word Count example:
@@ -54,11 +54,11 @@ Running the Word Count example:
 
 	1. Upload sample input file in HDFS using the following command:
 
-	bin/hadoop fs -put <Jumbune Home>/examples/resources/data/PREPROCESSED/data1 </Jumbune/data/data1 or any HDFS path>
+	bin/hadoop fs -put  $JUMBUNE_HOME/examples/resources/data/PREPROCESSED/data1 </Jumbune/data/data1 or any HDFS path>
 
 Note: Ensure that path <HDFS path> is not present on HDFS and user has appropriate permission to put data file on HDFS.
 		
-	2. Upload sample wordcount JSON (<Jumbune home>/examples/resources/sample JSON/WordCountSample.json).
+	2. Upload sample wordcount JSON ( $JUMBUNE_HOME/examples/resources/sample_json/WordCountSample.json).
 	
 	3. Edit Name-node and Data-node information.
 	
@@ -73,11 +73,11 @@ For Running Movie Rating example (for Profiling):
 	
 	1. Upload sample input file in HDFS by using the following command:
 	
-	bin/hadoop fs -put <Jumbune_Home>/examples/resources/data/u.data </Jumbune/examples/regex or any HDFS path>
+	bin/hadoop fs -put  $JUMBUNE_HOME/examples/resources/data/u.data </Jumbune/examples/regex or any HDFS path>
 	
 	Note: Ensure that path is not present on HDFS and user has appropriate permission to put data file on HDFS.
 	
-	2. Upload sample JSON (<Jumbune home>/examples/resources/sample JSON/MovieRatingSample.json).
+	2. Upload sample JSON ( $JUMBUNE_HOME/examples/resources/sample_json/MovieRatingSample.json).
 	
 	3. Edit the Name-node and Data-node information.
 	
@@ -93,12 +93,12 @@ For Running Bank Defaulters example (for Debugging):
 
 	1. Upload sample input file in HDFS by using the following command
 
-	bin/hadoop fs -put <Jumbune_Home>/examples/resources/data/defaulterlistdata.txt	</Jumbune/examples/defaulter or any HDFS path>
+	bin/hadoop fs -put  $JUMBUNE_HOME/examples/resources/data/defaulterlistdata.txt	</Jumbune/examples/defaulter or any HDFS path>
 
 	Note: Ensure that path is not present on HDFS and user has appropriate permission to put data file
 	on HDFS.
 
-	2. Upload sample JSON (<Jumbune home>/examples/resources/sample	JSON/BankDefaultersSample.json).
+	2. Upload sample JSON ($JUMBUNE_HOME/examples/resources/sample_json/BankDefaultersSample.json).
 
 	3. In 'M/R Jobs' tab select the bank defaulters sample jar (examples-bankdefaulters-x.y.z.jar), either by mentioning the path on the Jumbune machine or by uploading from local machine.
 
@@ -114,13 +114,13 @@ For Running US Region Port Out example (for Debugging):
 
 	1. Upload sample input file in HDFS by using the following command:
 
-	bin/hadoop fs -put <Jumbune_Home>/examples/resources/data/PREPROCESSED/data1 /Jumbune/Demo/input/PREPROCESSED/data1
+	bin/hadoop fs -put $JUMBUNE_HOME/examples/resources/data/PREPROCESSED/data1 /Jumbune/Demo/input/PREPROCESSED/data1
 
-	bin/hadoop fs -put <Jumbune_Home>/examples/resources/data/PREPROCESSED/data2 /Jumbune/Demo/input/PREPROCESSED/data2
+	bin/hadoop fs -put $JUMBUNE_HOME/examples/resources/data/PREPROCESSED/data2 /Jumbune/Demo/input/PREPROCESSED/data2
 
 	Note: Ensure that path is not present on HDFS and user has appropriate permission to put data file on HDFS.
 	
-	2. Upload sample JSON (<Jumbune home>/examples/resources/sample JSON/USRegionPortOutSample.json).
+	2. Upload sample JSON ($JUMBUNE_HOME/examples/resources/sample_json/USRegionPortOutSample.json).
 
 	3. In the 'M/R Jobs' tab select the US region portout sample jar (examples-usregionportouts-x.y.z.jar), either by mentioning the path on the Jumbune machine or by uploading from the local machine.
 
@@ -134,12 +134,12 @@ For Running Clickstream Analysis example (for Debugging):
 
 	1. Upload sample input file in HDFS by using the following command:
 
-	bin/hadoop fs -put <Jumbune_Home>/examples/resources/data/clickstream.tsv /Jumbune/clickstreamdata
+	bin/hadoop fs -put $JUMBUNE_HOME/examples/resources/data/clickstream.tsv /Jumbune/clickstreamdata
 
 	Note: Ensure that path is not present on HDFS and user has appropriate permission to put data file
 	on HDFS.
 
-	2. Upload sample JSON (<Jumbune home>/examples/resources/sample JSON/ClickstreamSample.json).
+	2. Upload sample JSON ($JUMBUNE_HOME/examples/resources/sample_json/ClickstreamSample.json).
 
 	3. In 'M/R Jobs' tab select the clickstream sample jar (examples-clickstreamanalysis-x.y.z.jar), either by mentioning the path on the Jumbune machine or by uploading from the local machine.
 
@@ -155,11 +155,11 @@ For Running Sensor data example (for HDFS Validation):
 
 	1. Upload sample input file in HDFS by using the following command
 	
-	bin/hadoop fs -put <Jumbune_Home>/examples/resources/data/sensor_data/Jumbune/sensordata
+	bin/hadoop fs -put $JUMBUNE_HOME/examples/resources/data/sensor_data/Jumbune/sensordata
 
 	Note: Ensure that path is not present on HDFS and user has appropriate permission to put data file on HDFS.
 
-	2. Upload sample JSON (<Jumbune home>/examples/resources/sample JSON/SensorDataSample.json).
+	2. Upload sample JSON ($JUMBUNE_HOME/examples/resources/sample_json/SensorDataSample.json).
 
 	3. Edit Name-node and Data-node information.
 

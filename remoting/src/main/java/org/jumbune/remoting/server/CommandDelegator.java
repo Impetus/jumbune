@@ -18,7 +18,6 @@ import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.JschUtil;
 import org.jumbune.remoting.common.RemotingConstants;

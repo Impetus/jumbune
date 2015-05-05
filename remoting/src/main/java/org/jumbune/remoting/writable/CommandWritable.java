@@ -3,7 +3,6 @@ package org.jumbune.remoting.writable;
 import java.io.Serializable;
 import java.util.List;
 
-import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.CommandType;
 
 /**
@@ -12,10 +11,9 @@ import org.jumbune.remoting.common.CommandType;
  */
 public class CommandWritable implements Serializable {
 
-	/**
-	 * Generated Serial Version
-	 */
-	private static final long serialVersionUID = 2125648606871472571L;
+
+	/** The Constant serialVersionUID. */
+	private static final long serialVersionUID = 8739134782179076646L;
 
 	/**
 	 * The username
@@ -68,11 +66,6 @@ public class CommandWritable implements Serializable {
 	private List<Command> batchedCommands;
 
 	/**
-	 * Customized api invocations
-	 */
-	private ApiInvokeHintsEnum apiInvokeHints;
-
-	/**
 	 * This should be called when command requires a public-key authentication.
 	 */
 	private boolean isAuthenticationRequired;
@@ -82,7 +75,32 @@ public class CommandWritable implements Serializable {
 	 */
 	private CommandType commandType;
 
+	/** The method name which is to be invoked by agent. */
+	private String methodToBeInvoked;
+	
+
+	
 	/**
+	 * Gets the method to be invoked.
+	 *
+	 * @return the method to be invoked
+	 */
+	public String getMethodToBeInvoked() {
+		return methodToBeInvoked;
+	}
+
+	/**
+	 * Sets the method to be invoked.
+	 *
+	 * @param methodToBeInvoked the new method to be invoked
+	 */
+	public void setMethodToBeInvoked(String methodToBeInvoked) {
+		this.methodToBeInvoked = methodToBeInvoked;
+	}
+
+	/**
+	 * Gets the username.
+	 *
 	 * @return the username
 	 */
 	public String getUsername() {
@@ -233,21 +251,8 @@ public class CommandWritable implements Serializable {
 	}
 
 	/**
-	 * @return the apiInvokeHints
-	 */
-	public ApiInvokeHintsEnum getApiInvokeHints() {
-		return apiInvokeHints;
-	}
-
-	/**
-	 * @param apiInvokeHints
-	 *            the apiInvokeHints to set
-	 */
-	public void setApiInvokeHints(ApiInvokeHintsEnum apiInvokeHints) {
-		this.apiInvokeHints = apiInvokeHints;
-	}
-
-	/**
+	 * Checks if is authentication required.
+	 *
 	 * @return isAuthenticationRequired
 	 */
 	public boolean isAuthenticationRequired() {
@@ -360,9 +365,9 @@ public class CommandWritable implements Serializable {
 				+ dsaFilePath + ", isCommandForMaster=" + isCommandForMaster
 				+ ", masterHostname=" + masterHostname + ", slaveHostname="
 				+ slaveHostname + ", batchedCommands=" + batchedCommands
-				+ ", apiInvokeHints=" + apiInvokeHints
 				+ ", isAuthenticationRequired=" + isAuthenticationRequired
-				+ ", commandType=" + commandType + "]";
+				+ ", commandType=" + commandType + ", methodToBeInvoked=" + methodToBeInvoked
+				+ "]";
 	}
 
 }
