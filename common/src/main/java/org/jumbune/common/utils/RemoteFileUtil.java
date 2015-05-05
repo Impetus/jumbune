@@ -24,9 +24,9 @@ import org.jumbune.common.beans.Slave;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.remoting.client.Remoter;
-import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
+import org.jumbune.remoting.common.RemotingMethodConstants;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
 
@@ -230,9 +230,11 @@ public class RemoteFileUtil {
 			}
 		}
 		builder.getCommandBatch().clear();
-		builder.addCommand(AGENT_HOME + relativePath, false, null, CommandType.FS).setApiInvokeHints(ApiInvokeHintsEnum.GET_FILES);
-		String[] files = (String[]) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
-		for (String string : files) {
+		builder.addCommand(AGENT_HOME + relativePath, false, null,
+				CommandType.FS).setMethodToBeInvoked(RemotingMethodConstants.PROCESS_GET_FILES);
+		List<String> fileList = (List<String>) remoter
+				.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		for (String string : fileList) {
 			remoter.receiveLogFiles(relativePath, relativePath + "/" + string);
 		}
 		remoter.close();
@@ -282,8 +284,9 @@ public class RemoteFileUtil {
 						.append(locationNode.substring(0, locationNode.indexOf("*.log*"))).append("-").append(relativePath);
 
 				builder.getCommandBatch().clear();
-				builder.addCommand(lsSb.toString(), false, null, CommandType.FS).populateFromLogConsolidationInfo(logCollection, null)
-						.setApiInvokeHints(ApiInvokeHintsEnum.DB_DOUBLE_HASH);
+				builder.addCommand(lsSb.toString(), false, null, CommandType.FS)
+						.populateFromLogConsolidationInfo(logCollection, null)
+						.setMethodToBeInvoked(RemotingMethodConstants.PROCESS_DB_OPT_STEPS);
 				remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 				String command = "scp -r " + userNode + "@" + hostNode + ":" + locationNode + " " + userMaster + "@" + hostMaster + ":" + AGENT_HOME
 						+ relativePath;
@@ -294,13 +297,15 @@ public class RemoteFileUtil {
 			}
 		}
 		builder.getCommandBatch().clear();
-		builder.addCommand(AGENT_HOME + relativePath, false, null, CommandType.FS).setApiInvokeHints(ApiInvokeHintsEnum.GET_FILES);
-		String[] files = (String[]) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
-		for (String string : files) {
+		builder.addCommand(AGENT_HOME + relativePath, false, null,
+				CommandType.FS).setMethodToBeInvoked(RemotingMethodConstants.PROCESS_GET_FILES);
+		List<String> fileList = (List<String>) remoter
+				.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		for (String string : fileList) {
 			remoter.receiveLogFiles(relativePath, relativePath + "/" + string);
 		}
 		remoter.close();
-		for (String string : files) {
+		for (String string : fileList) {
 			if (!string.contains("mrChain")) {
 				execute(new String[] { "unzip", string }, appHome + relativePath + "/");
 				execute(new String[] { "rm", string }, appHome + relativePath + "/");
@@ -663,9 +668,11 @@ public class RemoteFileUtil {
 			}
 		}
 		builder.getCommandBatch().clear();
-		builder.addCommand(AGENT_HOME + relativePath, false, null, CommandType.FS).setApiInvokeHints(ApiInvokeHintsEnum.GET_FILES);
-		String[] files = (String[]) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
-		for (String string : files) {
+		builder.addCommand(AGENT_HOME + relativePath, false, null,
+				CommandType.FS).setMethodToBeInvoked(RemotingMethodConstants.PROCESS_GET_FILES);
+		List<String> fileList = (List<String>) remoter
+				.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		for (String string : fileList) {
 			remoter.receiveLogFiles(relativePath, relativePath + File.separator + string);
 		}
 		remoter.close();

@@ -19,7 +19,6 @@ import org.apache.logging.log4j.Logger;
 
 import io.netty.channel.ChannelHandlerContext;
 
-import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.JschUtil;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.remoting.writable.CommandWritable;

@@ -24,9 +24,10 @@ import org.jumbune.common.utils.locators.CDHLocator;
 import org.jumbune.common.utils.locators.HadoopDistributionLocator;
 import org.jumbune.common.utils.locators.MapRLocator;
 import org.jumbune.remoting.client.Remoter;
-import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.BasicJobConfig;
 import org.jumbune.remoting.common.CommandType;
+import org.jumbune.remoting.common.RemotingConstants;
+import org.jumbune.remoting.common.RemotingMethodConstants;
 import org.jumbune.remoting.common.StringUtil;
 
 
@@ -466,7 +467,7 @@ public final class RemotingUtil {
 		Remoter remoter = getRemoter(config, jumbuneHome);
 		String command =  hostName;
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(command, false, null, CommandType.FS).setApiInvokeHints(ApiInvokeHintsEnum.HOST_TO_IP_OP);
+		builder.addCommand(command, false, null, CommandType.FS).setMethodToBeInvoked(RemotingMethodConstants.CONVERT_HOST_NAME_TO_IP);		
 		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		remoter.close();
 		return response;

@@ -21,7 +21,6 @@ import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.JschUtil;
 import org.jumbune.remoting.common.RemoterUtility;
@@ -92,29 +91,29 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 					parameters.set(i, mayBeReplacedParam);
 				}
 			}
-			ApiInvokeHintsEnum apiInvokeHint = commandWritable.getApiInvokeHints();
 			
-			//checks if command uses some api invoke hint
-			if(apiInvokeHint!=null){
-				switch(apiInvokeHint){
-					case GET_JOB_LOG_FILE_OP:
-						String[] strArr = command.getCommandString().split(RemotingConstants.SINGLE_SPACE);
-						return getJobHistoryFilefromJobID(strArr[0], strArr[1]);
-					case GET_HADOOP_CONFIG:
-						String[] strTmp = command.getCommandString().split(RemotingConstants.SINGLE_SPACE);
-						return getHadoopConfigFilefromJobID(strTmp[0], strTmp[1]);
-					case HOST_TO_IP_OP:
-						return convertHostNameToIP(command.getCommandString());
-				//	case JOB_EXECUTION:
-				//		return processJob(command.getCommandString(), agentHome);
-					case GET_FILES:
-					File file = processGetFiles(command);
-						return file.list();
-					case DB_DOUBLE_HASH:
-						return processDBOptSteps(command.getCommandString());
+			java.lang.reflect.Method method = null;
+			Class<?> commandAsObjectResponser = null;
+			// checks if command is in the form of a method to be executed.
+			if (commandWritable.getMethodToBeInvoked() != null) {
+				try { // invoking different methods by reflection. Method name
+						// is set in CommandWritable bean.
+					commandAsObjectResponser = Class
+							.forName(CommandAsObjectResponser.class.getName());
+					method = commandAsObjectResponser.getDeclaredMethod(
+							commandWritable.getMethodToBeInvoked(),
+							Command.class);
+
+					Object object = (Object) method.invoke(
+							commandAsObjectResponser.newInstance(), command);
+					return object;
+				} catch (ReflectiveOperationException exception) {
+					LOGGER.error("Unable to invoke method: " + method.getName()
+							+ " due to " + exception.getCause());
+
 				}
-			}
-			else{
+
+			}			else{
 				if (commandWritable.isAuthenticationRequired()) {
 					// execute with jsch
 					return executeCommandWithJsch(commandWritable, command);
@@ -150,12 +149,12 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 		}
 	}
 
-	private File processGetFiles(Command command) {
+	private List<String> processGetFiles(Command command) {
 		File file = new File(command.getCommandString().trim());
 		if (!file.isDirectory()) {
 			throw new  IllegalArgumentException("Not a directory!!!");
 		}
-		return file;
+		return Arrays.asList(file.list());
 	}
 
 	/**
@@ -235,9 +234,11 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 		return executeJob(msgToExec.split(" "));
 	}
 
-	private String processDBOptSteps(String command) throws IOException {
-		
-		String arr[] = command.split("[-]");
+
+
+	private String processDBOptSteps(Command command) throws IOException {
+		String commandString=command.getCommandString();
+		String arr[] = commandString.split("[-]");
 		String absLocation = arr[2];
 		String response = JschUtil.execSlaveCleanUpTask(new String[] { "ssh", arr[1], "ls", "-1", absLocation }, null);
 		String[] s = response.split("\n");
@@ -458,7 +459,10 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 	 * @param jobHistoryDir
 	 * @return
 	 */
-	private String getJobHistoryFilefromJobID(String jobID, String jobHistoryDir) {
+	private String getJobHistoryFilefromJobID(Command command) {
+		String[] strArr = command.getCommandString().split(RemotingConstants.SINGLE_SPACE);
+		String jobID=strArr[0];
+		String jobHistoryDir=strArr[1];
 		long timestamp = 0, latestTimestamp = 0;
 		String name, jobDir = null, jobHistoryFile = null;
 		File file = new File(jobHistoryDir);
@@ -503,7 +507,10 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 	 * @param jobHistoryDir
 	 * @return
 	 */
-	private String getHadoopConfigFilefromJobID(String jobID, String jobHistoryDir) {
+	private String getHadoopConfigFilefromJobID(Command command) {
+		String[] strTmp = command.getCommandString().split(RemotingConstants.SINGLE_SPACE);
+		String jobID=strTmp[0];
+		String jobHistoryDir=strTmp[1];
 		long timestamp = 0, latestTimestamp = 0;
 		String name, jobDir = null, configFile = null;
 		File file = new File(jobHistoryDir);
@@ -577,7 +584,8 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 
 	}
 
-	private String convertHostNameToIP(String hostName) throws UnknownHostException {
+	private String convertHostNameToIP(Command command) throws UnknownHostException {
+		String hostName=command.getCommandString();
 		InetAddress addr = InetAddress.getByName(hostName);
 		return addr.getHostAddress();
 	}

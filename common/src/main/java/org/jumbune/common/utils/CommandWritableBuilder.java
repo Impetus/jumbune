@@ -9,7 +9,6 @@ import org.jumbune.common.beans.Master;
 import org.jumbune.common.beans.Slave;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
-import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemoterUtility;
 import org.jumbune.remoting.writable.CommandWritable;
@@ -133,17 +132,7 @@ public class CommandWritableBuilder {
 		getCommandWritable().setCommandType(commandType);
 		return this;
 	}
-
-	/**
-	 * sets the api invoke hint 
-	 * @param apiInvokeHints
-	 * @return
-	 */
-	public CommandWritableBuilder setApiInvokeHints(ApiInvokeHintsEnum apiInvokeHints) {
-		getCommandWritable().setApiInvokeHints(apiInvokeHints);
-		return this;
-	}
-
+	
 	/**
 	 * adds a new command to be executed over Remoting
 	 * the command may optionally have params too
@@ -244,6 +233,16 @@ public class CommandWritableBuilder {
 		return commandBatch;
 	}
 	
+	
+	/**
+	 * sets the methodName
+	 * @param methodName
+	 * @return
+	 */
+	public CommandWritableBuilder setMethodToBeInvoked(String methodToBeInvoked) {
+		getCommandWritable().setMethodToBeInvoked(methodToBeInvoked);
+		return this;
+	}
 
 
 }

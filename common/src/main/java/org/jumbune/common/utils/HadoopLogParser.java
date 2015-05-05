@@ -26,9 +26,9 @@ import org.jumbune.common.beans.TaskOutputDetails;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.remoting.client.Remoter;
-import org.jumbune.remoting.common.ApiInvokeHintsEnum;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
+import org.jumbune.remoting.common.RemotingMethodConstants;
 import org.jumbune.utils.exception.JumbuneException;
 
 import com.google.gson.Gson;
@@ -286,7 +286,6 @@ public class HadoopLogParser {
 				.append(Constants.HADOOP_HOME).append(HDFS_LS_COMMAND)
 				.append(Constants.SPACE).append(logsHistory).append("*")
 				.append(jobID).append("*").append("[!'.xml']");
-		LOGGER.debug("History FileName Fetch Command: " + lsCommand.toString());
 		CommandWritableBuilder lsBuilder = new CommandWritableBuilder();
 		lsBuilder.addCommand(lsCommand.toString(), false, null,
 				CommandType.HADOOP_FS);
@@ -394,8 +393,6 @@ public class HadoopLogParser {
 	{		
 	StringBuilder commandToExecute = new StringBuilder().append(Constants.HADOOP_HOME).append(HDFS_FILE_GET_COMMAND)
 	.append(Constants.SPACE).append(rumenTempDirOnMapRFS).append("*").append(SPACE).append(rumenDirPath);
-	LOGGER.debug("File get Command" + commandToExecute.toString());
-
 	CommandWritableBuilder fsGetBuilder = new CommandWritableBuilder();
 	fsGetBuilder.addCommand(commandToExecute.toString(),false, null, CommandType.MAPRED).populate(jobConfig, null);
     StringBuilder rmCommand=new StringBuilder().append(Constants.HADOOP_HOME).append(HDFS_RM_COMMAND).append(SPACE).append("/jumbune");
@@ -462,7 +459,7 @@ public class HadoopLogParser {
 	private String getLogFilePath(String jobID, Remoter remoter,
 			String logsHistory, CommandWritableBuilder builder) {
 		String command = jobID + RemotingConstants.SINGLE_SPACE + logsHistory;
-		builder.addCommand(command, false, null, CommandType.FS).setApiInvokeHints(ApiInvokeHintsEnum.GET_JOB_LOG_FILE_OP);
+		builder.addCommand(command, false, null, CommandType.FS).setMethodToBeInvoked(RemotingMethodConstants.GET_JOB_HISTORY_FILE_FROM_JOB_ID);
 		return (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		
 	}
