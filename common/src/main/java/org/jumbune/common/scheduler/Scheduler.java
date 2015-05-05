@@ -55,7 +55,7 @@ public abstract class Scheduler {
 	 *            scheduled jumbune job name which user wants to stop
 	 * @throws JumbuneException
 	 */
-	protected void deleteCurrentJobEntryFromCron(String jobName)
+	public void deleteCurrentJobEntryFromCron(String jobName)
 			throws JumbuneException {
 		InputStream cronInputStream;
 		cronInputStream = getCurrentUserCronTabInfo();
