@@ -156,10 +156,22 @@ public final class RemotingUtil {
 		if(Enable.TRUE.equals(jobConfig.getEnableYarn())){
 			configuration.set("mapreduce.framework.name", "yarn");
 		}
+
+		String host= jobConfig.getMaster().getHost();
+		SupportedHadoopDistributions hadoopVersion = getHadoopVersion(jobConfig);
+
 		try {
-			if(StringUtil.emptyOrNull(jobTrackerURI)){
+			if(StringUtil.emptyOrNull(jobTrackerURI)||isDefaultJobTrackerURI(jobTrackerURI)){
 				LOGGER.debug("No Job Tracker configuration found in mapred-site.xml, attempting to create job client with default uri");
-				client = new JobClient(new InetSocketAddress("0:0:0:0", 8032), configuration);
+
+		
+				if(SupportedHadoopDistributions.HADOOP_MAPR.equals(hadoopVersion))
+				{  //default IPC port for jobtracker in MapR is 9001
+					client = new JobClient(new InetSocketAddress(host, 9001), configuration);
+				}else{
+					client = new JobClient(new InetSocketAddress(host, 8032), configuration);	
+				}					
+				
 			}else {
 				LOGGER.debug("Attempting to create job client with uri: "+jobTrackerURI);
 				client = new JobClient(new InetSocketAddress(jobTrackerURI.split(":")[0], Integer.parseInt(jobTrackerURI.split(":")[1])), configuration);
@@ -168,6 +180,14 @@ public final class RemotingUtil {
 			LOGGER.error(e);
 		}
 		return client;
+	}
+	
+	private static boolean isDefaultJobTrackerURI(String jobTrackerURI)
+	{
+		if(jobTrackerURI.equalsIgnoreCase("maprfs:///")){
+			return true;
+		}
+	return false;
 	}
 	
 	/**
