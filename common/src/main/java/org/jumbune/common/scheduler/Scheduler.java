@@ -31,7 +31,8 @@ public abstract class Scheduler {
 				.append(File.separator).toString();
 	}
 
-	public Scheduler() {
+	protected Scheduler() {
+		
 	}
 
 	/**
@@ -44,7 +45,7 @@ public abstract class Scheduler {
 	 * 
 	 * @throws JumbuneException
 	 */
-	public abstract void scheduleJob(Config config) throws JumbuneException;
+	protected abstract void scheduleJob(Config config) throws JumbuneException;
 
 	/**
 	 * This method removes a cronjob entry in cronfile identified by Jumbune
@@ -54,7 +55,7 @@ public abstract class Scheduler {
 	 *            scheduled jumbune job name which user wants to stop
 	 * @throws JumbuneException
 	 */
-	public void deleteCurrentJobEntryFromCron(String jobName)
+	protected void deleteCurrentJobEntryFromCron(String jobName)
 			throws JumbuneException {
 		InputStream cronInputStream;
 		cronInputStream = getCurrentUserCronTabInfo();
