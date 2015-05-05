@@ -15,8 +15,8 @@
 <link rel="stylesheet" type="text/css" href="${pageContext.servletContext.contextPath}/skins/css/jstree.css">
 <link rel="stylesheet" type="text/css" href="${pageContext.servletContext.contextPath}/skins/js/plugins/jquery.jqplot/dist/jquery.jqplot.css">
 <link rel="stylesheet" type="text/css" href="${pageContext.servletContext.contextPath}/skins/css/toggles.css">
-<link rel="stylesheet" type="text/css" href="${pageContext.servletContext.contextPath}/skins/css/toggles-iphone.css">
 <link rel="stylesheet" type="text/css" href="${pageContext.servletContext.contextPath}/skins/css/freeow.css">
+<link rel="stylesheet" type="text/css" href="${pageContext.servletContext.contextPath}/skins/css/nv.d3.css">
 
 <!-- css code End here -->
 
@@ -58,7 +58,9 @@
 <script type="text/javascript" src="${pageContext.servletContext.contextPath}/skins/js/plugins/jquery/jquery.jstree.js"></script>
 
 <!-- d3 -->
-<script type="text/javascript" src="${pageContext.servletContext.contextPath}/skins/js/plugins/d3/d3.v2.js?2.9.1"></script>
+<%-- <script type="text/javascript" src="${pageContext.servletContext.contextPath}/skins/js/plugins/d3/d3.v2.js?2.9.1"></script> --%>
+<script type="text/javascript" src="${pageContext.servletContext.contextPath}/skins/js/d3.min.js"></script>
+<script type="text/javascript" src="${pageContext.servletContext.contextPath}/skins/js/nv.d3.js"></script>
 
 <!-- Script code End here -->
 

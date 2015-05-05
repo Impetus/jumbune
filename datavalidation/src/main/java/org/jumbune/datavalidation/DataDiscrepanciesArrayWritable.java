@@ -22,14 +22,12 @@ public void set(Writable[] values) {
 	public void write(DataOutput out) throws IOException {
 		super.write(out);
 		out.writeUTF(fileName);
-		System.out.println("fileName ["+fileName+"]");
 	}
+	
 	@Override
 	public void readFields(DataInput in) throws IOException {
-		// TODO Auto-generated method stub
 		super.readFields(in);
 		fileName = in.readUTF();
-		System.out.println("fileName ["+fileName+"]");
 	}
 	/**
 	 * @return the fileName

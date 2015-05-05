@@ -74,10 +74,10 @@ public class DataValidationReducer extends Reducer<Text, DataDiscrepanciesArrayW
 		Map<String, Integer> regexCheckFileViolationsMap = null;
 		Map<String, Integer> fieldFileViolationsMap = null;
 		StringBuffer wb = new StringBuffer();
-		Set<Integer> dirtyFieldTupleSet = new HashSet<Integer>();
-		Set<Integer> dirtyDataTypeTupleSet = new HashSet<Integer>();
-		Set<Integer> dirtyRegexTupleSet = new HashSet<Integer>();
-		Set<Integer> dirtyNullCheckSet = new HashSet<Integer>();
+		Set<String> dirtyFieldTupleSet = new HashSet<String>();
+		Set<String> dirtyDataTypeTupleSet = new HashSet<String>();
+		Set<String> dirtyRegexTupleSet = new HashSet<String>();
+		Set<String> dirtyNullCheckSet = new HashSet<String>();
 		String fileName = null;
 		for (DataDiscrepanciesArrayWritable dvarrayWritable : values) {
 			totalDirtyTuple++;
@@ -88,7 +88,7 @@ public class DataValidationReducer extends Reducer<Text, DataDiscrepanciesArrayW
 				if(fileViolationsWritable!= null) {
 					switch(fileViolationsWritable.getViolationType()){
 					case DataValidationConstants.NUM_OF_FIELDS_CHECK:
-						dirtyFieldTupleSet.add(fileViolationsWritable.getLineNumber());
+						dirtyFieldTupleSet.add(fileName+fileViolationsWritable.getLineNumber());
 						totalFieldViolations++;
 						if(fieldMapWritable == null || fieldFileViolationsMap == null){
 							fieldMapWritable = new MapWritable();
@@ -99,7 +99,7 @@ public class DataValidationReducer extends Reducer<Text, DataDiscrepanciesArrayW
 								fileViolationsWritable,fileName);
 						break;
 					case DataValidationConstants.USER_DEFINED_NULL_CHECK:
-						dirtyNullCheckSet.add(fileViolationsWritable.getLineNumber());
+						dirtyNullCheckSet.add(fileName+fileViolationsWritable.getLineNumber());
 						totalNullCheckViolations++;
 						if(nullCheckMapWritable == null || nullCheckfileViolationsMap == null){
 							nullCheckMapWritable = new MapWritable();
@@ -110,7 +110,7 @@ public class DataValidationReducer extends Reducer<Text, DataDiscrepanciesArrayW
 								fileViolationsWritable, fileName);
 						break;
 					case DataValidationConstants.USER_DEFINED_DATA_TYPE:
-						dirtyDataTypeTupleSet.add(fileViolationsWritable.getLineNumber());
+						dirtyDataTypeTupleSet.add(fileName+fileViolationsWritable.getLineNumber());
 						totalDataTypeViolations++;
 						if(dataTypeCheckMapWritable == null || dataTypeFileViolationsMap == null){
 							dataTypeCheckMapWritable = new MapWritable();
@@ -121,7 +121,7 @@ public class DataValidationReducer extends Reducer<Text, DataDiscrepanciesArrayW
 								fileViolationsWritable, fileName);
 						break;
 					case DataValidationConstants.USER_DEFINED_REGEX_CHECK:
-						dirtyRegexTupleSet.add(fileViolationsWritable.getLineNumber());
+						dirtyRegexTupleSet.add(fileName+fileViolationsWritable.getLineNumber());
 						totalRegexCheckViolations++;
 						if(regexCheckMapWritable == null || regexCheckFileViolationsMap == null){
 							regexCheckMapWritable = new MapWritable();

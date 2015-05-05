@@ -82,6 +82,11 @@
 				<h3>Select</h3>
 				<p>Select a job json from recent ones</p>
 			  </li>
+			  <li>
+				<div class="icon_block"><a id="dataprofiling" href="javascript:void(0)"><span class="icon"><img src="skins/images/select_icon.png" /></span></a></div>
+				<h3>Define Data Quailty</h3>
+				<p>Data Quality Suit</p>
+			  </li>
 			</ul>
 			<div class="clear"></div>
 		  </div>
@@ -96,6 +101,7 @@
 	<div id="yamlFormModel"></div>
 	<div id="yamlRepositryModelBox" style="display:none;"><table id="yamlRepositryModel"></table></div>
 	<div id="yamlFileUploadModel" style="display:none;">File Uploaded Successfully!</div>
+	<div id="dataProfilingFormModel"></div>
 	<div class="clear"></div>
 
 
@@ -356,6 +362,18 @@
 			}
 			//document.getElementById("filelist").style.display = "block";
 		}
+		
+		$('#dataprofiling').click(function() {
+				$("#dataProfilingFormModel").load('jsp/DataProfilingWizard.jsp').dialog({
+					dialogClass : 'modalSelectLocation',
+					height : 600,
+					width : 880,
+					resizable : false,
+					draggable:false,
+					modal : true,
+			});
+		});
+	
 	</script>
 
 </body>

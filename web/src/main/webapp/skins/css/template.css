@@ -124,7 +124,7 @@ h1.yaml_text {
 }
 .bottm_nav li {
 	float:left;
-	width:230px;
+	width:135px;
 	text-align:center;
 	margin:0 140px 0 0;
 }
@@ -485,6 +485,48 @@ h2.pinkHeading{
 	position:relative;	
         left: 5px;
 }
+
+.fld-interval-dropdown{
+	float:left;	
+	position: relative;
+        left: 5px;
+}
+.fld-duration-dropdown{
+	float: left;
+	position: relative;
+	left: 5px
+}
+
+#dQTInterval {
+    border: 1px solid #CCCCCC;      
+    float: left;
+    min-width: 50px;
+    
+}
+
+#duration {
+    border: 1px solid #CCCCCC;      
+    float: left;
+    min-width: 100px;
+    
+}
+
+/*
+.fld-duration-dropdown .inputbox, .inputboxes select, select {
+    border: 1px solid #CCCCCC;      
+    float: left;
+    min-width: 100px;
+    
+}
+
+.fld-interval-dropdown .inputbox, .inputboxes select, select {
+    border: 1px solid #CCCCCC;      
+    float: left;
+    min-width: 50px;
+    
+}*/
+
+
 .fld-extend {
 	float: right;
     width: 520px;
@@ -872,6 +914,9 @@ span.reducer_ident { width:7px; height:7px; float:left; margin:3px 5px 0 0; back
 .fixWidthBox input[type="checkbox"] { margin-top:2px; float:left; }
 .commonBox .fld input[type="radio"] { float:left; }
 .commonBox .fld label { float:left; margin-top:5px; margin-right: 15px; }
+.commonBox .fld-duration-dropdown label { float:left; margin-top:5px; margin-right: 55px; margin-left: 15px}
+.commonBox .fld-interval-dropdown label {float:left; margin-top:5px; margin-right: 5px }
+.commonBox .fld-duration-dropdown .fld-interval-dropdown { float:left; margin-top:5px; margin-right: 55px; margin-left: 15px}
 .ui-datepicker { border:1px solid #ccc !important; background:#e7e7e7 !important; }
 #slider-range-min {border:1px solid #ccc; margin:2px;cursor:pointer; }
 .addMoreSign { width:auto; padding-left:20px; font-size:12px; line-height: 18px; margin-left:-2px; }
@@ -926,9 +971,9 @@ a#supportOptionsLink { color: #095AC6; }
 img.trendCloseImg{position: absolute; right: 11px; top: 2px;cursor: pointer;} 
 img.colorCloseImg{position: absolute; right: -8px; top: 4px;cursor: pointer;} 
 .favHeader{background-color: #ccc;color: #000;float: left;width: 92%;font-size:14px;padding:5px 20px;font-size:12px;color:#333;}
-.profilingWidget{float:left;border:solid 1px #ccc;width:450px;margin:0 0 0 10px;}
-.dataCenterBox{border:solid 1px #ccc;width:420px;float:left;margin-left:-2px;}
-.dataCenterBox ul li{float: left; width: 410px;list-style:none;border:solid 1px #ccc;font-size:12px;}
+.profilingWidget{float:left;border:solid 1px #ccc;width:538px;margin:0 0 0 10px;}
+.dataCenterBox{border:solid 1px #ccc;width:350px;float:left;margin-left:-2px;}
+.dataCenterBox ul li{float: left; width: 338px;list-style:none;border:solid 1px #ccc;font-size:12px;}
 .rackBox{margin-top:5px;float: left;}
 .green span{background-color:green;}
 .orange span{background-color:orange;}
@@ -936,7 +981,7 @@ img.colorCloseImg{position: absolute; right: -8px; top: 4px;cursor: pointer;}
 .catTxt{font-size:10px;}
 .statTxt{font-size:12px;}
 .favRight{  border-left: 1px solid #CCCCCC; float: right; padding: 5px; text-align: right; width: auto; margin-left:10px;}
-.toggle {float:left;width:93%;padding:5px 5px 5px 22px;background:url(../images/max_icon.png) 3px 7px no-repeat #ddd;text-transform:uppercase;}
+.toggle {float:left;width:92%;padding:5px 5px 5px 22px;background:url(../images/max_icon.png) 3px 7px no-repeat #ddd;text-transform:uppercase;}
 .dataCenterBox .selected{background:url("../images/min_icon.png") 3px 7px no-repeat #ddd;}
 .accordianList{float:left;padding-left:5px; margin: 5px 0;}
 .dataCenterMainBox{width:335px;}
@@ -988,7 +1033,7 @@ img.colorCloseImg{position: absolute; right: -8px; top: 4px;cursor: pointer;}
 #hdfsDataInformation ul li span.cval { padding: 0 0 0 5px; float: left; width: 48%; background: #f1f1f1; overflow: hidden; text-overflow: ellipsis;}
 #hdfsDataNodeInformation ul {margin: 0; padding: 0; list-style-type: none;} 
 #hdfsDataNodeInformation ul li {float: left; margin: 0 0 1px 0; width: 50%; line-height: 25px;} 
-#hdfsDataNodeInformation ul li span.clabel { padding: 0 0 0 4px; float: left; width: 48%; background: #e9e9e9; overflow: hidden; text-overflow: ellipsis; font-weight: bold;} 
+#hdfsDataNodeInformation ul li span.clabel { padding: 0 0 0 4px; float: left; width: 48%; background: #e9e9e9; overflow: hidden; text-overflow: ellipsis; font-weight: bol<div id="heading1" class="gauge-fieldnumber-textField">Field-1</div>d;} 
 #hdfsDataNodeInformation ul li span.cval { padding: 0 0 0 5px; float: left; width: 48%; background: #f1f1f1; overflow: hidden; text-overflow: ellipsis;}
 #summary-data-validation { margin-left: 10px;}
 .accordion-heading {	float: left; width: 100%;}
@@ -1004,3 +1049,42 @@ img.colorCloseImg{position: absolute; right: -8px; top: 4px;cursor: pointer;}
 .password-model-box table td { padding: 3px; text-align: left; }
 .kill-job-link a { color: #c92403; }
 #killJobResponse { display: none; }
+.gauge-canvas-preview {
+  /*background:#F9F9F9;*/
+  border-bottom-left-radius:10px;
+  border-bottom-right-radius:10px;
+  border-top-left-radius:10px;
+  border-top-right-radius:10px;
+  clear:both;
+  color:#FFFFFF;
+  float:center;
+  height:100px;
+  margin:0 0px 0px 0;
+  position:relative;
+  
+  width:220px;
+}
+.gauge-preview-textfield {
+  color:black;
+  font-family:Amaranth, sans-serif;
+  font-size:2em;
+  font-weight:bold;
+  left:0;
+  position:relative;
+  right:0;
+  text-align:center;
+  
+}
+.gauge-super-canvas-preview {
+  position:relative;
+  top:0px;
+  width:250px;
+}
+.gauge-fieldnumber-textField {
+color:black;
+text-align:center;
+font-weight:bold;
+font-size:15px;
+font-family: sans-srif;
+}
+

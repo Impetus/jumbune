@@ -62,7 +62,12 @@
 		<servlet-name>ProfilerServlet</servlet-name>
 		<servlet-class>org.jumbune.web.servlet.ProfilerServlet</servlet-class>
 	</servlet>
-
+	
+	<servlet>
+		<servlet-name>DataQualityServlet</servlet-name>
+		<servlet-class>org.jumbune.web.servlet.DataQualityServlet</servlet-class>
+	</servlet>
+	
 	<servlet-mapping>
 		<servlet-name>JumbuneHistoryJobPickerServlet</servlet-name>
 		<url-pattern>/JumbuneHistoryJobPickerServlet</url-pattern>
@@ -121,6 +126,11 @@
 	<servlet-mapping>
 		<servlet-name>ProfilerServlet</servlet-name>
 		<url-pattern>/ProfilerServlet</url-pattern>
+	</servlet-mapping>
+	
+	<servlet-mapping>
+		<servlet-name>DataQualityServlet</servlet-name>
+		<url-pattern>/DataQualityServlet</url-pattern>
 	</servlet-mapping>
 
 	<welcome-file-list>
