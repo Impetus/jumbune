@@ -100,7 +100,7 @@ RUN echo '##Jumbune' >> /etc/profile \
 RUN cat /etc/profile
 
 #Fetching Jumbune jar and the depoy script
-RUN wget -O /root/jumbune-dist-1.4.1-bin.jar  http://www.jumbune.org/jar/beta/jumbune-dist-1.4.1-bin.jar
+RUN wget -O /root/jumbune-dist-1.5.0-bin.jar  http://www.jumbune.org/jar/beta/jumbune-dist-1.5.0-bin.jar
 ADD docker-conf/deploynRun.sh /root/deploynRun.sh
 ADD docker-conf/sampleJson.json /root/sampleJson.json
 RUN chmod +x /root/deploynRun.sh
