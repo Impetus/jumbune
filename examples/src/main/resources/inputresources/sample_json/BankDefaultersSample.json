@@ -30,7 +30,7 @@
     "hadoopJobProfile": "FALSE",
     "hdfsInputPath": null,
     "includeClassJar": "TRUE",
-    "inputFile": "user.home.directory/Desktop/Jumbune_Home/examples/example-distribution/examples-bankdefaulters-1.4.2-SNAPSHOT.jar",
+    "inputFile": "user.home.directory/Desktop/Jumbune_Home/examples/example-distribution/examples-bankdefaulters-1.5.0.jar",
     "jobs": [
       {
         "jobClass": null,
