@@ -17,13 +17,19 @@ import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -33,6 +39,10 @@ import java.util.Scanner;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.jumbune.common.beans.DataProfilingBean;
+import org.jumbune.common.beans.DataProfilingFileDetails;
+import org.jumbune.common.beans.DataProfilingJson;
 import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.beans.LogConsolidationInfo;
@@ -55,10 +65,11 @@ import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
 import org.jumbune.utils.exception.JumbuneException;
-
+import org.jumbune.dataprofiling.utils.DataProfilingConstants;
 
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 /**
  * Helper class for all processors
@@ -71,7 +82,7 @@ public class ProcessHelper {
 	private static final MessageLoader MESSAGES = MessageLoader.getInstance();
 	private static final String LIBDIR = "lib/";
 	private static boolean isYarnJob = false;	
-	
+	private static String jobJson = null ;
 	private HadoopJobCounters hadoopJobCounters=null;
 		
 	
@@ -742,6 +753,294 @@ public class ProcessHelper {
 		}
 		return dvJson;
 	}
+	
+	
+	
+	/**
+	 * Launch data profiling job and process output.
+	 *
+	 * @param config the config
+	 * @param inputPath the input path
+	 * @param dpBeanString the dp bean string
+	 * @return the string
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws JumbuneException the jumbune exception
+	 */
+	public String launchDataProfilingJobAndProcessOutput(Config config, String inputPath, String dpBeanString,DataProfilingBean dataProfilingBean) throws IOException, JumbuneException {
+
+		
+		String jumbuneHome = JobConfig.getJumbuneHome();
+		JobConfig jobConfig = (JobConfig)config;
+		boolean dataProfilingJbLaunch = false ;
+		boolean mergeOutput  =  false ;
+		int hashCode = 0 ;
+		if(jobConfig.getCriteriaBasedDataProfiling().equals(Enable.TRUE)){
+		  hashCode = dataProfilingBean.getFieldProfilingRules().hashCode();
+		}
+		String dataProfJsonDir = new StringBuilder(jumbuneHome).append(File.separator).append(DataProfilingConstants.DATA_PROFILES).append(File.separator).toString();
+		File[] jsonFiles = getJsonFile(dataProfJsonDir);
+		String lsrCommandResponse = getLsrCommandResponse(inputPath, jobConfig);	
+		// If there is no Json files present inside data profile folder then we trigger new Data profiling job.
+		if(jsonFiles == null){
+			dataProfilingJbLaunch = true;	
+		}
+		else{
+		
+		Enable dataProEnable = null ;
+		DataProfilingJson dataProfJson = populateDataProfilingJson(inputPath, dataProfJsonDir, jsonFiles ,jobConfig.getCriteriaBasedDataProfiling());
+		//Here we check if data profiling is not null then we go for extracting and comparing the files to be profiled.
+		if(dataProfJson!=null){
+		Map<String, String> fileCheckSumMap = new HashMap<String, String>();
+		Map<String, String> currentFileCheckSumMap = new HashMap<String, String>();
+		List<DataProfilingFileDetails> dataProfilingFileDetails = dataProfJson.getDataProfilingFileDetails();
+		for (DataProfilingFileDetails dataprofiles : dataProfilingFileDetails) {
+			int verifyHashCode = dataprofiles.getHashCode();
+			dataProEnable = dataprofiles.getDataProfilingType();
+			fileCheckSumMap = dataprofiles.getFileCheckSumMap();
+			//Here we perform the hdfs look up i.e. computing the checksum of the current files to be profiled and storing them in a map corresponding to their name.
+			currentFileCheckSumMap = performHdfsLookUp(inputPath, jobConfig, lsrCommandResponse);
+			String currentKey = null;
+			String currentValue = null;
+			if(currentFileCheckSumMap.size() < dataprofiles.getNoOfFiles()){
+				dataProfilingJbLaunch = true ;
+				break;
+			}
+			if(dataProEnable.equals(Enable.FALSE)){
+				//Here we check if the number of files to be profiled is greater the previously profiled files, if true then
+				 //we take only the new file and run data profiling job for it and merge both the outputs. 
+				if(currentFileCheckSumMap.size() > dataprofiles.getNoOfFiles()){
+				inputPath = getInputPaths(inputPath, jobConfig, lsrCommandResponse);
+				String[] listOfFiles = inputPath.split(Constants.COMMA);
+				List<String> fileList = new ArrayList<String>();
+				for (String eachFile : listOfFiles) {
+					fileList.add(eachFile.trim());
+					for (Map.Entry<String, String> entrySet : fileCheckSumMap.entrySet()) {
+						if(entrySet.getKey().equalsIgnoreCase(eachFile.trim())){
+							fileList.remove(eachFile.trim());
+						}
+					}
+				
+				}
+				inputPath = fileList.toString().substring(1, fileList.toString().length()-1);	
+				inputPath = inputPath.replace(Constants.DOT,File.separator);
+				mergeOutput = true ;
+				jobJson = dataprofiles.getProfiledOutput();
+				dataProfilingJbLaunch = true ;
+				break;
+				}
+			}
+			
+			//This loop takes out the entries in the current file checksum map.
+			for(Map.Entry<String, String> currentEntrySet : currentFileCheckSumMap.entrySet()){
+				currentKey = currentEntrySet.getKey();
+				//if the current key i.e. file on hdfs is there , then we check if the corresponding file is present already.
+				if(currentKey!=null){
+					currentValue = fileCheckSumMap.get(currentKey);
+					//If we found a file match then we compare their checksum value.
+					if(currentValue!=null && currentValue.equals(currentEntrySet.getValue())){
+						//Here we check if Rule Based Profiling is enabled and the saved rule is same as current rule then we populate the saved output.
+						if(dataProEnable.equals(Enable.TRUE) &&  hashCode == verifyHashCode){
+								jobJson = dataprofiles.getProfiledOutput();
+							}
+							//if Non-Rule based profiling is enabled then we populate the already saved output.
+							else if(dataProEnable.equals(Enable.FALSE)){
+								jobJson = dataprofiles.getProfiledOutput();
+							}
+							// if both above conditions are not met then we trigger a new data profiling job.
+							else{
+								dataProfilingJbLaunch = true ;
+							}
+						}
+						// this is the condition where file checksum doesn't match and hence we trigger data profiling job.  
+						else{
+								dataProfilingJbLaunch = true ;
+							}
+			}
+			}
+			
+		}
+	}
+		//if the data profiling json is null then we trigger data profiling job.
+		else{
+			dataProfilingJbLaunch = true ;
+		}
+		}	
+		if(dataProfilingJbLaunch){
+		String hadoopHome=RemotingUtil.getHadoopHome(config);
+		Remoter remoter = RemotingUtil.getRemoter(config,"");
+		
+		String jobName = jobConfig.getFormattedJumbuneJobName();
+		String userSuppliedJars = addUserSuppliedDependencyJars(jobName);
+		StringBuffer commandBuffer = new StringBuffer();
+		sendDVJars(remoter, jumbuneHome);
+		String relativePath="jobJars/"+jobConfig.getJumbuneJobName()+"/dp/";
+		commandBuffer=commandBuffer.append("remoteJobLaunch|").append("jobJars/").append(jobConfig.getJumbuneJobName()).append("|")
+				.append(relativePath.subSequence(0, relativePath.lastIndexOf('/')));
+		// building the job trigger command
+		ArrayParamBuilder sb = buildDataProfilingCommandString(jobConfig, inputPath, dpBeanString, hadoopHome, remoter, userSuppliedJars);
+		
+		CommandWritableBuilder builder = new CommandWritableBuilder();
+		String [] stringArray=(String[]) sb.toList().toArray(new String [sb.toList().size()]);
+		builder.addCommand(commandBuffer.toString(), true, Arrays.asList(stringArray), CommandType.HADOOP_JOB);
+		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		if (response == null || response.trim().equals("")){
+			throw new IllegalArgumentException("Data Profiling::Invalid Hadoop Job Response!!!");
+		}
+		BufferedReader reader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(response.getBytes())));
+		String line = null , dataProfilingJson = null;
+		boolean errorFound = false;
+		String [] dataProfilingReportArray ;
+		//ToDO
+		while ((line = reader.readLine()) != null) {
+			String dataProfilingReport = DataProfilingConstants.DATA_PROFILING_REPORT;
+			if (line.contains(dataProfilingReport)) {
+				dataProfilingReportArray = line.split(DataProfilingConstants.DATA_PROFILING_REPORT); 
+				dataProfilingJson = dataProfilingReportArray[1];
+			}// checking for any exception or error
+			else if (errorFound || (errorFound =(line.contains(Constants.EXCEPTION))) || (errorFound =(line.contains(Constants.ERROR)))) {
+				sb.append(line).append("\n");
+			}
+			
+		}
+		//If merge output is true then we merge the output of the current job and saved job.
+		if(mergeOutput){
+			HashMap<String,Integer> persistedMapOutput = new ObjectMapper().readValue(jobJson, HashMap.class);
+			HashMap<String,Integer> newMapOutput = new ObjectMapper().readValue(dataProfilingJson, HashMap.class);
+			HashMap<String, Integer> mergedMap  = new HashMap<String, Integer>();
+			mergedMap  = getMergeMapOutput(persistedMapOutput, newMapOutput, mergedMap);
+			Map<String,Integer> sortedMap  = getSortedMap(mergedMap);
+			Gson dataGson = new GsonBuilder().disableHtmlEscaping().create();
+			dataProfilingJson = dataGson.toJson(sortedMap);
+		}
+		//Going to dump the data profiling details into a json file.
+		if(!dataProfilingJson.isEmpty() && dataProfilingJson!=null){
+		saveDataProfilingJson(jobConfig,dataProfilingJson,hashCode, lsrCommandResponse);
+		}
+		return dataProfilingJson;
+		}
+		return jobJson ;
+	}
+
+	/**
+	 * Gets the sorted map.
+	 *
+	 * @param mergedMap the merged map
+	 * @return the sorted map
+	 */
+	private Map<String, Integer> getSortedMap(
+			HashMap<String, Integer> mergedMap) {
+		
+		List<Map.Entry<String, Integer>> sortedList = new LinkedList<Map.Entry<String, Integer>>( mergedMap.entrySet() );
+        Collections.sort( sortedList, new Comparator<Map.Entry<String, Integer>>()
+        {
+            public int compare( Map.Entry<String, Integer> o1, Map.Entry<String, Integer> o2 )
+            {
+                return (o2.getValue()).compareTo( o1.getValue() );
+            }
+        } );
+		 Map<String, Integer> sortedMap = new LinkedHashMap<String, Integer>();
+        for (Map.Entry<String, Integer> entry : sortedList)
+        {
+        	sortedMap.put( entry.getKey(), entry.getValue() );
+         }
+        return sortedMap;
+	}
+
+	
+	/**
+	 * Gets the merged map containing the results of both saved job and newly run file job.
+	 *
+	 * @param persistedMapOutput the persisted map output
+	 * @param newMapOutput the new map output
+	 * @param mergedMap the merged map
+	 * @return the merge map output
+	 */
+	private HashMap<String, Integer> getMergeMapOutput(HashMap<String, Integer> persistedMapOutput,
+			HashMap<String, Integer> newMapOutput,
+			HashMap<String, Integer> mergedMap) {
+		for (Map.Entry<String, Integer> persistedEntrySet : persistedMapOutput.entrySet()) {
+			for (Map.Entry<String, Integer> newEntrySet : newMapOutput.entrySet()){
+				if(persistedEntrySet.getKey().equalsIgnoreCase(newEntrySet.getKey())){
+					int value = persistedEntrySet.getValue() + newEntrySet.getValue();
+					mergedMap.put(persistedEntrySet.getKey(),value);
+			}
+				if(!mergedMap.containsKey(newEntrySet.getKey())){
+					mergedMap.put(newEntrySet.getKey(), newEntrySet.getValue());
+				}
+			}
+			if(!mergedMap.containsKey(persistedEntrySet.getKey())){
+				mergedMap.put(persistedEntrySet.getKey(), persistedEntrySet.getValue());
+			}
+		}
+		return mergedMap;
+	}
+
+	/**
+	 * Populate data profiling json.
+	 *
+	 * @param inputPath the input path
+	 * @param dataProfJsonDir the data prof json dir
+	 * @param jsonFiles the json files
+	 * @param dataProfilingType 
+	 * @return the data profiling json
+	 * @throws IOException 
+	 */
+	private DataProfilingJson populateDataProfilingJson(String inputPath,
+			String dataProfJsonDir, File[] jsonFiles, Enable dataProfilingType)
+			throws IOException {
+		
+		String fileName = null ;
+		InputStream inputStream = null ;
+		DataProfilingJson dataProfilingJson = null ;
+		inputPath = inputPath.endsWith(File.separator)? inputPath : inputPath + File.separator ;
+		inputPath = inputPath.replaceAll(File.separator, Constants.DOT).substring(1, inputPath.length());
+		if(dataProfilingType.equals(Enable.TRUE)){
+		inputPath = new StringBuilder(DataProfilingConstants.PROFILE).append(inputPath).append(DataProfilingConstants.CB).append(DataProfilingConstants.JSON).toString();	
+		}else{
+		inputPath = new StringBuilder(DataProfilingConstants.PROFILE).append(inputPath).append(DataProfilingConstants.JSON).toString();
+		}
+		try{
+		for (File file : jsonFiles) {
+			fileName = file.getName();
+			if(fileName.equalsIgnoreCase(inputPath)){
+				String filePath = dataProfJsonDir + file.getName() ;
+				inputStream = new FileInputStream(filePath);
+				Gson gson = new Gson();
+				dataProfilingJson = gson.fromJson(new InputStreamReader(inputStream), DataProfilingJson.class);
+			}
+		}}catch (IOException ie) {
+			LOGGER.error(ie);
+		}finally{
+			if (inputStream != null) {
+				inputStream.close();
+			}
+		}
+		return dataProfilingJson;
+	}
+
+		
+
+	private ArrayParamBuilder buildDataProfilingCommandString(JobConfig jobConfig,
+			String inputPath, String dpBeanString, String hadoopHome,
+			Remoter remoter, String userSuppliedJars) {
+			
+			ArrayParamBuilder arrayParamBuilder = new ArrayParamBuilder(8);
+			if(jobConfig.getEnableDataProfiling().equals(Enable.TRUE) && jobConfig.getCriteriaBasedDataProfiling().equals(Enable.TRUE)){
+			arrayParamBuilder.append("HADOOP_HOME"+Constants.HADOOP_COMMAND).append(Constants.HADOOP_COMMAND_TYPE).append(Constants.AGENT_ENV_VAR_NAME+Constants.DV_JAR_PATH)
+			.append(DataProfilingConstants.DP_MAIN_CLASS).append(Constants.LIB_JARS).append(Constants.AGENT_ENV_VAR_NAME+
+			Constants.GSON_JAR+","+Constants.AGENT_ENV_VAR_NAME+Constants.COMMON_JAR+","+
+			Constants.AGENT_ENV_VAR_NAME+Constants.UTILITIES_JAR+userSuppliedJars+","+Constants.AGENT_ENV_VAR_NAME
+			+Constants.LOG4J2_API_JAR+","+Constants.AGENT_ENV_VAR_NAME+Constants.LOG4J2_CORE_JAR).append(inputPath).append(dpBeanString);
+			}else{
+				arrayParamBuilder.append("HADOOP_HOME"+Constants.HADOOP_COMMAND).append(Constants.HADOOP_COMMAND_TYPE).append(Constants.AGENT_ENV_VAR_NAME+Constants.DV_JAR_PATH)
+				.append(DataProfilingConstants.DP_NO_CRITERIA_MAIN_CLASS).append(Constants.LIB_JARS).append(Constants.AGENT_ENV_VAR_NAME+
+				Constants.GSON_JAR+","+Constants.AGENT_ENV_VAR_NAME+Constants.COMMON_JAR+","+
+				Constants.AGENT_ENV_VAR_NAME+Constants.UTILITIES_JAR+userSuppliedJars+","+Constants.AGENT_ENV_VAR_NAME
+				+Constants.LOG4J2_API_JAR+","+Constants.AGENT_ENV_VAR_NAME+Constants.LOG4J2_CORE_JAR).append(inputPath).append(dpBeanString);
+			}
+			
+			return arrayParamBuilder;
+	}
 
 	private ArrayParamBuilder buildCommandString(Config config,
 			String inputPath, String dvFileDir, String dvBeanString,
@@ -768,7 +1067,132 @@ public class ProcessHelper {
 		remoter.sendJar(LIBDIR, jHomeTmp + Constants.LOG4J2_CORE_JAR);
 	}
 
-	
+	/**
+	 * This method Saves the data profiling details inside Jumbune Home folder.
+	 *
+	 * @param yamlConfig the yaml config
+	 * @param dataProfilingJson the data profiling json
+	 * @param dataProfilingType the data profiling type(denotes RuleBased or NonRule Based Profiling)
+	 * @param loader the loader
+	 * @param dpBeanString the dp bean string contain the data profiling parameters.
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	private void saveDataProfilingJson(JobConfig jobConfig, String dataProfilingJson, int hashCode, String commandResponse) throws IOException {
+		Gson gson = new Gson();
+		DataProfilingJson daJson = new DataProfilingJson();
+		DataProfilingFileDetails dataProfilingFileDetails = new DataProfilingFileDetails();
+		Enable dataProfilingType = jobConfig.getCriteriaBasedDataProfiling();
+		List<DataProfilingFileDetails> dataProfilingFileDetailsList = new ArrayList<DataProfilingFileDetails>();
+		Map<String, String> fileCheckSumMap = new HashMap<String, String>();
+		String jsonDir =  new StringBuilder(System.getenv("JUMBUNE_HOME")).append(File.separator).append(DataProfilingConstants.DATA_PROFILES).append(File.separator).toString();
+		String hdfsFileName = jobConfig.getHdfsInputPath();
+		hdfsFileName = hdfsFileName.endsWith(File.separator)? hdfsFileName : hdfsFileName + File.separator ;
+		fileCheckSumMap = performHdfsLookUp(hdfsFileName,jobConfig,commandResponse);
+		hdfsFileName = hdfsFileName.replaceAll(File.separator, Constants.DOT).substring(1, hdfsFileName.length());
+		dataProfilingFileDetails.setFileName(hdfsFileName);
+		dataProfilingFileDetails.setFileCheckSumMap(fileCheckSumMap);
+		dataProfilingFileDetails.setDataProfilingType(dataProfilingType);
+		dataProfilingFileDetails.setProfiledOutput(dataProfilingJson);
+		dataProfilingFileDetails.setNoOfFiles(fileCheckSumMap.size());
+		String fileName = DataProfilingConstants.PROFILE + hdfsFileName ; 
+		if(dataProfilingType.equals(Enable.TRUE)){
+			dataProfilingFileDetails.setHashCode(hashCode);
+			fileName = fileName + DataProfilingConstants.CB ;
+		}
+		dataProfilingFileDetailsList.add(dataProfilingFileDetails);
+		String [] folderName = hdfsFileName.split("\\.");
+		daJson.setFolderName(folderName[0]);
+		daJson.setDataProfilingFileDetails(dataProfilingFileDetailsList);
+		
+		File dataProfDir = new File(jsonDir);
+		if (!dataProfDir.exists()) {
+			dataProfDir.mkdir();
+		}
+		String jsonData = gson.toJson(daJson,DataProfilingJson.class);
+		jsonDir = jsonDir + fileName + DataProfilingConstants.JSON;
+		ConfigurationUtil.writeToFile(jsonDir, jsonData);
+		LOGGER.debug("Persisted Data Profiling Json [" + jsonData + "]");
 
+	}
+
+	/**
+	 * Performs hdfs look up and calculates the checksum of the files on hdfs is stored in a map.
+	 *
+	 * @param yamlConfig the yaml config
+	 * @param hdfsFilePath the hdfs file path
+	 * @param loader the loader
+	 * @return the map containing file name and its checksum value.
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	private Map<String, String> performHdfsLookUp(String hdfsFilePath, JobConfig jobConfig, String commmandResponse) throws IOException {
+		Map<String, String> hashMap = new HashMap<String, String>();
+		String[] fileResponse = commmandResponse.split(Constants.NEW_LINE);
+		String filePath = null ;
+		String dateTime = null ;
+		for (int i = 0; i < fileResponse.length; i++) {
+			String [] eachFileResponse = fileResponse[i].split("\\s+");
+			filePath = eachFileResponse[eachFileResponse.length-1];
+			dateTime = eachFileResponse[eachFileResponse.length-2] +  eachFileResponse[eachFileResponse.length-3];
+			MessageDigest messageDigest = null;
+			try {
+				messageDigest = MessageDigest.getInstance("MD5");
+			} catch (NoSuchAlgorithmException e) {
+				LOGGER.error(e);
+			}
+			messageDigest.update(dateTime.getBytes(),0,dateTime.length());
+			hashMap.put(filePath.replaceAll(File.separator, Constants.DOT), new BigInteger(1,messageDigest.digest()).toString(16));
+			}
+				
+		return hashMap;
+		
+	}
+
+	/** This method is responsible for giving the details of file that is present on HDFS.
+	 * @param hdfsFilePath
+	 * @param jobConfig
+	 * @return
+	 */
+	private String getLsrCommandResponse(String hdfsFilePath,
+			JobConfig jobConfig) {
+		Remoter remoter = RemotingUtil.getRemoter(jobConfig, null);
+		StringBuilder stringBuilder = new StringBuilder().append("HADOOP_HOME").append(Constants.HADOOP_COMMAND).append(" fs -lsr ").append(hdfsFilePath);
+		CommandWritableBuilder commandWritableBuilder = new CommandWritableBuilder();
+		commandWritableBuilder.addCommand(stringBuilder.toString(), false, null, CommandType.HADOOP_FS).populate(jobConfig, null);
+		String commmandResponse = (String) remoter.fireCommandAndGetObjectResponse(commandWritableBuilder.getCommandWritable());
+		return commmandResponse;
+	}
+
+	
+	
+	/**
+	 * Gets the json file.
+	 *
+	 * @param filePath the file path at which the json files are kept.
+	 * @return the json file kept at the specified path.
+	 */
+	private File[] getJsonFile(String filePath) {
+		File[] getJsonFiles = null ;
+			File jobFilePath = new File(filePath);
+
+			if (jobFilePath.exists() && jobFilePath.isDirectory()) {
+				getJsonFiles = jobFilePath.listFiles();
+			}
+		return getJsonFiles ;
+	}
+	
+	private String getInputPaths(String hdfsFilePath,JobConfig jobConfig, String commandResponse) throws IOException{
+		
+		List<String> listOfFiles = new ArrayList<String>();
+		String[] fileResponse = commandResponse.split(Constants.NEW_LINE);
+		String filePath = null ;
+		for (int i = 0; i < fileResponse.length; i++) {
+			String [] eachFileResponse = fileResponse[i].split("\\s+");
+			filePath = eachFileResponse[eachFileResponse.length-1];
+			filePath = filePath.replaceAll(File.separator, Constants.DOT);
+			listOfFiles.add(filePath);
+		}
+		return listOfFiles.toString().substring(1, listOfFiles.toString().length()-1);
+		
+	}
 
 }

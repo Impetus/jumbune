@@ -49,6 +49,15 @@
 <script type="text/javascript" src="${pageContext.servletContext.contextPath}/skins/js/plugins/jquery.jqplot/dist/plugins/jqplot.enhancedLegendRenderer.js"></script>
 <script type="text/javascript" src="${pageContext.servletContext.contextPath}/skins/js/plugins/jquery.jqplot/dist/plugins/jqplot.categoryAxisRenderer.js"></script>
 
+<!-- demo gauge.js -->
+
+<script type="text/javascript" src="${pageContext.servletContext.contextPath}/skins/js/plugins/justGage.1.0.1/resources/js/justgage.1.0.1.js"></script>
+<script type="text/javascript" src="${pageContext.servletContext.contextPath}/skins/js/plugins/justGage.1.0.1/resources/js/justgage.1.0.1.min.js"></script>
+<script type="text/javascript" src="${pageContext.servletContext.contextPath}/skins/js/plugins/justGage.1.0.1/resources/js/raphael.2.1.0.min.js"></script>
+
+
+<!-- gauge.js js script -->
+<script type="text/javascript" src="${pageContext.servletContext.contextPath}/skins/js/gauge.min.js"></script>
 
 <script type="text/javascript" src="${pageContext.servletContext.contextPath}/skins/js/plupload.js"></script>
 <script type="text/javascript" src="${pageContext.servletContext.contextPath}/skins/js/plupload.html5.js"></script>

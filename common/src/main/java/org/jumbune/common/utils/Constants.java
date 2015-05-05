@@ -447,4 +447,6 @@ public interface Constants {
 	/** The one three three. */
 	int ONE_THREE_THREE = 133;	
 	
+	String NEW_LINE = "\n" ;
+	
 }

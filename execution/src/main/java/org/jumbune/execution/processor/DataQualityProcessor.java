@@ -14,6 +14,7 @@ import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.DataProfilingBean;
 import org.jumbune.common.beans.DataQualityTimeLineConfig;
 import org.jumbune.common.beans.DataValidationBean;
 import org.jumbune.common.beans.Module;
@@ -23,6 +24,7 @@ import org.jumbune.common.scheduler.DataQualityTaskScheduler;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.RemoteFileUtil;
 import org.jumbune.common.utils.ValidateInput;
+import org.jumbune.dataprofiling.utils.DataProfilingConstants;
 import org.jumbune.datavalidation.DataValidationReport;
 import org.jumbune.datavalidation.report.DVReportGenerator;
 import org.jumbune.execution.beans.CommunityModule;
@@ -66,6 +68,9 @@ public class DataQualityProcessor extends BaseProcessor {
 		JobConfig jobConfig = (JobConfig) super.getConfig();
 		if (dataQualityTaskEnum.equals(DataQualityTaskEnum.DATA_VALIDATION)) {
 			return generateDataValidationReport(params, jobConfig);
+		} else if (dataQualityTaskEnum
+				.equals(DataQualityTaskEnum.DATA_PROFILING)) {
+			return generateDataProfilingReport(params, jobConfig);
 		} else if (dataQualityTaskEnum
 				.equals(DataQualityTaskEnum.DATA_QUALITY_TIMELINE)) {
 			return generateDataQualityTimelineReport(params, jobConfig);
@@ -135,7 +140,28 @@ public class DataQualityProcessor extends BaseProcessor {
 
 	private boolean generateDataProfilingReport(Map<Parameters, String> params,
 			JobConfig jobConfig) throws JumbuneException {
-		return false;
+		String dataProfilingReport = null ;
+		Gson gsonDV = new Gson();
+		String inputPath = jobConfig.getHdfsInputPath();
+		Map<String, String> report = super.getReports().getReport(CommunityModule.DATA_QUALITY);
+		try {
+			DataProfilingBean dataProfilingBean = jobConfig.getDataProfilingBean();
+			String dataProfilingBeanString = gsonDV.toJson(dataProfilingBean);
+			dataProfilingReport = processHelper.launchDataProfilingJobAndProcessOutput(super.getConfig(), inputPath, dataProfilingBeanString, dataProfilingBean);
+			LOGGER.info("Successfully Exiting [Data Quality-Data Profiling] Processor...");
+			return true;
+		}catch (Exception e) {
+			Map<String, Map<String, String>> errorMap = new HashMap<String, Map<String, String>>(1);
+			Map<String, String> errorMessageMap = new HashMap<String, String>(1);
+			errorMessageMap.put("Could not profile data", e.getMessage());
+			errorMap.put(ERRORANDEXCEPTION, errorMessageMap);
+			Gson gson = new Gson();
+			dataProfilingReport = gson.toJson(errorMap);
+			throw new JumbuneException("Exception occured during Data Profiling"+e);
+		} finally {
+			report.put(DataProfilingConstants.DATA_PROFILING, dataProfilingReport);
+			super.getReports().setCompleted(CommunityModule.DATA_QUALITY);
+		}
 	}
 
 
