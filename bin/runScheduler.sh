@@ -20,9 +20,6 @@ for f in $JUMBUNE_HOME/lib/*.jar; do
 done
 
 #add dataValidation module to classpath
-for f in $JUMBUNE_HOME/modules/jumbune-tuning*.jar; do
-  CLASSPATH=${CLASSPATH}:$f;
-done
 for f in $JUMBUNE_HOME/modules/jumbune-datavalidation*.jar; do
   CLASSPATH=${CLASSPATH}:$f;
 done
