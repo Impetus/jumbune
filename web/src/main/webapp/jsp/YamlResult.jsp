@@ -88,7 +88,33 @@
 						</li>
 						<%
 							}
-							
+							if (tabs.contains("Data Profiling")) {
+						%>
+						<li class="ui-state-default"><a
+							href="#dataProfilingTabContent" class="first"><span>Data
+								Profiling</span>
+						</a>
+						</li>
+						<%
+							}
+						if (tabs.contains("NoCriteriaBasedDP")) {
+						%>
+						<li class="ui-state-default"><a
+							href="#dataProfilingTabContent" class="first"><span>Data
+								Profiling Chart</span>
+						</a>
+						</li>
+						<%
+							}  if (tabs.contains("DataQuality Timeline")) {
+								
+						%>
+						<li class="ui-state-default"><a
+							href="#DQTTabContent" class="first"><span>Data
+								Quality Timeline</span>
+						</a>
+						</li>
+						<%
+							}
 						%>
 						<li class="ui-state-default"><a href="#errorTabContent"
 							class="first"><span>Failed Jobs</span>
@@ -193,10 +219,53 @@
 								</div>
 							</div>
 						</div>
+						<%
+							}
+							if (tabs.contains("Data Profiling")) {
+						%>
+						<div id="dataProfilingTabContent">
+							<div id="dataProfilingJSPContent" style="display: none;">
+								<jsp:include page="DataProfiling.jsp" />
+							</div>
+							<div id="dataProfilingTabLoader" class="loaderMainBox">
+								<div class="txtCenter">
+									<img src="./skins/images/loading.gif" />
+								</div>
+							</div>
+						</div>
 
 						<%
 							}
-							
+						if (tabs.contains("NoCriteriaBasedDP")) {
+						%>
+						<div id="dataProfilingTabContent">
+							<div id="dataProfilingJSPContent" style="display: none;">
+								<jsp:include page="DataProfilingChart.jsp" />
+							</div>
+							<div id="dataProfilingTabLoader" class="loaderMainBox">
+								<div class="txtCenter">
+									<img src="./skins/images/loading.gif" />
+								</div>
+							</div>
+						</div>
+
+						<%
+							}  if (tabs.contains("DataQuality Timeline")) {
+								
+						%>
+							<div id="DQTTabContent">
+							<div id="DQTJSPContent" style="display: none;">
+								<jsp:include page="DataQualityTimeline.jsp" />
+							</div>
+							<div id="DQTTabLoader" class="loaderMainBox">
+								<div class="txtCenter">
+									<img src="./skins/images/loading.gif" />
+								</div>
+							</div>
+						</div>
+					
+						<%
+							}
 						%>
 						<div id="errorTabContent">
 							<div id="errorJSPContent">
@@ -316,8 +385,18 @@
 		$('#summary-data-validation').show();
 		timerId = setInterval(callServletForJSON, ajaxInterval);
 	<%}%>
-		
-	<%if (tabs.contains("Cluster Profiling")) {%>
+	<%if (tabs.contains("Data Profiling")) {%>
+		$('#summary-dataprofiling-validation').show();
+		timerId = setInterval(callServletForJSON, ajaxInterval);
+	<%}%>
+	
+	<%if (tabs.contains("NoCriteriaBasedDP")) {%>
+		$('#summary-dataprofiling-validation').show();
+		timerId = setInterval(callServletForJSON, ajaxInterval);
+	<%}if (tabs.contains("DataQuality Timeline")) {%>
+	    $('#summary-DQT').show();
+	timerId = setInterval(callServletForJSON, ajaxInterval);			
+	<%}if (tabs.contains("Cluster Profiling")) {%>
 		profileTimerId = setInterval(function() {callProfileServletForJSON('');}, ajaxInterval);
 	<%}%>
 		tabsLength = $('#tabs').tabs("length");
@@ -382,6 +461,7 @@
 								})
 						.done(
 								function(finalJSON) {
+									console.log("callservletforjson() called");
 									finalJSON = jQuery.parseJSON(finalJSON);
 
 									profilerSchInterval = finalJSON.stats_interval;
@@ -396,7 +476,7 @@
 													finalJSON,
 													function(finalJSONKey,
 															finalJSONVal) {
-
+														
 														if (finalJSONKey == "PURE_PROFILING") {
 															loadedModules.push('staticProfilingTabContent');
 															$('#staticProfilingJSPContent').show();
@@ -445,6 +525,23 @@
 														if (finalJSONKey == "DATA_SCIENCE_REQUEST") {
 															// todo
 															populateDsForm(finalJSONVal);
+														}
+														
+														if (finalJSONKey == "DATA_PROFILING") {
+															loadedModules.push('dataProfilingTabContent');
+															$('#dataProfilingJSPContent').show();
+															$('#dataProfilingTabLoader').remove();
+															showExcel = false;
+															stopAjaxCall=true;
+															enableDataProfilingTab(finalJSONVal);
+														}
+														if (finalJSONKey == "DATA_QUALITY_TIMELINE") {
+             												loadedModules.push('DQTTabContent');
+															$('#DQTJSPContent').show();
+															$('#DQTTabLoader').remove();
+															showExcel = false;
+															stopAjaxCall=true;
+															makeAndShowGraph(finalJSONVal);
 														}
 														if (finalJSONKey == "AJAXCALL") {
 															checkAllAJAXComplete();

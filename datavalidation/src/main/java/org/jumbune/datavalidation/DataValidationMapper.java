@@ -102,7 +102,10 @@ public class DataValidationMapper extends Mapper<Object, Text, Text, DataDiscrep
 		List<DataViolationWritableBean> dataValidationWritableBeanList = new ArrayList<DataViolationWritableBean>();
 		
 		// validating the number of fields in the record
-		validateNumberOfFields(key, context, actualNumOfFields, dataValidationWritableBeanList);
+		if(!validateNumberOfFields(key, context, actualNumOfFields, dataValidationWritableBeanList)){
+			writeViolations(dataValidatoinDiscripancies, dataValidationWritableBeanList, context);
+			return;
+		}
 		
 		for (FieldValidationBean fieldValidationBean : fieldValidationList) {
 			fieldNumber = fieldValidationBean.getFieldNumber();
@@ -110,33 +113,41 @@ public class DataValidationMapper extends Mapper<Object, Text, Text, DataDiscrep
 			nullCheck = fieldValidationBean.getNullCheck();
 			dataType = fieldValidationBean.getDataType();
 			regex = fieldValidationBean.getRegex();
-				if(validate(nullCheck) && !applyNullCheck(nullCheck, actualFieldValue)){
-					writeFailedValidationToOutput(key, context,
-						actualFieldValue, fieldNumber,
+			if(validate(nullCheck) && !applyNullCheck(nullCheck, actualFieldValue)){
+			 writeFailedValidationToOutput(key, context,	actualFieldValue, fieldNumber,
 						DataValidationConstants.USER_DEFINED_NULL_CHECK, nullCheck,dataValidationWritableBeanList);
-				}
-			if(validate(dataType) && !applyDataTypeCheck(dataType, actualFieldValue)){
+			}
+			if((!isNullOrEmpty(actualFieldValue)) && (validate(dataType) && !applyDataTypeCheck(dataType, actualFieldValue))){
 				writeFailedValidationToOutput(key, context,
 						actualFieldValue, fieldNumber,
 						DataValidationConstants.USER_DEFINED_DATA_TYPE, dataType,dataValidationWritableBeanList);
 				
 			}
-			if(validate(regex) && !applyRegexCheck(regex, actualFieldValue)){
+			
+			if((!isNullOrEmpty(actualFieldValue)) && (validate(regex) && applyRegexCheck(regex, actualFieldValue))){
 				writeFailedValidationToOutput(key, context,
 						actualFieldValue, fieldNumber,
 						DataValidationConstants.USER_DEFINED_REGEX_CHECK, regex,dataValidationWritableBeanList);
 				
 			}
-				}
+		}
+		
 		if(!dataValidationWritableBeanList.isEmpty()){
-			dataValidatoinDiscripancies.setFileName(fileName);
-			dataValidatoinDiscripancies.set( dataValidationWritableBeanList.toArray(new DataViolationWritableBean[dataValidationWritableBeanList.size()]));
-			context.write(new Text(contextKey), dataValidatoinDiscripancies);
+			writeViolations(dataValidatoinDiscripancies, dataValidationWritableBeanList, context);
 		}else{
 			cleanTupleCounter++;
 		}
 	}
 	
+	private void writeViolations(
+			DataDiscrepanciesArrayWritable dataValidatoinDiscripancies,
+			List<DataViolationWritableBean> dataValidationWritableBeanList, Context context) throws IOException, InterruptedException {
+		dataValidatoinDiscripancies.setFileName(fileName);
+		dataValidatoinDiscripancies.set( dataValidationWritableBeanList.toArray ( 
+				new DataViolationWritableBean[dataValidationWritableBeanList.size()]));
+		context.write(new Text(contextKey), dataValidatoinDiscripancies);
+	}
+
 	@Override
 	protected void cleanup(
 			Mapper<Object, Text, Text, DataDiscrepanciesArrayWritable>.Context context)
@@ -150,6 +161,7 @@ public class DataValidationMapper extends Mapper<Object, Text, Text, DataDiscrep
 		try{
 			fileWriter = new FileWriter(new File(dirPath, context.getTaskAttemptID().getTaskID().toString()));
 			fileWriter.write(Long.toString(noOfToupleProcessd)+"\n"+Long.toString(cleanTupleCounter));
+			fileWriter.flush();
 		}finally{
 			if(fileWriter!= null){
 				fileWriter.close();
@@ -176,7 +188,7 @@ public class DataValidationMapper extends Mapper<Object, Text, Text, DataDiscrep
 			String actualFieldValue, int fieldNumber,
 			String validationCheckName, String expectedValue, List<DataViolationWritableBean> dataValidationWritableBeanList)
 			throws IOException, InterruptedException {
-		DataViolationWritableBean dataViolationWritableBean = null;
+			DataViolationWritableBean dataViolationWritableBean = null;
 			dataViolationType.set(validationCheckName);
 			dataViolationWritableBean = new DataViolationWritableBean();
 			dataViolationWritableBean.setExpectedValue(expectedValue);
@@ -205,7 +217,7 @@ public class DataValidationMapper extends Mapper<Object, Text, Text, DataDiscrep
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws InterruptedException the interrupted exception
 	 */
-	private void validateNumberOfFields(Object key, Context context,
+	private boolean validateNumberOfFields(Object key, Context context,
 			int actualNumOfFields, List<DataViolationWritableBean> dataValidationWritableBeanList) throws IOException, InterruptedException {
 		DataViolationWritableBean dataViolationWritableBean;
 		if (expectedNumOfFields != actualNumOfFields) {
@@ -217,8 +229,9 @@ public class DataValidationMapper extends Mapper<Object, Text, Text, DataDiscrep
 			dataViolationType.set(DataValidationConstants.NUM_OF_FIELDS_CHECK);
 			dataViolationWritableBean.setViolationType(DataValidationConstants.NUM_OF_FIELDS_CHECK);
 			dataValidationWritableBeanList.add(dataViolationWritableBean);
-			return;
+			return false;
 		}
+		return true;
 	}
 
 	/**
@@ -316,7 +329,7 @@ public class DataValidationMapper extends Mapper<Object, Text, Text, DataDiscrep
 	 */
 	private boolean isNullOrEmpty(String value) {
 		
-		return ((DataValidationConstants.EMPTY_STRING.equals(value) || (value.equalsIgnoreCase(DataValidationConstants.NULL))));
+		return ((DataValidationConstants.EMPTY_STRING.equals(value.trim()) || (value.equalsIgnoreCase(DataValidationConstants.NULL))));
 		
 	}
 }

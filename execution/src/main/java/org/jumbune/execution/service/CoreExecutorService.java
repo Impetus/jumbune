@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,9 +31,10 @@ import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.execution.beans.CommunityModule;
+import org.jumbune.execution.beans.DataQualityTaskEnum;
+import org.jumbune.execution.processor.DataQualityProcessor;
 import org.jumbune.execution.processor.DebugProcessor;
 import org.jumbune.execution.processor.Processor;
-import org.jumbune.execution.processor.DataValidationProcessor;
 import org.jumbune.execution.processor.ProfilingProcessor;
 import org.jumbune.execution.utils.ExecutionConstants;
 import org.jumbune.execution.utils.ExecutionUtil;
@@ -101,7 +103,7 @@ public abstract class CoreExecutorService {
 
 		JobConfig jobConfig = (JobConfig)config;
 		if (jobConfig.getEnableDataValidation().equals(Enable.TRUE)) {
-			modules.add(CommunityModule.DATA_VALIDATION);
+			modules.add(CommunityModule.DATA_QUALITY);
 		}
 
 		if (jobConfig.getEnableStaticJobProfiling().equals(Enable.TRUE)) {
@@ -116,7 +118,12 @@ public abstract class CoreExecutorService {
 			modules.add(CommunityModule.PROFILING);
 		}
 		
-		
+		if (jobConfig.getEnableDataProfiling().equals(Enable.TRUE)){
+			modules.add(CommunityModule.DATA_QUALITY);
+		}
+		if (jobConfig.getEnableDataQualityTimeline().equals(Enable.TRUE)){
+			modules.add(CommunityModule.DATA_QUALITY);
+		}
 		//Collections.sort(modules);
 		LOGGER.debug("Executable Modules [" + modules + "]");
 		return modules;
@@ -169,8 +176,12 @@ public abstract class CoreExecutorService {
 		Processor processor = null;
 		JobConfig jobConfig = (JobConfig) config;
 		
-		if(module.getEnumValue()==CommunityModule.DATA_VALIDATION.getEnumValue() && jobConfig.getEnableDataValidation().equals(Enable.TRUE)){
-			processor = new DataValidationProcessor(isCommand);
+		if(module.getEnumValue()==CommunityModule.DATA_QUALITY.getEnumValue() && jobConfig.getEnableDataQualityTimeline().equals(Enable.TRUE)){
+			processor = new DataQualityProcessor(isCommand,DataQualityTaskEnum.DATA_QUALITY_TIMELINE);
+		}
+	
+		if(module.getEnumValue()==CommunityModule.DATA_QUALITY.getEnumValue() && jobConfig.getEnableDataValidation().equals(Enable.TRUE)){
+			processor = new DataQualityProcessor(isCommand,DataQualityTaskEnum.DATA_VALIDATION);
 		}
 
 		if(module.getEnumValue()==CommunityModule.PROFILING.getEnumValue()){
@@ -181,7 +192,9 @@ public abstract class CoreExecutorService {
 			processor = new DebugProcessor(isCommand);
 		}
 		
-	
+		if(module.getEnumValue()==CommunityModule.DATA_QUALITY.getEnumValue() && jobConfig.getEnableDataProfiling().equals(Enable.TRUE)){
+			processor = new DataQualityProcessor(isCommand,DataQualityTaskEnum.DATA_PROFILING);
+		}
 
 		return processor;
 	}
@@ -271,6 +284,7 @@ public abstract class CoreExecutorService {
 				LOGGER.error(e);
 			} finally {
 				cleanUpSlavesservice.shutdown();
+				cleanUpSlavesservice.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
 			}
 		}
 	}

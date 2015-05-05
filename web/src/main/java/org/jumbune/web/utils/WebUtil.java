@@ -165,6 +165,21 @@ public class WebUtil {
 			tabBuilder.append(separator).append("Debug Analysis");
 			isDashBoardNeeded = true;
 		}
+		
+		if(jobConfig.getEnableDataProfiling().equals(Enable.TRUE) && jobConfig.getCriteriaBasedDataProfiling().equals(Enable.TRUE)){
+			tabBuilder.append(separator).append("Data Profiling");
+			isDashBoardNeeded = false;
+		}
+		
+		if(jobConfig.getEnableDataProfiling().equals(Enable.TRUE) && jobConfig.getCriteriaBasedDataProfiling().equals(Enable.FALSE)){
+			tabBuilder.append(separator).append("NoCriteriaBasedDP");
+			isDashBoardNeeded = false;
+		}
+		
+		if(jobConfig.getEnableDataQualityTimeline().equals(Enable.TRUE) ){
+			tabBuilder.append(separator).append("DataQuality Timeline");
+			isDashBoardNeeded = false;
+		}
 
 		if (isDashBoardNeeded) {
 			tabBuilder.append(separator).append("Dashboard");

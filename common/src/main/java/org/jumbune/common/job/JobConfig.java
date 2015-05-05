@@ -11,6 +11,7 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Classpath;
+import org.jumbune.common.beans.DataQualityTimeLineConfig;
 import org.jumbune.common.beans.DataValidationBean;
 import org.jumbune.common.beans.DebuggerConf;
 import org.jumbune.common.beans.DoNotInstrument;
@@ -19,7 +20,6 @@ import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.beans.LogConsolidationInfo;
 import org.jumbune.common.beans.LogSummaryLocation;
 import org.jumbune.common.beans.Master;
-import org.jumbune.common.beans.SlaveParam;
 import org.jumbune.common.beans.ProfilingParam;
 import org.jumbune.common.beans.Slave;
 import org.jumbune.common.beans.Validation;
@@ -30,7 +30,6 @@ import org.jumbune.common.yarn.beans.YarnSlaveParam;
 import org.jumbune.utils.JobUtil;
 import org.jumbune.utils.beans.LogLevel;
 
-import com.google.gson.Gson;
 
 
 // TODO: Auto-generated Javadoc
@@ -160,6 +159,9 @@ public class JobConfig implements Config {
 
 	/** This must be set explicitly. */
 	private static String jumbuneHome;
+	
+	/** The data quality time line. */
+	private DataQualityTimeLineConfig dataQualityTimeLineConfig ;
 
 
 
@@ -1409,6 +1411,24 @@ public class JobConfig implements Config {
 				+ ", enableDataProfiling=" + enableDataProfiling
 				+ ", criteriaBasedDataProfiling=" + criteriaBasedDataProfiling
 				+ "]";
+	}
+	
+	/**
+	 * Gets the data quality time line.
+	 *
+	 * @return the dataQualityTimeLine
+	 */
+	public DataQualityTimeLineConfig getDataQualityTimeLineConfig() {
+		return dataQualityTimeLineConfig;
+	}
+	
+	/**
+	 * Sets the data quality time line.
+	 *
+	 * @param dataQualityTimeLineConfig the dataQualityTimeLine to set
+	 */
+	public void setDataQualityTimeLineConfig(DataQualityTimeLineConfig dataQualityTimeLineConfig) {
+		this.dataQualityTimeLineConfig = dataQualityTimeLineConfig;
 	}
 
 }

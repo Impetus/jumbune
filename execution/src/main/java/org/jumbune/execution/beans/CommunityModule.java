@@ -4,9 +4,10 @@ import org.jumbune.common.beans.Module;
 
 public enum CommunityModule implements Module{
 
-	DATA_VALIDATION(0),
+	DATA_QUALITY(0),
 	PROFILING(1),
 	DEBUG_ANALYSER(2);
+	
 	
 	private int enumValue;
   
