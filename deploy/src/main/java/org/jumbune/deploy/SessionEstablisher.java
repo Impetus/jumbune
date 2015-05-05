@@ -71,19 +71,20 @@ public final class SessionEstablisher {
 			LOGGER.error(e);
 		}
 		if(nnpwd!=null){
-		session.setPassword(nnpwd);
+			session.setPassword(nnpwd);
+		}else {
+			try {
+				jsch.addIdentity(privateKeyPath);
+			} catch (JSchException e) {
+				LOGGER.error(e);
+			}
 		}
 		UserInfo info = new JumbuneUserInfo();
-		try {
-			jsch.addIdentity(privateKeyPath);
-		} catch (JSchException e) {
-			LOGGER.error(e);
-		}
 		session.setUserInfo(info);
 		java.util.Properties config = new java.util.Properties();
 		config.put("StrictHostKeyChecking", "no");
 		if(nnpwd!=null){
-		config.put("PreferredAuthentications", "password");
+			config.put("PreferredAuthentications", "password");
 		}
 		session.setConfig(config);
 		try {

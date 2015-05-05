@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.Console;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -11,17 +12,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.InetAddress;
 import java.net.JarURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.net.URLDecoder;
 import java.security.CodeSource;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Scanner;
@@ -33,8 +36,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.Constants;
-import org.jumbune.common.utils.Versioning;
 
+import org.jumbune.common.utils.Versioning;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 
@@ -43,6 +46,18 @@ import com.jcraft.jsch.Session;
  */
 public final class DeployUtil {
 	
+	private static final String USER_NAME = "username";
+
+	private static final String NAMENODE_IP = "namenodeIP";
+
+	private static final String PRIVATE_KEY_PATH = "privatekeypath";
+
+	private static final String PASSWORD = "password";
+
+	private static final String DISTRIBUTION = "distribution";
+
+	private static final String PROPERTY_FILE = "propertyfile";
+
 	public static final Logger LOGGER = LogManager.getLogger("EventLogger");
 
 	private static final Map<String, String> FoundPaths = new HashMap<String, String>(3);
@@ -55,6 +70,7 @@ public final class DeployUtil {
 	private static final String CLEAN_UNUSED_FILES_AND_DIRS = "rm -rf WEB-INF/ skins META-INF/ jsp/ lib/";
 	private static final String UPDATE_WAR_FILE = "/modules/jumbune-web-"+ Versioning.BUILD_VERSION + Versioning.DISTRIBUTION_NAME + ".war WEB-INF/lib";
 	private static final String UPDATE_AGENT_JAR = "/agent-distribution/jumbune-remoting-" + Versioning.BUILD_VERSION + Versioning.DISTRIBUTION_NAME + "-agent.jar lib/";
+	
 	private static final String UPDATE_JAR = "jar -uvf ";
 	private static final String USER_DIR = "user.dir";
 	private static final String WEB_FOLDER_STRUCTURE = "/WEB-INF/lib/";
@@ -62,13 +78,13 @@ public final class DeployUtil {
 	private static final String JAVA_ENV_VAR = "JAVA_HOME";
 	private static String namenodeIP = null;
 	private static String username = null;
-	
 	private static int MAX_RETRY_ATTEMPTS = 3;
 
 	
 	private static final Scanner SCANNER = new Scanner(System.in);
 
 	private static final String UPDATE_WAR_CLASSES_FILE = "/modules/jumbune-web-"+ Versioning.BUILD_VERSION + Versioning.DISTRIBUTION_NAME + ".war WEB-INF/classes";
+
 
 	static {
 		agentJars.add("jumbune-datavalidation");
@@ -102,7 +118,135 @@ public final class DeployUtil {
 	
 	private DeployUtil() {
 		// hiding utility class constructor
-	}	
+	}
+	
+	/**
+	 * Exit VM
+	 * 
+	 * @param status can be 0 or 1
+	 */
+	private static void exitVM(int status) {
+		System.exit(status);
+	}
+	
+	/**
+	 * Extracts the arguments from configuration file and put in map
+	 * 
+	 * @param argMap Map containing properties and their values
+	 * @throws IOException
+	 */
+	private static void getArgumentsFromPropertyFile(Map<String, String> argMap) throws IOException {
+		
+		if (argMap.containsKey(PROPERTY_FILE)) {
+			Properties props = new Properties();
+			props.keySet();
+			String value = argMap.get(PROPERTY_FILE);
+			if (value.startsWith("\"") && value.endsWith("\"")) {
+				value= value.substring(1, value.length()-1);
+			}
+			FileInputStream in = new FileInputStream(argMap.get(PROPERTY_FILE));
+			props.load(in);
+			in.close();
+			for (Object propertyKeyObject : props.keySet() ){
+				String key =(String)propertyKeyObject;
+				if(argMap.get(key)==null){
+					argMap.put(key, props.getProperty(key));
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Removes double quotes from arguments' value
+	 * 
+	 * @param argMap map containing arguments and their values
+	 */
+	private static void removeDoubleQuotes(Map<String, String> argMap) {
+		String value = null;
+		for (String key: argMap.keySet()) {
+			value = argMap.get(key);
+			if (value != null && value.startsWith("\"") && value.endsWith("\"")) {
+				argMap.put(key, value.substring(1, value.length()-1));
+			}
+		}
+	}
+	
+	/**
+	 * Check if their is any invalid argument or not
+	 * 
+	 * @param args arguments from command line
+	 * @return map containing arguments
+	 */
+	private static Map<String, String> getAndVerifyArguments(String[] args) {
+		List<String> options = new ArrayList<String>();
+		options.add("distribution");
+		options.add(NAMENODE_IP);
+		options.add(USER_NAME);
+		options.add("password");
+		options.add("privatekeypath");
+		options.add("propertyfile");
+		
+		Map<String, String> argMap = new HashMap<String, String>();
+		String option = null;
+		String[] temp= null;
+		for (String arg:args) {
+			try {
+				if(arg.startsWith("-D")) {
+					temp = arg.substring(2).split("=", 2);
+					option = temp[0];
+					if (!options.contains(option)) {
+						LOGGER.error("Invalid option "+arg+"\nTry  '--help' for more information.");
+						exitVM(1);
+					}
+					argMap.put(option, temp[1]);
+				} else {
+					LOGGER.error("Invalid option "+arg+"\nTry  '--help' for more information.");
+					exitVM(1);
+				}
+			} catch (Exception e) {
+				LOGGER.error("Unable to read arguments");
+				exitVM(1);
+			}
+		}
+		return argMap;
+	}
+	
+	/**
+	 * Prints help and exit
+	 */
+	private static void printHelp() {
+		LOGGER.info("Usage: java -jar [Jumbune Jar File Name] [Options]...\n"+
+				"    -Dpropertyfile\tProperties file path containing options\n"+
+				"    \t\t\te.g. -Dpropertyfile=/home/user/properties.txt\n"+
+				"\n    -Ddistribution\tHadoop Distribution Type\n"+
+				"    \t\t\te.g. \"-Ddistribution=a\" for Apache,\n\t\t\t \"-Ddistribution=c\" for Cloudera,\n\t\t\t \"-Ddistribution=h\" for HortonWorks,\n\t\t\t \"-Ddistribution=m\" for MapR\n"+
+				"\n    -DnamenodeIP\tIP address of the namenode machine\n"+
+				"    \t\t\t(e.g. DnamenodeIP=127.0.0.1)\n"+
+				"\n    -Dusername\t\tUsername of the namenode machine\n"+
+				"    \t\t\t(e.g. -Dusername=user)\n"+
+				"\n    -Dpassword\t\tEncrypted password of the namenode machine\n"+
+				"    \t\t\t(e.g. -Dpassword=imt2s23wgs)\n"+
+				"\n    -Dprivatekeypath\tPrivate key file path\n"+
+				"    \t\t\t(e.g. -Dprivatekeypath=/home/user/.ssh/id_rsa)\n"+
+				"\n    --encryption\tUse this option to run password encryption utility\n"+
+				"\n    --help\t\tdisplay this help and exit");
+		exitVM(0);
+	}
+	
+	/**
+	 * Run password encryption utility
+	 */
+	private static void runEncryptionUtillity() {
+		LOGGER.info("Enter your password");	
+		Console console = System.console();
+		char[] password = console.readPassword();
+		while ("".equals(new String(password))) {
+			LOGGER.info("Please enter a valid password");
+			password = console.readPassword();
+		}
+		LOGGER.info("Your encrypted password is\n"+StringUtil.getEncrypted(new String(password)));
+		exitVM(0);
+	}
 	
 	/**
 	 * Main method for extracting the content of deployment jar file
@@ -111,13 +255,31 @@ public final class DeployUtil {
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	public static void main(String[] args) throws IOException, InterruptedException {
+	public static void main(String[] args) throws InterruptedException, IOException {
 		String distributionType;
 		String hadoopDistributionType;
-		if (args.length != 0) {
-			LOGGER.info("Usage: java -jar <jar-name>");
-			System.exit(1);
+		if (args.length != 0 && args[0].equalsIgnoreCase("--help")) {
+			printHelp();
 		}
+		if (args.length !=0 && args[0].equalsIgnoreCase("--encryption")) {
+			runEncryptionUtillity();
+		}
+		Map<String, String> argMap = getAndVerifyArguments(args);
+		try {
+		getArgumentsFromPropertyFile(argMap);
+		} catch (IOException e) {
+			LOGGER.error("Unable to read file "+argMap.get("propertyfilepath"));
+			exitVM(1);
+		}
+		removeDoubleQuotes(argMap);
+		if (argMap.get(PRIVATE_KEY_PATH) != null) {
+			File privateKeyFile = new File(argMap.get(PRIVATE_KEY_PATH));
+			if (!privateKeyFile.exists() || privateKeyFile.isDirectory()) {
+				LOGGER.error("Invalid private key file path ["+privateKeyFile+"]");
+				exitVM(1);
+			}
+		}
+		
 		Properties prop = new Properties();
 		prop.load(DeployUtil.class.getClassLoader().getResourceAsStream("distribution.properties"));
 		distributionType = prop.getProperty("hadoop-distribution");
@@ -126,27 +288,49 @@ public final class DeployUtil {
 			LOGGER.info("--Jumbune built for ["+distributionType+" based Hadoop] distributions--");
 			URLConnection jarConnection = performSanity();
 			
-			if (distributionType.equalsIgnoreCase("Non-Yarn")) {
-				LOGGER.info("Choose the Hadoop Distribution Type : (a)Apache | (m)MapR");
-				hadoopDistributionType = SCANNER.nextLine().trim();
-				while (hadoopDistributionType.isEmpty()
-						|| (!hadoopDistributionType.equalsIgnoreCase("a")
-						&& !hadoopDistributionType.equalsIgnoreCase("m"))) {
-					LOGGER.info("Invalid input! Choose from the given Hadoop Distribution Type : (a)Apache | (m)MapR");
-					hadoopDistributionType = SCANNER.nextLine().trim();
+			hadoopDistributionType = argMap.get(DISTRIBUTION);
+			
+			if (hadoopDistributionType != null) {
+				hadoopDistributionType = hadoopDistributionType.substring(0, 1).toLowerCase();
+				if (distributionType.equalsIgnoreCase("Non-Yarn")
+					&& !hadoopDistributionType.startsWith("a")
+					&& !hadoopDistributionType.startsWith("m")) {
+						LOGGER.error("Invalid: Hadoop distribution ["+hadoopDistributionType
+								+"] passed during deploy. Available are : (a)Apache | (m)MapR");
+						exitVM(1);
+				} else if(!hadoopDistributionType.startsWith("a")
+					&& !hadoopDistributionType.startsWith("h")
+					&& !hadoopDistributionType.startsWith("c")) {
+					LOGGER.error("Invalid: Hadoop distribution ["+hadoopDistributionType
+								+"] passed during deploy. Available are : (a)Apache | (c)Cloudera | (h)HortonWorks");
+					exitVM(1);
 				}
+			
 			} else {
-				LOGGER.info("Choose the Hadoop Distribution Type : (a)Apache | (c)Cloudera | (h)HortonWorks");
-				hadoopDistributionType = SCANNER.nextLine().trim();
-				while (hadoopDistributionType.isEmpty()
-						|| (!hadoopDistributionType.equalsIgnoreCase("a")
-						&& !hadoopDistributionType.equalsIgnoreCase("h") && !hadoopDistributionType.equalsIgnoreCase("c"))) {
-					LOGGER.info("Invalid input! Choose from the given Hadoop Distribution Type : (a)Apache | (c)Cloudera | (h)HortonWorks");
+			
+				if (distributionType.equalsIgnoreCase("Non-Yarn")) {
+					LOGGER.info("Choose the Hadoop Distribution Type : (a)Apache | (m)MapR");
 					hadoopDistributionType = SCANNER.nextLine().trim();
+					while (hadoopDistributionType.isEmpty()
+							|| (!hadoopDistributionType.equalsIgnoreCase("a")
+							&& !hadoopDistributionType.equalsIgnoreCase("m"))) {
+						LOGGER.info("Invalid input! Choose from the given Hadoop Distribution Type : (a)Apache | (m)MapR");
+						hadoopDistributionType = SCANNER.nextLine().trim();
+					}
+				} else {
+					LOGGER.info("Choose the Hadoop Distribution Type : (a)Apache | (c)Cloudera | (h)HortonWorks");
+					hadoopDistributionType = SCANNER.nextLine().trim();
+					while (hadoopDistributionType.isEmpty()
+							|| (!hadoopDistributionType.equalsIgnoreCase("a")
+							&& !hadoopDistributionType.equalsIgnoreCase("h") && !hadoopDistributionType.equalsIgnoreCase("c"))) {
+						LOGGER.info("Invalid input! Choose from the given Hadoop Distribution Type : (a)Apache | (c)Cloudera | (h)HortonWorks");
+						hadoopDistributionType = SCANNER.nextLine().trim();
+					}
 				}
+				
 			}
 			
-			session = getSession();
+			session = getSession(argMap);
 			
 			LOGGER.info("Extracting Jumbune...");
 			
@@ -171,7 +355,7 @@ public final class DeployUtil {
 			cleanup();
 		}
 	}
-	
+
 	private static void serializeDistributionType(String distributionType, String HadoopDistribution) throws IOException{
 		FileWriter writer = new FileWriter(new File("./WEB-INF/classes/distributionInfo.properties"));
 		writer.write("DistributionType="+distributionType);
@@ -197,9 +381,9 @@ public final class DeployUtil {
 		}
 	}
 	
-	private static Session getSession() throws IOException{
+	private static Session getSession(Map<String, String> argMap) throws IOException{
 		Console console = System.console();
-		return validateUserAuthentication(console);
+		return validateUserAuthentication(console, argMap);
 	}
 	
 	
@@ -223,8 +407,8 @@ public final class DeployUtil {
 
 			CodeSource codeSource = DeployUtil.class.getProtectionDomain().getCodeSource();
 			File distJarFile = new File(codeSource.getLocation().toURI().getPath());
-			String parentPath = getJarContainingFolder(codeSource, DeployUtil.class);
-			String jarPath = parentPath + "/"+ distJarFile.getName();
+			String path = getJarContainingFolder(codeSource, DeployUtil.class);
+			String jarPath = path + "/"+ distJarFile.getName();
 			URL url = new URL("jar:file:" + jarPath + "!/");
 			JarURLConnection jarConnection = (JarURLConnection) url.openConnection();
 			return jarConnection;
@@ -282,7 +466,12 @@ public final class DeployUtil {
 		if(hadoopHome.endsWith(File.separator)){
 			hadoopHome = hadoopHome.substring(0,hadoopHome.length()-1);
 		}
-		SessionEstablisher.fetchHadoopJarsFromNamenode(session, username, namenodeIP, hadoopHome, currentDir + WEB_FOLDER_STRUCTURE, hadoopDistributionType,distributionType);
+		try {
+			SessionEstablisher.fetchHadoopJarsFromNamenode(session, username, namenodeIP, hadoopHome, currentDir + WEB_FOLDER_STRUCTURE, hadoopDistributionType,distributionType);
+		} catch(java.lang.ArrayIndexOutOfBoundsException e) {
+			LOGGER.error("Invalid: Hadoop distribution ["+hadoopDistributionType+"] passed during deploy doesn't match with the deployed distribution of Hadoop");
+			exitVM(1);
+		}
 		String updateJumbuneWar = append(javaHomeStr, "/bin/", UPDATE_JAR, jumbuneHomeStr, UPDATE_WAR_FILE, "/");
 		String updateJumbuneWarClasses = append(javaHomeStr, "/bin/", UPDATE_JAR, jumbuneHomeStr, UPDATE_WAR_CLASSES_FILE, "/");		
 		String updateAgentJar = append(javaHomeStr, "/bin/", UPDATE_JAR, jumbuneHomeStr, UPDATE_AGENT_JAR);
@@ -343,7 +532,7 @@ public final class DeployUtil {
 		if (hadoopHome == null || hadoopHome.trim().isEmpty()
 				|| !hadoopHome.contains(File.separator)) {
 			LOGGER.info("Unable to find location of Hadoop! Please make sure Hadoop deployment instruction are followed as recommended, then retry running the deployment.");
-			System.exit(1);
+			exitVM(1);
 		}
 	}
 	
@@ -376,63 +565,99 @@ public final class DeployUtil {
 	 * @return Session, established session after successfull user
 	 *         authentication.
 	 */
-	private static Session validateUserAuthentication(Console console) throws IOException {
+	private static Session validateUserAuthentication(Console console, Map<String, String> argMap) throws IOException {
 		char[] password = null;
 		String privateKeyPath;
 		Session tempSession;
+		boolean sysexit;
 		int retryAttempts=0;
 		LOGGER.info("\r\nJumbune needs to calibrate itself according to the installed Hadoop distribution, please provide details about hadoop namenode machine");
 		do {
+			sysexit = false;
 			String masterNode = InetAddress.getLocalHost().getHostAddress();
-			LOGGER.info("\r\nIP address of the namenode machine ["+ masterNode + "]");
-			namenodeIP = SCANNER.nextLine().trim();
-			if ("".equals(namenodeIP)) {
-				namenodeIP = masterNode;
+			
+			namenodeIP = argMap.get(NAMENODE_IP);
+			if (namenodeIP  == null) {
+				LOGGER.info("\r\nIP address of the namenode machine ["+ masterNode + "]");
+				namenodeIP = SCANNER.nextLine().trim();
+				if ("".equals(namenodeIP)) {
+					namenodeIP = masterNode;
+				}
+			} else {
+				sysexit = true;
 			}
-
+			
+			username = argMap.get(USER_NAME);
 			String user = System.getProperty("user.name");
-			LOGGER.info("Username of the namenode machine: [" + user + "]");
-			username = SCANNER.nextLine().trim();
-			if ("".equals(username)) {
-				username = user;
+			if (username == null) {
+				LOGGER.info("Username of the namenode machine: [" + user + "]");
+				username = SCANNER.nextLine().trim();
+				if ("".equals(username)) {
+					username = user;
+				}
+			} else {
+				sysexit = true;
 			}
-			LOGGER.info("Do we have passwordless SSH between ["+masterNode+"] - ["+namenodeIP+"] machines? (y)/(n)");
-			String isPLSSH = SCANNER.nextLine().trim();
-			while(!"y".equalsIgnoreCase(isPLSSH)&&!"n".equalsIgnoreCase(isPLSSH)){
+			String isPasswordlessSSH = null;
+			privateKeyPath = argMap.get(PRIVATE_KEY_PATH);
+			
+			if (argMap.get(PASSWORD) == null && privateKeyPath == null) {
 				LOGGER.info("Do we have passwordless SSH between ["+masterNode+"] - ["+namenodeIP+"] machines? (y)/(n)");
-				isPLSSH = SCANNER.nextLine().trim();
-			}
-			if("n".equalsIgnoreCase(isPLSSH)){
-				LOGGER.info("Password of the namenode machine:");
-				password = console.readPassword();
-				while ("".equals(new String(password))) {
-					LOGGER.info("Please enter a valid password");
+				isPasswordlessSSH = SCANNER.nextLine().trim();
+				while(!"y".equalsIgnoreCase(isPasswordlessSSH)&&!"n".equalsIgnoreCase(isPasswordlessSSH)){
+					LOGGER.info("Do we have passwordless SSH between ["+masterNode+"] - ["+namenodeIP+"] machines? (y)/(n)");
+					isPasswordlessSSH = SCANNER.nextLine().trim();
+				}
+				if("n".equalsIgnoreCase(isPasswordlessSSH)){
+					LOGGER.info("Password of the namenode machine:");
 					password = console.readPassword();
-				}				
+					while ("".equals(new String(password))) {
+						LOGGER.info("Please enter a valid password");
+						password = console.readPassword();
+					}				
+				}
+			} else if (privateKeyPath != null) {
+					password = null;
+					sysexit = true;
+			} else {
+				password = StringUtil.getPlain(argMap.get(PASSWORD)).toCharArray();
+				sysexit = true;
 			}
-			String defaultPrivateKeyPath = "/home/" + user + "/.ssh/id_rsa";
-			LOGGER.info("Please provide private key file path ["+ defaultPrivateKeyPath + "]");
-			privateKeyPath = SCANNER.nextLine().trim();
-			if ("".equals(privateKeyPath)) {
-				privateKeyPath = defaultPrivateKeyPath;
-			}
-			File privateKeyFile = new File(privateKeyPath);
-			while (!privateKeyFile.exists() || privateKeyFile.isDirectory()) {
-				LOGGER.info("private key file should exist, please provide file path");
+			
+			
+			if (privateKeyPath == null && password==null) {
+				String defaultPrivateKeyPath = "/home/" + user + "/.ssh/id_rsa";
+				LOGGER.info("Please provide private key file path ["+ defaultPrivateKeyPath + "]");
 				privateKeyPath = SCANNER.nextLine().trim();
-				privateKeyFile = new File(privateKeyPath);
+				if ("".equals(privateKeyPath)) {
+					privateKeyPath = defaultPrivateKeyPath;
+				}
+				File privateKeyFile = new File(privateKeyPath);
+				while (!privateKeyFile.exists() || privateKeyFile.isDirectory()) {
+					LOGGER.info("private key file should exist, please provide file path");
+					privateKeyPath = SCANNER.nextLine().trim();
+					privateKeyFile = new File(privateKeyPath);
+				}
+			} else {
+				sysexit = true;
 			}
 			if(password!=null){
 				tempSession = SessionEstablisher.establishConnection(username,
-						namenodeIP, new String(password), privateKeyPath);
+						namenodeIP, new String(password), null);
 			}else{
 				tempSession = SessionEstablisher.establishConnection(username,
 						namenodeIP, null, privateKeyPath);
 			}
-				if(++retryAttempts==MAX_RETRY_ATTEMPTS){
-					LOGGER.error("Exiting Installation as maximum number of authentication attempts are exhaused!");
-					System.exit(1);
-				}
+			
+			if(++retryAttempts==MAX_RETRY_ATTEMPTS){
+				LOGGER.error("Exiting Installation as maximum number of authentication attempts are exhaused!");
+				exitVM(1);
+			}
+			
+			if (sysexit == true && (tempSession == null || !tempSession.isConnected())) {
+				LOGGER.error("Failed to authenticate, check username and password");
+				exitVM(1);
+			}
 		} while (tempSession == null || !tempSession.isConnected());
 		return tempSession;
 	}
@@ -657,13 +882,6 @@ public final class DeployUtil {
 
 	}
 
-	/**
-	 * Method get's the parent path of the jar file
-	 * 
-	 * @param codeSource, the codeSource of the class
-	 * @param aClass, class file
-	 * @return the parent path of the jar file
-	 */
 	private static String getJarContainingFolder(CodeSource codeSource, Class aClass) throws URISyntaxException, UnsupportedEncodingException {
 		  File jarFile;
 		  if (codeSource.getLocation() != null) {
@@ -676,6 +894,7 @@ public final class DeployUtil {
 		    jarFile = new File(jarFilePath);
 		  }
 		  return jarFile.getParentFile().getAbsolutePath();
-		}	
+		}
 
-}
+}	
+
