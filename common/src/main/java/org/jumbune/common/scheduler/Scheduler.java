@@ -58,12 +58,13 @@ public abstract class Scheduler {
 			throws JumbuneException {
 		InputStream cronInputStream;
 		cronInputStream = getCurrentUserCronTabInfo();
+		BufferedReader br = null;
 		try {
 			if (cronInputStream != null && cronInputStream.available() != 0) {
 				StringBuilder cronBuilder = new StringBuilder();
 				InputStreamReader isReader = new InputStreamReader(
 						cronInputStream);
-				BufferedReader br = new BufferedReader(isReader);
+				br = new BufferedReader(isReader);
 				do {
 					String textinLine = br.readLine();
 					if (textinLine == null)
@@ -77,15 +78,15 @@ public abstract class Scheduler {
 				addUpdatedFileToCron();
 			}
 		} catch (IOException ioe) {
-			LOGGER.info(
+			LOGGER.warn(
 					" Could not update crontab to remove entry of current job",
 					ioe);
 			throw new JumbuneException(ioe.getMessage());
 		} finally {
 
-			if (cronInputStream != null) {
+			if (br != null) {
 				try {
-					cronInputStream.close();
+					br.close();
 				} catch (IOException e) {
 					LOGGER.error("could not close the cron file input stream ",
 							e);
@@ -196,7 +197,6 @@ public abstract class Scheduler {
 				.append(NEW_LINE);
 
 		if (cronInputStream != null) {
-			try {
 				InputStreamReader isReader = new InputStreamReader(
 						cronInputStream);
 				BufferedReader br = new BufferedReader(isReader);
@@ -214,10 +214,6 @@ public abstract class Scheduler {
 					cronBuilder.append(NEW_LINE);
 				}
 				return cronBuilder.toString();
-
-			} finally {
-				cronInputStream.close();
-			}
 		}
 		return cronFileBasicInfo.toString();
 	}

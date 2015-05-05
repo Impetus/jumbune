@@ -136,7 +136,7 @@ public class DataQualityTimelineShellExecutor extends CoreExecutorService {
 		startExecution(reports, jobConfig);
 		}finally{
 			try {
-				LOGGER.debug("Clean up process slave tmp + agent home shell case");
+				LOGGER.debug("Cleaning up agent and slaves temporary directories");
 				cleanUpJumbuneAgentCurrentJobFolder(jobConfig);
 				cleanUpSlavesTempFldr(jobConfig);
 				deleteTokenFile();

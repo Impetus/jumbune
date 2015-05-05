@@ -163,7 +163,7 @@ public class DataQualityServlet extends HttpServlet {
 						return null;
 					}
 					JobConfig jobConfig = (JobConfig) config;
-					LOG.info("jobConfig: " + jobConfig);
+					LOG.debug("jobConfig: " + jobConfig);
 					JobConfigUtil.checkIfJumbuneHomeEndsWithSlash(config);
 					
 				}

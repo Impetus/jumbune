@@ -90,6 +90,7 @@ public class DataQualityTaskScheduler extends Scheduler {
 	@Override
 	public void scheduleJob(Config config) throws JumbuneException {
 		JobConfig jobConfig = null;
+		InputStream cronInputStream = null;
 		try {
 			jobConfig = (JobConfig) config;
 			String cronExpression = null;
@@ -101,7 +102,7 @@ public class DataQualityTaskScheduler extends Scheduler {
 			} else {
 				cronExpression = getCronExpressionFromUserInput(dqtl);
 			}
-			InputStream cronInputStream = getCurrentUserCronTabInfo();
+			cronInputStream = getCurrentUserCronTabInfo();
 			StringBuilder updatedCronInfoBuilder = new StringBuilder(
 					readCronTabFile(cronInputStream));
 			String schedluedScriptPath = scheduledJobLocation + EXEC_DIR
@@ -115,6 +116,14 @@ public class DataQualityTaskScheduler extends Scheduler {
 		} catch (Exception e) {
 			LOGGER.error("Unable to schedule DataQuality Job ", e);
 			throw new JumbuneException(e.getMessage());
+		}finally{
+			if(cronInputStream != null){
+				try {
+					cronInputStream.close();
+				} catch (IOException e) {
+					LOGGER.error("Failed to close cron input stream", e);
+				}
+			}
 		}
 
 	}
@@ -136,7 +145,6 @@ public class DataQualityTaskScheduler extends Scheduler {
 				scheduledJobDateTime).append(SPACE)
 				.append(jumbuneScheduleTaskCommand).append(NEW_LINE)
 				.append("#");
-		LOGGER.info("jumbuneTaskCommand " + jumbuneSchedulerdBuilder.toString());
 		return jumbuneSchedulerdBuilder.toString();
 	}
 
