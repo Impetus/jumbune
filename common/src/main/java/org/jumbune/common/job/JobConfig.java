@@ -11,6 +11,7 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Classpath;
+import org.jumbune.common.beans.DataProfilingBean;
 import org.jumbune.common.beans.DataQualityTimeLineConfig;
 import org.jumbune.common.beans.DataValidationBean;
 import org.jumbune.common.beans.DebuggerConf;
@@ -150,6 +151,9 @@ public class JobConfig implements Config {
 
 	/** The criteria based data profiling. */
 	private Enable criteriaBasedDataProfiling = Enable.FALSE;
+
+	/** The data profiling bean. */
+	private DataProfilingBean dataProfilingBean;
 
 	/** The log definition. */
 	private LogConsolidationInfo logDefinition;
@@ -774,7 +778,23 @@ public class JobConfig implements Config {
 		return enableDataProfiling;
 	}
 
-	
+	/**
+	 * Sets the data profiling bean.
+	 *
+	 * @param dataProfilingBean the new data profiling bean
+	 */
+	public void setDataProfilingBean(DataProfilingBean dataProfilingBean) {
+		this.dataProfilingBean = dataProfilingBean;
+	}
+
+	/**
+	 * Gets the data profiling bean.
+	 *
+	 * @return the data profiling bean
+	 */
+	public DataProfilingBean getDataProfilingBean() {
+		return dataProfilingBean;
+	}
 
 	/**
 	 * Sets the criteria based data profiling.

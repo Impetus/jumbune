@@ -257,7 +257,7 @@ $.fn.smartWizard.defaults = {
 						<div class="commonBox previewInfo">
 							<div class="fld chk">
 								<input type="checkbox" name="enableDataProfiling" value="TRUE"
-									id="enableDataProfiling" checked />
+									id="enableDataProfiling"/>
 							</div>
 							<div class="">
 								<label>Enable Data Profiling</label>
