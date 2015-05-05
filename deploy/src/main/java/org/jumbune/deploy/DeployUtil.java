@@ -272,7 +272,8 @@ public final class DeployUtil {
 		LoggerConfig loggerConfig = config.getLoggerConfig(ROLLING_FILE_APPENDER);
 		loggerConfig.setLevel(Level.DEBUG);
 		ctx.updateLoggers();
-		DEBUG_LOGGER.info("logging level changed to [DEBUG]");
+		CONSOLE_LOGGER.info("logging level changed to [DEBUG]");
+		CONSOLE_LOGGER.info("Further details can be found in log file");
 	}
 	
 	/**
