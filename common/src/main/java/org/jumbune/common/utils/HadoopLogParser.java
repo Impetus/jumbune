@@ -188,7 +188,7 @@ public class HadoopLogParser {
 
 			    //receiving job-trace.json and topology files
 				remoter.receiveLogFiles(relLocalPath, relativeRemotePath);
-				LOGGER.info("Received log files from:" + relativeRemotePath);
+				LOGGER.debug("Received log files from:" + relativeRemotePath);
 
 				Gson gson = new Gson();
 				JobDetails jobDetails = extractJobDetails(appHome,
