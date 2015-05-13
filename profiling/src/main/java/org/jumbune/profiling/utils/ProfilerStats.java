@@ -83,7 +83,7 @@ public class ProfilerStats {
 	/** The reset. */
 	private boolean reset;
 
-	private SupportedHadoopDistributions version;
+	
 	
 	private static final String COLLECTJMXSTATSFAILED = "Collecting JMX stats failed for Node ";
 
@@ -95,12 +95,11 @@ public class ProfilerStats {
 	 * @param nodeIp
 	 *            the node ip
 	 */
-	public ProfilerStats(Config config, String nodeIp, SupportedHadoopDistributions version) {
+	public ProfilerStats(Config config, String nodeIp) {
 		this.jobConfig = (JobConfig) config;
 		this.nodeIp = nodeIp;
 		profilerJMXDump = new ProfilerJMXDump();
-		this.version = version;
-
+		
 	}
 
 	/**
@@ -223,7 +222,7 @@ public class ProfilerStats {
 	public String getDnStats(String attribute) throws HTFProfilingException {
 		if ((dnStats == null) || reset) {
 			try {
-				dnStats = profilerJMXDump.getAllJMXStats(JMXDeamons.DATA_NODE, version, nodeIp, getDnPort());
+				dnStats = profilerJMXDump.getAllJMXStats(JMXDeamons.DATA_NODE, nodeIp, getDnPort());
 			} catch (Exception e) {
 				/*
 				 * Catching generic exception as profilerJMXDump.getAllJmxStats(...) throwing lots of exceptions.
@@ -257,7 +256,7 @@ public class ProfilerStats {
 	public String getTtStats(String attribute) throws HTFProfilingException {
 		if ((ttStats == null) || reset) {
 			try {
-				ttStats = profilerJMXDump.getAllJMXStats(JMXDeamons.TASK_TRACKER, version, nodeIp, getTtPort());
+				ttStats = profilerJMXDump.getAllJMXStats(JMXDeamons.TASK_TRACKER, nodeIp, getTtPort());
 			} catch (Exception e) {
 				/*
 				 * Catching generic exception as profilerJMXDump.getAllJmxStats(...) throwing lots of exceptions.
@@ -292,7 +291,7 @@ public class ProfilerStats {
 	public String getNnStats(String attribute) throws HTFProfilingException {
 		if ((nnStats == null) || reset) {
 			try {
-				nnStats = profilerJMXDump.getAllJMXStats(JMXDeamons.NAME_NODE, version, getNameNodeIP(), getNnPort());
+				nnStats = profilerJMXDump.getAllJMXStats(JMXDeamons.NAME_NODE, getNameNodeIP(), getNnPort());
 			} catch (Exception e) {
 				/*
 				 * Catching generic exception as profilerJMXDump.getAllJmxStats(...) throwing lots of exceptions.
@@ -327,7 +326,7 @@ public class ProfilerStats {
 	public String getJtStats(String attribute) throws HTFProfilingException {
 		if ((jtStats == null) || reset) {
 			try {
-				jtStats = profilerJMXDump.getAllJMXStats(JMXDeamons.JOB_TRACKER, version, getNameNodeIP(), getJtPort());
+				jtStats = profilerJMXDump.getAllJMXStats(JMXDeamons.JOB_TRACKER, getNameNodeIP(), getJtPort());
 			} catch (Exception e) {
 				/*
 				 * Catching generic exception as profilerJMXDump.getAllJmxStats(...) throwing lots of exceptions.
@@ -371,7 +370,7 @@ public class ProfilerStats {
 				break;
 			default:
 				if ((jumbuneContextStats == null) || reset) {
-					jumbuneContextStats = profilerJMXDump.getAllJMXStats(JMXDeamons.TASK_TRACKER, version, nodeIp, getTtPort());
+					jumbuneContextStats = profilerJMXDump.getAllJMXStats(JMXDeamons.TASK_TRACKER, nodeIp, getTtPort());
 				}
 				statValue = jumbuneContextStats.get(jumbuneStat);
 			}
@@ -433,7 +432,7 @@ public class ProfilerStats {
 				String tempReduceRuning = null;
 				for (Slave slave : jobConfig.getSlaves()) {
 					for (String hostIp : slave.getHosts()) {
-						clusterWideStats = profilerJMXDump.getAllJMXStats(JMXDeamons.TASK_TRACKER, version, hostIp, getTtPort());
+						clusterWideStats = profilerJMXDump.getAllJMXStats(JMXDeamons.TASK_TRACKER, hostIp, getTtPort());
 						tempMapSlot = clusterWideStats.get("MapTaskSlots");
 						tempReduceSlot = clusterWideStats.get("ReduceTaskSlots");
 						tempMapRunning = clusterWideStats.get("Maps_running");
@@ -576,7 +575,7 @@ public class ProfilerStats {
 		if ((nmStats == null) || reset) {
 			try {
 				nmStats = profilerJMXDump.getAllJMXStats(
-						JMXDeamons.NODE_MANAGER, version, nodeIp, getNmPort());
+						JMXDeamons.NODE_MANAGER, nodeIp, getNmPort());
 			} catch (Exception e) {
 				/*
 				 * Catching generic exception as
@@ -607,7 +606,7 @@ public class ProfilerStats {
 		if ((rmStats == null) || reset) {
 			try {
 				rmStats = profilerJMXDump.getAllJMXStats(
-						JMXDeamons.RESOURCE_MANAGER, version, getNameNodeIP(),
+						JMXDeamons.RESOURCE_MANAGER, getNameNodeIP(),
 						getRmPort());
 			} catch (Exception e) {
 				/*

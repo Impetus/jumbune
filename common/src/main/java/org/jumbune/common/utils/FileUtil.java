@@ -97,7 +97,7 @@ public final class FileUtil {
 	
 	/**
 	 * Utility method, this method extracts out the given property from the <Jumbune Home>/jobjars/jobname/cluster-configuration.properties file.
-	 * @param loader
+	 * @param config
 	 * @param propertyKey
 	 * @return
 	 */
@@ -107,5 +107,13 @@ public final class FileUtil {
 		return getPropertyFromFile(expectedLocation, propertyKey);
 	}
 
-
+	/**
+	 * Utility method, this method extracts out the given property from the <Jumbune Home>/configuration/clusterinfo properties.
+	 * @param propertyKey
+	 * @return
+	 */
+	public static String getClusterInfoDetail(String propertyKey){
+		String expectedLocation = new StringBuilder().append(JobConfig.getJumbuneHome()).append(File.separator).append(Constants.CONFIGURATION).append(File.separator).append(Constants.CLUSTER_INFO).toString();
+		return getPropertyFromFile(expectedLocation, propertyKey);
+	}
 }

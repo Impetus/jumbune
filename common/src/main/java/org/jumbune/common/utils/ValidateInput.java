@@ -588,15 +588,15 @@ public class ValidateInput {
 	 * This method validates Slave information in Basic field Tab in Web UI, and check slaves input is in correct format or not.
 	 *
 	 * @param failedCases error list
-	 * @param yConfig the y config
+	 * @param Config the  config
 	 */
 	private void validateSlaveField(Map<String,String> failedCases, Config config) {
 		int count = 0;
 		List<String> listOfValidDataNode = new ArrayList<String>();
 		JobConfig jobConfig = (JobConfig)config;
 		List<Slave> slaves = jobConfig.getSlaves();
-		SupportedHadoopDistributions hadoopVersion = RemotingUtil.getHadoopVersion(jobConfig);
-		if(SupportedHadoopDistributions.HADOOP_MAPR.equals(hadoopVersion)){
+		String hadoopDistribution = FileUtil.getClusterInfoDetail(Constants.HADOOP_DISTRIBUTION);		
+		if(hadoopDistribution.equalsIgnoreCase(Constants.MAPR)){
 			StringBuilder commandBuilder = new StringBuilder().append(MAPR_DATANODE_IP);
 			Remoter remoter = RemotingUtil.getRemoter(config,"");
 			CommandWritableBuilder commandWritableBuilder = new CommandWritableBuilder();

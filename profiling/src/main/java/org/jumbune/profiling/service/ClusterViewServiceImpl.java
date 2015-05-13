@@ -23,13 +23,11 @@ import javax.management.remote.JMXServiceURL;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.Slave;
-import org.jumbune.common.beans.SupportedHadoopDistributions;
 import org.jumbune.common.beans.UnavailableHost;
 import org.jumbune.common.utils.Constants;
+import org.jumbune.common.utils.FileUtil;
 import org.jumbune.common.utils.RemoteFileUtil;
-import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.yarn.beans.YarnMaster;
@@ -72,7 +70,6 @@ import org.jumbune.profiling.utils.ViewHelper;
  */
 public class ClusterViewServiceImpl implements ProfilingViewService {
 	private Config config;
-	private SupportedHadoopDistributions hadoopVersions = null;
 	private boolean isYarnEnable = false;	
 	private static final Logger LOGGER = LogManager
 			.getLogger(ClusterViewServiceImpl.class);
@@ -86,8 +83,9 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
     public ClusterViewServiceImpl(Config config) {
       this.config = config;
 	  JobConfig jobConfig = (JobConfig)config;
-      isYarnEnable = Enable.TRUE.equals(jobConfig.getEnableYarn());
-      this.hadoopVersions = RemotingUtil.getHadoopVersion(config);
+	  String hadoopType = FileUtil.getClusterInfoDetail(Constants.HADOOP_TYPE);
+      isYarnEnable = hadoopType.equalsIgnoreCase(Constants.YARN);
+      
     }
 
 	/*
@@ -317,8 +315,7 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 			List<PerformanceStats> clrSettings) throws HTFProfilingException {
 		JobConfig jobConfig = (JobConfig)config;
 		String nodeIp = nodeConfig.getNodeIp();
-		ProfilerStats pfStats = new ProfilerStats(jobConfig, nodeIp,
-				hadoopVersions);
+		ProfilerStats pfStats = new ProfilerStats(jobConfig, nodeIp);
 		CategoryInfo favourities = nodeConfig.getFavourities();
 		CategoryInfo trends = nodeConfig.getTrends();
 		NodeStats nodeStats = null;

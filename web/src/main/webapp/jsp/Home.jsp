@@ -84,8 +84,8 @@
 			  </li>
 			  <li>
 				<div class="icon_block"><a id="dataprofiling" href="javascript:void(0)"><span class="icon"><img src="skins/images/select_icon.png" /></span></a></div>
-				<h3>Define Data Quality</h3>
-				<p>Data Quality Suite</p>
+				<h3>Define Data Profiling</h3>
+				<p>Profile your data</p>
 			  </li>
 			</ul>
 			<div class="clear"></div>

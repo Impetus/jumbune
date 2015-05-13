@@ -10,6 +10,7 @@ import java.util.List;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.ClusterStatus;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -151,22 +152,25 @@ public final class RemotingUtil {
 	public static JobClient getJobClient(Config config) throws IOException {
 		String jobTrackerURI = RemotingUtil.getHadoopConfigurationValue(config, "mapred-site.xml", "mapred.job.tracker");
 		JobClient client = null;
+
 		Configuration configuration = new Configuration();
 		JobConfig jobConfig = (JobConfig) config;
 		configuration.set(jobConfig.getMaster().getUser(), "");
-		if(Enable.TRUE.equals(jobConfig.getEnableYarn())){
+		String hadoopType = FileUtil.getClusterInfoDetail(Constants.HADOOP_TYPE);
+		String hadoopDistribution = FileUtil.getClusterInfoDetail(Constants.HADOOP_DISTRIBUTION);
+		if(hadoopType.equalsIgnoreCase(Constants.YARN)){
 			configuration.set("mapreduce.framework.name", "yarn");
 		}
 
 		String host= jobConfig.getMaster().getHost();
-		SupportedHadoopDistributions hadoopVersion = getHadoopVersion(jobConfig);
+	
 
 		try {
 			if(StringUtil.emptyOrNull(jobTrackerURI)||isDefaultJobTrackerURI(jobTrackerURI)){
 				LOGGER.debug("No Job Tracker configuration found in mapred-site.xml, attempting to create job client with default uri");
 
 		
-				if(SupportedHadoopDistributions.HADOOP_MAPR.equals(hadoopVersion))
+				if(hadoopDistribution.equalsIgnoreCase(Constants.MAPR))
 				{  //default IPC port for jobtracker in MapR is 9001
 					client = new JobClient(new InetSocketAddress(host, 9001), configuration);
 				}else{
@@ -309,7 +313,9 @@ public final class RemotingUtil {
 		if (!dir.exists()) {
 			dir.mkdirs();
 		}
-		HadoopDistributionLocator hadoopUtility = getDistributionLocator(getHadoopVersion(jobConfig));
+		String hadoopDistribution = FileUtil.getClusterInfoDetail(Constants.HADOOP_DISTRIBUTION);
+		String hadoopType = FileUtil.getClusterInfoDetail(Constants.HADOOP_TYPE);
+		HadoopDistributionLocator hadoopUtility = getDistributionLocator(hadoopDistribution,hadoopType);
 		String hadoopConfDir = hadoopUtility.getHadoopConfDirPath(jobConfig);
 		
 		jumbuneHome = new String(jumbuneHome+File.separator);
@@ -376,7 +382,9 @@ public final class RemotingUtil {
 		if (!dir.exists()) {
 			dir.mkdirs();
 		}
-		HadoopDistributionLocator hadoopUtility = getDistributionLocator(getHadoopVersion(jobConfig));
+		String hadoopDistribution = FileUtil.getClusterInfoDetail(Constants.HADOOP_DISTRIBUTION);
+		String hadoopType = FileUtil.getClusterInfoDetail(Constants.HADOOP_TYPE);
+		HadoopDistributionLocator hadoopUtility = getDistributionLocator(hadoopDistribution,hadoopType);
 		return hadoopUtility.getHadoopConfDirPath(jobConfig);
 	}
 	
@@ -443,7 +451,8 @@ public final class RemotingUtil {
 			JobConfig jobConfig = (JobConfig)configuration;
 			org.apache.hadoop.conf.Configuration config = new org.apache.hadoop.conf.Configuration();
 			String nameNodeURI;
-			if(Enable.FALSE.equals(jobConfig.getEnableYarn())){
+			String hadoopType = FileUtil.getClusterInfoDetail(Constants.HADOOP_TYPE);
+			if(hadoopType.equalsIgnoreCase(Constants.NON_YARN)){
 				nameNodeURI = RemotingUtil.getHadoopConfigurationValue(configuration, "core-site.xml", "fs.default.name");
 			}else{
 				nameNodeURI = RemotingUtil.getHadoopConfigurationValue(configuration, "core-site.xml", "fs.defaultFS");
@@ -513,28 +522,24 @@ public final class RemotingUtil {
 	 * @param version
 	 * @return
 	 */
-	public static HadoopDistributionLocator getDistributionLocator(SupportedHadoopDistributions version) {
+	public static HadoopDistributionLocator getDistributionLocator(String hadoopDistribution, String hadoopType) {
 		HadoopDistributionLocator hadoopLocator = null;
-	    switch (version) {
-	      case HADOOP_NON_YARN:
+		if(hadoopType.equalsIgnoreCase(Constants.NON_YARN)){
+			if(hadoopDistribution.equalsIgnoreCase(Constants.APACHE)){
 	    	  hadoopLocator = new ApacheNonYarnLocator();
-	        break;
-	      case HADOOP_MAPR:
+			}else{
 	    	  hadoopLocator = new MapRLocator();
-	        break;
-	      case HADOOP_YARN:
-	    	  hadoopLocator = new ApacheYarnLocator();
-	        break;
-	      case CDH_5:
-	    	  hadoopLocator = new CDHLocator();
-	    	  break;
-	      case APACHE_02X:
-	      	  hadoopLocator = new MapRLocator();
-	      	  break;
-	      default:
-	    	  hadoopLocator =  new ApacheNonYarnLocator();
-	      break;
-	    }
+	        }
+		}
+		if(hadoopType.equalsIgnoreCase(Constants.YARN)){
+			if(hadoopDistribution.equalsIgnoreCase(Constants.APACHE)){
+				hadoopLocator = new ApacheYarnLocator();
+			}
+			else{
+				hadoopLocator = new CDHLocator();
+			    }
+			}
+
 	    return hadoopLocator;
 	  }
 	

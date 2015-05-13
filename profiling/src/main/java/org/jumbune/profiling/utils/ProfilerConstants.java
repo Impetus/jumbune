@@ -11,6 +11,7 @@ public interface ProfilerConstants {
 	int DEFAULT_DN_PORT = 5679;
 	int DEFAULT_TT_PORT = 5678;
 
+	String HADOOP = "Hadoop";
 	String DATANODE = "DataNode";
 	String NAMENODE = "NameNode";
 	String TASKTRACKER = "TaskTracker";

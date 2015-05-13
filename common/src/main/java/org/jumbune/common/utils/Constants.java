@@ -389,6 +389,25 @@ public interface Constants {
 	/** The Constant CHMOD_CMD. */
 	String CHMOD_CMD = "chmod -R o+w ";
 	
+	String CONFIGURATION = "conf";
+	
+	String CLUSTER_INFO ="clusterInfo.properties";
+	
+	String HADOOP_TYPE = "HadoopType";
+	
+	String NON_YARN= "Non-Yarn";
+	
+	String YARN ="Yarn";
+	
+	String HADOOP_DISTRIBUTION = "HadoopDistribution";
+	
+	String APACHE = "a";
+	
+	String MAPR = "m";
+	
+	String CLOUDERA = "c";
+
+	
 	/*
 	 * Following are Number literals used in different classes, to avoid usage of magic numbers
 	 */

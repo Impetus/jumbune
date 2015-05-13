@@ -214,7 +214,7 @@ public class ProfilerUtil {
 
 	/**
 	 * This method will iterate over HeapAllocSitesBean to get only topN heapAllocation sites along with there stackTrace element. It will check if
-	 * there is any specific package specified by user in Yaml, if yes only those HeapAllocSitesBean's would be selected whose trace contains the
+	 * there is any specific package specified by user in json, if yes only those HeapAllocSitesBean's would be selected whose trace contains the
 	 * specified package.
 	 * 
 	 * @param heapBean
@@ -572,14 +572,5 @@ public class ProfilerUtil {
 		return RemotingUtil.fireCommandAsHadoopDistribution(jobConfig, sbReport.toString(), CommandType.HADOOP_FS);
 		
 	}	
-	/***
-	 * This method finds out the Hadoop URL which is used while monitoring remote hadoop jmx based on the hadoop version.
-	 * 
-	 * @param hadoopVersion
-	 * @param jmxDaemon
-	 * @return
-	 */
-	public static String getHadoopJMXURLPrefix(SupportedHadoopDistributions hadoopVersion, JMXDeamons jmxDaemon) {
-		return HADOOP;
-	}
+	
 }

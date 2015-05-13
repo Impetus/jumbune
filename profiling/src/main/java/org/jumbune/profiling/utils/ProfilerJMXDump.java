@@ -186,14 +186,14 @@ public class ProfilerJMXDump {
 	 * @throws IntrospectionException
 	 *             the introspection exception
 	 */
-	public Map<String, String> getAllJMXStats(JMXDeamons jmxDaemon, SupportedHadoopDistributions hadoopVersion, String host, String port) throws IOException,
+	public Map<String, String> getAllJMXStats(JMXDeamons jmxDaemon, String host, String port) throws IOException,
 			AttributeNotFoundException, InstanceNotFoundException, MBeanException, ReflectionException, IntrospectionException {
 		List<String> jmxAttributeList = new ArrayList<String>();
 		JMXConnector connector = null;
 		MBeanServerConnection connection = null;
 		Map<String, String> serviceStats = null;
 		JMXServiceURL url = new JMXServiceURL(JMX_URL_PREFIX + host + ":" + port + JMX_URL_POSTFIX);
-		String serviceUrl = ProfilerUtil.getHadoopJMXURLPrefix(hadoopVersion, jmxDaemon) + ProfilerConstants.HADOOP_SERVICE_URL + jmxDaemon;
+		String serviceUrl = ProfilerConstants.HADOOP + ProfilerConstants.HADOOP_SERVICE_URL + jmxDaemon;
 		connector = JMXConnectorInstance.getJMXConnectorInstance(url);
 		connection = connector.getMBeanServerConnection();
 		Set<ObjectName> names = connection.queryNames(null, null);
@@ -284,7 +284,7 @@ public class ProfilerJMXDump {
 	 * @throws ReflectionException
 	 * @throws IntrospectionException
 	 */
-	public List<String> getAllJMXAttribute(JMXDeamons jmxDaemon, SupportedHadoopDistributions hadoopVersion, String host, String port) throws IOException,
+	public List<String> getAllJMXAttribute(JMXDeamons jmxDaemon, String host, String port) throws IOException,
 			AttributeNotFoundException, InstanceNotFoundException, MBeanException, ReflectionException, IntrospectionException {
 		List<String> jmxAttributeList = new ArrayList<String>();
 		JMXConnector connector = null;
@@ -294,7 +294,7 @@ public class ProfilerJMXDump {
 		MBeanAttributeInfo[] mbi;
 
 		JMXServiceURL url = new JMXServiceURL(JMX_URL_PREFIX + host + ":" + port + JMX_URL_POSTFIX);
-		String serviceUrl = ProfilerUtil.getHadoopJMXURLPrefix(hadoopVersion, jmxDaemon) + ProfilerConstants.HADOOP_SERVICE_URL + jmxDaemon;
+		String serviceUrl = ProfilerConstants.HADOOP+ ProfilerConstants.HADOOP_SERVICE_URL + jmxDaemon;
 		connector = JMXConnectorInstance.getJMXConnectorInstance(url);
 		connection = connector.getMBeanServerConnection();
 		Set<ObjectName> names = connection.queryNames(null, null);
@@ -406,6 +406,7 @@ public class ProfilerJMXDump {
 				}
 			}
 		} finally {
+			
 			if (bufferReader != null) {
 				bufferReader.close();
 			}
@@ -610,8 +611,7 @@ public class ProfilerJMXDump {
 	}
 
 	/**
-	 * <<<<<<< Updated upstream Calculates how efficient the partitions are on different nodes of the cluster. ======= Calculates how efficient the
-	 * partitions are on different nodes of the cluster. >>>>>>> Stashed changes
+	 * 
 	 * 
 	 * @param config
 	 *            the config
@@ -721,7 +721,7 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public List<ResultInfo> getNodeThroughput(Config config, SupportedHadoopDistributions version, String nodeIp) throws AttributeNotFoundException,
+	public List<ResultInfo> getNodeThroughput(Config config,  String nodeIp) throws AttributeNotFoundException,
 			InstanceNotFoundException, IntrospectionException, MBeanException, ReflectionException, IOException {
 
 		JobConfig jobConfig = (JobConfig)config;
@@ -741,10 +741,10 @@ public class ProfilerJMXDump {
 
 		for (String host : hosts) {
 			throughput = new NodeThroughputInfo();
-			allJmxStats = getAllJMXStats(JMXDeamons.DATA_NODE, version, host, jobConfig.getProfilingParams().getDataNodeJmxPort());
+			allJmxStats = getAllJMXStats(JMXDeamons.DATA_NODE,  host, jobConfig.getProfilingParams().getDataNodeJmxPort());
 			throughput.setReadThroughput(Integer.parseInt(allJmxStats.get(READ_BLOCK_OP_MAX_TIME)));
 			throughput.setWriteThroughput(Integer.parseInt(allJmxStats.get(WRITE_BLOCK_OP_MAX_TIME)));
-			allJmxStats = getAllJMXStats(JMXDeamons.TASK_TRACKER, version, host, jobConfig.getProfilingParams().getTaskTrackerJmxPort());
+			allJmxStats = getAllJMXStats(JMXDeamons.TASK_TRACKER, host, jobConfig.getProfilingParams().getTaskTrackerJmxPort());
 			throughput.setProcessingThroughput(Integer.parseInt(allJmxStats.get(RPC_PROCESSING_MAX_TIME)));
 			nodesThroughput.add(throughput);
 		}
