@@ -323,15 +323,6 @@ var uploader_mr;
 					<span>Note: </span>Tab collects mapreduce job jar and dependent
 					jar information.
 				</div>
-				<div class="commonBox previewInfo">
-							<div class="fld chk">
-								<input type="checkbox" name="enableYarn" id="enableYarn"
-									value="TRUE" />
-							</div>
-							<div class="">
-								<label>Execution On Yarn</label>
-							</div>							
-				</div>
 				<div class="fieldsetBox innerFieldsetBox">
 					<div class="paddBott">Specify job jar information</div>
 					<fieldset>
@@ -1650,7 +1641,7 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 									if ( yamlValidate == true ) {
 										$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Json</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');	
 									} else {
-										$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="disableNextStep buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="disableNextStep buttonPrevious" href="javascript:void(0);">Run</a>');	
+										$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="disableNextStep buttonPrevious" href="javascript:void(0);">Save Json</a><a id="runWizardBtn" class="disableNextStep buttonPrevious" href="javascript:void(0);">Run</a>');	
 									}
 									//$('#yaml-dialog-modal .actionBar a').hide('slow');
 									/*if ($('#yaml-dialog-modal .actionBar').find('a#validateWizardBtn').text() == "") {

@@ -11,8 +11,6 @@ import static org.jumbune.execution.utils.ExecutionConstants.MESSAGE_EXECUTION_T
 import static org.jumbune.execution.utils.ExecutionConstants.MESSAGE_VALID_INPUT;
 import static org.jumbune.execution.utils.ExecutionConstants.RUNNING_JOB;
 
-
-
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -45,28 +43,28 @@ import org.jumbune.common.beans.DataProfilingFileDetails;
 import org.jumbune.common.beans.DataProfilingJson;
 import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.JobDefinition;
+import org.jumbune.common.beans.JobProcessBean;
 import org.jumbune.common.beans.LogConsolidationInfo;
 import org.jumbune.common.beans.Master;
 import org.jumbune.common.beans.ServiceInfo;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.ArrayParamBuilder;
 import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
+import org.jumbune.common.utils.FileUtil;
 import org.jumbune.common.utils.HadoopJobCounters;
+import org.jumbune.common.utils.JobConfigUtil;
 import org.jumbune.common.utils.MessageLoader;
 import org.jumbune.common.utils.RemotingUtil;
-import org.jumbune.common.utils.JobConfigUtil;
-import org.jumbune.common.job.Config;
-import org.jumbune.common.job.JobConfig;
+import org.jumbune.dataprofiling.utils.DataProfilingConstants;
 import org.jumbune.datavalidation.DataValidationConstants;
-import org.jumbune.common.beans.JobProcessBean;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
 import org.jumbune.utils.exception.JumbuneException;
-import org.jumbune.dataprofiling.utils.DataProfilingConstants;
-
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -102,10 +100,10 @@ public class ProcessHelper {
 	 */
 	public boolean writetoServiceFile(ServiceInfo info) {
 	    Gson gson = new Gson();
-		String serviceYamlPath = JobConfigUtil.getServiceJsonPath();
+		String serviceJsonPath = JobConfigUtil.getServiceJsonPath();
 		try {
 			String jsonString = gson.toJson(info,ServiceInfo.class);
-			ConfigurationUtil.writeToFile(serviceYamlPath, jsonString, true);
+			ConfigurationUtil.writeToFile(serviceJsonPath, jsonString, true);
 			LOGGER.debug("Persisted service job configuration[" + jsonString+"]");
 			return true;
 
@@ -144,7 +142,7 @@ public class ProcessHelper {
 			}
 		} else {
 			serviceInfo = new ServiceInfo();
-			LOGGER.warn("services.yaml does not exist at :" + serviceJsonPath);
+			LOGGER.warn("services.json does not exist at :" + serviceJsonPath);
 		}
 
 		return serviceInfo;
@@ -164,7 +162,9 @@ public class ProcessHelper {
 	public Map<String, Map<String, String>> executeJar(String inputJarPath, boolean isCommandBasedAllowed, Config config, boolean isDebugged)
 			throws IOException {
 		JobConfig jobConfig = (JobConfig)config;
-	    isYarnJob=jobConfig.getEnableYarn().equals(Enable.TRUE);
+		String hadoopType = FileUtil.getClusterInfoDetail(Constants.HADOOP_TYPE);
+	    isYarnJob= hadoopType.equalsIgnoreCase(Constants.YARN);
+	  
 	    List<JobDefinition> jobDefList = jobConfig.getJobs();
 		Map<String, Map<String, String>> jobsCounterMap = new LinkedHashMap<String, Map<String, String>>();
 

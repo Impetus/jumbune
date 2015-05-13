@@ -49,6 +49,7 @@ import org.jumbune.common.beans.SupportedHadoopDistributions;
 import org.jumbune.common.beans.UnavailableHost;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
+import org.jumbune.common.utils.FileUtil;
 import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.common.utils.ValidateInput;
 import org.jumbune.common.utils.JobConfigUtil;
@@ -198,7 +199,7 @@ public class ExecutionServlet extends HttpServlet {
 	/**
 	 * @param request
 	 * @param config
-	 * @param loader class loads the yaml
+	 * @param config class loads the json
 	 * @throws AttributeNotFoundException
 	 * @throws InstanceNotFoundException
 	 * @throws IntrospectionException
@@ -213,8 +214,9 @@ public class ExecutionServlet extends HttpServlet {
 			IOException {
 		JobConfig jobConfig = (JobConfig)config;
 		if (jobConfig.getHadoopJobProfile().equals(Enable.TRUE)) {
-		    isYarnEnable= jobConfig.getEnableYarn().equals(Enable.TRUE)?true:false;
-			request.setAttribute("clusterProfilerCategoriesJson", getProfilerCategoryJson(config));
+			String hadoopType = FileUtil.getClusterInfoDetail(Constants.HADOOP_TYPE);
+		    isYarnEnable = hadoopType.equalsIgnoreCase(Constants.YARN);
+		   	request.setAttribute("clusterProfilerCategoriesJson", getProfilerCategoryJson(config));
 			request.setAttribute(STATS_INTERVAL, Constants.FIVE_THOUNSAND);
 
 		}
@@ -303,8 +305,7 @@ public class ExecutionServlet extends HttpServlet {
       }else {
         categoryInfo = new NonYarnCategoryInfo();
       }
-      SupportedHadoopDistributions hadoopVersion =
-          RemotingUtil.getHadoopVersion(config);
+      
       WorkerJMXInfo levelJMXInfo =null;
       ClusterWideInfo clusterWideInfo = new ClusterWideInfo();
       if(isYarnEnable){
@@ -316,8 +317,8 @@ public class ExecutionServlet extends HttpServlet {
       }
       ProfilerJMXDump dump = new ProfilerJMXDump();
       
-      setClusterLevelDaemons(master, clusterWideInfo, hadoopVersion, dump);
-      setNodeLevelDaemons(jobConfig, master, slave, hadoopVersion, dump, levelJMXInfo);
+      setClusterLevelDaemons(master, clusterWideInfo, dump);
+      setNodeLevelDaemons(jobConfig, master, slave, dump, levelJMXInfo);
       String systemStatsJson =
           WebUtil.getPropertyFromResource(WebConstants.PROFILING_PROPERTY_FILE,
               WebConstants.PROFILING_SYSTEM_JSON);
@@ -331,54 +332,54 @@ public class ExecutionServlet extends HttpServlet {
 
 
     private void setNodeLevelDaemons(JobConfig jobConfig, YarnMaster master, YarnSlaveParam slave,
-        SupportedHadoopDistributions hadoopVersion, ProfilerJMXDump dump, WorkerJMXInfo levelJMXInfo)
+         ProfilerJMXDump dump, WorkerJMXInfo levelJMXInfo)
         throws IOException, AttributeNotFoundException, InstanceNotFoundException, MBeanException,
         ReflectionException, IntrospectionException {
     for (Slave slaves : jobConfig.getSlaves()) {
         for (String slaveIp : slaves.getHosts()) {
           if (master.getHost().equalsIgnoreCase(slaveIp)) {
-            setYarnAndNonYarnDaemons(master.getHost(), slave, hadoopVersion, dump, levelJMXInfo);
+            setYarnAndNonYarnDaemons(master.getHost(), slave,  dump, levelJMXInfo);
           } else {
-            setYarnAndNonYarnDaemons(slaveIp, slave, hadoopVersion, dump, levelJMXInfo);
+            setYarnAndNonYarnDaemons(slaveIp, slave,  dump, levelJMXInfo);
           }
         }
       }
     }
     
     private void setYarnAndNonYarnDaemons(String host, YarnSlaveParam slave,
-            SupportedHadoopDistributions hadoopVersion, ProfilerJMXDump dump,
+            ProfilerJMXDump dump,
             WorkerJMXInfo levelJMXInfo) throws IOException,
             AttributeNotFoundException, InstanceNotFoundException, MBeanException, ReflectionException,
             IntrospectionException {
-          levelJMXInfo.setDataNode(dump.getAllJMXAttribute(JMXDeamons.DATA_NODE, hadoopVersion, host,
+          levelJMXInfo.setDataNode(dump.getAllJMXAttribute(JMXDeamons.DATA_NODE,  host,
               slave.getDataNodeJmxPort()));
           if(isYarnEnable){
             YarnWorkerJMXInfo ywji = (YarnWorkerJMXInfo) levelJMXInfo;
             ywji.setNodeManager(dump.getAllJMXAttribute(JMXDeamons.NODE_MANAGER,
-                hadoopVersion, host, slave.getNodeManagerJmxPort()));
+                host, slave.getNodeManagerJmxPort()));
           }else{
-            levelJMXInfo.setTaskTracker(dump.getAllJMXAttribute(JMXDeamons.TASK_TRACKER, hadoopVersion, host,
+            levelJMXInfo.setTaskTracker(dump.getAllJMXAttribute(JMXDeamons.TASK_TRACKER,  host,
                   slave.getTaskTrackerJmxPort()));
           }
         }
 
 	private void setClusterLevelDaemons(YarnMaster master,
 			ClusterWideInfo clusterWideInfo,
-			SupportedHadoopDistributions hadoopVersion, ProfilerJMXDump dump)
+			ProfilerJMXDump dump)
 			throws IOException, AttributeNotFoundException,
 			InstanceNotFoundException, MBeanException, ReflectionException,
 			IntrospectionException {
 		clusterWideInfo.setNameNode(dump.getAllJMXAttribute(
-				JMXDeamons.NAME_NODE, hadoopVersion, master.getHost(),
+				JMXDeamons.NAME_NODE ,master.getHost(),
 				master.getNameNodeJmxPort()));
 		if (isYarnEnable) {
 			YarnClusterWideInfo yarnClusterWideInfo = (YarnClusterWideInfo) clusterWideInfo;
 			yarnClusterWideInfo.setResourceManager(dump.getAllJMXAttribute(
-					JMXDeamons.RESOURCE_MANAGER, hadoopVersion,
+					JMXDeamons.RESOURCE_MANAGER, 
 					master.getHost(), master.getResourceManagerJmxPort()));
 		} else {
 			clusterWideInfo.setJobTracker(dump.getAllJMXAttribute(
-					JMXDeamons.JOB_TRACKER, hadoopVersion, master.getHost(),
+					JMXDeamons.JOB_TRACKER, master.getHost(),
 					master.getJobTrackerJmxPort()));
 		}
 	}
@@ -492,7 +493,8 @@ public class ExecutionServlet extends HttpServlet {
 						return null;
 					}
 					JobConfig jobConfig = (JobConfig) config;
-					isYarnEnable= jobConfig.getEnableYarn().equals(Enable.TRUE);
+					String hadoopType = FileUtil.getClusterInfoDetail(Constants.HADOOP_TYPE);
+				    isYarnEnable = hadoopType.equalsIgnoreCase(Constants.YARN);
 					JobConfigUtil.checkIfJumbuneHomeEndsWithSlash(config);
 
 				}
@@ -562,17 +564,17 @@ public class ExecutionServlet extends HttpServlet {
 	}
 
 	/**
-	 * @param yamlData contains the data supplied in the yaml form.
+	 * @param jsonData contains the data supplied in the yaml form.
 	 * @param config refers to the bean containing the yaml parameters.
 	 * @param classpathElement refers to the bean containing the classpath elements.
 	 */
-	private void saveUserSuppliedJar(String yamlData, Config config,
+	private void saveUserSuppliedJar(String jsonData, Config config,
 			ClasspathElement classpathElement) {
 		String[] resources= null;
 		JobConfig jobConfig = (JobConfig)config;
 		if (WebConstants.MASTER_MACHINE_PATH_OPTION == classpathElement.getSource() && WebUtil.isRequiredModuleEnable(config)) {
 			String filePath = jobConfig.getJobJarLoc() + jobConfig.getFormattedJumbuneJobName() + WebConstants.DEPENDNET_JAR_RESOURCES_DIR;
-			JsonObject json = (JsonObject) new JsonParser().parse(yamlData);
+			JsonObject json = (JsonObject) new JsonParser().parse(jsonData);
 			resources = WebUtil.jsonValueOfMasterMachineField(WebConstants.DEPENDENT_JAR_MASTER_MACHINE_PATH, json);
 			if (resources != null) {
 				String[] path  = JobConfigUtil.replaceJumbuneHome(resources);

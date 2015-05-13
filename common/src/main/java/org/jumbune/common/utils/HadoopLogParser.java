@@ -6,9 +6,12 @@ import static org.jumbune.common.utils.Constants.SPACE;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -133,20 +136,20 @@ public class HadoopLogParser {
 		String agentHome = RemotingUtil.getAgentHome(jobConfig);
 		Remoter remoter = RemotingUtil.getRemoter(jobConfig, appHome);
 		String logsHistory = null;
-		SupportedHadoopDistributions hadoopVersion = RemotingUtil.getHadoopVersion(jobConfig);
-		String user = jobConfig.getMaster().getUser();
+		String hadoopDistribution = FileUtil.getClusterInfoDetail(Constants.HADOOP_DISTRIBUTION);
+		String hadoopType = FileUtil.getClusterInfoDetail(Constants.HADOOP_TYPE);
 		logsHistory = changeLogHistoryPathAccToHadoopVersion(HADOOP_HOME,
-				hadoopVersion, user);
+				hadoopDistribution,hadoopType);
 		
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		
-		boolean isYarn = jobConfig.getEnableYarn().equals(Enable.TRUE);
+		
 		String logfilePath = null ;
 		String relLocalPath = null;
-		if(!isYarn){
+		if(hadoopType.equalsIgnoreCase(Constants.NON_YARN)){
 		
 			//check if the hadoop distribution is non-yarn and MapR as well.
-			if(SupportedHadoopDistributions.HADOOP_MAPR.equals(hadoopVersion))
+			if(hadoopDistribution.equalsIgnoreCase(Constants.MAPR))
 			{  
 				relLocalPath  = Constants.JOB_JARS_LOC + jobConfig.getFormattedJumbuneJobName();
 				String fileName=null;
@@ -154,7 +157,7 @@ public class HadoopLogParser {
 				 fileName=getHistoryFileNameForMapR(remoter, logsHistory, jobID);
 				
 				//Now starting rumen processing
-				Properties hadoopJarProperties = loadHadoopJarConfigurationProperties();
+				Properties props = loadHadoopJarConfigurationProperties();
 				String rumenDirPath = agentHome+Constants.JOB_JARS_LOC + jobConfig.getFormattedJumbuneJobName()+ RUMEN;				
 			
 				// make rumen related directory and files
@@ -172,11 +175,11 @@ public class HadoopLogParser {
 						+ fileName;
 
 				//prepare rumen processing command and start processing
-				StringBuilder rumenProcessingCommand = prepareRumenProcessingCommand(hadoopJarProperties,
-						agentHome, jsonFilePath, topologyFilePath,
+				StringBuilder sb = prepareRumenProcessingCommand(props,
+						appHome, agentHome, jsonFilePath, topologyFilePath,
 						historyFilePathOnMapRFS);
 
-				startRumenProcessing(remoter, relLocalPath, rumenDirPath, rumenProcessingCommand);
+				startRumenProcessing(remoter, relLocalPath, rumenDirPath, sb);
 				getAndRemoveRumenTempDir(remoter, jobConfig,
 						rumenTempDirOnMapRFS, rumenDirPath);
      			String relativeRemotePath = Constants.JOB_JARS_LOC
@@ -185,7 +188,7 @@ public class HadoopLogParser {
 
 			    //receiving job-trace.json and topology files
 				remoter.receiveLogFiles(relLocalPath, relativeRemotePath);
-				LOGGER.debug("Received log files from:" + relativeRemotePath);
+				LOGGER.info("Received log files from:" + relativeRemotePath);
 
 				Gson gson = new Gson();
 				JobDetails jobDetails = extractJobDetails(appHome,
@@ -210,31 +213,31 @@ public class HadoopLogParser {
 			// preparing command for rumen processing
 			
 			String remoteHadoopLib = HADOOP_HOME + LIB;
-			Properties hadoopJarProperties = loadHadoopJarConfigurationProperties();
+			Properties props = loadHadoopJarConfigurationProperties();
 			
 			String coreJar;
-			if(SupportedHadoopDistributions.HADOOP_NON_YARN.equals(hadoopVersion)) {
-				coreJar = HADOOP_HOME + hadoopJarProperties.getProperty("CORE_JAR");	
+			if(hadoopDistribution.equalsIgnoreCase(Constants.APACHE)) {
+				coreJar = HADOOP_HOME + props.getProperty("CORE_JAR");	
 			}else {
 				coreJar = HADOOP_HOME + WILDCARD;
 			}
 			
-			String commonsLoggingJar = agentHome + LIB + hadoopJarProperties.getProperty("COMMONS_LOGGING_JAR");
-			String commonsCliJar = remoteHadoopLib + hadoopJarProperties.getProperty("COMMONS_CLI_JAR");
-			String commonsConfigurationJar = agentHome + LIB + hadoopJarProperties.getProperty("COMMONS_CONFIGURATION_JAR");
-			String commonsLangJar = agentHome + LIB + hadoopJarProperties.getProperty("COMMONS_LANG_JAR");
-			String jacksonMapperAslJar = agentHome + LIB + hadoopJarProperties.getProperty("JACKSON_MAPPER_ASL_JAR");
-			String jacksonMapperCoreJar = agentHome + LIB + hadoopJarProperties.getProperty("JACKSON_MAPPER_CORE_JAR");
-			String rumenJar = agentHome + LIB + hadoopJarProperties.getProperty("RUMEN_JAR")+"-"+Versioning.BUILD_VERSION+Versioning.DISTRIBUTION_NAME+".jar";
+			String commonsLoggingJar = agentHome + LIB + props.getProperty("COMMONS_LOGGING_JAR");
+			String commonsCliJar = remoteHadoopLib + props.getProperty("COMMONS_CLI_JAR");
+			String commonsConfigurationJar = agentHome + LIB + props.getProperty("COMMONS_CONFIGURATION_JAR");
+			String commonsLangJar = agentHome + LIB + props.getProperty("COMMONS_LANG_JAR");
+			String jacksonMapperAslJar = agentHome + LIB + props.getProperty("JACKSON_MAPPER_ASL_JAR");
+			String jacksonMapperCoreJar = agentHome + LIB + props.getProperty("JACKSON_MAPPER_CORE_JAR");
+			String rumenJar = agentHome + LIB + props.getProperty("RUMEN_JAR")+"-"+Versioning.BUILD_VERSION+Versioning.DISTRIBUTION_NAME+".jar";
 			
-			StringBuilder rumenProcessingCommand = new StringBuilder(JAVA_CP_CMD);
+			StringBuilder sb = new StringBuilder(JAVA_CP_CMD);
 			
-			checkHadoopVersionsForRumen(hadoopVersion, logfilePath, jsonFilepath,
+			checkHadoopVersionsForRumen(logfilePath, jsonFilepath,
 					topologyFilePath, coreJar, commonsLoggingJar,
 					commonsCliJar, commonsConfigurationJar, commonsLangJar,
-					jacksonMapperAslJar, jacksonMapperCoreJar, rumenJar, rumenProcessingCommand);
-			LOGGER.debug("Rumen processing command [" + rumenProcessingCommand.toString()+"]");
-			startRumenProcessing(remoter, relLocalPath, relRemotePath, rumenProcessingCommand);
+					jacksonMapperAslJar, jacksonMapperCoreJar, rumenJar, sb);
+			LOGGER.debug("Rumen processing command [" + sb.toString()+"]");
+			startRumenProcessing(remoter, relLocalPath, relRemotePath, sb);
 			remoter = RemotingUtil.getRemoter(jobConfig, appHome);
 			remoter.receiveLogFiles(relLocalPath, relRemotePath);
 			LOGGER.debug("Received log files from:"+ relRemotePath);
@@ -281,43 +284,42 @@ public class HadoopLogParser {
 	 */
 	private String getHistoryFileNameForMapR(Remoter remoter,
 			String logsHistory, String jobID) {
-
-		StringBuilder lsCommand = new StringBuilder()
-				.append(Constants.HADOOP_HOME).append(HDFS_LS_COMMAND)
-				.append(Constants.SPACE).append(logsHistory).append("*")
-				.append(jobID).append("*").append("[!'.xml']");
+		
+		StringBuilder lsCommand = new StringBuilder().append(Constants.HADOOP_HOME).append(HDFS_LS_COMMAND).append(Constants.SPACE).append(logsHistory)
+		.append("*").append(jobID).append("*").append("[!'.xml']");
+		LOGGER.debug("History FileName Fetch Command: "+lsCommand.toString());
 		CommandWritableBuilder lsBuilder = new CommandWritableBuilder();
-		lsBuilder.addCommand(lsCommand.toString(), false, null,
-				CommandType.HADOOP_FS);
-		String response = (String) remoter
-				.fireCommandAndGetObjectResponse(lsBuilder.getCommandWritable());
+		lsBuilder.addCommand(lsCommand.toString(), false, null, CommandType.HADOOP_FS);
+		String response = (String) remoter.fireCommandAndGetObjectResponse(lsBuilder.getCommandWritable());
 		BufferedReader reader = new BufferedReader(new StringReader(response));
-		String line = null;
+		String line = null;		
 		String[] splits = null;
-		String filePath = null;
-		try {
-			while ((line = reader.readLine()) != null) {
-				if (line.contains(jobID)) {
-					splits = line.split("\\s+");
-				}
+		String filePath =null;
+		try{
+		while ((line = reader.readLine()) != null) {    			
+              if (line.contains(jobID)) {
+				splits = line.split("\\s+");
 			}
-		} catch (IOException exception) {
-			LOGGER.error("Error reading command response: "+exception);
-		} finally {
-			if (reader != null) {
+		}
+		}catch(IOException exception)
+		{
+			LOGGER.error(exception);
+		}
+		finally{
+			if(reader!=null)
+			{ 
 				try {
-					reader.close();
-				} catch (IOException ioException) {
-					LOGGER.error("Error while closing the reader: "
-							+ ioException);
+				reader.close();
+				}catch(IOException ioException)
+				{
+					LOGGER.error("Error while closing the reader: "+ioException);
 				}
 			}
 		}
 		try {
-			filePath = splits[7];
-		} catch (ArrayIndexOutOfBoundsException boundsException) {
-			LOGGER.error("Error reading the file name from command response: "
-					+ boundsException);
+		filePath=splits[7];		
+		}catch(ArrayIndexOutOfBoundsException boundsException){
+			LOGGER.error("Error reading the file name from command response: "+boundsException);
 		}
 		return filePath.substring(filePath.lastIndexOf(File.separator) + 1);
 	}
@@ -349,34 +351,46 @@ public class HadoopLogParser {
 	 * @param historyFilePathOnMapRFS
 	 * @return
 	 */
-	private StringBuilder prepareRumenProcessingCommand(Properties hadoopJarProperties, String agentHome, String jsonFilepath, String topologyFilePath, String historyFilePathOnMapRFS)
-	{
+	private StringBuilder prepareRumenProcessingCommand(Properties props, String jumbuneHome, String agentHome, String jsonFilepath, String topologyFilePath, String historyFilePathOnMapRFS)
+	{  
+		props.clear();
+		final String propertyFilePath=jumbuneHome+"resources"+File.separator+HADOOP_JAR_CONFIF_FILE;
+		FileReader propertyFileReader=null;
+		try{
+		   propertyFileReader=new FileReader(propertyFilePath);	
+		props.load(propertyFileReader);
+		}catch(IOException exception){
+			LOGGER.error("Cannot load property file from "+propertyFilePath+", "+exception.getMessage());
+		}
+		
 		String[] requiredJars={
-				HADOOP_HOME+LIB+hadoopJarProperties.getProperty("CORE_MAPR_JAR"),
-				HADOOP_HOME+LIB+hadoopJarProperties.getProperty("LOG4J_JAR"),
-				HADOOP_HOME+LIB+hadoopJarProperties.getProperty("JACKSON_CORE_V1.5_JAR"),
-				HADOOP_HOME+LIB+hadoopJarProperties.getProperty("JACKSON_MAPPER_V1.5_JAR"),
-				HADOOP_HOME+LIB+hadoopJarProperties.getProperty("COMMONS_CLI_JAR"),
-				HADOOP_HOME+LIB+hadoopJarProperties.getProperty("COMMONS_COLLECTIONS_JAR"),
-				HADOOP_HOME+LIB+hadoopJarProperties.getProperty("COMMONS_LOGGING_V1.0.4_JAR"),
-				HADOOP_HOME+LIB+hadoopJarProperties.getProperty("MAPRFS_JAR"),
-				HADOOP_HOME+LIB+hadoopJarProperties.getProperty("ZOOKEEPER_JAR"),
-				HADOOP_HOME+LIB+hadoopJarProperties.getProperty("COMMONS_EL_JAR")
+				HADOOP_HOME+LIB+props.getProperty("CORE_MAPR_JAR").trim(),
+				HADOOP_HOME+LIB+props.getProperty("LOG4J_JAR").trim(),
+				HADOOP_HOME+LIB+props.getProperty("JACKSON_CORE_V1.5_JAR").trim(),
+				HADOOP_HOME+LIB+props.getProperty("JACKSON_MAPPER_V1.5_JAR").trim(),
+				HADOOP_HOME+LIB+props.getProperty("COMMONS_CLI_JAR").trim(),
+				HADOOP_HOME+LIB+props.getProperty("COMMONS_COLLECTIONS_JAR").trim(),
+				HADOOP_HOME+LIB+props.getProperty("COMMONS_LOGGING_V1.0.4_JAR").trim(),
+				HADOOP_HOME+LIB+props.getProperty("MAPRFS_JAR").trim(),
+				HADOOP_HOME+LIB+props.getProperty("ZOOKEEPER_JAR").trim(),
+				HADOOP_HOME+LIB+props.getProperty("COMMONS_EL_JAR").trim()
+
 			};
-	
-		String rumenJar = agentHome + LIB + hadoopJarProperties.getProperty("RUMEN_JAR")+"-"+Versioning.BUILD_VERSION+Versioning.DISTRIBUTION_NAME+".jar";				
-		StringBuilder rumenProcessingCommand = new StringBuilder(JAVA_CP_CMD);
+	LOGGER.info("Rumen Processing Command: "+Arrays.asList(requiredJars));
+		
+		String rumenJar = agentHome + LIB + props.getProperty("RUMEN_JAR")+"-"+Versioning.BUILD_VERSION+Versioning.DISTRIBUTION_NAME+".jar";				
+		StringBuilder sb = new StringBuilder(JAVA_CP_CMD);
         
 		//adding jars to classpath   
 		for(String jar:requiredJars)
 		{
-			rumenProcessingCommand.append(jar).append(COLON);
+			sb.append(jar).append(COLON);
 		}
 	
-		rumenProcessingCommand.append(rumenJar);
-		rumenProcessingCommand.append(SPACE).append(RUMEN_MAIN_CLASS_OLD).append(SPACE).append(jsonFilepath)
+		sb.append(rumenJar);
+        sb.append(SPACE).append(RUMEN_MAIN_CLASS_OLD).append(SPACE).append(jsonFilepath)
 		.append(SPACE).append(topologyFilePath).append(SPACE).append(historyFilePathOnMapRFS);
-		return rumenProcessingCommand;
+		return sb;
 	}
 	
 	
@@ -393,6 +407,8 @@ public class HadoopLogParser {
 	{		
 	StringBuilder commandToExecute = new StringBuilder().append(Constants.HADOOP_HOME).append(HDFS_FILE_GET_COMMAND)
 	.append(Constants.SPACE).append(rumenTempDirOnMapRFS).append("*").append(SPACE).append(rumenDirPath);
+	LOGGER.info("File get Command" + commandToExecute.toString());
+
 	CommandWritableBuilder fsGetBuilder = new CommandWritableBuilder();
 	fsGetBuilder.addCommand(commandToExecute.toString(),false, null, CommandType.MAPRED).populate(jobConfig, null);
     StringBuilder rmCommand=new StringBuilder().append(Constants.HADOOP_HOME).append(HDFS_RM_COMMAND).append(SPACE).append("/jumbune");
@@ -521,13 +537,13 @@ public class HadoopLogParser {
 	 * @return the string
 	 */
 	private String changeLogHistoryPathAccToHadoopVersion(String remoteHadoop,
-			SupportedHadoopDistributions hadoopVersion, String user) {
+			String hadoopDistribution, String hadoopType) {
 		String logsHistory = null;
-		if(SupportedHadoopDistributions.HADOOP_NON_YARN.equals(hadoopVersion)) {
+		if(hadoopType.equalsIgnoreCase(Constants.NON_YARN) && hadoopDistribution.equalsIgnoreCase(Constants.APACHE)) {
 			logsHistory = remoteHadoop + LOGS + HISTORY_DIR_SUFFIX;
-		}else if(SupportedHadoopDistributions.HADOOP_YARN.equals(hadoopVersion) || SupportedHadoopDistributions.CDH_5.equals(hadoopVersion) || SupportedHadoopDistributions.APACHE_02X.equals(hadoopVersion)){
+		}else if(hadoopType.equalsIgnoreCase(Constants.YARN)){
 			logsHistory = HISTORY_INT_DIR_SUFFIX_YARN;
-		}else if(SupportedHadoopDistributions.HADOOP_MAPR.equals(hadoopVersion)) {
+		}else if(hadoopDistribution.equalsIgnoreCase(Constants.MAPR)) {
 			logsHistory =HISTORY_DIR_SUFFIX_MAPR_NY;
 		}		
 		return logsHistory;
@@ -550,21 +566,13 @@ public class HadoopLogParser {
 	 * @param sb
 	 */
 	private void checkHadoopVersionsForRumen(
-			SupportedHadoopDistributions hadoopVersion, String logfilePath,
+			String logfilePath,
 			String jsonFilepath, String topologyFilePath, String coreJar,
 			String commonsLoggingJar, String commonsCliJar,
 			String commonsConfigurationJar, String commonsLangJar,
 			String jacksonMapperAslJar, String jacksonMapperCoreJar,
 			String rumenJar, StringBuilder sb) {
-		/*if(SupportedApacheHadoopVersions.HADOOP_MAPR.equals(hadoopVersion)) {
-			// need to provide Jumbune modified rumen jar explicitly for older versions of hadoop 
-			 sb.append(coreJar).append(COLON).append(rumenJar).append(COLON).append(commonsLoggingJar).append(COLON)
-				.append(COLON).append(commonsCliJar).append(COLON).append(commonsConfigurationJar).append(COLON).append(commonsLangJar)
-				.append(COLON).append(jacksonMapperAslJar).append(COLON)
-				.append(jacksonMapperCoreJar).append(SPACE).append(RUMEN_MAIN_CLASS_OLD).append(SPACE).append(FILE_PREFIX).append(jsonFilepath)
-				.append(SPACE).append(FILE_PREFIX).append(topologyFilePath).append(SPACE).append(FILE_PREFIX).append(logfilePath);
-			}*/
-			// fallback for default hadoop version
+		// fallback for default hadoop version
 			 sb.append(coreJar).append(COLON).append(rumenJar).append(COLON).append(commonsLoggingJar).append(COLON).append(commonsCliJar).append(COLON)
 				.append(commonsConfigurationJar).append(COLON).append(commonsLangJar).append(COLON).append(jacksonMapperAslJar).append(COLON)
 				.append(jacksonMapperCoreJar).append(SPACE).append(RUMEN_MAIN_CLASS_OLD).append(SPACE).append(FILE_PREFIX).append(jsonFilepath)

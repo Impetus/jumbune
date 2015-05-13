@@ -20,6 +20,7 @@ import org.jumbune.common.beans.LogConsolidationInfo;
 import org.jumbune.common.beans.Module;
 import org.jumbune.common.beans.ServiceInfo;
 import org.jumbune.common.utils.Constants;
+import org.jumbune.common.utils.FileUtil;
 import org.jumbune.common.utils.HadoopLogParser;
 import org.jumbune.common.utils.RemoteFileUtil;
 import org.jumbune.common.utils.ResourceUsageCollector;
@@ -87,8 +88,8 @@ public class ProfilingProcessor extends BaseProcessor {
 		checkJobClassesInJar(jarJobList);
 
 		String pureJarPath = jobConfig.getInputFile();
-		
-		boolean isYarn = jobConfig.getEnableYarn().equals(Enable.TRUE);
+		String hadoopType = FileUtil.getClusterInfoDetail(Constants.HADOOP_TYPE);
+				
 		ResourceUsageCollector collector = new ResourceUsageCollector(
 				super.getConfig());
 		Enable runFromJumbune = jobConfig.getRunJobFromJumbune();
@@ -96,7 +97,7 @@ public class ProfilingProcessor extends BaseProcessor {
 		JobOutput jobOutput = null;
 		String jobID = null;
 		try {
-			if (!isYarn) {
+			if (hadoopType.equalsIgnoreCase(Constants.NON_YARN)) {
 				
 				if (runFromJumbune.getEnumValue()) {
 					LOGGER.debug("Fired top command on Workers");

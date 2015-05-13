@@ -286,6 +286,7 @@ public final class DeployUtil {
 	public static void main(String[] args) throws InterruptedException, IOException {
 		String distributionType;
 		String hadoopDistributionType;
+	
 		if (args.length != 0 && args[0].equalsIgnoreCase("--help")) {
 			printHelp();
 		}
@@ -361,6 +362,8 @@ public final class DeployUtil {
 			
 			checkJumbuneDirectoryCreation();
 			
+			createConfigurationFile(distributionType,hadoopDistributionType);
+			
 			changeRunnablePermissions();
 			
 			serializeDistributionType(distributionType, hadoopDistributionType);
@@ -386,6 +389,36 @@ public final class DeployUtil {
 		writer.write("\n");
 		writer.write("HadoopDistribution="+HadoopDistribution);
 		writer.close();
+	}
+	
+	
+	// Create configuration file and folder in Jumbune Home while deploying
+	private static void createConfigurationFile(String hadoopType,String hadoopDistribution) throws IOException{
+		String configurationpath;
+		FileWriter writer =null;
+		try{
+		configurationpath = FoundPaths.get("<JUMBUNE.HOME>")+File.separator+Constants.CONFIGURATION;
+		File configuration = new File(configurationpath);
+		if(!configuration.exists()){
+			configuration.mkdirs();
+		}
+		File clusterfile = new File (configurationpath+File.separator+Constants.CLUSTER_INFO);
+		
+		if (clusterfile.exists()){
+			clusterfile.delete();
+		}
+		writer = new FileWriter(clusterfile);
+		writer.write("HadoopType="+hadoopType);
+		writer.write("\n");
+		writer.write("HadoopDistribution="+hadoopDistribution);
+		}catch(IOException e){
+			CONSOLE_LOGGER.error("IO Exception",e);
+		}
+		finally{
+			if(writer!=null){
+				writer.close();	
+			}
+		}
 	}
 
 	private static void checkJumbuneDirectoryCreation() {
