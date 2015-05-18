@@ -1,4 +1,5 @@
 #
+
 # Dockerfile - Jumbune
 #
 FROM     ubuntu:12.04
@@ -7,7 +8,7 @@ MAINTAINER Jumbune-Dev <dev@collaborate.jumbune.org>
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 
 # Upgradation and installation of required packages.
-RUN apt-get update && apt-get install -y curl supervisor openssh-server net-tools iputils-ping nano zip
+RUN apt-get update && apt-get install -y curl supervisor openssh-server net-tools iputils-ping nano zip maven git
 
 # Installing JDK and adding JAVA HOME
 ENV JDK_URL http://download.oracle.com/otn-pub/java/jdk
@@ -21,7 +22,9 @@ RUN cd $SRC_DIR && curl -LO "$JDK_URL/$JDK_VER/$JDK_VER2-linux-x64.tar.gz" -H 'C
  && echo '# JDK' >> /etc/profile \
  && echo "export JAVA_HOME=$JAVA_HOME" >> /etc/profile \
  && echo 'export PATH="$PATH:$JAVA_HOME/bin"' >> /etc/profile \
- && echo '' >> /etc/profile
+ && echo '' >> /etc/profile \
+ && update-alternatives --install "/usr/bin/java" "java" "/usr/local/jdk/bin/java" 5000
+
 
 #Fetch Apache Hadoop and untar
 ENV SRC_DIR /opt
@@ -94,13 +97,48 @@ ENV JUMBUNE_HOME /root/jumbune
 ENV AGENT_HOME /root/agent
 RUN mkdir $JUMBUNE_HOME
 RUN mkdir $AGENT_HOME
-RUN echo '##Jumbune' >> /etc/profile \
+RUN echo '#Jumbune' >> /etc/profile \
  && echo "export JUMBUNE_HOME=$JUMBUNE_HOME" >> /etc/profile \
  && echo "export AGENT_HOME=$AGENT_HOME" >> /etc/profile
-RUN cat /etc/profile
 
-#Fetching Jumbune jar and the depoy script
-RUN wget -O /root/jumbune-dist-1.5.0-bin.jar  http://www.jumbune.org/jar/beta/jumbune-dist-1.5.0-bin.jar
+#########################################################
+#							#
+# Fetching latest Jumbune release (stable) build	#
+#							#
+#########################################################
+
+###
+# UnComment below lines (if you wish to fetch latest Jumbune release rather than building from latest snapshot codebase)
+###
+
+#ENV JUMBUNE_VERSION 1.5.0
+#RUN mkdir -p /jumbune_code/distribution/target/ \
+# && wget -O /jumbune_code/distribution/target/jumbune-dist-$JUMBUNE_VERSION-bin.jar  http://www.jumbune.org/jar/current/yarn/jumbune-dist-$JUMBUNE_VERSION-bin.jar
+
+###
+# Uncomment Above lines  (if you wish to fetch latest Jumbune release rather than building from latest snapshot codebase)
+###
+
+#########################################################
+#                                                       #
+# Fetching latest Jumbune SNAPSHOT codebase             #
+#                                                       #
+#########################################################
+
+###
+# UnComment below lines (if you wish to build from the latest snapshot codebase and not the latest Jumbune release)
+###
+
+RUN git clone https://github.com/impetus-opensource/jumbune.git jumbune_code/ -b master \
+ && cd jumbune_code/ \
+ && export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=350m" \
+ && mvn clean install -P yarn 
+
+###
+# Uncomment Above lines (if you wish to build from the latest snapshot codebase and not the latest Jumbune release)
+###
+
+
 ADD docker-conf/deploynRun.sh /root/deploynRun.sh
 ADD docker-conf/sampleJson.json /root/sampleJson.json
 RUN chmod +x /root/deploynRun.sh
