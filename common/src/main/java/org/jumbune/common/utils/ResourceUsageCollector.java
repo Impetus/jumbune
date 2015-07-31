@@ -92,7 +92,7 @@ public class ResourceUsageCollector {
 	/** The interval period. */
 	private long intervalPeriod = Constants.FOUR;
 
-	/** The loader. */
+	/** The config. */
 	private Config config;
 
 	/** The Constant LOGS **/
@@ -488,15 +488,12 @@ public class ResourceUsageCollector {
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		String remoteHadoop = RemotingUtil.getHadoopHome(remoter, jobConfig)
 				+ File.separator;
-		String user = jobConfig.getMaster().getUser();
-		SupportedHadoopDistributions hadoopVersion = RemotingUtil
-				.getHadoopVersion(jobConfig);
-		String logsHistory = changeLogHistoryPathAccToHadoopVersion(
-				remoteHadoop, hadoopVersion, user);
+		String logsHistory = remoteHadoop + LOGS + HISTORY_DIR_SUFFIX;
 		String command = jobID + RemotingConstants.SINGLE_SPACE + logsHistory;
 
 		builder.addCommand(command, false, null, CommandType.FS)
-		.setMethodToBeInvoked(RemotingMethodConstants.GET_HADOOP_CONFIG_FILE_FROM_JOBID);
+				.setMethodToBeInvoked(
+						RemotingMethodConstants.GET_HADOOP_CONFIG_FILE_FROM_JOBID);
 		String configFilePath = (String) remoter
 				.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		String fileName = configFilePath.substring(configFilePath
@@ -600,10 +597,10 @@ public class ResourceUsageCollector {
 		float totalPhaseCpu = 0;
 		int totalPhaseIntervals = 0;
 		List<String> allHosts = new ArrayList<String>();
+
 		for (Slave slave : jobConfig.getSlaves()) {
 			allHosts.addAll(Arrays.asList(slave.getHosts()));
 		}
-
 		for (TaskOutputDetails tod : taskDetails) {
 			String todLocation = tod.getLocation();
 			if (todLocation != null) {
@@ -795,31 +792,6 @@ public class ResourceUsageCollector {
 
 	}
 
-	/**
-	 * Change log history path acc to hadoop version.
-	 *
-	 * @param remoteHadoop
-	 *            the remote hadoop
-	 * @param hadoopVersion
-	 *            constants for hadoop specific versions.
-	 * @param user
-	 *            TODO
-	 * @return the string
-	 */
-	private String changeLogHistoryPathAccToHadoopVersion(String remoteHadoop,
-			SupportedHadoopDistributions hadoopVersion, String user) {
-		String logsHistory;
-		if (SupportedHadoopDistributions.HADOOP_NON_YARN.equals(hadoopVersion)
-				|| SupportedHadoopDistributions.HADOOP_NON_YARN
-						.equals(hadoopVersion)) {
-			logsHistory = remoteHadoop + LOGS + HISTORY_DIR_SUFFIX;
-		} else if (SupportedHadoopDistributions.HADOOP_NON_YARN
-				.equals(hadoopVersion)) {
-			logsHistory = remoteHadoop + LOGS + HISTORY_DIR_SUFFIX_OLD;
-		} else {
-			logsHistory = remoteHadoop + LOGS + user + HISTORY_DIR_SUFFIX;
-		}
-		return logsHistory;
-	}
+
 
 }

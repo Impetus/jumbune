@@ -49,7 +49,7 @@ or
 
 `./runCli`
 
-## Docker Image
+## Docker Image (Jumbune + Apache YARN )
 
 - Building from root of the checked out repository
 `$ sudo docker build –t = "jumbune/pseudo-distributed:1.5.0" .`
@@ -61,8 +61,7 @@ or
 `https://registry.hub.docker.com/u/jumbune/jumbune/`
 
 - Running the built image
-`$ docker run -d --name="jumbune" -h "jumbune-docker" -p 8042 -p 8088:8088 -p 50070:50070 -p
-50075:50075 -p 50090:50090 -p 8080:8080 -p 5555 jumbune/pseudo-distributed:1.5.0`
+`$ docker run -d --name="jumbune" -h "jumbune-docker" -p 8080:8080 -p 5555 jumbune/pseudo-distributed:1.5.0`
 
 ## Code Examples
 

@@ -20,7 +20,7 @@ public abstract class AbstractDistributionLocator implements
 	protected static final String WHEREIS_HADOOP = "whereis hadoop";
 
 	/* (non-Javadoc)
-	 * @see org.jumbune.common.utils.HadoopDistributionLocator#getHadoopHomeDirPath(org.jumbune.common.yaml.config.YamlConfig)
+	 * @see org.jumbune.common.utils.HadoopDistributionLocator
 	 */
 	@Override
 	public String getHadoopHomeDirPath(JobConfig jobConfig) {

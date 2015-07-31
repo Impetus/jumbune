@@ -21,6 +21,7 @@ import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.beans.LogConsolidationInfo;
 import org.jumbune.common.beans.LogSummaryLocation;
 import org.jumbune.common.beans.Master;
+import org.jumbune.common.beans.SlaveParam;
 import org.jumbune.common.beans.ProfilingParam;
 import org.jumbune.common.beans.Slave;
 import org.jumbune.common.beans.Validation;
@@ -31,6 +32,7 @@ import org.jumbune.common.yarn.beans.YarnSlaveParam;
 import org.jumbune.utils.JobUtil;
 import org.jumbune.utils.beans.LogLevel;
 
+import com.google.gson.Gson;
 
 
 // TODO: Auto-generated Javadoc
@@ -64,9 +66,6 @@ public class JobConfig implements Config {
 	/* Jumbune Modules */
 	/** The hadoop job profile. */
 	private Enable hadoopJobProfile = Enable.FALSE;
-
-	/** The enable yarn. */
-	private Enable enableYarn = Enable.FALSE;
 
 	/** The enable data validation. */
 	private Enable enableDataValidation = Enable.FALSE;
@@ -163,11 +162,9 @@ public class JobConfig implements Config {
 
 	/** This must be set explicitly. */
 	private static String jumbuneHome;
-	
+
 	/** The data quality time line. */
 	private DataQualityTimeLineConfig dataQualityTimeLineConfig ;
-
-
 
 	static {
 		// locating jumbune home form env properties
@@ -743,24 +740,6 @@ public class JobConfig implements Config {
 	}
 
 	/**
-	 * Gets the enable yarn.
-	 *
-	 * @return the enableYarn
-	 */
-	public Enable getEnableYarn() {
-		return enableYarn;
-	}
-
-	/**
-	 * Sets the enable yarn.
-	 *
-	 * @param enableYarn the enableYarn to set
-	 */
-	public void setEnableYarn(Enable enableYarn) {
-		this.enableYarn = enableYarn;
-	}
-
-	/**
 	 * Sets the enable data profiling.
 	 *
 	 * @param enableDataProfiling the new enable data profiling
@@ -832,7 +811,23 @@ public class JobConfig implements Config {
 		this.enableDataQualityTimeline = enableDataQualityTimeline;
 	}
 
-	
+	/**
+	 * Gets the data quality time line.
+	 *
+	 * @return the dataQualityTimeLine
+	 */
+	public DataQualityTimeLineConfig getDataQualityTimeLineConfig() {
+		return dataQualityTimeLineConfig;
+	}
+
+	/**
+	 * Sets the data quality time line.
+	 *
+	 * @param dataQualityTimeLineConfig the dataQualityTimeLine to set
+	 */
+	public void setDataQualityTimeLineConfig(DataQualityTimeLineConfig dataQualityTimeLineConfig) {
+		this.dataQualityTimeLineConfig = dataQualityTimeLineConfig;
+	}
 
 	/**
 	 * Gets the jumbune job loc.
@@ -1408,8 +1403,7 @@ public class JobConfig implements Config {
 	public String toString() {
 		return "JobConfig [distributedHDFSPath=" + distributedHDFSPath
 				+ ", master=" + master + ", slaves=" + slaves
-				+ ", hadoopJobProfile=" + hadoopJobProfile + ", enableYarn="
-				+ enableYarn + ", enableDataValidation=" + enableDataValidation
+				+ ", hadoopJobProfile=" + hadoopJobProfile + ", enableDataValidation=" + enableDataValidation
 				+ ", debugAnalysis=" + debugAnalysis
 				+ ", enableStaticJobProfiling=" + enableStaticJobProfiling
 				+ ", profilingParams=" + profilingParams + ", jobs=" + jobs
@@ -1430,25 +1424,7 @@ public class JobConfig implements Config {
 				+ ", isLocalSystemJar=" + isLocalSystemJar
 				+ ", enableDataProfiling=" + enableDataProfiling
 				+ ", criteriaBasedDataProfiling=" + criteriaBasedDataProfiling
-				+ "]";
-	}
-	
-	/**
-	 * Gets the data quality time line.
-	 *
-	 * @return the dataQualityTimeLine
-	 */
-	public DataQualityTimeLineConfig getDataQualityTimeLineConfig() {
-		return dataQualityTimeLineConfig;
-	}
-	
-	/**
-	 * Sets the data quality time line.
-	 *
-	 * @param dataQualityTimeLineConfig the dataQualityTimeLine to set
-	 */
-	public void setDataQualityTimeLineConfig(DataQualityTimeLineConfig dataQualityTimeLineConfig) {
-		this.dataQualityTimeLineConfig = dataQualityTimeLineConfig;
+				+ ", dataProfilingBean=" + dataProfilingBean + ",dataQualityTimeLine="+dataQualityTimeLineConfig+"]";
 	}
 
 }

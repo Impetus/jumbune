@@ -20,6 +20,8 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Enable;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
+import org.jumbune.common.utils.Constants;
+import org.jumbune.common.utils.FileUtil;
 import org.jumbune.profiling.beans.ClusterInfo;
 import org.jumbune.profiling.beans.NodeConfig;
 import org.jumbune.profiling.beans.NodeStats;
@@ -111,8 +113,10 @@ public class ProfilerServlet extends HttpServlet {
 		String viewName = request.getParameter("VIEW_NAME");
 		viewName = setDefaultView(viewName);
 		Gson gson = new Gson();
-
-		if(Enable.TRUE.equals(jobConfig.getEnableYarn())){
+		String hadoopType = FileUtil.getClusterInfoDetail(Constants.HADOOP_TYPE);
+			    
+		
+		if(hadoopType.equalsIgnoreCase(Constants.YARN)){
 		  isYarnEnable = true;
 		}
 		

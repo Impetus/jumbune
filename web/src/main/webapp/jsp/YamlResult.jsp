@@ -6,7 +6,7 @@
 <head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-<title>Hadoop YAML Result</title>
+<title>Jumbune Job Result</title>
 </head>
 <body>
 
@@ -205,20 +205,6 @@
 							</div>
 						</div>
 
-						<%
-							}
-							if (tabs.contains("Pure Jobs")) {
-						%>
-						<div id="pureJobsTabContent">
-							<div id="pureJobsJSPContent" style="display: none;">
-								<jsp:include page="PureNInstrument.jsp" />
-							</div>
-							<div id="pureJobsTabLoader" class="loaderMainBox">
-								<div class="txtCenter">
-									<img src="./skins/images/loading.gif" />
-								</div>
-							</div>
-						</div>
 						<%
 							}
 							if (tabs.contains("Data Profiling")) {
