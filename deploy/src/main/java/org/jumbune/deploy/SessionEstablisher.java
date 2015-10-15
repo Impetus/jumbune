@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -383,13 +384,14 @@ public final class SessionEstablisher {
 		public void showMessage(String message) {
 		}
 	}
-	
-	public static String executeCommandUsingShell(Session session, String simpleCommand,String lineBreaker) throws JSchException, IOException {
+
+	public static String getHadoopHome(Session session, String simpleCommand, String lineBreaker)
+			throws JSchException, IOException {
 		String response = null;
 		ChannelShell channelShell = null;
 		BufferedReader brIn = null;
 		DataOutputStream dataOut = null;
-
+       
 		try {
 			channelShell = (ChannelShell) session.openChannel("shell");
 			InputStream is = channelShell.getInputStream();
@@ -403,15 +405,17 @@ public final class SessionEstablisher {
 			StringBuilder stringBuilder = null;
 			while ((line = brIn.readLine()) != null) {
 				if (line.contains(lineBreaker)) {
-					stringBuilder = new StringBuilder();
-					stringBuilder.append(line);
-					response = stringBuilder.toString();
+					if (lineBreaker.contains("echo $HADOOP_HOME") && line.contains(session.getUserName())) {
+						stringBuilder = new StringBuilder(brIn.readLine());
+						break;
+					}
+				}
+				if ((line.contains(session.getUserName()))
+						&& (line.trim().endsWith("$") || line.trim().endsWith("#"))) {
 					break;
 				}
-				if((line.contains(session.getUserName())) && (line.trim().endsWith("$") || line.trim().endsWith("#"))){
-					break;
 			}
-			}
+			response = stringBuilder.toString();
 		} finally {
 			if (brIn != null) {
 				brIn.close();
@@ -425,5 +429,5 @@ public final class SessionEstablisher {
 		}
 		return response;
 	}
-
+	
 }
