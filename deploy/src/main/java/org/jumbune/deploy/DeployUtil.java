@@ -544,7 +544,7 @@ public final class DeployUtil {
 
 	private static String getHadoopLocation(Session session,String hadoopDistributionType) throws JSchException, IOException{
 		DEBUG_LOGGER.debug("Trying to locate Hadoop with echo $HADOOP_HOME");
-		String hadoopHome = SessionEstablisher.executeCommandUsingShell(session, SessionEstablisher.ECHO_HADOOP_HOME,"hadoop");
+		String hadoopHome = SessionEstablisher.getHadoopHome(session, SessionEstablisher.ECHO_HADOOP_HOME, "echo $HADOOP_HOME");
 		DEBUG_LOGGER.debug("Hadoop location with echo $HADOOP_HOME [" + hadoopHome + "]");
 		if (hadoopHome == null || hadoopHome.trim().isEmpty() || !hadoopHome.contains(File.separator)) {
 			String possibleHome;
@@ -561,7 +561,7 @@ public final class DeployUtil {
 			}
 			if((hadoopHome == null || hadoopHome.trim().isEmpty()) && hadoopDistributionType.equalsIgnoreCase("m")){
 				//Support in case of mapr is run through VM.
-				String llResponse = SessionEstablisher.executeCommandUsingShell(session,SessionEstablisher.LL_COMMAND, "->");
+				String llResponse = SessionEstablisher.getHadoopHome(session,SessionEstablisher.LL_COMMAND, "->");
 				DEBUG_LOGGER.debug("<ll> command Response"+ llResponse);
 				hadoopHome = getHadoopHome(llResponse);
 			}
