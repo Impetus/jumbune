@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,12 +17,10 @@ import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.AttemptDetails;
-import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.JobDetails;
 import org.jumbune.common.beans.JobOutput;
 import org.jumbune.common.beans.PhaseDetails;
 import org.jumbune.common.beans.PhaseOutput;
-import org.jumbune.common.beans.SupportedHadoopDistributions;
 import org.jumbune.common.beans.TaskDetails;
 import org.jumbune.common.beans.TaskOutputDetails;
 import org.jumbune.common.job.Config;
@@ -32,7 +29,6 @@ import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.remoting.common.RemotingMethodConstants;
-import org.jumbune.utils.exception.JumbuneException;
 
 import com.google.gson.Gson;
 
@@ -130,148 +126,183 @@ public class HadoopLogParser {
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws ClassNotFoundException 
 	 */
-	public JobOutput getJobDetails(Config config, String jobID) throws IOException{
+	public JobOutput getJobDetails(Config config, String jobID)
+			throws IOException {
 		JobConfig jobConfig = (JobConfig) config;
+		String hadoopDistribution = FileUtil
+				.getClusterInfoDetail(Constants.HADOOP_DISTRIBUTION);
+		String hadoopType = FileUtil
+				.getClusterInfoDetail(Constants.HADOOP_TYPE);
+
+		if (hadoopType.equalsIgnoreCase(Constants.NON_YARN)) {
+			// check if the hadoop distribution is non-yarn and MapR as well.
+			if (hadoopDistribution.equalsIgnoreCase(Constants.MAPR)) {
+				return getJobDetailsFromNonYarnMapRSetup(jobConfig, jobID, hadoopDistribution, hadoopType);
+			} else {
+				return getJobDetailsFromNonYarnOthersSetup(jobConfig, jobID, hadoopDistribution, hadoopType);
+			}
+		} else {
+			return getJobDetailsFromYarnSetup(jobConfig, jobID, hadoopDistribution, hadoopType);
+		}
+	}
+
+	
+	private JobOutput getJobDetailsFromNonYarnMapRSetup(JobConfig jobConfig, String jobID,String hadoopDistribution,String hadoopType) 
+			throws IOException{
+		
 		String appHome = JobConfig.getJumbuneHome() + File.separator;
 		String agentHome = RemotingUtil.getAgentHome(jobConfig);
 		Remoter remoter = RemotingUtil.getRemoter(jobConfig, appHome);
-		String logsHistory = null;
-		String hadoopDistribution = FileUtil.getClusterInfoDetail(Constants.HADOOP_DISTRIBUTION);
-		String hadoopType = FileUtil.getClusterInfoDetail(Constants.HADOOP_TYPE);
-		logsHistory = changeLogHistoryPathAccToHadoopVersion(HADOOP_HOME,
+		String logsHistory = changeLogHistoryPathAccToHadoopVersion(HADOOP_HOME,
 				hadoopDistribution,hadoopType);
 		
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		
+		String relLocalPath = Constants.JOB_JARS_LOC + jobConfig.getFormattedJumbuneJobName();
 		
-		String logfilePath = null ;
-		String relLocalPath = null;
-		if(hadoopType.equalsIgnoreCase(Constants.NON_YARN)){
+		//getting history file name corresponding to jobID 
+		String fileName = getHistoryFileNameForMapR(remoter, logsHistory, jobID);
 		
-			//check if the hadoop distribution is non-yarn and MapR as well.
-			if(hadoopDistribution.equalsIgnoreCase(Constants.MAPR))
-			{  
-				relLocalPath  = Constants.JOB_JARS_LOC + jobConfig.getFormattedJumbuneJobName();
-				String fileName=null;
-				//getting history file name corresponding to jobID 
-				 fileName=getHistoryFileNameForMapR(remoter, logsHistory, jobID);
-				
-				//Now starting rumen processing
-				Properties props = loadHadoopJarConfigurationProperties();
-				String rumenDirPath = agentHome+Constants.JOB_JARS_LOC + jobConfig.getFormattedJumbuneJobName()+ RUMEN;				
-			
-				// make rumen related directory and files
-				final String rumenTempDirOnMapRFS = "/jumbune/rumen-tmp/";
-				final String jsonFilePath = rumenTempDirOnMapRFS + JSON_FILE;
-				final String topologyFilePath = rumenTempDirOnMapRFS + TOPOLOGY_FILE;				
-				
-				//removing any previous rumen Directory and its contents
-				builder.addCommand(RM_CMD+ rumenDirPath, false, null, CommandType.FS);
-				remoter.fireAndForgetCommand(builder.getCommandWritable());			
-				builder.getCommandBatch().clear();
-                mkDir(builder, remoter, rumenDirPath); 
-				
-				String historyFilePathOnMapRFS = logsHistory + File.separator
-						+ fileName;
-
-				//prepare rumen processing command and start processing
-				StringBuilder sb = prepareRumenProcessingCommand(props,
-						appHome, agentHome, jsonFilePath, topologyFilePath,
-						historyFilePathOnMapRFS);
-
-				startRumenProcessing(remoter, relLocalPath, rumenDirPath, sb);
-				getAndRemoveRumenTempDir(remoter, jobConfig,
-						rumenTempDirOnMapRFS, rumenDirPath);
-     			String relativeRemotePath = Constants.JOB_JARS_LOC
-						+ jobConfig.getFormattedJumbuneJobName()
-						+ RUMEN;
-
-			    //receiving job-trace.json and topology files
-				remoter.receiveLogFiles(relLocalPath, relativeRemotePath);
-				LOGGER.debug("Received log files from:" + relativeRemotePath);
-
-				Gson gson = new Gson();
-				JobDetails jobDetails = extractJobDetails(appHome,
-						relLocalPath, gson);
-				return convertToFinalOutput(jobDetails);			
-				
-			}else{
-				
-				logfilePath = getLogFilePath(jobID, remoter, logsHistory,
-						builder);
-			relLocalPath  = Constants.JOB_JARS_LOC + jobConfig.getFormattedJumbuneJobName();
-			String relRemotePath = relLocalPath + RUMEN;
-			StringBuilder stringAppender = new StringBuilder(agentHome);
-			stringAppender.append(File.separator).append(relRemotePath).append(File.separator);
-			// make rumen related directory and files
-			String pathToRumenDir = stringAppender.toString();
-			String jsonFilepath = pathToRumenDir + JSON_FILE;
-			String topologyFilePath = pathToRumenDir + TOPOLOGY_FILE;
-			
-			builder.getCommandBatch().clear();
-			mkDir(builder, remoter, pathToRumenDir);
-			// preparing command for rumen processing
-			
-			String remoteHadoopLib = HADOOP_HOME + LIB;
-			Properties props = loadHadoopJarConfigurationProperties();
-			
-			String coreJar;
-			if(hadoopDistribution.equalsIgnoreCase(Constants.APACHE)) {
-				coreJar = HADOOP_HOME + props.getProperty("CORE_JAR");	
-			}else {
-				coreJar = HADOOP_HOME + WILDCARD;
-			}
-			
-			String commonsLoggingJar = agentHome + LIB + props.getProperty("COMMONS_LOGGING_JAR");
-			String commonsCliJar = remoteHadoopLib + props.getProperty("COMMONS_CLI_JAR");
-			String commonsConfigurationJar = agentHome + LIB + props.getProperty("COMMONS_CONFIGURATION_JAR");
-			String commonsLangJar = agentHome + LIB + props.getProperty("COMMONS_LANG_JAR");
-			String jacksonMapperAslJar = agentHome + LIB + props.getProperty("JACKSON_MAPPER_ASL_JAR");
-			String jacksonMapperCoreJar = agentHome + LIB + props.getProperty("JACKSON_MAPPER_CORE_JAR");
-			String rumenJar = agentHome + LIB + props.getProperty("RUMEN_JAR")+"-"+Versioning.BUILD_VERSION+Versioning.DISTRIBUTION_NAME+".jar";
-			
-			StringBuilder sb = new StringBuilder(JAVA_CP_CMD);
-			
-			checkHadoopVersionsForRumen(logfilePath, jsonFilepath,
-					topologyFilePath, coreJar, commonsLoggingJar,
-					commonsCliJar, commonsConfigurationJar, commonsLangJar,
-					jacksonMapperAslJar, jacksonMapperCoreJar, rumenJar, sb);
-			LOGGER.debug("Rumen processing command [" + sb.toString()+"]");
-			startRumenProcessing(remoter, relLocalPath, relRemotePath, sb);
-			remoter = RemotingUtil.getRemoter(jobConfig, appHome);
-			remoter.receiveLogFiles(relLocalPath, relRemotePath);
-			LOGGER.debug("Received log files from:"+ relRemotePath);
-			// process json
-			Gson gson = new Gson();
-			JobDetails jobDetails = extractJobDetails(appHome, relLocalPath, gson);
-			return convertToFinalOutput(jobDetails);
+		//Now starting rumen processing
+		Properties props = loadHadoopJarConfigurationProperties();
+		String rumenDirPath = agentHome+Constants.JOB_JARS_LOC + jobConfig.getFormattedJumbuneJobName()+ RUMEN;				
 	
-				
-			}
+		// make rumen related directory and files
+		final String rumenTempDirOnMapRFS = "/jumbune/rumen-tmp/";
+		final String jsonFilePath = rumenTempDirOnMapRFS + JSON_FILE;
+		final String topologyFilePath = rumenTempDirOnMapRFS + TOPOLOGY_FILE;				
+		
+		//removing any previous rumen Directory and its contents
+		builder.addCommand(RM_CMD+ rumenDirPath, false, null, CommandType.FS);
+		remoter.fireAndForgetCommand(builder.getCommandWritable());			
+		builder.getCommandBatch().clear();
+        mkDir(builder, remoter, rumenDirPath); 
+		
+		String historyFilePathOnMapRFS = logsHistory + File.separator
+				+ fileName;
 
-		}else{
-	 		
-			String relativeRemotePath = Constants.JOB_JARS_LOC + jobConfig.getJumbuneJobName() + File.separator + jobID;
-			String remotePath = agentHome + relativeRemotePath;
-			mkDir(builder, remoter, remotePath);
-			checkAndgetCurrentLogFilePathForYarn(remoter,logsHistory,remotePath,jobID,config);
-			relLocalPath  = Constants.JOB_JARS_LOC + jobConfig.getFormattedJumbuneJobName();
-			remoter.receiveLogFiles(relLocalPath, relativeRemotePath);
-			String absolutePath = appHome + relLocalPath + jobID + File.separator;
-			String fileName = checkAndGetHistFile(absolutePath);
-			String localPath = absolutePath + fileName;
-			java.lang.reflect.Method method = null;
-			Class<?> yarnJobStatsUtility = null;
-			try {
-				yarnJobStatsUtility = Class.forName(YARN_JOB_STATS_UTILITY_CLASS);
-				method = yarnJobStatsUtility.getDeclaredMethod(YARN_JOB_STATS_UTILITY_CLASS_PARSE_METHOD, String.class);
-				return 	(JobOutput) method.invoke(yarnJobStatsUtility.newInstance(), localPath);
-			} catch (Exception e) {
-				LOGGER.error("Error while instanting class", e);
-			}
-			}
-			return null;
+		//prepare rumen processing command and start processing
+		StringBuilder sb = prepareRumenProcessingCommand(props,appHome, agentHome, jsonFilePath, topologyFilePath,
+				historyFilePathOnMapRFS);
+
+		startRumenProcessing(remoter, relLocalPath, rumenDirPath, sb);
+		getAndRemoveRumenTempDir(remoter, jobConfig,
+				rumenTempDirOnMapRFS, rumenDirPath);
+			String relativeRemotePath = Constants.JOB_JARS_LOC
+				+ jobConfig.getFormattedJumbuneJobName()
+				+ RUMEN;
+
+	    //receiving job-trace.json and topology files
+		remoter.receiveLogFiles(relLocalPath, relativeRemotePath);
+		LOGGER.debug("Received log files from:" + relativeRemotePath);
+
+		Gson gson = new Gson();
+		JobDetails jobDetails = extractJobDetails(appHome,relLocalPath, gson);
+		return convertToFinalOutput(jobDetails);			
+		
 	}
+	
+
+	private JobOutput getJobDetailsFromNonYarnOthersSetup(JobConfig jobConfig, String jobID,String hadoopDistribution,String hadoopType)
+			throws IOException {
+		
+		String appHome = JobConfig.getJumbuneHome() + File.separator;
+		String agentHome = RemotingUtil.getAgentHome(jobConfig);
+		Remoter remoter = RemotingUtil.getRemoter(jobConfig, appHome);
+		String logsHistory = changeLogHistoryPathAccToHadoopVersion(HADOOP_HOME,
+				hadoopDistribution, hadoopType);
+		CommandWritableBuilder builder = new CommandWritableBuilder();
+		String logfilePath  = getLogFilePath(jobID, remoter, logsHistory, builder);
+		String relLocalPath  = Constants.JOB_JARS_LOC
+				+ jobConfig.getFormattedJumbuneJobName();
+		String relRemotePath = relLocalPath + RUMEN;
+		StringBuilder stringAppender = new StringBuilder(agentHome);
+		stringAppender.append(File.separator).append(relRemotePath)
+		.append(File.separator);
+		
+		// make rumen related directory and files
+		String pathToRumenDir = stringAppender.toString();
+		String jsonFilepath = pathToRumenDir + JSON_FILE;
+		String topologyFilePath = pathToRumenDir + TOPOLOGY_FILE;
+		builder.getCommandBatch().clear();
+		mkDir(builder, remoter, pathToRumenDir);
+		
+		// preparing command for rumen processing
+		String remoteHadoopLib = HADOOP_HOME + LIB;
+		Properties props = loadHadoopJarConfigurationProperties();
+		
+		String coreJar;
+		if (hadoopDistribution.equalsIgnoreCase(Constants.APACHE)) {
+			coreJar = HADOOP_HOME + props.getProperty("CORE_JAR");
+		} else {
+			coreJar = HADOOP_HOME + WILDCARD;
+		}
+
+		String commonsLoggingJar = agentHome + LIB
+				+ props.getProperty("COMMONS_LOGGING_JAR");
+		String commonsCliJar = remoteHadoopLib
+				+ props.getProperty("COMMONS_CLI_JAR");
+		String commonsConfigurationJar = agentHome + LIB
+				+ props.getProperty("COMMONS_CONFIGURATION_JAR");
+		String commonsLangJar = agentHome + LIB
+				+ props.getProperty("COMMONS_LANG_JAR");
+		String jacksonMapperAslJar = agentHome + LIB
+				+ props.getProperty("JACKSON_MAPPER_ASL_JAR");
+		String jacksonMapperCoreJar = agentHome + LIB
+				+ props.getProperty("JACKSON_MAPPER_CORE_JAR");
+		String rumenJar = agentHome + LIB + props.getProperty("RUMEN_JAR")
+				+ "-" + Versioning.BUILD_VERSION + Versioning.DISTRIBUTION_NAME
+				+ ".jar";
+
+		StringBuilder sb = new StringBuilder(JAVA_CP_CMD);
+		checkHadoopVersionsForRumen(logfilePath, jsonFilepath,
+				topologyFilePath, coreJar, commonsLoggingJar, commonsCliJar,
+				commonsConfigurationJar, commonsLangJar, jacksonMapperAslJar,
+				jacksonMapperCoreJar, rumenJar, sb);
+		LOGGER.debug("Rumen processing command [" + sb.toString() + "]");
+		startRumenProcessing(remoter, relLocalPath, relRemotePath, sb);
+		remoter = RemotingUtil.getRemoter(jobConfig, appHome);
+		remoter.receiveLogFiles(relLocalPath, relRemotePath);
+		LOGGER.debug("Received log files from:" + relRemotePath);
+		// process json
+		Gson gson = new Gson();
+		JobDetails jobDetails = extractJobDetails(appHome, relLocalPath, gson);
+		
+		return convertToFinalOutput(jobDetails);
+	}
+	
+	private JobOutput getJobDetailsFromYarnSetup(JobConfig jobConfig, String jobID,String hadoopDistribution,String hadoopType){
+		
+		String appHome = JobConfig.getJumbuneHome() + File.separator;
+		String agentHome = RemotingUtil.getAgentHome(jobConfig);
+		Remoter remoter = RemotingUtil.getRemoter(jobConfig, appHome);
+		String logsHistory = changeLogHistoryPathAccToHadoopVersion(HADOOP_HOME,
+				hadoopDistribution,hadoopType);
+		
+		CommandWritableBuilder builder = new CommandWritableBuilder();
+		
+		String relativeRemotePath = Constants.JOB_JARS_LOC + jobConfig.getJumbuneJobName() + File.separator + jobID;
+		String remotePath = agentHome + relativeRemotePath;
+		mkDir(builder, remoter, remotePath);
+		checkAndgetCurrentLogFilePathForYarn(remoter,logsHistory,remotePath,jobID,jobConfig);
+		String relLocalPath  = Constants.JOB_JARS_LOC + jobConfig.getFormattedJumbuneJobName();
+		remoter.receiveLogFiles(relLocalPath, relativeRemotePath);
+		String absolutePath = appHome + relLocalPath + jobID + File.separator;
+		String fileName = checkAndGetHistFile(absolutePath);
+		String localPath = absolutePath + fileName;
+		java.lang.reflect.Method method = null;
+		JobOutput jobOutput = null;
+		
+		try {
+			Class<?> yarnJobStatsUtility  = Class.forName(YARN_JOB_STATS_UTILITY_CLASS);
+			method = yarnJobStatsUtility.getDeclaredMethod(YARN_JOB_STATS_UTILITY_CLASS_PARSE_METHOD, String.class);
+			jobOutput = (JobOutput) method.invoke(yarnJobStatsUtility.newInstance(), localPath);
+		} catch (Exception e) {
+			LOGGER.error("Error while instanting class", e);
+		}
+		return jobOutput;
+	}
+	
 	
 	/**
 	 * This method gets the Job History file name corresponding to 

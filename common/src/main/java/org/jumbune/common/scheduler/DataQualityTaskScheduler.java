@@ -313,7 +313,11 @@ public class DataQualityTaskScheduler extends Scheduler {
 			LOGGER.error("Could not read the file ", e);
 		} finally {
 			if (fileReader != null) {
-				fileReader.close();
+				try{
+					fileReader.close();
+				}catch(IOException ex){
+					LOGGER.error("exception occured while closing properties file",ex);
+				}
 			}
 		}
 		return prop;
@@ -375,7 +379,11 @@ public class DataQualityTaskScheduler extends Scheduler {
 							+ "]");
 		} finally {
 			if (fw != null) {
-				fw.close();
+				try{
+					fw.close();
+				}catch(IOException ex){
+					LOGGER.error("exception occured while closing properties file",ex);
+				}
 			}
 		}
 	}

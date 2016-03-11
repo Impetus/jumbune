@@ -1,6 +1,13 @@
 package org.jumbune.common.scheduler;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -144,15 +151,14 @@ public abstract class Scheduler {
 			FileWriter fstream = new FileWriter(jumbuneCronFile);
 			outobj = new BufferedWriter(fstream);
 			outobj.write(cronInfo);
-			outobj.close();
 		} catch (IOException e) {
 			LOGGER.error("Error while write info to file ", e);
+		}finally{
 			try {
 				if (outobj != null)
 					outobj.close();
 			} catch (IOException ioe) {
-				LOGGER.error("Unable to close the writable object connection ",
-						e);
+				LOGGER.error("Unable to close the writable object connection ",ioe);
 			}
 		}
 	}
@@ -236,8 +242,7 @@ public abstract class Scheduler {
 			String scheduleJobScriptDestLoc) throws IOException,
 			JumbuneException {
 		// Copy the scheduling execute script in this folder
-		InputStream schedulingScriptIS = new FileInputStream(new File(
-				(String) (scriptPath)));
+		InputStream schedulingScriptIS = new FileInputStream(new File(scriptPath));
 
 		InputStreamReader isReader = new InputStreamReader(schedulingScriptIS);
 		BufferedReader br = new BufferedReader(isReader);
@@ -254,14 +259,16 @@ public abstract class Scheduler {
 					schedulerScripBuilder.append(textinLine);
 					schedulerScripBuilder.append(NEW_LINE);
 				} catch (IOException e1) {
-					LOGGER.error(
-							"Unable to read executionScript file from source ",
-							e1);
+					LOGGER.error("Unable to read executionScript file from source ",e1);
 				}
 			}
 		} finally {
 			if (br != null) {
-				br.close();
+				try{
+					br.close();
+				}catch(IOException ex){
+					LOGGER.error("Unable to read executionScript file from source ",ex);
+				}
 			}
 		}
 		String scriptWord = schedulerScripBuilder.toString().replaceAll(
