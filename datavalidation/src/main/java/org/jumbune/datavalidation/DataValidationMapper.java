@@ -8,13 +8,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.DataValidationBean;
 import org.jumbune.common.beans.FieldValidationBean;
+import org.jumbune.common.scheduler.DataQualityTaskScheduler;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.utils.JobUtil;
+
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -51,6 +56,10 @@ public class DataValidationMapper extends Mapper<Object, Text, Text, DataDiscrep
 	
 	/** The slave file loc. */
 	String SLAVE_FILE_LOC = "slaveFileLoc";
+	
+	/* Logger */
+	private static final Logger LOGGER = LogManager
+			.getLogger(DataValidationMapper.class);
 
 	/* (non-Javadoc)
 	 * @see org.apache.hadoop.mapreduce.Mapper#setup(org.apache.hadoop.mapreduce.Mapper.Context)
@@ -162,9 +171,17 @@ public class DataValidationMapper extends Mapper<Object, Text, Text, DataDiscrep
 			fileWriter = new FileWriter(new File(dirPath, context.getTaskAttemptID().getTaskID().toString()));
 			fileWriter.write(Long.toString(noOfToupleProcessd)+"\n"+Long.toString(cleanTupleCounter));
 			fileWriter.flush();
-		}finally{
+		}catch (IOException e) {
+			LOGGER.error("Error while write info to file ", e);
+		}
+				finally{
 			if(fileWriter!= null){
+				try{
 				fileWriter.close();
+				}catch(IOException ex){
+					LOGGER.error("exception occured while closing properties file",ex);
+			}
+				
 			}
 		}
 				
@@ -280,6 +297,7 @@ public class DataValidationMapper extends Mapper<Object, Text, Text, DataDiscrep
 				break;
 			}
 		} catch (NumberFormatException nfe) {
+			LOGGER.error("exception occured while parsing the number",nfe);
 			flag = false;
 		}
 		return flag;

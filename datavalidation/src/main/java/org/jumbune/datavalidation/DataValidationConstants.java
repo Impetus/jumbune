@@ -112,8 +112,8 @@ public interface DataValidationConstants {
 	Map<Integer, String> VALIDATION_CHECK_MAP = new HashMap<Integer, String>() {
 
 		{
-			put(1, "Null Check");
-			put(2, "Data Type");
+			put(ONE, "Null Check");
+			put(TWO, "Data Type");
 			put(THREE, "Regex");
 
 		}
@@ -205,6 +205,8 @@ public interface DataValidationConstants {
 	int ONE_ZERO_TWO_FOUR = 1024;
 
 	int ONE = 1;
+	
+	int TWO = 2;
 
 	int TEN = 10;
 	
