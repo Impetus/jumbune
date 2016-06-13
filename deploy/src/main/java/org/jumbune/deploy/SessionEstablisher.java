@@ -33,6 +33,7 @@ public final class SessionEstablisher {
 	static final String ECHO_HADOOP_HOME = "echo $HADOOP_HOME \n \n";
 	private static final String SCP_COMMAND = "scp -f ";
 	private static final Logger LOGGER = LogManager.getLogger("EventLogger");
+	public static final Logger CONSOLE_LOGGER = LogManager.getLogger("EventLogger");
 	public static final String WHERE_IS_HADOOP = "whereis hadoop";
 	private static byte[] bufs;
 	public static final String LS_PREFIX_PART = "ls ";
@@ -66,9 +67,8 @@ public final class SessionEstablisher {
 		JSch jsch = new JSch();
 		Session session = null;
 		try {
-
 			session = jsch.getSession(username, namenodeIP, Constants.TWENTY_TWO);
-		} catch (JSchException e) {
+		} catch (JSchException e) {			
 			LOGGER.error(e);
 		}
 		if(nnpwd!=null){
@@ -76,7 +76,7 @@ public final class SessionEstablisher {
 		}else {
 			try {
 				jsch.addIdentity(privateKeyPath);
-			} catch (JSchException e) {
+			} catch (JSchException e) {				
 				LOGGER.error(e);
 			}
 		}
@@ -86,12 +86,13 @@ public final class SessionEstablisher {
 		config.put("StrictHostKeyChecking", "no");
 		if(nnpwd!=null){
 			config.put("PreferredAuthentications", "password");
+			LOGGER.info("PRE AUTH");
 		}
 		session.setConfig(config);
 		try {
 			session.connect();
-		} catch (JSchException e) {
-			LOGGER.error("Failed to authenticate, check username and password");
+		} catch (JSchException e) {			
+			CONSOLE_LOGGER.info("Failed to authenticate, check username and password");
 		}
 		return session;
 	}
