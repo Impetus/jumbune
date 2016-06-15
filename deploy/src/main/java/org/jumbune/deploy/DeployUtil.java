@@ -632,10 +632,9 @@ public final class DeployUtil {
 		Session tempSession = null;
 		boolean sysexit;
 		boolean verified = false;
-		int passwordRetryAttempts = 0;
-		int passwdRetryAttempLeft = 0;
+		int passwordRetryAttempts = 0;		
 		int maxPasswdRetryAttempts = 3;
-		int retryAttempts = 0;
+		
 		CONSOLE_LOGGER.info("\r\nJumbune needs to calibrate itself according to the installed Hadoop distribution, please provide details about hadoop namenode machine");
 		do {
 			sysexit = false;
@@ -696,11 +695,8 @@ public final class DeployUtil {
 											new String(password), null);
 						}
 						if (!tempSession.isConnected()) {
-							passwordRetryAttempts = passwordRetryAttempts + 1;
-							passwdRetryAttempLeft = maxPasswdRetryAttempts
-									- passwordRetryAttempts;
-							if (passwdRetryAttempLeft == 0) {
-								verified = true;
+							passwordRetryAttempts ++;							
+							if (passwordRetryAttempts == maxPasswdRetryAttempts) {								
 								CONSOLE_LOGGER
 										.info("Max attempts of password verification has been reached hence exiting");
 								exitVM(1);
@@ -709,7 +705,7 @@ public final class DeployUtil {
 										.info("Password verification failed for user ["
 												+ user
 												+ "] , total number of attempts left ["
-												+ passwdRetryAttempLeft + "]");
+												+ (maxPasswdRetryAttempts - passwordRetryAttempts) + "]");
 							}
 						}
 
@@ -717,7 +713,6 @@ public final class DeployUtil {
 							DEBUG_LOGGER.debug("Session Established");
 							verified = true;
 						}
-
 					} while (!verified);
 				}
 			} else if (privateKeyPath != null) {
@@ -726,8 +721,7 @@ public final class DeployUtil {
 			} else {
 				password = StringUtil.getPlain(argMap.get(PASSWORD)).toCharArray();
 				sysexit = true;
-			}
-			
+			}			
 			
 			if (privateKeyPath == null && password==null) {
 				String defaultPrivateKeyPath = "/home/" + user + "/.ssh/id_rsa";
@@ -745,13 +739,12 @@ public final class DeployUtil {
 				DEBUG_LOGGER.debug("Authenticating username[" + username + "], namenodeIP[" + namenodeIP + "], and privatekeyPath[" + privateKeyPath + "]");
 				tempSession = SessionEstablisher.establishConnection(username,
 						namenodeIP, null, privateKeyPath);
+				if (tempSession!=null && tempSession.isConnected()) {
+					DEBUG_LOGGER.debug("Session Established");
+				}	
 			} else {
 				sysexit = true;
-			}
-			
-			if (tempSession!=null && tempSession.isConnected()) {
-				DEBUG_LOGGER.debug("Session Established");
-			}			
+			}				
 			
 			if (sysexit == true && (tempSession == null || !tempSession.isConnected())) {
 				CONSOLE_LOGGER.error("Failed to authenticate, check username and password");
