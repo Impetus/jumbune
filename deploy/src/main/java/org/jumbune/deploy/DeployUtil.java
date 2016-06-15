@@ -629,9 +629,12 @@ public final class DeployUtil {
 	private static Session validateUserAuthentication(Console console, Map<String, String> argMap) throws IOException {
 		char[] password = null;
 		String privateKeyPath;
-		Session tempSession;
+		Session tempSession = null;
 		boolean sysexit;
-		int retryAttempts=0;
+		boolean verified = false;
+		int passwordRetryAttempts = 0;		
+		int maxPasswdRetryAttempts = 3;
+		
 		CONSOLE_LOGGER.info("\r\nJumbune needs to calibrate itself according to the installed Hadoop distribution, please provide details about hadoop namenode machine");
 		do {
 			sysexit = false;
@@ -670,12 +673,47 @@ public final class DeployUtil {
 					isPasswordlessSSH = SCANNER.nextLine().trim();
 				}
 				if("n".equalsIgnoreCase(isPasswordlessSSH)){
-					CONSOLE_LOGGER.info("Password of the namenode machine:");
-					password = console.readPassword();
-					while ("".equals(new String(password))) {
-						CONSOLE_LOGGER.info("Please enter a valid password");
-						password = console.readPassword();
-					}				
+					do {
+						CONSOLE_LOGGER
+								.info("Password of the namenode machine:");
+						if (console != null) {
+							password = console.readPassword();
+						}
+						while ("".equals(new String(password))) {
+							CONSOLE_LOGGER
+									.info("Please enter a valid password");
+							if (console != null) {
+								password = console.readPassword();
+							}
+						}
+						if (password != null) {
+							DEBUG_LOGGER.debug("Authenticating username["
+									+ username + "], namenodeIP[" + namenodeIP
+									+ "], with password based authentication");
+							tempSession = SessionEstablisher
+									.establishConnection(username, namenodeIP,
+											new String(password), null);
+						}
+						if (!tempSession.isConnected()) {
+							passwordRetryAttempts ++;							
+							if (passwordRetryAttempts == maxPasswdRetryAttempts) {								
+								CONSOLE_LOGGER
+										.info("Max attempts of password verification has been reached hence exiting");
+								exitVM(1);
+							} else {
+								CONSOLE_LOGGER
+										.info("Password verification failed for user ["
+												+ user
+												+ "] , total number of attempts left ["
+												+ (maxPasswdRetryAttempts - passwordRetryAttempts) + "]");
+							}
+						}
+
+						if (tempSession != null && tempSession.isConnected()) {
+							DEBUG_LOGGER.debug("Session Established");
+							verified = true;
+						}
+					} while (!verified);
 				}
 			} else if (privateKeyPath != null) {
 					password = null;
@@ -683,8 +721,7 @@ public final class DeployUtil {
 			} else {
 				password = StringUtil.getPlain(argMap.get(PASSWORD)).toCharArray();
 				sysexit = true;
-			}
-			
+			}			
 			
 			if (privateKeyPath == null && password==null) {
 				String defaultPrivateKeyPath = "/home/" + user + "/.ssh/id_rsa";
@@ -699,25 +736,15 @@ public final class DeployUtil {
 					privateKeyPath = SCANNER.nextLine().trim();
 					privateKeyFile = new File(privateKeyPath);
 				}
-			} else {
-				sysexit = true;
-			}
-			if(password!=null){
-				DEBUG_LOGGER.debug("Authenticating username[" + username + "], namenodeIP[" + namenodeIP + "], with password based authentication");
-				tempSession = SessionEstablisher.establishConnection(username,
-						namenodeIP, new String(password), null);
-			}else{
 				DEBUG_LOGGER.debug("Authenticating username[" + username + "], namenodeIP[" + namenodeIP + "], and privatekeyPath[" + privateKeyPath + "]");
 				tempSession = SessionEstablisher.establishConnection(username,
 						namenodeIP, null, privateKeyPath);
-			}
-			if (tempSession!=null && tempSession.isConnected()) {
-				DEBUG_LOGGER.debug("Session Established");
-			}
-			if(++retryAttempts == MAX_RETRY_ATTEMPTS){
-				CONSOLE_LOGGER.error("Exiting Installation as maximum number of authentication attempts are exhaused!");
-				exitVM(1);
-			}
+				if (tempSession!=null && tempSession.isConnected()) {
+					DEBUG_LOGGER.debug("Session Established");
+				}	
+			} else {
+				sysexit = true;
+			}				
 			
 			if (sysexit == true && (tempSession == null || !tempSession.isConnected())) {
 				CONSOLE_LOGGER.error("Failed to authenticate, check username and password");
@@ -965,5 +992,3 @@ public final class DeployUtil {
 		}
 
 }	
-
-
