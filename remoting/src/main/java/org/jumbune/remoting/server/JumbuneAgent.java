@@ -431,7 +431,7 @@ public final class JumbuneAgent {
 				passwordRetryAttempts++;				
 				if (passwordRetryAttempts == maxPasswdRetryAttempts) {					
 					CONSOLE_LOGGER
-							.info("Max attempts of password verification has been  reached hence exiting");
+							.info("Max attempts of password verification has been reached hence exiting");
 					exitVM(1);
 				} else {
 					CONSOLE_LOGGER
