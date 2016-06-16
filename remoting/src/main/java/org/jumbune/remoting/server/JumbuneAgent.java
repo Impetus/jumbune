@@ -375,27 +375,42 @@ public final class JumbuneAgent {
 		hcpl.persistPropertiesToDisk();
 	}
 
-	private static String promptPassword(String user){
+	private static String promptPassword(String user) {
 		char[] passwd;
 		Console console = System.console();
 		boolean verified = false;
 		String encryptedPassword = null;
-		do{
-			CONSOLE_LOGGER.info("Please provide the password for "+user+ " user:");
+		int passwordRetryAttempts = 0;		
+		int maxPasswdRetryAttempts = 3;
+		do {
+			CONSOLE_LOGGER.info("Please provide the password for " + user
+					+ " user:");
 			passwd = console.readPassword();
 			try {
 				encryptedPassword = StringUtil.getEncrypted(new String(passwd));
 				verified = JschUtil.verifyPassword(user, encryptedPassword);
+
 			} catch (JSchException e) {
 				verified = false;
 			}
-			if(!verified){
-				CONSOLE_LOGGER.info("Password verification failed for user ["+user+"]");
+			if (!verified) {
+				passwordRetryAttempts++;				
+				if (passwordRetryAttempts == maxPasswdRetryAttempts) {					
+					CONSOLE_LOGGER
+							.info("Max attempts of password verification has been reached hence exiting");
+					exitVM(1);
+				} else {
+					CONSOLE_LOGGER
+							.info("Password verification failed for user ["
+									+ user
+									+ "] , total number of attempts left ["
+									+ (maxPasswdRetryAttempts - passwordRetryAttempts) + "]");
+				}
 			}
-		}while(!verified);
+		} while (!verified);
 		return encryptedPassword;
 	}
-	
+
 	/***
 	 * Validate Hadoop installed directory location 
 	 * @param hadoopHome
@@ -581,6 +596,15 @@ public final class JumbuneAgent {
 		}catch (IOException e) {
 			LOGGER.error(e);
 		}
+	}
+	
+	/**
+	 * Exit VM
+	 * 
+	 * @param status can be 0 or 1
+	 */
+	private static void exitVM(int status) {
+		System.exit(status);
 	}
 
 }
