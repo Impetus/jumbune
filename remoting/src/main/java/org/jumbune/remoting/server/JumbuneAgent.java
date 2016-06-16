@@ -312,7 +312,8 @@ public final class JumbuneAgent {
 		hcpl.setDistributionType(distributionType);
 		hcpl.setHadoopType(hadoopType);
 		
-		
+		String currentWorkingUser = System.getProperty("user.name");		
+
 		CONSOLE_LOGGER.info("Do you have separate users for MapReduce, Yarn and HDFS? (y)Yes/(n)No");
 		String hasSeparateUsers= SCANNER.nextLine().trim();
 		while(!("n".equalsIgnoreCase(hasSeparateUsers) || "y".equalsIgnoreCase(hasSeparateUsers))){
@@ -328,12 +329,12 @@ public final class JumbuneAgent {
 		//String isSingleUser;
 		if("n".equalsIgnoreCase(hasSeparateUsers)){
 			//isSingleUser = "y";
-			CONSOLE_LOGGER.info("Please provide the username [root]:");
+			CONSOLE_LOGGER.info("Please provide the username ["+currentWorkingUser+"]:");
 			hdfsUser = SCANNER.nextLine().trim();
 			if("".equals(hdfsUser)){
-				hdfsUser = "root";
-				yarnUser = "root";
-				mapredUser = "root";
+				hdfsUser = currentWorkingUser;
+				yarnUser = currentWorkingUser;
+				mapredUser = currentWorkingUser;
 			}else {
 				mapredUser = yarnUser = hdfsUser;	
 			}
