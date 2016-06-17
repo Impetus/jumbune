@@ -632,11 +632,12 @@ public final class DeployUtil {
 		Session tempSession = null;
 		boolean sysexit;
 		boolean verified = false;
+		String isPasswordlessSSH = null;
 		int passwordRetryAttempts = 0;		
 		int maxPasswdRetryAttempts = 3;
 		
 		CONSOLE_LOGGER.info("\r\nJumbune needs to calibrate itself according to the installed Hadoop distribution, please provide details about hadoop namenode machine");
-		do {
+		
 			sysexit = false;
 			String masterNode = InetAddress.getLocalHost().getHostAddress();
 			
@@ -647,8 +648,6 @@ public final class DeployUtil {
 				if ("".equals(namenodeIP)) {
 					namenodeIP = masterNode;
 				}
-			} else {
-				sysexit = true;
 			}
 			
 			username = argMap.get(USER_NAME);
@@ -659,41 +658,46 @@ public final class DeployUtil {
 				if ("".equals(username)) {
 					username = user;
 				}
-			} else {
-				sysexit = true;
 			}
-			String isPasswordlessSSH = null;
+			
 			privateKeyPath = argMap.get(PRIVATE_KEY_PATH);
 			
-			if (argMap.get(PASSWORD) == null && privateKeyPath == null) {
-				CONSOLE_LOGGER.info("Do we have passwordless SSH between ["+masterNode+"] - ["+namenodeIP+"] machines? (y)/(n)");
-				isPasswordlessSSH = SCANNER.nextLine().trim();
-				while(!"y".equalsIgnoreCase(isPasswordlessSSH)&&!"n".equalsIgnoreCase(isPasswordlessSSH)){
+			if (argMap.get(PRIVATE_KEY_PATH) == null) {
+				
+				if (argMap.get(PASSWORD) == null) {					
 					CONSOLE_LOGGER.info("Do we have passwordless SSH between ["+masterNode+"] - ["+namenodeIP+"] machines? (y)/(n)");
 					isPasswordlessSSH = SCANNER.nextLine().trim();
+					
+					while(!"y".equalsIgnoreCase(isPasswordlessSSH)&&!"n".equalsIgnoreCase(isPasswordlessSSH)){
+						CONSOLE_LOGGER.info("Do we have passwordless SSH between ["+masterNode+"] - ["+namenodeIP+"] machines? (y)/(n)");
+						isPasswordlessSSH = SCANNER.nextLine().trim();
+					}					
+				}else {
+					password = StringUtil.getPlain(argMap.get(PASSWORD)).toCharArray();
+					isPasswordlessSSH = "n";
 				}
+				
 				if("n".equalsIgnoreCase(isPasswordlessSSH)){
 					do {
-						CONSOLE_LOGGER
-								.info("Password of the namenode machine:");
-						if (console != null) {
+						if (password == null){
+							CONSOLE_LOGGER.info("Password of the namenode machine:");
+						
 							password = console.readPassword();
-						}
-						while ("".equals(new String(password))) {
+							
+							while ("".equals(new String(password))) {
 							CONSOLE_LOGGER
-									.info("Please enter a valid password");
-							if (console != null) {
-								password = console.readPassword();
-							}
+									.info("Please enter a valid password");							
+								password = console.readPassword();							
+							}						
 						}
-						if (password != null) {
-							DEBUG_LOGGER.debug("Authenticating username["
+						
+						DEBUG_LOGGER.debug("Authenticating username["
 									+ username + "], namenodeIP[" + namenodeIP
 									+ "], with password based authentication");
 							tempSession = SessionEstablisher
 									.establishConnection(username, namenodeIP,
-											new String(password), null);
-						}
+											new String(password), null);						
+						
 						if (!tempSession.isConnected()) {
 							passwordRetryAttempts ++;							
 							if (passwordRetryAttempts == maxPasswdRetryAttempts) {								
@@ -706,53 +710,45 @@ public final class DeployUtil {
 												+ user
 												+ "] , total number of attempts left ["
 												+ (maxPasswdRetryAttempts - passwordRetryAttempts) + "]");
+								password = null;
 							}
-						}
-
-						if (tempSession != null && tempSession.isConnected()) {
+						}else {
 							DEBUG_LOGGER.debug("Session Established");
 							verified = true;
-						}
+						}						
 					} while (!verified);
 				}
-			} else if (privateKeyPath != null) {
-					password = null;
-					sysexit = true;
-			} else {
-				password = StringUtil.getPlain(argMap.get(PASSWORD)).toCharArray();
-				sysexit = true;
-			}			
-			
-			if (privateKeyPath == null && password==null) {
-				String defaultPrivateKeyPath = "/home/" + user + "/.ssh/id_rsa";
-				CONSOLE_LOGGER.info("Please provide private key file path ["+ defaultPrivateKeyPath + "]");
-				privateKeyPath = SCANNER.nextLine().trim();
-				if ("".equals(privateKeyPath)) {
-					privateKeyPath = defaultPrivateKeyPath;
-				}
-				File privateKeyFile = new File(privateKeyPath);
-				while (!privateKeyFile.exists() || privateKeyFile.isDirectory()) {
-					CONSOLE_LOGGER.info("private key file should exist, please provide file path");
-					privateKeyPath = SCANNER.nextLine().trim();
-					privateKeyFile = new File(privateKeyPath);
-				}
-				DEBUG_LOGGER.debug("Authenticating username[" + username + "], namenodeIP[" + namenodeIP + "], and privatekeyPath[" + privateKeyPath + "]");
-				tempSession = SessionEstablisher.establishConnection(username,
-						namenodeIP, null, privateKeyPath);
-				if (tempSession!=null && tempSession.isConnected()) {
-					DEBUG_LOGGER.debug("Session Established");
-				}	
-			} else {
-				sysexit = true;
-			}				
-			
-			if (sysexit == true && (tempSession == null || !tempSession.isConnected())) {
-				CONSOLE_LOGGER.error("Failed to authenticate, check username and password");
-				exitVM(1);
+			} 
+
+			if ("y".equalsIgnoreCase(isPasswordlessSSH) || privateKeyPath != null){				
+					String defaultPrivateKeyPath = "/home/" + user + "/.ssh/id_rsa";
+					
+					if (privateKeyPath == null){
+						CONSOLE_LOGGER.info("Please provide private key file path ["+ defaultPrivateKeyPath + "]");
+						privateKeyPath = SCANNER.nextLine().trim();
+							if ("".equals(privateKeyPath)) {
+								privateKeyPath = defaultPrivateKeyPath;
+							}	
+					}
+					
+					File privateKeyFile = new File(privateKeyPath);
+					while (!privateKeyFile.exists() || privateKeyFile.isDirectory()) {
+						CONSOLE_LOGGER.info("private key file should exist, please provide file path");
+						privateKeyPath = SCANNER.nextLine().trim();
+						privateKeyFile = new File(privateKeyPath);
+					}
+					DEBUG_LOGGER.debug("Authenticating username[" + username + "], namenodeIP[" + namenodeIP + "], and privatekeyPath[" + privateKeyPath + "]");
+					tempSession = SessionEstablisher.establishConnection(username,
+							namenodeIP, null, privateKeyPath);
+					if (tempSession.isConnected()) {
+						DEBUG_LOGGER.debug("Session Established");
+					}	
+				
 			}
-		} while (tempSession == null || !tempSession.isConnected());
-		return tempSession;
-	}
+				return tempSession;
+		} 
+		
+	
 
 	private static void cleanup() throws IOException, InterruptedException {
 		executeCommand(CLEAN_UNUSED_FILES_AND_DIRS);
