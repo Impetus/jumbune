@@ -20,7 +20,6 @@ import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.beans.Master;
 import org.jumbune.common.beans.ProfilingParam;
 import org.jumbune.common.beans.Slave;
-import org.jumbune.common.beans.SupportedHadoopDistributions;
 import org.jumbune.common.beans.Validation;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
@@ -29,7 +28,9 @@ import org.jumbune.remoting.common.CommandType;
 import org.jumbune.utils.beans.LogLevel;
 import org.jumbune.utils.exception.JumbuneException;
 
-
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
 
 
 /**
@@ -85,7 +86,7 @@ public class ValidateInput {
 	 * @param config object of yamlConfig class
 	 * @return map containing failed and suggestion to given to user
 	 */
-	public Map<String, Map<String, Map<String, String>>> validateJson(Config config) {
+	public Map<String, Map<String, Map<String, String>>> validateJson(Config config) {		
 		Map<String, Map<String, Map<String,String>>> validateInput = new HashMap<String, Map<String, Map<String,String>>>();
 		
 		JobConfig jobConfig = (JobConfig)config;
@@ -120,8 +121,7 @@ public class ValidateInput {
 	 * 
 	 * @param jobConfig
 	 */
-	public void validateJarPath(JobConfig jobConfig) {
-	
+	public void validateJarPath(JobConfig jobConfig) {		
 		//validation to be done only when flow debugging and job profiling (only "Run from jumbune" option) are enabled. 
 		if(isEnable(jobConfig.getDebugAnalysis())||(isEnable(jobConfig.getEnableStaticJobProfiling())&&isEnable(jobConfig.getRunJobFromJumbune())))
     	{	    
@@ -148,7 +148,7 @@ public class ValidateInput {
 	}
 	
 	
-	private void validateProfilingField(Config config) {
+	private void validateProfilingField(Config config) {		
 		Map<String,String> failedCases = new HashMap<String,String>();
 		Map<String,String> suggestionList = new HashMap<String,String>();
 		JobConfig jobConfig = (JobConfig)config;
@@ -179,7 +179,7 @@ public class ValidateInput {
 	 *            the config
 	 * @return true if all case passes successfully
 	 */
-	protected boolean intialSettingsValidation(Config config) {
+	protected boolean intialSettingsValidation(Config config) {		
 		Map<String, String> listOfErrors = new HashMap<String, String>();
 		boolean result = false;
 		if (config != null) {
@@ -209,7 +209,7 @@ public class ValidateInput {
 	 * @param listOfErrors
 	 * @return
 	 */
-	private boolean checkProfilerState(Config config, Map<String, String> listOfErrors) {
+	private boolean checkProfilerState(Config config, Map<String, String> listOfErrors) {		
 		boolean result = true;
 		JobConfig jobConfig = (JobConfig)config;
 		if (isEnable(jobConfig.getEnableStaticJobProfiling())) {
@@ -243,7 +243,7 @@ public class ValidateInput {
 	 *
 	 * @param config the config
 	 */
-	private void validateDebugField(Config config) {
+	private void validateDebugField(Config config) {		
 		Map<String,String> failedDebug = new HashMap<String,String>();
 		Map<String,String> suggestionDebug = new HashMap<String,String>();
 		/**
@@ -292,7 +292,7 @@ public class ValidateInput {
  * @return true if one of the validations (User or Regex) are enabled.
  */
 	private boolean ifDebuggerValidationsEnabled(Config config)
-	{  
+	{  		
 		JobConfig jobConfig = (JobConfig)config;
 		Map <String,LogLevel> logLevelMap =jobConfig.getDebuggerConf().getLogLevel();
 		final String REGEXKEY="instrumentRegex";
@@ -315,7 +315,7 @@ public class ValidateInput {
 	 * @param regexKey value of regex field
 	 * @param failedValidation list of validation which is failed
 	 */
-	private void checkFieldsValue(List<Validation> validations, int classKey, int regexKey, Map<String,String> failedValidation,String fieldValue) {
+	private void checkFieldsValue(List<Validation> validations, int classKey, int regexKey, Map<String,String> failedValidation,String fieldValue) {		
 		int count=0;
 		for (Validation validation : validations) {
 			if (isNullOrEmpty(validation.getClassname())) {
@@ -338,7 +338,7 @@ public class ValidateInput {
 	 * @param config the config
 	 */
 
-	private void validateDataValidation(Config config) {
+	private void validateDataValidation(Config config) {		
 		Map<String,String> failedDataValidation = new HashMap<String,String>();
 		Map<String,String> listOfSuggestions = new HashMap<String,String>();
 		JobConfig jobConfig = (JobConfig)config;
@@ -393,7 +393,7 @@ public class ValidateInput {
 	 */
 	private void checkIfFieldAndRecordSeparatorAreNull(
 			Map<String,String> listOfFailedValidation,
-			DataValidationBean dataValidationBean) {
+			DataValidationBean dataValidationBean) {		
 		if (dataValidationBean.getFieldSeparator() == null) {
 			listOfFailedValidation.put("dataValidation.fieldSeparator",errorMessages.get(ErrorMessages.DVALID_FIELD_S_EMPTY));
 		}
@@ -412,7 +412,7 @@ public class ValidateInput {
 	 * @return all validation checks to be applied by the user
 	 */
 	private DataValidationBean checkAndValidateHdfsPath(Config config,
-			Map<String,String> listOfFailedValidation) {
+			Map<String,String> listOfFailedValidation) {		
 		JobConfig jobConfig = (JobConfig)config;
 		DataValidationBean dataValidationBean = jobConfig.getDataValidation();
 		String hadoopInputPath = jobConfig.getHdfsInputPath();
@@ -435,7 +435,7 @@ public class ValidateInput {
 	 *
 	 * @param config the config
 	 */
-	protected void validateJobs(Config config,Map<String,String> failedCases,Map<String,String> suggestion) {
+	protected void validateJobs(Config config,Map<String,String> failedCases,Map<String,String> suggestion) {		
 
 		int countForJobJar = 0;
 		JobConfig jobConfig = (JobConfig)config;
@@ -464,23 +464,23 @@ public class ValidateInput {
 	 *
 	 * @param config the config
 	 */
-	protected void validateBasicField(Config config) {
+	protected void validateBasicField(Config config) {		
 		Map<String,String> failedCases = new HashMap<String,String>();
 		Map<String,String> suggestionList = new HashMap<String,String>();
 		
 		checkIfJumbuneJobEmptyOrNot(config, failedCases,"jumbuneJobName");
 		JobConfig jobConfig = (JobConfig)config;
+		/**
+		 * check master host user name is nulll or conatain space
+		 */
+		Master master = jobConfig.getMaster();
+		checkMasterNodeValidation(failedCases, master);
 		if (isEnable(jobConfig.getDebugAnalysis()) || isEnable(jobConfig.getEnableStaticJobProfiling())) {
 			/**
 			 * check if slave jumbune home is empty
 			 */
 
-			checkNullEmptyAndMessage(failedCases, jobConfig.getSlaveWorkingDirectory(), ErrorMessages.BASIC_SLAVE_HOME_EMPTY,"");
-			/**
-			 * check master host user name is nulll or conatain space
-			 */
-			Master master = jobConfig.getMaster();
-			checkMasterNodeValidation(failedCases, master);
+			checkNullEmptyAndMessage(failedCases, jobConfig.getSlaveWorkingDirectory(), ErrorMessages.BASIC_SLAVE_HOME_EMPTY,"");						
 			if (!jobConfig.getSlaves().isEmpty() && !failedCases.containsValue(errorMessages.get(ErrorMessages.RSA_DSA_INVALID))) {
 				validateSlaveField(failedCases, config);
 			}
@@ -498,16 +498,26 @@ public class ValidateInput {
 	 * @param master the master
 	 */
 	private void checkMasterNodeValidation(Map<String,String> failedCases,
-			Master master) {
+			Master master) {		
+		boolean isMasterNodeUsernameValid = true;		
 		if (master != null) {
-			checkNullEmptyAndMessage(failedCases, master.getUser(), ErrorMessages.MASTER_HOST_USER,"master.user");
-
+			
+			boolean isMasterNodeUserValid = checkNullEmptyAndMessage(failedCases, master.getUser(), ErrorMessages.MASTER_HOST_USER,"master.user");
 			/***
 			 * master host validation
 			 */
-			checkIPAndShowMessage(failedCases, master.getHost(), ErrorMessages.MASTER_HOST_IP,"master.host");
+			boolean isMasterHostIpValid = checkIPAndShowMessage(failedCases, master.getHost(), ErrorMessages.MASTER_HOST_IP,"master.host");
 
-			checkRsaDsaFileExistence(failedCases, master,"master.rsaFile");
+			boolean isPrivateKeyFilesValid = checkRsaDsaFileExistence(failedCases, master,"master.rsaFile");
+			
+			if (isMasterNodeUserValid == false && isMasterHostIpValid == true && isPrivateKeyFilesValid == true){				
+				isMasterNodeUsernameValid = establishConnection(master.getUser(), master.getHost(), master.getRsaFile());
+				LOGGER.info("the master node username validation status"+isMasterNodeUsernameValid);				
+			}			
+			
+			if (!isMasterNodeUsernameValid)			
+				failedCases.put("master.username.status",errorMessages.get(ErrorMessages.MASTER_NODE_USERNAME_INVALID));			
+							
 		} else {
 			failedCases.put("master.user",errorMessages.get(ErrorMessages.MASER_FIELD_INVALID));
 		}
@@ -519,7 +529,7 @@ public class ValidateInput {
 	 * @param config object of yamlConfig class
 	 * @param failedCasesList error list
 	 */
-	protected void checkMrJobField(Config config) {
+	protected void checkMrJobField(Config config) {		
 		Map<String,String> failedCases=new HashMap<String, String>();
 		Map<String,String> suggetion=new HashMap<String, String>();
 		JobConfig jobConfig = (JobConfig)config;
@@ -537,8 +547,8 @@ public class ValidateInput {
 	 * @param master the master
 	 * @param fieldValue
 	 */
-	private void checkRsaDsaFileExistence(Map<String,String> failedCases,
-			Master master,String fieldValue) {
+	private boolean checkRsaDsaFileExistence(Map<String,String> failedCases,
+			Master master,String fieldValue) {		
 		/**
 		 * RSA file and DSA file existence validation
 		 */
@@ -560,7 +570,9 @@ public class ValidateInput {
 		if (!(master.getRsaFile() != null && rsaResponse.equalsIgnoreCase(master.getRsaFile()))
 				&& !(master.getDsaFile() != null && dsaResponse.equalsIgnoreCase(master.getDsaFile()))) {
 			failedCases.put(fieldValue,errorMessages.get(ErrorMessages.RSA_DSA_INVALID));
+			return false;
 		}
+		return true;
 	}
 
 	/**
@@ -571,7 +583,7 @@ public class ValidateInput {
 	 * @param fieldValue
 	 */
 	private void checkIfJumbuneJobEmptyOrNot(Config config,
-			Map<String,String> failedCases,String fieldValue) {
+			Map<String,String> failedCases,String fieldValue) {		
 		/**
 		 * check if jumbune job name is empty or not
 		 */
@@ -590,7 +602,7 @@ public class ValidateInput {
 	 * @param failedCases error list
 	 * @param Config the  config
 	 */
-	private void validateSlaveField(Map<String,String> failedCases, Config config) {
+	private void validateSlaveField(Map<String,String> failedCases, Config config) {		
 		int count = 0;
 		List<String> listOfValidDataNode = new ArrayList<String>();
 		JobConfig jobConfig = (JobConfig)config;
@@ -664,8 +676,8 @@ public class ValidateInput {
 	 * @param failureList the failure list
 	 * @param suggestionList the suggestion list
 	 */
-	protected void addToValidationList(String key, Map<String,String> failureList, Map<String,String> suggestionList) {
-		if (!failureList.isEmpty()) {
+	protected void addToValidationList(String key, Map<String,String> failureList, Map<String,String> suggestionList) {		
+		if (!failureList.isEmpty()) {			
 			failedValidation.put(key, failureList);
 		}
 		if (!suggestionList.isEmpty()) {
@@ -684,7 +696,7 @@ public class ValidateInput {
 	 * @param fieldName for field 
 	 * @return true, if successful
 	 */
-	protected boolean checkNullEmptyAndMessage(Map<String,String> errorList, String value, int errorCode,String fieldName) {
+	protected boolean checkNullEmptyAndMessage(Map<String,String> errorList, String value, int errorCode,String fieldName) {		
 		if (isNullOrEmpty(value)) {
 			errorList.put(fieldName,errorMessages.get(errorCode));
 			return true;
@@ -700,10 +712,12 @@ public class ValidateInput {
 	 * @param errorCode code of error which is a integer
 	 * @param filedValue
 	 */
-	private void checkIPAndShowMessage(Map<String,String> listOfError, final String value, int errorCode,String fieldValue) {
+	private boolean checkIPAndShowMessage(Map<String,String> listOfError, final String value, int errorCode,String fieldValue) {		
 		if (isNullOrEmpty(value) || !checkIPAdress(value)) {
 			listOfError.put(fieldValue,errorMessages.get(errorCode));
+			return false;
 		}
+		return true;
 	}
 
 	/**
@@ -714,7 +728,7 @@ public class ValidateInput {
 	 * @param errorCode code of error which is a integer
 	 * @return the boolean
 	 */
-	private Boolean checkFileOrDirExist(Map<String,String> listOfError, final String value, int errorCode,String fieldValue) {
+	private Boolean checkFileOrDirExist(Map<String,String> listOfError, final String value, int errorCode,String fieldValue) {		
 		if (!isNullOrEmpty(value) && !new File(value).exists()) {
 			listOfError.put(fieldValue,errorMessages.get(errorCode));
 			return false;
@@ -730,7 +744,7 @@ public class ValidateInput {
 	 * @param errorCode code of error which is a integer
 	 * @param fieldIndex which is replace the value in message
 	 */
-	private void checkEmptyAndShowMessage(Map<String,String> listOfError, String value, int errorCode, int fieldIndex,String fieldValue) {
+	private void checkEmptyAndShowMessage(Map<String,String> listOfError, String value, int errorCode, int fieldIndex,String fieldValue) {		
 		if (isNullOrEmpty(value)) {
 			listOfError.put(fieldValue,MessageFormat.format(errorMessages.get(errorCode), fieldIndex));
 		}
@@ -744,7 +758,7 @@ public class ValidateInput {
 	 * @param inputValue value which is to be tested
 	 * @return true if command exist already
 	 */
-	public Boolean checkCommand(int value, String inputValue) {
+	public Boolean checkCommand(int value, String inputValue) {		
 		String[] commandArray = errorMessages.get(value).split("\\\n");
 		for (String string : commandArray) {
 			if (string.equals(string)) {
@@ -762,7 +776,7 @@ public class ValidateInput {
 	 * @return true, if is hadoop input path
 	 * @throws JumbuneException the hTF exception
 	 */
-	public boolean isHadoopInputPath(String path, Config config) throws JumbuneException {
+	public boolean isHadoopInputPath(String path, Config config) throws JumbuneException {		
 		LOGGER.debug("Valdating HDFS Path :"+HDFS_FILE_EXISTS+path);
 		String commandResponse = RemotingUtil.fireCommandAsHadoopDistribution(config, HDFS_FILE_EXISTS + path, CommandType.HADOOP_FS);
 		LOGGER.debug("HDFS Path ["+path+"] exist? Response :"+commandResponse);
@@ -778,7 +792,7 @@ public class ValidateInput {
 	 * @param config the config
 	 * @return true, if is atleast one module enabled
 	 */
-	protected boolean isAtleastOneModuleEnabled(Config config) {
+	protected boolean isAtleastOneModuleEnabled(Config config) {		
 		boolean result = false;
 		JobConfig jobConfig = (JobConfig)config;
 		boolean isProfiling = isProfilingModuleEnabled(config);
@@ -796,7 +810,7 @@ public class ValidateInput {
 	 * @param config the config
 	 * @return true, if profiling module is enabled
 	 */
-	protected boolean isProfilingModuleEnabled(Config config) {
+	protected boolean isProfilingModuleEnabled(Config config) {		
 		boolean result = false;
 		JobConfig jobConfig = (JobConfig)config;
 		if (isEnable(jobConfig.getEnableStaticJobProfiling())) {
@@ -814,6 +828,7 @@ public class ValidateInput {
 	 * @return true if port is available
 	 */
 	public boolean isPortAvailable(int port, String inetAddress) {
+		
 		Socket socket = null;
 		try {
 			socket = new Socket();
@@ -928,6 +943,44 @@ public class ValidateInput {
 		}
 	}
 	
-	
+	/**
+	 * method for establishing connection with username password less authentication 
+	 * @param username
+	 * @param namenodeIP 
+	 * @param privateKeyPath
+	 * @return
+	 * @throws JSchException
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+	private boolean establishConnection(String masterNodeHostUsername, String masterNodeHostIP, String MasterNodePrivateKeyPath) {		
+		JSch jsch = new JSch();
+		Session session = null;
+		try {
+			session = jsch.getSession(masterNodeHostUsername, masterNodeHostIP, Constants.TWENTY_TWO);
+		} catch (JSchException e) {			
+			LOGGER.error(e);
+		}
+		
+		try {
+				jsch.addIdentity(MasterNodePrivateKeyPath);
+			} catch (JSchException e) {				
+				LOGGER.error(e);
+			}
+		
+		java.util.Properties config = new java.util.Properties();
+		config.put("StrictHostKeyChecking", "no");		
+		session.setConfig(config);
+		try {
+			session.connect();
+		} catch (JSchException e) {			
+			LOGGER.error("Failed to authenticate, check username with password less ssh key path");
+		}
+		if (session.isConnected()){
+			return true;
+		}else{
+			return false;
+		}		
+	}
 
 }
