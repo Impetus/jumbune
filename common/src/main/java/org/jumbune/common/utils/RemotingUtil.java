@@ -222,21 +222,17 @@ public final class RemotingUtil {
 		String hadoopHome = RemotingUtil.getHadoopHome(config);
 		Remoter remoter = getRemoter(config, " ");
 		JobConfig jobConfig = (JobConfig)config;
-		Master master = jobConfig.getMaster();
-		String hadoopDir = fireWhereIsHadoopCommand(remoter, master, config);
+		Master master = jobConfig.getMaster();		
 		List<String> host = new ArrayList<String>();
 		host.add(master.getHost());
 		String commandToExecute = null;
-		if(hadoopDir != null){
-			commandToExecute = hadoopDir + " " + command;
-		} else {
+		if(hadoopHome != null){
 			commandToExecute = hadoopHome + "/bin/hadoop  " + command;
 		}
 		LOGGER.debug("Command to be executed:" + commandToExecute);
 		CommandWritableBuilder builder = new CommandWritableBuilder();
 		builder.addCommand(commandToExecute, false, null, commandType).populate(config, null);
-		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
-		remoter.close();
+		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());		
 		return response;
 	}
 
