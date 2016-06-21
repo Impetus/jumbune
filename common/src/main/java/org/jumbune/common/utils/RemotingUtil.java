@@ -218,25 +218,22 @@ public final class RemotingUtil {
 	 * @return the string
 	 */
 	
-	public static String fireCommandAsHadoopDistribution(Config config, String command, CommandType commandType) {
-		String hadoopHome = RemotingUtil.getHadoopHome(config);
-		Remoter remoter = getRemoter(config, " ");
-		JobConfig jobConfig = (JobConfig)config;
+	public static String fireCommandAsHadoopDistribution(Config config, String command, CommandType commandType) {		
+		String hadoopHome = RemotingUtil.getHadoopHome(config);		
+		Remoter remoter = getRemoter(config, " ");		
+		JobConfig jobConfig = (JobConfig)config;		
 		Master master = jobConfig.getMaster();
-		String hadoopDir = fireWhereIsHadoopCommand(remoter, master, config);
 		List<String> host = new ArrayList<String>();
-		host.add(master.getHost());
+		host.add(master.getHost());		
 		String commandToExecute = null;
-		if(hadoopDir != null){
-			commandToExecute = hadoopDir + " " + command;
-		} else {
-			commandToExecute = hadoopHome + "/bin/hadoop  " + command;
-		}
+		if(hadoopHome != null){			
+			commandToExecute = hadoopHome + "/bin/hadoop  " + command;			
+		}		
 		LOGGER.debug("Command to be executed:" + commandToExecute);
-		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(commandToExecute, false, null, commandType).populate(config, null);
-		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
-		remoter.close();
+		CommandWritableBuilder builder = new CommandWritableBuilder();		
+		builder.addCommand(commandToExecute, false, null, commandType).populate(config, null);		
+		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());		
+		remoter.close();		
 		return response;
 	}
 
@@ -247,19 +244,18 @@ public final class RemotingUtil {
 	 * @param yamlConfig
 	 * @return
 	 */
-	public static String fireWhereIsHadoopCommand(Remoter remoter, Master master, Config config) {
+	public static String fireWhereIsHadoopCommand(Remoter remoter, Master master, Config config) {		
 		String hadoopDir = null;
 		String command = "whereis hadoop  ";
 		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(command, false, null, CommandType.FS).populate(config, null);
-		
+		builder.addCommand(command, false, null, CommandType.FS).populate(config, null);		
 		String wherIsHadoopResponse=(String)remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		if(wherIsHadoopResponse!=null && 2<wherIsHadoopResponse.split(" ").length){
 			hadoopDir = wherIsHadoopResponse.split(" ")[1];
-		}
+		}		
 		if(hadoopDir!= null && hadoopDir.trim().length()==0){
 			return null;
-		}
+		}		
 		return hadoopDir;
 	}
 	
