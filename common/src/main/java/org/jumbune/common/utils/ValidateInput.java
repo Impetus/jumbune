@@ -29,8 +29,9 @@ import org.jumbune.remoting.common.CommandType;
 import org.jumbune.utils.beans.LogLevel;
 import org.jumbune.utils.exception.JumbuneException;
 
-
-
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
 
 /**
  * This class validates inputs from user and give messages if a field is not in correct format.
@@ -470,23 +471,20 @@ public class ValidateInput {
 		
 		checkIfJumbuneJobEmptyOrNot(config, failedCases,"jumbuneJobName");
 		JobConfig jobConfig = (JobConfig)config;
+		/**
+		 * check master host user name is nulll or conatain space
+		 */
+		Master master = jobConfig.getMaster();
+		checkMasterNodeValidation(failedCases, master);
 		if (isEnable(jobConfig.getDebugAnalysis()) || isEnable(jobConfig.getEnableStaticJobProfiling())) {
 			/**
 			 * check if slave jumbune home is empty
 			 */
-
-			checkNullEmptyAndMessage(failedCases, jobConfig.getSlaveWorkingDirectory(), ErrorMessages.BASIC_SLAVE_HOME_EMPTY,"");
-			/**
-			 * check master host user name is nulll or conatain space
-			 */
-			Master master = jobConfig.getMaster();
-			checkMasterNodeValidation(failedCases, master);
+			checkNullEmptyAndMessage(failedCases, jobConfig.getSlaveWorkingDirectory(), ErrorMessages.BASIC_SLAVE_HOME_EMPTY,"");			
 			if (!jobConfig.getSlaves().isEmpty() && !failedCases.containsValue(errorMessages.get(ErrorMessages.RSA_DSA_INVALID))) {
 				validateSlaveField(failedCases, config);
 			}
-			checkMrJobField(config);
-
-			
+			checkMrJobField(config);			
 		}
 		addToValidationList(Constants.BASIC_VALIDATION, failedCases, suggestionList);
 	}
@@ -499,15 +497,23 @@ public class ValidateInput {
 	 */
 	private void checkMasterNodeValidation(Map<String,String> failedCases,
 			Master master) {
+		boolean isMasterNodeUsernameValid = true;
 		if (master != null) {
-			checkNullEmptyAndMessage(failedCases, master.getUser(), ErrorMessages.MASTER_HOST_USER,"master.user");
+			boolean isMasterNodeUserInvalid = checkNullEmptyAndMessage(failedCases, master.getUser(), ErrorMessages.MASTER_HOST_USER,"master.user");
 
 			/***
 			 * master host validation
 			 */
-			checkIPAndShowMessage(failedCases, master.getHost(), ErrorMessages.MASTER_HOST_IP,"master.host");
+			boolean isMasterHostIpValid = checkIPAndShowMessage(failedCases, master.getHost(), ErrorMessages.MASTER_HOST_IP,"master.host");
 
-			checkRsaDsaFileExistence(failedCases, master,"master.rsaFile");
+			boolean isPrivateKeyFilesValid = checkRsaDsaFileExistence(failedCases, master,"master.rsaFile");
+			if (!isMasterNodeUserInvalid  && isMasterHostIpValid && isPrivateKeyFilesValid){				
+				isMasterNodeUsernameValid = establishConnection(master.getUser(), master.getHost(), master.getRsaFile());
+				LOGGER.info("the master node username validation status"+isMasterNodeUsernameValid);				
+			}
+			
+			if (!isMasterNodeUsernameValid)			
+				failedCases.put("master.username.status",errorMessages.get(ErrorMessages.MASTER_NODE_USERNAME_INVALID));
 		} else {
 			failedCases.put("master.user",errorMessages.get(ErrorMessages.MASER_FIELD_INVALID));
 		}
@@ -537,7 +543,7 @@ public class ValidateInput {
 	 * @param master the master
 	 * @param fieldValue
 	 */
-	private void checkRsaDsaFileExistence(Map<String,String> failedCases,
+	private boolean checkRsaDsaFileExistence(Map<String,String> failedCases,
 			Master master,String fieldValue) {
 		/**
 		 * RSA file and DSA file existence validation
@@ -560,7 +566,9 @@ public class ValidateInput {
 		if (!(master.getRsaFile() != null && rsaResponse.equalsIgnoreCase(master.getRsaFile()))
 				&& !(master.getDsaFile() != null && dsaResponse.equalsIgnoreCase(master.getDsaFile()))) {
 			failedCases.put(fieldValue,errorMessages.get(ErrorMessages.RSA_DSA_INVALID));
+			return false;
 		}
+		return true;
 	}
 
 	/**
@@ -700,10 +708,12 @@ public class ValidateInput {
 	 * @param errorCode code of error which is a integer
 	 * @param filedValue
 	 */
-	private void checkIPAndShowMessage(Map<String,String> listOfError, final String value, int errorCode,String fieldValue) {
+	private boolean checkIPAndShowMessage(Map<String,String> listOfError, final String value, int errorCode,String fieldValue) {
 		if (isNullOrEmpty(value) || !checkIPAdress(value)) {
 			listOfError.put(fieldValue,errorMessages.get(errorCode));
+			return false;
 		}
+		return true;
 	}
 
 	/**
@@ -928,6 +938,44 @@ public class ValidateInput {
 		}
 	}
 	
-	
+	/**
+	 * method for establishing connection with username password less authentication 
+	 * @param username
+	 * @param namenodeIP 
+	 * @param privateKeyPath
+	 * @return
+	 * @throws JSchException
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+	private boolean establishConnection(String masterNodeHostUsername, String masterNodeHostIP, String MasterNodePrivateKeyPath) {		
+		JSch jsch = new JSch();
+		Session session = null;
+		try {
+			session = jsch.getSession(masterNodeHostUsername, masterNodeHostIP, Constants.TWENTY_TWO);
+		} catch (JSchException e) {			
+			LOGGER.error(e);
+		}
+		
+		try {
+				jsch.addIdentity(MasterNodePrivateKeyPath);
+			} catch (JSchException e) {				
+				LOGGER.error(e);
+			}
+		
+		java.util.Properties config = new java.util.Properties();
+		config.put("StrictHostKeyChecking", "no");		
+		session.setConfig(config);
+		try {
+			session.connect();
+		} catch (JSchException e) {			
+			LOGGER.error("Failed to authenticate, check username with password less ssh key path");
+		}
+		if (session.isConnected()){
+			return true;
+		}else{
+			return false;
+		}		
+	}
 
 }

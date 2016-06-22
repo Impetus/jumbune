@@ -321,4 +321,7 @@ public interface ErrorMessages {
    
 	/** The both debugger validations null. */
 	int BOTH_DEBUGGER_VALIDATIONS_NULL=2113;
+	
+	/** The masternode username invalid. */
+	int MASTER_NODE_USERNAME_INVALID=2114;
 }
