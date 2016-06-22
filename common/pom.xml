@@ -97,7 +97,7 @@
 		<dependency>
 			<groupId>org.jumbune</groupId>
 			<artifactId>jumbune-remoting</artifactId>
-			<version>1.5.1-SNAPSHOT</version>
+			<version>1.5.1</version>
 		</dependency>
 	</dependencies>
 </project>
