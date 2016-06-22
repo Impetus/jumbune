@@ -21,4 +21,4 @@ $HADOOP_HOME/sbin/mr-jobhistory-daemon.sh start historyserver
 sleep 2
 #Adding Sample JSON to JSONRepo and changing to version of Jumbune in it
 mkdir $JUMBUNE_HOME/jsonrepo
-sed "s:1.5.0:$JUMBUNE_VERSION:" </root/sampleJson.json  >$JUMBUNE_HOME/jsonrepo/sampleJson.json
+sed "s:1.5.1:$JUMBUNE_VERSION:" </root/sampleJson.json  >$JUMBUNE_HOME/jsonrepo/sampleJson.json

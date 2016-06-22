@@ -5,7 +5,7 @@
 	<parent>
 		<artifactId>jumbune</artifactId>
 		<groupId>org.jumbune</groupId>
-		<version>1.5.1-SNAPSHOT</version>
+		<version>1.5.1</version>
 	</parent>
 
 	<groupId>org.jumbune</groupId>
@@ -63,7 +63,7 @@
 							<addDefaultImplementationEntries/>
 						</manifest>
 						<manifestEntries>
-							<Class-Path>./jumbune-common-1.5.1-SNAPSHOT.jar ./commons-io-1.3.2.jar ./gson-2.2.4.jar ./jumbune-utils-1.5.1-SNAPSHOT.jar</Class-Path>
+							<Class-Path>./jumbune-common-1.5.1.jar ./commons-io-1.3.2.jar ./gson-2.2.4.jar ./jumbune-utils-1.5.1.jar</Class-Path>
 						</manifestEntries>
 					  <pomPropertiesFile/>
 					</archive>

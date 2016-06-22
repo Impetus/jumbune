@@ -111,7 +111,7 @@ RUN echo '#Jumbune' >> /etc/profile \
 # UnComment below lines (if you wish to fetch latest Jumbune release rather than building from latest snapshot codebase)
 ###
 
-#ENV JUMBUNE_VERSION 1.5.0
+#ENV JUMBUNE_VERSION 1.5.1
 #RUN mkdir -p /jumbune_code/distribution/target/ \
 # && wget -O /jumbune_code/distribution/target/jumbune-dist-$JUMBUNE_VERSION-bin.jar  http://www.jumbune.org/jar/current/yarn/jumbune-dist-$JUMBUNE_VERSION-bin.jar
 
