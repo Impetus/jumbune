@@ -30,7 +30,7 @@
     "hadoopJobProfile": "TRUE",
     "hdfsInputPath": null,
     "includeClassJar": "TRUE",
-    "inputFile": "user.home.directory/Desktop/Jumbune_Home/examples/example-distribution/examples-movierating-1.5.1.jar",
+    "inputFile": "user.home.directory/Desktop/Jumbune_Home/examples/example-distribution/examples-movierating-1.5.2-SNAPSHOT.jar",
     "jobs": [
       {
         "jobClass": null,

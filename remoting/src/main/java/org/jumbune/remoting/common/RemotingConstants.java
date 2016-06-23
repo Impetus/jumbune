@@ -205,7 +205,7 @@ public interface RemotingConstants {
 	/** The redirect symbol. */
 	String REDIRECT_SYMBOL = ">";
 	
-	String DATA_VALIDATION_JAR = "jumbune-datavalidation-1.5.1.jar";
+	String DATA_VALIDATION_JAR = "jumbune-datavalidation-1.5.2-SNAPSHOT.jar";
 	
 	/** The job jars loc. */
 	String JOB_JARS_LOC = "jobJars/";
