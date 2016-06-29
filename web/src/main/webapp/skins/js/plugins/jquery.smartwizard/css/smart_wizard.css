@@ -129,14 +129,14 @@
 }
 .swMain ul.anchor li a.selected{
   color:#F8F8F8;
-  background: none repeat scroll 0 0 #EA8511;
-  border: 1px solid #EA8511;
+  background: none repeat scroll 0 0 #23b4c0;
+  border: 1px solid #23b4c0;
   box-shadow: 0 0 5px 1px #CCCCCC;
   cursor:text;
 }
 .swMain ul.anchor li a.selected:hover {
   color:#F8F8F8;  
-  background: #EA8511;  
+  background: #23b4c0;  
 }
 .swMain ul.anchor li a.done { 
   position:relative;
@@ -148,7 +148,7 @@
 }
 .swMain ul.anchor li a.done:hover {
   background: #f2f2f2; 
-  border: 1px solid #63991c;   
+  border: 1px solid #23b4c0;   
 }
 .swMain ul.anchor li a.disabled {
   color:#CCCCCC;  
@@ -222,8 +222,8 @@
   width:100px;
   color:#FFF;
   outline-style:none;
-  background-color:   #369044;
-  border: 1px solid #369044;      
+  background-color:   #23b4c0;
+  border: 1px solid #23b4c0;      
 }
 
 /* Form Styles */

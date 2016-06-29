@@ -30,8 +30,8 @@ input, select, textarea, button {
 	margin:0em;
 }
 input { padding:0.16em; }
-button { font-size: 12px; padding:0; height:30px; background: #369044; color:#fff; overflow: visible; border:1px solid #369044; }
-button:hover { background: #669933;}
+button { font-size: 12px; padding:0; height:30px; background: #23b4c0; color:#fff; overflow: visible; border:1px solid #23b4c0; }
+button:hover { background: #23b4c0;}/*button:hover { background: #669933;}*/
 button span { padding:8px; }
 button.graybtn { background: url("../images/button-s.jpg") repeat-x 0 -60px transparent; border:1px solid #555; }
 button.graybtn:hover { background-position: 0 -90px;}
