@@ -29,142 +29,89 @@ Brief Deployment Guide
     
     4)  Start the Jumbune agent by using the command 'java -jar <Jumbune-Agent-Name> portNo'.
     
-    5)  Please make sure that the port mentioned while starting the Jumbune agent is later entered in the job JSON. 
+    5)  Please make sure that the port mentioned while starting the Jumbune agent is later entered in the job YAML. 
 
     
 For detailed deployment guide, please refer to the 'Jumbune Usage Document'.
 
 
-				Running a shipped example
-				-------------------------
+Running Jumbune Sample Jobs
+--------------------------
 
-To execute Jumbune sample examples (shipped along with the distribution), perform the following steps:
+    1) Using the browser navigate to 'localhost:8080' if Jumbune is deployed on the same machine or navigate to '<Jumbune machine IP>:8080', Jumbune page would appear.
 
-	1. Navigate to the example folder you are wishing to run, go through the readme.txt
+    2) Upload one of the YAMLs found in the '<Jumbune home>/examples/resources/sample yaml/' directory.
+    
+    3) The sample job jars are found in the '<Jumbune home>/examples/example-distribution/' directory.
+    
+    4) Select the appropriate YAML file from the sample YAML directory, following are the steps for doing so.
+    
+    Word Count:
+    ----------
+    
+        1) Upload sample input file in HDFS by using the following command
+          bin/hadoop fs -put <Jumbune Home>/examples/resources/data/PREPROCESSED/data1 /Jumbune/Demo/input/PREPROCESSED/data1
+    
+        2) Upload the sample wordcount YAML (<Jumbune home>/examples/resources/sample yaml/WordCountSample.yaml).
+        
+        3) Edit the Name-node and Data-node information.
+        
+        4) In the 'M/R Jobs' tab select the WordCount sample jar, either by mentioning the path on the Jumbune machine or by uploading from the local machine.
+        
+        5) Validate and Run the job.
+        
+    Reg-ex Validator for profiling:
+    -----------------------------
+        
+        1) Upload sample input file in HDFS by using the following command
+          bin/hadoop fs -put <Jumbune_Home>/examples/resources/data/u.data /Jumbune/example/regex
+          
+        2) In the 'M/R Jobs' tab select the Reg-ex Validator sample jar, either by mentioning the path on the Jumbune machine or by uploading from the local machine.
+        
+        3) Edit the Name-node and Data-node information.
+        
+        4) Validate and Run the job.
+        
+    Defaulter list validation for debugging:
+    ---------------------------------------
+        
+        1) Upload sample input file in HDFS by using the following command
+        bin/hadoop fs -put <Jumbune_Home>/examples/resources/data/defaulterlistdata.txt /Jumbune/example/defaulter
+          
+        2) In the 'M/R Jobs' tab select the Defaulter List sample jar, either by mentioning the path on the Jumbune machine or by uploading from the local machine.
+        
+        3) Edit the Name-node and Data-node information.
+        
+        4) Validate and Run the job.
+        
+        
+    NOTE: We have used GenericOptionsParser for the examples, so do not provide class name information, just select 'Job Class defined in the Jar Manifest' option instead.    
+    
 
-	2. Upload the JSON from $JUMBUNE_HOME/examples/resources/sample_json/ directory from the Open option on the Jumbune home page.
-
-	3. The sample job jars are found in the  $JUMBUNE_HOME/examples/example-distribution/ directory.
-
-
-Running the Word Count example:
--------------------------------
-
-	For running the word count example, execute the following steps:
-
-	1. Upload sample input file in HDFS using the following command:
-
-	bin/hadoop fs -put  $JUMBUNE_HOME/examples/resources/data/PREPROCESSED/data1 </Jumbune/data/data1 or any HDFS path>
-
-Note: Ensure that path <HDFS path> is not present on HDFS and user has appropriate permission to put data file on HDFS.
-		
-	2. Upload sample wordcount JSON ( $JUMBUNE_HOME/examples/resources/sample_json/WordCountSample.json).
-	
-	3. Edit Name-node and Data-node information.
-	
-	4. In 'M/R Jobs' tab select the WordCount sample jar (examples-wordcount-x.y.z.jar), either by mentioning the path on the Jumbune machine or by uploading from local machine.
-
-	5. Validate and Run the job.
-
-For Running Movie Rating example (for Profiling):
-------------------------------------------------
-
-	For movie rating, perform the following steps:
-	
-	1. Upload sample input file in HDFS by using the following command:
-	
-	bin/hadoop fs -put  $JUMBUNE_HOME/examples/resources/data/u.data </Jumbune/examples/regex or any HDFS path>
-	
-	Note: Ensure that path is not present on HDFS and user has appropriate permission to put data file on HDFS.
-	
-	2. Upload sample JSON ( $JUMBUNE_HOME/examples/resources/sample_json/MovieRatingSample.json).
-	
-	3. Edit the Name-node and Data-node information.
-	
-	4. In the 'M/R Jobs' tab select movie rating sample jar (examples-movierating-x.y.z.jar), either by mentioning the path on the Jumbune machine or by uploading from local machine.
-
-	5. Validate and run the job.
-
-	
-For Running Bank Defaulters example (for Debugging):
-----------------------------------------------------
-
-	For bank defaulters, perform the following steps:
-
-	1. Upload sample input file in HDFS by using the following command
-
-	bin/hadoop fs -put  $JUMBUNE_HOME/examples/resources/data/defaulterlistdata.txt	</Jumbune/examples/defaulter or any HDFS path>
-
-	Note: Ensure that path is not present on HDFS and user has appropriate permission to put data file
-	on HDFS.
-
-	2. Upload sample JSON ($JUMBUNE_HOME/examples/resources/sample_json/BankDefaultersSample.json).
-
-	3. In 'M/R Jobs' tab select the bank defaulters sample jar (examples-bankdefaulters-x.y.z.jar), either by mentioning the path on the Jumbune machine or by uploading from local machine.
-
-	4. Edit the Name-node and Data-node information.
-
-	5. Validate and Run the job.
+Let's tune the Jumbo!
 
 
-For Running US Region Port Out example (for Debugging):
-------------------------------------------------------
+        
+        
+        
+    
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    
+    
+    
+    
+    
+    
+    
+    
 
-	For US Region port out, perform the following steps:
-
-	1. Upload sample input file in HDFS by using the following command:
-
-	bin/hadoop fs -put $JUMBUNE_HOME/examples/resources/data/PREPROCESSED/data1 /Jumbune/Demo/input/PREPROCESSED/data1
-
-	bin/hadoop fs -put $JUMBUNE_HOME/examples/resources/data/PREPROCESSED/data2 /Jumbune/Demo/input/PREPROCESSED/data2
-
-	Note: Ensure that path is not present on HDFS and user has appropriate permission to put data file on HDFS.
-	
-	2. Upload sample JSON ($JUMBUNE_HOME/examples/resources/sample_json/USRegionPortOutSample.json).
-
-	3. In the 'M/R Jobs' tab select the US region portout sample jar (examples-usregionportouts-x.y.z.jar), either by mentioning the path on the Jumbune machine or by uploading from the local machine.
-
-	4. Edit the Name-node and Data-node information.
-
-	5. Validate and Run the job.
-
-
-For Running Clickstream Analysis example (for Debugging):
----------------------------------------------------------
-
-	1. Upload sample input file in HDFS by using the following command:
-
-	bin/hadoop fs -put $JUMBUNE_HOME/examples/resources/data/clickstream.tsv /Jumbune/clickstreamdata
-
-	Note: Ensure that path is not present on HDFS and user has appropriate permission to put data file
-	on HDFS.
-
-	2. Upload sample JSON ($JUMBUNE_HOME/examples/resources/sample_json/ClickstreamSample.json).
-
-	3. In 'M/R Jobs' tab select the clickstream sample jar (examples-clickstreamanalysis-x.y.z.jar), either by mentioning the path on the Jumbune machine or by uploading from the local machine.
-
-	4. Edit Name-node and Data-node information.
-
-	5. Validate and Run the job.
-
-
-For Running Sensor data example (for HDFS Validation):
------------------------------------------------------
-
-	For sensor data, perform the following steps:
-
-	1. Upload sample input file in HDFS by using the following command
-	
-	bin/hadoop fs -put $JUMBUNE_HOME/examples/resources/data/sensor_data/Jumbune/sensordata
-
-	Note: Ensure that path is not present on HDFS and user has appropriate permission to put data file on HDFS.
-
-	2. Upload sample JSON ($JUMBUNE_HOME/examples/resources/sample_json/SensorDataSample.json).
-
-	3. Edit Name-node and Data-node information.
-
-	4. Validate and Run the job.
-
-NOTE:
-We have used GenericOptionsParser in our examples, so do not provide class name information, just select 'Job Class defined in the Jar Manifest' option on ‘M/R Jobs’ tab on Jumbune UI Wizard.
-Ensure that output path provided in JSON file must not exist on HDFS previously

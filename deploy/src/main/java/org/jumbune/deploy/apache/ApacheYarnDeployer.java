@@ -12,11 +12,11 @@ public class ApacheYarnDeployer extends YarnDeployer implements Deployer {
 
 		StringBuilder strBuilder;
 
-		String[] relativeJarPaths = new String[ADDITIONAL_HADOOP_JARS.length];
+		String[] relativeJarPaths = new String[ADDITIONAL_HADOOP_JARS.length+1];
 		int i = 0;
 		for (String jar : ADDITIONAL_HADOOP_JARS) {
 			if (jar.contains("hadoop")
-					&& !jar.contains("hadoop-mapreduce-client")) {
+					&& jar.contains("hadoop-common-*.jar")) {
 				strBuilder = new StringBuilder().append(File.separator)
 						.append("share").append(File.separator)
 						.append("hadoop").append(File.separator)
@@ -25,7 +25,7 @@ public class ApacheYarnDeployer extends YarnDeployer implements Deployer {
 						.append(".jar");
 				relativeJarPaths[i++] = strBuilder.toString();
 			} else if (jar.contains("hadoop")
-					&& !jar.contains("hadoop-mapreduce-client-hs-*.jar")) {
+					&& jar.contains("hadoop-mapreduce-client-core-*.jar")) {
 				strBuilder = new StringBuilder().append(File.separator)
 						.append("share").append(File.separator)
 						.append("hadoop").append(File.separator)
@@ -33,7 +33,7 @@ public class ApacheYarnDeployer extends YarnDeployer implements Deployer {
 						.append("hadoop-mapreduce-client-core-")
 						.append(versionNumber).append(".jar");
 				relativeJarPaths[i++] = strBuilder.toString();
-			} else if (jar.contains("hadoop")) {
+			} else if (jar.contains("hadoop") && jar.contains("hadoop-mapreduce-client-hs-*.jar")) {
 				strBuilder = new StringBuilder().append(File.separator)
 						.append("share").append(File.separator)
 						.append("hadoop").append(File.separator)
@@ -41,7 +41,7 @@ public class ApacheYarnDeployer extends YarnDeployer implements Deployer {
 						.append("hadoop-mapreduce-client-hs-")
 						.append(versionNumber).append(".jar");
 				relativeJarPaths[i++] = strBuilder.toString();
-			} else {
+			}else {
 				strBuilder = new StringBuilder().append(File.separator)
 						.append("share").append(File.separator)
 						.append("hadoop").append(File.separator)
@@ -52,6 +52,8 @@ public class ApacheYarnDeployer extends YarnDeployer implements Deployer {
 			}
 
 		}
+		strBuilder = new StringBuilder().append(File.separator).append("share/hadoop/common/lib").append(File.separator).append("htrace-core*.jar");
+		relativeJarPaths[i++] = strBuilder.toString();
 		return relativeJarPaths;
 	}
 

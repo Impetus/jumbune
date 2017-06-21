@@ -1,0 +1,89 @@
+<div class="container" ng-controller="dataCleansingController">
+	<div jumbune-header=""></div>
+	<div class="inner-container">
+	<div ng-init="init()">
+	<h2 style="margin-top:0">Data Cleansing</h2>
+    <div class="main-container">
+        <form name="dataValidationForm" enctype="multipart/form-data" novalidate>
+            <p>
+                <strong>Note:</strong>Seperate HDFS data into clean and dirty based upon data violation constraints.Creates reports which depicts counts of clean and dirty fileset..
+            </p>
+            <div class="def-blo" ng-show="false" ng-init="enableDataValidation = 'TRUE'">
+                <input type="checkbox" ng-model="enableDataValidation"/>
+                <span>Enable Data Validation</span>
+            </div>
+            <table class="frm-tbl">
+                <tbody>
+                    <tr>
+                        <td  width="55%"><label class="fieldLabel">Tuple Record Separator<s>*</s></label></td>
+                        <td><input type="text" ng-blur="ChecktupleRecordSeparator()" ng-disabled="!enableDataValidation" class="validate" name="tupleRecordSeparator" ng-model="tupleRecordSeparator" ng-required="enableDataValidation && enableDataValidation" ng-class="{'has-error': hasError('tupleRecordSeparator')}"/>
+                            <div class="error" ng-show="tupleRecordSeparatorValidate">
+                                <span class="error" >Please provide valid record separator.</span>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                       <td  width="55%"><label class="fieldLabel">Tuple Field Separator<s>*</s></label></td>
+                        <td><input type="text" ng-blur="ChecktupleFieldSeparator()" ng-disabled="!enableDataValidation" class="validate" name="tupleFieldSeparator" ng-model="tupleFieldSeparator" ng-required="enableDataValidation && enableDataValidation" ng-class="{'has-error': hasError('tupleFieldSeparator')}"/>
+                            <div class="error" ng-show="tupleFieldSeparatorValidate">
+                                <span class="error" >Please provide valid field separator.</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td  width="55%"><label class="fieldLabel">No. of Fields<s>*</s></label></td>
+                        <td>
+                            <input type="text" ng-disabled="!enableDataValidation" ng-required="enableDataValidation && enableDataValidation" name="fieldCount" jumbune-only-digits jumbune-num-range-validate="{min:1, max:50}" class="num-input" ng-model="fieldCount" ng-class="{'has-error': hasError('fieldCount')}"/>
+                            <a ng-click="!hasError('fieldCount') && createFields()" href="javascript:void(0)">
+                                <i class="fa fa-check circle-icon green-icon" ng-class="{'disable': hasError('fieldCount')}"></i>
+                            </a>
+                            <div class="error" ng-show="hasError('fieldCount')">
+                                <span class="error">Please enter no of fields (1 - 50).</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="table-responsive ddv-table">
+                <table class="table table-striped dtl-tbl">
+                    <thead>
+                        <tr>
+                            <th>Enable Row</th>
+                            <th>Field Number</th>
+                            <th>Null Check</th>
+                            <th>Field Type</th>
+                            <th>RegEx</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="field in fields track by $index">
+                            <td>
+                                <input type="checkbox" ng-model="field.enable" ng-disabled="!enableDataValidation" />
+                            </td>
+                            <td>
+                                  <span ng-model="field.fieldNumber">{{field.fieldNumber}}</span> 
+                            </td>
+                            <td>
+                                <select ng-disabled="!field.enable" ng-model="field.nullCheck" ng-options="nullCheck.value as nullCheck.label for nullCheck in nullCheckList">
+                                    <option value="">Please Select</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select ng-disabled="!field.enable || field.nullCheck == 'mustBeNull'" ng-model="field.dataType" ng-options="fieldType.value as fieldType.label for fieldType in fieldTypeList">
+                                    <option value="">Please Select</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" ng-disabled="!field.enable || field.nullCheck == 'mustBeNull'" ng-model="field.regex"/>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                 <div jumbune-widget-form-buttons-three disable=true cancel="cancel()" back="back()" next="next()"></div>
+            </div>
+        </form>
+    </div>	</div>
+	 <div class="clear"></div>
+	</div>
+</div>

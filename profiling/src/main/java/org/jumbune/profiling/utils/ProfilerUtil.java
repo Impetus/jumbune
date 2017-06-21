@@ -17,20 +17,20 @@ import java.util.TreeMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.JobDefinition;
-import org.jumbune.common.beans.JobOutput;
-import org.jumbune.common.beans.SupportedHadoopDistributions;
-import org.jumbune.common.utils.Constants;
-import org.jumbune.common.utils.MessageLoader;
-import org.jumbune.common.utils.RemotingUtil;
-import org.jumbune.common.utils.ValidateInput;
+import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.beans.profiling.JobOutput;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
-import org.jumbune.profiling.beans.JMXDeamons;
+import org.jumbune.common.utils.Constants;
+import org.jumbune.common.utils.FileUtil;
+import org.jumbune.common.utils.JobConfigUtil;
+import org.jumbune.common.utils.MessageLoader;
+import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.profiling.hprof.BinaryHprofReader;
 import org.jumbune.profiling.hprof.CPUSamplesBean;
+import org.jumbune.profiling.hprof.CPUSamplesBean.SampleDescriptor;
 import org.jumbune.profiling.hprof.HeapAllocSitesBean;
 import org.jumbune.profiling.hprof.HprofData;
-import org.jumbune.profiling.hprof.CPUSamplesBean.SampleDescriptor;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.utils.exception.JumbuneException;
 
@@ -47,14 +47,17 @@ public class ProfilerUtil {
 
 	/** The LOGGER. */
 	private static final Logger LOGGER = LogManager.getLogger(ProfilerUtil.class);
-	private static final String HPROF_SUMMARY = "HPROF_PROFILER_SUMMERY";
 	/** MessageLoader used to load messages from a properties file. */
 	private MessageLoader messageLoader = MessageLoader.getInstance();
 	private JobConfig jobconfig;
-
-	private static final String HADOOP = "Hadoop";
 	
 	private static final String DFS_ADMIN_COMMAND = " dfsadmin -report";
+	
+
+	private static final String MAPR_CHECK_COMMAND="maprcli node heatmap -view diskspace -long";
+
+	
+	
 	/**
 	 * Creates an instance of ProfilerUtil which would have MessageLoader
 	 * 
@@ -93,7 +96,7 @@ public class ProfilerUtil {
 	 * @throws JumbuneException
 	 */
 	public Map<String, ProfilerBean> parseProfilingInfo(final String profileDirLocation) throws JumbuneException {
-		LOGGER.info("Starting JVM-TI based HProf JVM Profiling...");
+		LOGGER.debug("Starting JVM-TI based HProf JVM Profiling...");
 		Map<String, ProfilerBean> profilerInfoMap = new LinkedHashMap<String, ProfilerBean>();
 		List<File> profilingFilesList = getAllFilesInDirectory(profileDirLocation);
 
@@ -229,7 +232,7 @@ public class ProfilerUtil {
 		String[] profilingPackages = null;
 		JobConfig jobConfig = (JobConfig)jobconfig;
 		List<JobDefinition> jobList = jobConfig.getJobs();
-		if (!ValidateInput.isEnable(jobConfig.getIncludeClassJar())) {
+		if (!JobConfigUtil.isEnable(jobConfig.getIncludeClassJar())) {
 			profilingPackages = getProfilingPackages(profilingPackages, jobList);
 		}
 		final int maxHeapSampleCount = Constants.PROFILING_MAX_HEAP_SAMPLE_COUNT;;
@@ -550,9 +553,15 @@ public class ProfilerUtil {
 	 * @param loader the loader
 	 * @return the dFS admin report command result
 	 */
-	public static String[] getDFSAdminReportCommandResult(Config config) {
-		JobConfig jobConfig = (JobConfig)config;
-		String response = RemotingUtil.fireCommandAsHadoopDistribution( jobConfig, DFS_ADMIN_COMMAND, CommandType.HADOOP_FS);
+	public static String[] getDFSAdminReportCommandResult(Cluster cluster) {
+		String hadoopDistribution = FileUtil.getClusterInfoDetail(Constants.HADOOP_DISTRIBUTION);
+		boolean isMapr = Constants.MAPR.equalsIgnoreCase(hadoopDistribution) || Constants.EMRMAPR.equalsIgnoreCase(hadoopDistribution);
+		String response;
+		if (isMapr) {
+			response = RemotingUtil.executeCommand(cluster, MAPR_CHECK_COMMAND);
+		} else {
+			response = RemotingUtil.fireCommandAsHadoopDistribution( cluster, DFS_ADMIN_COMMAND, CommandType.HADOOP_FS);
+		}
 		return response.split("\n");
 	}
 
@@ -563,13 +572,12 @@ public class ProfilerUtil {
 	 *            the loader
 	 * @return the block status command result
 	 */
-	public static String getBlockStatusCommandResult(Config config,
+	public static String getBlockStatusCommandResult(Cluster cluster,
 			String hdfsFilePath) {
-		JobConfig jobConfig = (JobConfig)config;
 		StringBuilder sbReport = new StringBuilder();
 		sbReport.append(" fsck ").append(hdfsFilePath)
 			.append(" ").append("-files -blocks -locations ");
-		return RemotingUtil.fireCommandAsHadoopDistribution(jobConfig, sbReport.toString(), CommandType.HADOOP_FS);
+		return RemotingUtil.fireCommandAsHadoopDistribution(cluster, sbReport.toString(), CommandType.HADOOP_FS);
 		
 	}	
 	

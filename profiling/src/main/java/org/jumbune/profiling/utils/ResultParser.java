@@ -399,8 +399,13 @@ public class ResultParser {
 					cpuCores = Integer.parseInt(lineArray[len - 1]);
 				}
 			}
-			cpuStats.add((int) processorCount / cpuCores);
-			cpuStats.add(cpuCores);
+			if(cpuCores==0){
+				cpuStats.add(1);
+				cpuStats.add(processorCount);				
+			}else{
+				cpuStats.add((int) processorCount / cpuCores);
+				cpuStats.add(cpuCores);
+			}
 		} finally {
 			if (br != null) {
 				br.close();

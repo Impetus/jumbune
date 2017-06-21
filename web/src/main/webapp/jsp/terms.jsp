@@ -9,9 +9,37 @@
 <title>Terms of Use</title>
 </head>
 <body>
-	<h3>Licensing</h3>
+	<h3>Licensing of Jumbune</h3>
+	<p>License of Jumbune is distributed under Impetus ownership and provided for two user
+	level usage.</p>
+	<ol>
+		<li>Trial Usage -Under this license usage, limited by no of days a user can run
+	jumbune.</li>
+		<li>Life Time Usage- Under this license usage, User can run jumbune with no expiry date.</li>
+	</ol>
+	<p>For using license of Jumbune user should mail us at Jumbune team with following information:</p>
+	<ul>
+		<li>Purpose: Purpose of using Jumbune.</li>
+		<li>License level: What type of license a user wants like Trial Usage or Life Time Usage. In
+	Trial usage a user can also mention no of days it aspires to use jumbune.</li>
+		<li>IPAddress and MacAddress - for a machine on which jumbune is going to deploy.</li>
+		<li>IPAddress and MacAddress - for Hadoop master machine (NameNode)</li>
+		<li>Number of slave nodes which one wishes to work upon (actual Jumbune run can have
+	less number of slaves too)</li>
+	</ul>
+	<p>After getting license from Jumbune team user should place license file in <Jumbune_Home>
+	Folder.</p>
+	<p>After placing license file, with every successful start of Jumbune, following message appears:</p>
 	<p>&nbsp;</p>
-	<p>Jumbune includes a number of third-party libraries that are used to provide certain features, these libraries are supplied alongside the Jumbune.</p><p>Third Party Software may impose additional restrictions and it is the user's responsibility to ensure that they have met the licensing requirements of the GPL, LGPL and the relevant license of the Third Party Software they are using.</p><p>Some of the components require that their licensing terms be included in the documentation of products that include them. Cross references to these licensing terms are given with the applicable items in the list.</p>
+	<div>Verified Signature on license</div>
+	<div>file...OK Verified Machine</div>
+	<div>Endpoint...</div>
+	<div>Verified HardwareDigest...OK</div>
+	<div>Dear <user>, Your Jumbune installation license will expire in</div>
+	<div>[xx]</div>
+	<div>days.</div>
+	<p>&nbsp;</p>
+	<p>Jumbune includes a number of third-party libraries that are used to provide certain features, these libraries are supplied alongside the Jumbune.</p><p>Third Party Software may impose additional restrictions and it is the user's responsibility to ensure that they have met the licensing requirements of the GPL, LGPL, or Jumbune license and the relevant license of the Third Party Software they are using.</p><p>Some of the components require that their licensing terms be included in the documentation of products that include them. Cross references to these licensing terms are given with the applicable items in the list.</p>
 
 
 <h3>gson version 2.1 </h3>
@@ -56,6 +84,13 @@ The Jetty Web Server provides an HTTP server and Servlet container capable of se
 <p><a target="_blank" href="http://www.eclipse.org/jetty/licenses.php">License Details</a></p>
 
 <hr />
+
+<h3>bouncycastle version 140</h3>
+<p>
+Bouncy Castle is a collection of APIs used in cryptography.</p>
+
+<p><a target="_blank" href="http://www.bouncycastle.org/licence.html">License Details</a></p>
+
 
 </body>
 </html>	

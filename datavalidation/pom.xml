@@ -42,10 +42,26 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.apache.commons</groupId>
+			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>xmlbeans</groupId>
+			<artifactId>xbean</artifactId>
+			<version>2.2.0</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.sun.xsom</groupId>
+			<artifactId>xsom</artifactId>
+			<version>20140925</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.xml</groupId>
+			<artifactId>relaxngDatatype</artifactId>
+			<version>1.0</version>
+		</dependency>
 
 	</dependencies>
 

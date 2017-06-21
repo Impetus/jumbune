@@ -1,0 +1,37 @@
+<div jumbune-header=""></div>
+<div class="resultWrapper">
+    <div class="widgetRow" ng-init="init()">
+        <div class="widgetWrapper" id="tuningWidgetWrapper">
+            <!-- <div> <h2>Optimize Job&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Optimize Job</h2> </div> -->
+            <h2><span class="tracking"><i class="fa fa-home" style="font-size:30px;cursor:pointer;" ng-click="clickedHomeIcon()"></i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Job&nbsp;&nbsp;-&nbsp;&nbsp;{{showJobName}}(Data Quality TimeLine Job)</span><span class="tracking1" style="float:right;"><i class="fa fa-refresh" style="font-size:30px;cursor:pointer;" ng-click="manualRefresh()"></i></span><span style="float:right;margin-top:5px;padding-right:15px;"><i class="fa fa-key rotateClass tip" data-toggle="tooltip" ng-show="licenseExpireTrue" title="License will expire soon." data-placement="right" style="color:#F44336"></i>
+            <i ng-show="licenseExpireDays" class="fa fa-key rotateClass tip" data-toggle="tooltip" title="License will expire in {{daysDiffShow}} day." data-placement="right" style="color:#F44336"></i> </span></h2>
+            <div class="ring-loader" style="margin-top:145px;"></div>
+            <p class="message-loader" style="text-align: center;
+                    color: #00838F;
+                    width: 600px;
+                    padding: 20px;
+                    border-radius: 5px;
+                    background-color: #B2EBF2;
+                    margin: 0 auto;
+                    position: relative;
+                    top: 20px;
+                    font-size:16px;">Please wait while we assimilate timeline view of Quality of Data.</p>
+                    <p id="errorMessage" style="text-align: center;color: rgb(169, 68, 66);width: 600px;padding: 20px;
+                    border-radius: 5px;
+                    background: rgb(235, 204, 209);
+                    margin: 0 auto;
+                    position: relative;
+                    top: 150px;
+                    display: none"></p>
+            <div class="clearfix" style="padding:15px;">
+                <div align="center" id="chart1" style="min-width:1000px;min-height:300px;"></div>
+            </div>
+        </div>
+        
+    </div>
+</div>
+<style>
+.show-pointer {
+    cursor: pointer;
+}
+</style>

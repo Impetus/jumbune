@@ -3,42 +3,39 @@ package org.jumbune.datavalidation;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Writable;
 
 public class DataDiscrepanciesArrayWritable extends ArrayWritable {
-	private String fileName ;
-@Override
-public void set(Writable[] values) {
-	super.set(values);
-}
+
+	@Override
+	public void set(Writable[] values) {
+		super.set(values);
+	}
 
 	public DataDiscrepanciesArrayWritable() {
-		super(DataViolationWritableBean.class);
+		super(DataViolationWB.class);
 	}
-	
+
 	@Override
 	public void write(DataOutput out) throws IOException {
 		super.write(out);
-		out.writeUTF(fileName);
+
 	}
-	
+
 	@Override
 	public void readFields(DataInput in) throws IOException {
 		super.readFields(in);
-		fileName = in.readUTF();
 	}
-	/**
-	 * @return the fileName
-	 */
-	public String getFileName() {
-		return fileName;
+
+	@Override
+	public String toString() {
+		return "DataDiscrepanciesArrayWritable [fileName=" + ", getValueClass()=" + getValueClass() + ", toStrings()="
+				+ Arrays.toString(toStrings()) + ", toArray()=" + toArray() + ", get()=" + Arrays.toString(get())
+				+ ", getClass()=" + getClass() + ", hashCode()=" + hashCode() + ", toString()=" + super.toString()
+				+ "]";
 	}
-	/**
-	 * @param fileName the fileName to set
-	 */
-	public void setFileName(String fileName) {
-		this.fileName = fileName;
-	}
+
 }

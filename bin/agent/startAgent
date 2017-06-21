@@ -1,0 +1,41 @@
+#!/bin/bash
+
+##Uncomment the options (HADOOP_DISTRIBUTION_TYPE_FLAG and HADOOP_DISTRIBUTION_TYPE) to set Hadoop Distribution Type, 'a' for Apache, 'c' for Cloudera, 'e' for EMR, 'h' for HortonWorks, 'm' for MapR in flag HADOOP_DISTRIBUTION_TYPE
+#HADOOP_DISTRIBUTION_TYPE_FLAG=--distribution
+#HADOOP_DISTRIBUTION_TYPE=a
+
+# Uncomment the options (HADOOP_DIR_FLAG, HADOOP_DIR) to set Hadoop installation directory, typically it's the directory containing sub directories & files like (bin, sbin, lib, libexec, hadoop-common-*.jar), [/usr/lib/hadoop]
+#HADOOP_DIR_FLAG=--hadoop-dir
+#HADOOP_DIR=path to the hadoop directory
+
+##
+# (mandatory)
+# Agent Work Directory information.
+# The value of this property is configured to be the directory configured as AGENT_WORK_DIR
+##
+
+
+AGENT_WORK_DIR=..
+
+##
+# (mandatory)
+# Agent port information.
+# The value of this property is the port on which Jumbune Agent listens and communicates with Jumbune Container.
+# Default port configured is 2161
+##
+
+AGENT_PORT=2161
+
+##
+# (optional)
+# To increase the verbosity .
+# Uncommenting this increases the verbosity of the Jumbune Agent Logs.
+##
+
+#VERBOSE=--verbose
+
+#exec java -classpath  $CLASS 
+JAVA=${JAVA_HOME}/bin/java
+
+
+exec sudo -E "$JAVA" -jar ../jumbune-remoting-1.1.0-agent.jar --agent-dir $AGENT_WORK_DIR --agent-port $AGENT_PORT $HADOOP_DISTRIBUTION_TYPE_FLAG $HADOOP_DISTRIBUTION_TYPE $HADOOP_DIR_FLAG $HADOOP_DIR $VERBOSE

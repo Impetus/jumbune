@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<!DOCTYPE HTML>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
@@ -10,8 +10,17 @@
 <style>
 	body { background:#282834 !important; }
 </style>
+<link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:200,300,400" rel="stylesheet" />
+<link rel="stylesheet" type="text/css" href="${pageContext.servletContext.contextPath}/skins/js/plugins/sidebar-0.2.0/css/sidebar.css">
+<link rel="stylesheet" type="text/css" href="${pageContext.servletContext.contextPath}/skins/js/plugins/sidebar-0.2.0/css/index.css">
+<link rel="stylesheet" type="text/css" href="${pageContext.servletContext.contextPath}/skins/js/plugins/sidebar-0.2.0/css/lib/fontello.css">
+<link rel="stylesheet" type="text/css" href="${pageContext.servletContext.contextPath}/skins/js/plugins/sidebar-0.2.0/css/lib/normalize.css">
 </head>
 <body>
+<div class="jsc-sidebar-content jsc-sidebar-pulled">
+		<nav>
+		<a href="#" class="icon-menu link-menu jsc-sidebar-trigger"></a>
+		</nav>
 	
 	<div class="top-wrapper"> 
 	  <!-- Wrapper start-->
@@ -21,9 +30,11 @@
 		<div class="header">
 		  <div class="navbar-header">
 			<jsp:include page="Meta.jsp" />
-			<a href="/Home"><img src="${pageContext.servletContext.contextPath}/skins/images/logo_text.png" alt="Jumbune Logo"/></a>
+			<a href="/Home"><img src="${pageContext.servletContext.contextPath}/skins/images/logo_text.png" alt="Jumbune Logo"/>
+		</a>
 		</div>
 		  <div class="navbar-right">
+		<!--place right nav bar content here-->
 		  </div>
 		  <div class="clear"></div>
 		</div>
@@ -83,10 +94,11 @@
 				<p>Select a job json from recent ones</p>
 			  </li>
 			  <li>
-				<div class="icon_block"><a id="dataprofiling" href="javascript:void(0)"><span class="icon"><img src="skins/images/select_icon.png" /></span></a></div>
-				<h3>Define Data Profiling</h3>
-				<p>Profile HDFS data</p>
+				<div class="icon_block"><a id="viewScheduleJobsBtn" href="javascript:void(0)"><span class="icon"><img src="skins/images/select_icon.png" /></span></a></div>
+				<h3>Scheduled</h3>
+				<p>Select to see scheduled jobs report</p>
 			  </li>
+			  
 			</ul>
 			<div class="clear"></div>
 		  </div>
@@ -97,16 +109,50 @@
 	<!-- Footer start-->
 	<div class="footer"><a target="_blank" href="http://jumbune.org/terms.html">Terms of Use</a></div>
 	<!-- Footer end-->
-	
-	<div id="yamlFormModel"></div>
-	<div id="yamlRepositryModelBox" style="display:none;"><table id="yamlRepositryModel"></table></div>
-	<div id="yamlFileUploadModel" style="display:none;">File Uploaded Successfully!</div>
-	<div id="dataProfilingFormModel"></div>
-	<div class="clear"></div>
+				
+
+				<div id="yamlFormModel"></div>
+				<div id="scheduleJobsModel"></div>
+				<div id="yamlRepositryModelBox" style="display:none;"><table id="yamlRepositryModel"></table></div>
+				<div id="yamlFileUploadModel" style="display:none;">File Uploaded Successfully!</div>
+				<div class="clear"></div>
+			
+			</div>
+		</div>
+	</div>
+
+</div>
+
+		<nav class="sidebar jsc-sidebar" id="jsi-nav" data-sidebar-options="">
+		<ul class="sidebar-list">
+		<li><a href="./" class="current">Define Cluster</a></li>
+		<li><a href="http://jumbune.org">New</a></li>
+		<li><a href="http://jumbune.org">Edit</a></li>
+		</ul>
+		</nav>
 
 
 	<script language="javascript">
+		$('#jsi-nav').sidebar({
+			trigger: '.jsc-sidebar-trigger',
+			scrollbarDisplay: true,
+			pullCb: function () { console.log('pull'); },
+			pushCb: function () { console.log('push'); }
+		});
+		$('#api-push').on('click', function (e) {
+			e.preventDefault();
+			$('#jsi-nav').data('sidebar').push();
+		});
+		$('#api-pull').on('click', function (e) {
+			e.preventDefault();
+			$('#jsi-nav').data('sidebar').pull();
+		});
+
 		$(document).ready(function() {
+			var scheduleJobMessage = '<%=request.getAttribute("scheduledJob") %>';
+			if(scheduleJobMessage != 'null'){
+				alert(scheduleJobMessage);
+}
 			function validateInputBoxes() {
 				//console.log("in");
 				var isEmpty = false;						
@@ -129,7 +175,6 @@
 					$(".buttonFinish").addClass("disableNextStep");
 				}
 			}	
-				
 			$('#createYamlBtn').click(function() {
 				$("#yamlFormModel").load('jsp/YamlForm.jsp').dialog({
 					dialogClass : 'modalSelectLocation',
@@ -138,7 +183,7 @@
 					resizable : false,
 					draggable:false,
 					modal : true,
-				close: function(event, ui) { 
+				close: function(event, ui) {
 					$('#yamlForm').validationEngine('hideAll');
 					$('#pickfiles').val('Click here to browse');
 					
@@ -156,13 +201,34 @@
 				});
 			});
 			
-			
-			
 			$("#displayFileUpload input[type='file']").live("change", function() {					
 					uploader.start();
 			});
 
+			// view schedule jobs button click
+		        $('#viewScheduleJobsBtn').click(function() {
 
+				$.ajax({
+				  type: "POST",
+				  cache: false,			  
+				  url: 'SchedulerInfoServlet'
+				}).done(function( resp ) {
+					if(resp == '')
+					{
+						alert('No schedule jobs');
+						return;
+					}					 
+					$("#scheduleJobsModel").load('jsp/Schedulejobs.jsp', {"data" : resp}).dialog({
+						dialogClass: 'modalSelectLocation',
+						height:300,
+						width:400,
+						draggable:false,
+						resizable:false,
+						modal: true
+					}); 
+				
+				});
+			});
 			$('#yamlRepositry').click(function() {
 				var yamlJobsGridData = [];
 				var eachJobsJsonObj = '';
@@ -274,8 +340,8 @@
 				extensions : "json"
 			} ],
 			// Post init events, bound after the internal events
-			init : { 
-				FileUploaded : function(up, file, info) { 
+			init : {
+				FileUploaded : function(up, file, info) {
 					var res = info.response;
 					res = $.parseJSON(res);
 					console.log(res['ErrorAndException']);
@@ -320,7 +386,7 @@
 		uploader
 				.bind(
 						'UploadProgress',
-						function(up, file) { 
+						function(up, file) {
 // 							document.getElementById(file.id)
 // 									.getElementsByTagName('b')[0].innerHTML = '<span>'
 // 									+ file.percent + "%</span>";
@@ -349,11 +415,11 @@
 				$('#pickfiles').css('z-index',1);	
 			},1000);
 			
-			//toggle();*/
-			//return false;
-		}; 
+			//toggle();
+			//return false;*/
+
+		};
 		uploader.init();
-	
 		function toggle() {
 			var ele = document.getElementById("displayFileUpload");
 			if (ele.style.display == "block") {
@@ -362,19 +428,6 @@
 			}
 			//document.getElementById("filelist").style.display = "block";
 		}
-		
-		$('#dataprofiling').click(function() {
-				$("#dataProfilingFormModel").load('jsp/DataProfilingWizard.jsp').dialog({
-					dialogClass : 'modalSelectLocation',
-					height : 600,
-					width : 880,
-					resizable : false,
-					draggable:false,
-					modal : true,
-			});
-		});
-	
 	</script>
-
 </body>
 </html>	

@@ -288,7 +288,7 @@ public class BlockLogMethodAdapter extends BaseMethodAdpater {
 
 		int index = 0;
 		for (int msg : msgs) {
-			logger.info(MessageFormat.format(
+			logger.debug(MessageFormat.format(
 					InstrumentationMessageLoader.getMessage(msg),
 					getClassName() + "##" + name, currentIfCount[nestingLevel]));
 
@@ -357,7 +357,7 @@ public class BlockLogMethodAdapter extends BaseMethodAdpater {
 				String logMsg = InstrumentationMessageLoader
 						.getMessage(MessageConstants.MSG_IN_ELSEIF);
 
-				logger.info(MessageFormat.format(InstrumentationMessageLoader
+				logger.debug(MessageFormat.format(InstrumentationMessageLoader
 						.getMessage(MessageConstants.LOG_IN_ELSEIF),
 						getClassName() + "##" + name,
 						currentIfCount[nestingLevel]));
@@ -411,7 +411,7 @@ public class BlockLogMethodAdapter extends BaseMethodAdpater {
 		String logMsg = InstrumentationMessageLoader
 				.getMessage(MessageConstants.MSG_IN_ELSE);
 
-		logger.info(MessageFormat.format(InstrumentationMessageLoader
+		logger.debug(MessageFormat.format(InstrumentationMessageLoader
 				.getMessage(MessageConstants.LOG_IN_ELSE), getClassName()
 				+ "##" + name, currentIfCount[nestingLevel]));
 
@@ -1010,7 +1010,7 @@ public class BlockLogMethodAdapter extends BaseMethodAdpater {
 
 		// process the loop
 		if (process) {
-			logger.info(MessageFormat.format(InstrumentationMessageLoader
+			logger.debug(MessageFormat.format(InstrumentationMessageLoader
 					.getMessage(MessageConstants.LOG_LOOP_FOUND),
 					getClassName() + "##" + name));
 

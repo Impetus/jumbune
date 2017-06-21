@@ -1,8 +1,6 @@
 package org.jumbune.common.job;
 
 import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -11,36 +9,29 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Classpath;
+import org.jumbune.common.beans.DataCleansingBean;
 import org.jumbune.common.beans.DataProfilingBean;
 import org.jumbune.common.beans.DataQualityTimeLineConfig;
-import org.jumbune.common.beans.DataValidationBean;
 import org.jumbune.common.beans.DebuggerConf;
 import org.jumbune.common.beans.DoNotInstrument;
 import org.jumbune.common.beans.Enable;
+import org.jumbune.common.beans.Feature;
 import org.jumbune.common.beans.JobDefinition;
-import org.jumbune.common.beans.LogConsolidationInfo;
-import org.jumbune.common.beans.LogSummaryLocation;
-import org.jumbune.common.beans.Master;
-import org.jumbune.common.beans.SlaveParam;
-import org.jumbune.common.beans.ProfilingParam;
-import org.jumbune.common.beans.Slave;
 import org.jumbune.common.beans.Validation;
+import org.jumbune.common.beans.XmlElementBean;
+import org.jumbune.common.beans.cluster.LogSummaryLocation;
+import org.jumbune.common.beans.dsc.DataSourceCompValidationInfo;
+import org.jumbune.common.beans.profiling.ProfilingParam;
 import org.jumbune.common.utils.ClasspathUtil;
 import org.jumbune.common.utils.Constants;
-import org.jumbune.common.yarn.beans.YarnMaster;
-import org.jumbune.common.yarn.beans.YarnSlaveParam;
 import org.jumbune.utils.JobUtil;
 import org.jumbune.utils.beans.LogLevel;
 
-import com.google.gson.Gson;
 
-
-// TODO: Auto-generated Javadoc
 /**
  * This class is the bean for the json file.
  */
 public class JobConfig implements Config {
-
 	
 	/** The Constant CONSOLELOGGER. */
 	public static final Logger CONSOLELOGGER = LogManager
@@ -48,6 +39,17 @@ public class JobConfig implements Config {
 
 	/** The Constant logger. */
 	private static final Logger LOGGER = LogManager.getLogger(JobConfig.class);
+	
+	/** The operating cluster. */
+	private String operatingCluster;
+	
+	/** The additional parameters. */
+	private String parameters;
+
+	/**
+	 * This is the user who will submit job on Hadoop and submitted job will have access to the data folder with this user.
+	 */
+	private String operatingUser;
 	
 	/** The Constant DEFAULT_PARTITION_SAMPLE_INTERVAL. */
 	private static final int DEFAULT_PARTITION_SAMPLE_INTERVAL = 1000;
@@ -57,12 +59,7 @@ public class JobConfig implements Config {
 	
 	/** The distributed hdfs path. */
 	private String distributedHDFSPath;
-	/* Hadoop configurations */
-	/** The master. */
-	private YarnMaster master;
 
-	/** The slaves. */
-	private List<Slave> slaves;
 	/* Jumbune Modules */
 	/** The hadoop job profile. */
 	private Enable hadoopJobProfile = Enable.FALSE;
@@ -75,6 +72,10 @@ public class JobConfig implements Config {
 
 	/** The enable static job profiling. */
 	private Enable enableStaticJobProfiling = Enable.FALSE;
+	
+	/** The activated. */
+	private Feature activated;
+	
 	/* Profiling configurations */
 	/** The profiling params. */
 	private ProfilingParam profilingParams;
@@ -107,9 +108,6 @@ public class JobConfig implements Config {
 
 	/** The classpath. */
 	private Classpath classpath;
-	
-	/**  Specify the Job Configuration *. */
-	private JobConfig jobConfig;
 
 	/** The regex validations. */
 	private List<Validation> regexValidations;
@@ -126,15 +124,8 @@ public class JobConfig implements Config {
 	/** Location of HDFS path where data to be validated is kept. */
 	private String hdfsInputPath;
 
-	/* Data Validation Information */
-	/** The data validation. */
-	private DataValidationBean dataValidation;
-
 	/**  String specifying name of jumbune Job. */
 	private String jumbuneJobName;
-
-	/** The slave param. */
-	private YarnSlaveParam slaveParam;
 
 	/**  Launches a new job from Jumbune if set to TRUE *. */
 	private Enable runJobFromJumbune = Enable.FALSE;
@@ -143,7 +134,7 @@ public class JobConfig implements Config {
 	private String existingJobName;
 
 	/** The Jar is from Jumbune System is isLocalSystemJar is FALSE otherwise from local system. */
-	private Enable isLocalSystemJar;
+	private Enable isLocalSystemJar = Enable.FALSE;
 
 	/** The enable data profiling. */
 	private Enable enableDataProfiling = Enable.FALSE;
@@ -154,17 +145,32 @@ public class JobConfig implements Config {
 	/** The data profiling bean. */
 	private DataProfilingBean dataProfilingBean;
 
-	/** The log definition. */
-	private LogConsolidationInfo logDefinition;
-
-	/** The dv definition. */
-	private LogConsolidationInfo dvDefinition;
 
 	/** This must be set explicitly. */
 	private static String jumbuneHome;
 
 	/** The data quality time line. */
 	private DataQualityTimeLineConfig dataQualityTimeLineConfig ;
+	
+	private DataCleansingBean dataCleansing;
+	
+	/** The XML Data Validation. */
+	private Enable enableXmlDataValidation = Enable.FALSE;
+	
+	/** The enable json data validation. */
+	private Enable enableJsonDataValidation = Enable.FALSE;
+	
+	private Enable isDataSourceComparisonEnabled = Enable.FALSE;
+	
+	private Enable isDataCleansingEnabled = Enable.FALSE;
+	
+	private DataSourceCompValidationInfo dataSourceCompValidationInfo;
+	
+	/** The field validation list. */
+	private List<Map<String, String>> fieldValidationList;
+	
+	/** The xml element bean list. */
+	private List<XmlElementBean> xmlElementBeanList ;
 
 	static {
 		// locating jumbune home form env properties
@@ -183,12 +189,39 @@ public class JobConfig implements Config {
 	}
 	
 	/**
+	 * Gets the enable xml data validation.
+	 *
+	 * @return the enableXmlDataValidation
+	 */
+	public Enable getEnableXmlDataValidation() {
+		return enableXmlDataValidation;
+	}
+
+	/**
+	 * Sets the enable xml data validation.
+	 *
+	 * @param enableXmlDataValidation the enableXmlDataValidation to set
+	 */
+	public void setEnableXmlDataValidation(Enable enableXmlDataValidation) {
+		this.enableXmlDataValidation = enableXmlDataValidation;
+	}
+	
+	/**
 	 * Gets the checks if is local system jar.
 	 *
 	 * @return if isLocalSystemJar is TRUE or FALSE
 	 */
 	public Enable getIsLocalSystemJar() {
 		return isLocalSystemJar;
+	}
+	
+	/**
+	 * Sets the checks if is local system jar.
+	 *
+	 * @param x the new checks if is local system jar
+	 */
+	public void setIsLocalSystemJar(Enable x) {
+		this.isLocalSystemJar = x;
 	}
 
 	/**
@@ -205,8 +238,7 @@ public class JobConfig implements Config {
 		if (!jobNameTemp.endsWith(File.separator)) {
 			jobNameTemp += File.separator;
 		}
-		return jobNameTemp;
-	
+		return jobNameTemp;	
 	}
 
 	/**
@@ -230,24 +262,25 @@ public class JobConfig implements Config {
 		this.jumbuneJobName = jumbuneJobNameTemp;
 	}
 
+	
 	/**
-	 * Gets the Slave Working Directory.
-	 * 
-	 * @return the slave Working Directory
+	 * Gets the activated.
+	 *
+	 * @return the activated
 	 */
-	public String getSlaveWorkingDirectory() {
-		return JobUtil.getAndReplaceHolders(slaveWorkingDirectory);
+	public Feature getActivated() {
+		return activated;
 	}
 
 	/**
-	 * Sets the Slave Working Directory.
+	 * Sets the activated.
 	 *
-	 * @param slaveWorkingDirectory the new slave working directory
+	 * @param activated the new activated
 	 */
-	public void setSlaveWorkingDirectory(String slaveWorkingDirectory) {
-		this.slaveWorkingDirectory = slaveWorkingDirectory;
+	public void setActivated(Feature activated) {
+		this.activated = activated;
 	}
-	
+
 	/**
 	 * Gets the hadoop job profile.
 	 * 
@@ -283,7 +316,7 @@ public class JobConfig implements Config {
 	 *            the new enable data validation
 	 */
 	public void setEnableDataValidation(Enable enableDataValidation) {
-		this.enableDataValidation = enableDataValidation;
+		this.enableDataValidation = enableDataValidation;		
 	}
 
 	/**
@@ -431,53 +464,6 @@ public class JobConfig implements Config {
 	}
 
 	/**
-	 * Gets the master.
-	 * 
-	 * @return the master
-	 */
-	public YarnMaster getMaster() {
-		return master;
-	}
-
-	/**
-	 * Sets the master.
-	 * 
-	 * @param master
-	 *            the new master
-	 */
-	public void setMaster(YarnMaster master) {
-		this.master = master;
-	}
-
-	/**
-	 * Gets the slaves.
-	 * 
-	 * @return the slaves
-	 */
-	public List<Slave> getSlaves() {
-		return (slaves != null) ? slaves : new ArrayList<Slave>();
-	}
-	
-	/**
-	 * Gets the first user worker.
-	 *
-	 * @return the first user worker
-	 */
-	public Slave getFirstUserWorker(){
-		return getSlaves().get(0);
-	}
-
-	/**
-	 * Sets the slaves.
-	 * 
-	 * @param slaves
-	 *            the new slaves
-	 */
-	public void setSlaves(List<Slave> slaves) {
-		this.slaves = slaves;
-	}
-
-	/**
 	 * Gets the debugger conf.
 	 * 
 	 * @return the debugger conf
@@ -565,6 +551,22 @@ public class JobConfig implements Config {
 		this.userValidations = userValidations;
 	}
 
+	public Enable getIsDataSourceComparisonEnabled(){
+		return isDataSourceComparisonEnabled;
+	}
+
+	public void setIsDataSourceComparisonEnabled(Enable isDataSourceComparisonEnabled){
+		this.isDataSourceComparisonEnabled = isDataSourceComparisonEnabled;
+	}
+
+	public Enable getIsDataCleansingEnabled(){
+		return isDataCleansingEnabled;
+	}
+
+	public void setIsDataCleansingEnabled(Enable isDataCleansingEnabled){
+		this.isDataCleansingEnabled = isDataCleansingEnabled;
+	}
+	
 	/**
 	 * Gets the input file.
 	 * 
@@ -606,25 +608,6 @@ public class JobConfig implements Config {
 	 */
 	public void setProfilingParams(ProfilingParam profilingParams) {
 		this.profilingParams = profilingParams;
-	}
-
-	/**
-	 * Gets the data validation.
-	 * 
-	 * @return the data validation
-	 */
-	public final DataValidationBean getDataValidation() {
-		return dataValidation;
-	}
-
-	/**
-	 * Sets the data validation.
-	 * 
-	 * @param dataValidation
-	 *            the new data validation
-	 */
-	public final void setDataValidation(DataValidationBean dataValidation) {
-		this.dataValidation = dataValidation;
 	}
 
 	/**
@@ -721,31 +704,13 @@ public class JobConfig implements Config {
 	}
 
 	/**
-	 * Sets the slave param.
-	 * 
-	 * @param slaveParam
-	 *            the new slave param
-	 */
-	public void setSlaveParam(YarnSlaveParam slaveParam) {
-		this.slaveParam = slaveParam;
-	}
-
-	/**
-	 * Gets the slave param.
-	 * 
-	 * @return the slave param
-	 */
-	public YarnSlaveParam getSlaveParam() {
-		return slaveParam;
-	}
-
-	/**
 	 * Sets the enable data profiling.
 	 *
 	 * @param enableDataProfiling the new enable data profiling
 	 */
 	public void setEnableDataProfiling(Enable enableDataProfiling) {
 		this.enableDataProfiling = enableDataProfiling;
+		
 	}
 
 	/**
@@ -828,7 +793,8 @@ public class JobConfig implements Config {
 	public void setDataQualityTimeLineConfig(DataQualityTimeLineConfig dataQualityTimeLineConfig) {
 		this.dataQualityTimeLineConfig = dataQualityTimeLineConfig;
 	}
-
+	
+	
 	/**
 	 * Gets the jumbune job loc.
 	 *
@@ -1040,114 +1006,6 @@ public class JobConfig implements Config {
 	}
 
 	/**
-	 * Gets the dV definition.
-	 *
-	 * @return the dV definition
-	 */
-	public LogConsolidationInfo getDVDefinition() {
-
-		if (dvDefinition == null) {
-
-			// getting master
-			Master master = getMaster();
-
-			// setting consolidated log location
-			master.setLocation(getMasterConsolidatedDVLocation());
-
-			// getting slaves
-			List<Slave> slaves = getSlaves();
-
-			// setting slaves log location
-			for (Slave slave : slaves) {
-				slave.setLocation(getSlaveDVLocation());
-			}
-
-			dvDefinition = new LogConsolidationInfo();
-			dvDefinition.setMaster(master);
-			dvDefinition.setSlaves(slaves);
-		}
-
-		return dvDefinition;
-	}
-
-	/**
-	 * Gets the log definition.
-	 *
-	 * @return the log definition
-	 */
-	public LogConsolidationInfo getLogDefinition() {
-
-		// getting master
-		Master master = getMaster();
-
-		// setting consolidated log location
-		master.setLocation(getMasterConsolidatedLogLocation());
-
-		// getting slaves
-		List<Slave> slaves = getSlaves();
-
-		// setting slaves log location
-		for (Slave slave : slaves) {
-			slave.setLocation(getSlaveLogLocation());
-		}
-		LogSummaryLocation logSummarylocation = new LogSummaryLocation();
-		logSummarylocation.setPureJarCounterLocation(getJumbuneJobLoc()
-				+ Constants.SUMMARY_FILE_LOC + Constants.PURE_JAR_COUNTER);
-		logSummarylocation.setPureJarProfilingCountersLocation(getJumbuneJobLoc()
-				+ Constants.SUMMARY_FILE_LOC + Constants.PURE_PROFILING);
-		logSummarylocation.setInstrumentedJarCountersLocation(getJumbuneJobLoc()
-				+ Constants.SUMMARY_FILE_LOC
-				+ Constants.INSTRUMENTED_JAR_COUNTER);
-		logSummarylocation.setLogsConsolidatedSummaryLocation(getJumbuneJobLoc()
-				+ Constants.SUMMARY_FILE_LOC + Constants.M_SUMMARY_FILE);
-		logSummarylocation.setProfilingFilesLocation(getJumbuneJobLoc()
-				+ Constants.PROFILING_FILE_LOC);
-
-		logDefinition = new LogConsolidationInfo();
-		logDefinition.setMaster(master);
-		logDefinition.setSlaves(slaves);
-		logDefinition.setLogSummaryLocation(logSummarylocation);
-
-		return logDefinition;
-	}
-
-	/**
-	 * Gets the sys resource file consolidation.
-	 *
-	 * @return the sys resource file consolidation
-	 */
-	public LogConsolidationInfo getSysResourceFileConsolidation() {
-
-		// getting master
-		Master master = getMaster();
-
-		// setting consolidated log location
-		master.setLocation(jumbuneHome + Constants.SYSTEM_STATS_DIR);
-
-		// getting slaves
-		List<Slave> slaves = getSlaves();
-
-		// setting slaves log location
-		for (Slave slave : slaves) {
-			slave.setLocation(getSlaveWorkingDirectory());
-		}
-
-		LogConsolidationInfo fileDefinition = new LogConsolidationInfo();
-		fileDefinition.setMaster(master);
-		fileDefinition.setSlaves(slaves);
-		return fileDefinition;
-	}
-
-	/**
-	 * Gets the log master.
-	 *
-	 * @return the log master
-	 */
-	public Master getLogMaster() {
-		return getLogDefinition().getMaster();
-	}
-
-	/**
 	 * Gets the classpath.
 	 *
 	 * @return the classpath
@@ -1232,12 +1090,12 @@ public class JobConfig implements Config {
 	 *
 	 * @return the hadoop job profile params
 	 */
-	public String getHadoopJobProfileParams() {
+/*	public String getHadoopJobProfileParams() {
 		return "\'" + Constants.H_PROFILE_PARAM
 				+ getProfilingParams().getHadoopJobProfileParams()
 				+ "\'";
 	}
-
+*/
 
 	/**
 	 * Gets the max if block nesting level.
@@ -1259,18 +1117,6 @@ public class JobConfig implements Config {
 	}
 
 	/**
-	 * Gets the slave log location.
-	 *
-	 * @return the slave log location
-	 */
-	public String getSlaveLogLocation() {
-
-		return getSlaveWorkingDirectory() + Constants.JOB_JARS_LOC
-				+ getFormattedJumbuneJobName() + Constants.SLAVE_LOG_LOC;
-
-	}
-
-	/**
 	 * Gets the master consolidated dv location.
 	 *
 	 * @return the master consolidated dv location
@@ -1279,19 +1125,28 @@ public class JobConfig implements Config {
 		return getJumbuneJobLoc()
 				+ Constants.CONSOLIDATED_DV_LOC;
 	}
-
+	
 	/**
-	 * Gets the slave dv location.
+	 * Gets the master consolidated dv location for Xml.
 	 *
-	 * @return the slave dv location
+	 * @return the master consolidated dv location  for Xml.
 	 */
-	public String getSlaveDVLocation() {
-
-		return getSlaveWorkingDirectory() + Constants.JOB_JARS_LOC
-				+ getFormattedJumbuneJobName() + Constants.SLAVE_DV_LOC;
-
+	public String getMasterConsolidatedXmlDVLocation() {
+		return getJumbuneJobLoc()
+				+ Constants.CONSOLIDATED_XML_DV_LOC;
 	}
 
+	
+	/**
+	 * Gets the master consolidated json dv location.
+	 *
+	 * @return the master consolidated json dv location
+	 */
+	public String getMasterConsolidatedJsonDVLocation(){
+		return getJumbuneJobLoc()
+				+ Constants.CONSOLIDATED_JSON_DV_LOC;
+	}
+	
 	/**
 	 * Gets the file name.
 	 *
@@ -1341,7 +1196,6 @@ public class JobConfig implements Config {
 			return jumbuneHome;
 	}
 
-
 	/**
 	 * Set the FrameworkHome.
 	 *
@@ -1367,6 +1221,27 @@ public class JobConfig implements Config {
 	 */
 	public String getJobJarLoc() {
 		return jumbuneHome + Constants.JOB_JARS_LOC;
+	}
+	
+	/**
+	 * Gets the log summary location.
+	 *
+	 * @return the log summary location
+	 */
+	public LogSummaryLocation getLogSummaryLocation() {
+		LogSummaryLocation logSummarylocation = new LogSummaryLocation();
+		logSummarylocation.setPureJarCounterLocation(getJumbuneJobLoc()
+				+ Constants.SUMMARY_FILE_LOC + Constants.PURE_JAR_COUNTER);
+		logSummarylocation.setPureJarProfilingCountersLocation(getJumbuneJobLoc()
+				+ Constants.SUMMARY_FILE_LOC + Constants.PURE_PROFILING);
+		logSummarylocation.setInstrumentedJarCountersLocation(getJumbuneJobLoc()
+				+ Constants.SUMMARY_FILE_LOC
+				+ Constants.INSTRUMENTED_JAR_COUNTER);
+		logSummarylocation.setLogsConsolidatedSummaryLocation(getJumbuneJobLoc()
+				+ Constants.SUMMARY_FILE_LOC + Constants.M_SUMMARY_FILE);
+		logSummarylocation.setProfilingFilesLocation(getJumbuneJobLoc()
+				+ Constants.PROFILING_FILE_LOC);
+		return logSummarylocation;
 	}
 
 
@@ -1395,36 +1270,155 @@ public class JobConfig implements Config {
 	public boolean isMainClassDefinedInJobJar() {
 		return this.getIncludeClassJar().getEnumValue();
 	}
+
+	/**
+	 * Gets the operating cluster.
+	 *
+	 * @return the operating cluster
+	 */
+	public String getOperatingCluster() {
+		return operatingCluster;
+	}
+
+	/**
+	 * Sets the operating cluster.
+	 *
+	 * @param operatingCluster the new operating cluster
+	 */
+	public void setOperatingCluster(String operatingCluster) {
+		this.operatingCluster = operatingCluster;
+	}
 	
+	/**
+	 * Gets the operating user.
+	 *
+	 * @return the operating user
+	 */
+	public String getOperatingUser() {
+		return operatingUser;
+	}
+
+	/**
+	 * Sets the operating user.
+	 *
+	 * @param operatingUser the new operating user
+	 */
+	public void setOperatingUser(String operatingUser) {
+		this.operatingUser = operatingUser;
+	}
+
+	/**
+	 * Gets the enable json data validation.
+	 *
+	 * @return the enable json data validation
+	 */
+	public Enable getEnableJsonDataValidation() {
+		return enableJsonDataValidation;
+	}
+
+	/**
+	 * Sets the enable json data validation.
+	 *
+	 * @param enableJsonDataValidation the new enable json data validation
+	 */
+	public void setEnableJsonDataValidation(Enable enableJsonDataValidation) {
+		this.enableJsonDataValidation = enableJsonDataValidation;
+	}
+
+	/**
+	 * Gets the field validation list.
+	 *
+	 * @return the field validation list
+	 */
+	public List<Map<String, String>> getFieldValidationList() {
+		return fieldValidationList;
+	}
+
+	/**
+	 * Sets the field validation list.
+	 *
+	 * @param fieldValidationList the field validation list
+	 */
+	public void setFieldValidationList(List<Map<String, String>> fieldValidationList) {
+		this.fieldValidationList = fieldValidationList;
+	}
+
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
-	@Override
-	public String toString() {
-		return "JobConfig [distributedHDFSPath=" + distributedHDFSPath
-				+ ", master=" + master + ", slaves=" + slaves
-				+ ", hadoopJobProfile=" + hadoopJobProfile + ", enableDataValidation=" + enableDataValidation
-				+ ", debugAnalysis=" + debugAnalysis
-				+ ", enableStaticJobProfiling=" + enableStaticJobProfiling
-				+ ", profilingParams=" + profilingParams + ", jobs=" + jobs
-				+ ", includeClassJar=" + includeClassJar + ", inputFile="
-				+ inputFile + ", doNotInstrument=" + doNotInstrument
-				+ ", mapperSuperClasses=" + Arrays.toString(mapperSuperClasses)
-				+ ", reducerSuperClasses="
-				+ Arrays.toString(reducerSuperClasses) + ", debuggerConf="
-				+ debuggerConf + ", classpath=" + classpath + ", logKeyValues="
-				+ logKeyValues + ", regexValidations=" + regexValidations
-				+ ", userValidations=" + userValidations
-				+ ", partitionerSampleInterval=" + partitionerSampleInterval
-				+ ", slaveWorkingDirectory=" + slaveWorkingDirectory + ", hdfsInputPath="
-				+ hdfsInputPath + ", dataValidation=" + dataValidation
-				+ ", jumbuneJobName=" + jumbuneJobName + ", slaveParam="
-				+ slaveParam + ", runJobFromJumbune=" + runJobFromJumbune
-				+ ", existingJobName=" + existingJobName
-				+ ", isLocalSystemJar=" + isLocalSystemJar
-				+ ", enableDataProfiling=" + enableDataProfiling
-				+ ", criteriaBasedDataProfiling=" + criteriaBasedDataProfiling
-				+ ", dataProfilingBean=" + dataProfilingBean + ",dataQualityTimeLine="+dataQualityTimeLineConfig+"]";
+	
+	public List<XmlElementBean> getXmlElementBeanList() {
+		return xmlElementBeanList;
 	}
 
+	public void setXmlElementBeanList(List<XmlElementBean> xmlElementBeanList) {
+		this.xmlElementBeanList = xmlElementBeanList;
+	}
+	
+	/**
+	 * Gets the data cleansing.
+	 *
+	 * @return the data cleansing
+	 */
+	public DataCleansingBean getDataCleansing() {
+		return dataCleansing;
+	}
+
+	/**
+	 * Sets the data cleansing.
+	 *
+	 * @param dataCleansing the new data cleansing
+	 */
+	public void setDataCleansing(DataCleansingBean dataCleansing) {
+		this.dataCleansing = dataCleansing;
+	}
+	
+	/**
+	 * Gets the parameters.
+	 *
+	 * @return the parameters
+	 */
+	public String getParameters() {
+		return parameters;
+	}
+
+	/**
+	 * Sets the parameters.
+	 *
+	 * @param parameters the new parameters
+	 */
+	public void setParameters(String parameters) {
+		this.parameters = parameters;
+	}
+
+	public DataSourceCompValidationInfo getDataSourceCompValidationInfo() {
+		return dataSourceCompValidationInfo;
+	}
+
+	public void setDataSourceCompValidationInfo(DataSourceCompValidationInfo dataSourceCompValidationInfo) {
+		this.dataSourceCompValidationInfo = dataSourceCompValidationInfo;
+	}
+	
+	@Override
+	public String toString() {
+		return "JobConfig [operatingCluster=" + operatingCluster + ", operatingUser=" + operatingUser
+				+ ", enableDataQualityTimeline=" + enableDataQualityTimeline + ", distributedHDFSPath="
+				+ distributedHDFSPath + ", hadoopJobProfile=" + hadoopJobProfile + ", enableDataValidation="
+				+ enableDataValidation + ", debugAnalysis=" + debugAnalysis + ", enableStaticJobProfiling="
+				+ enableStaticJobProfiling + ", activated=" + activated + ", profilingParams=" + profilingParams
+				+ ", jobs=" + jobs + ", includeClassJar=" + includeClassJar + ", inputFile=" + inputFile
+				+ ", doNotInstrument=" + doNotInstrument + ", mapperSuperClasses=" + Arrays.toString(mapperSuperClasses)
+				+ ", reducerSuperClasses=" + Arrays.toString(reducerSuperClasses) + ", debuggerConf=" + debuggerConf
+				+ ", logKeyValues=" + logKeyValues + ", classpath=" + classpath + ", regexValidations="
+				+ regexValidations + ", userValidations=" + userValidations + ", partitionerSampleInterval="
+				+ partitionerSampleInterval + ", slaveWorkingDirectory=" + slaveWorkingDirectory + ", hdfsInputPath="
+				+ hdfsInputPath + ", jumbuneJobName=" + jumbuneJobName + ", runJobFromJumbune=" + runJobFromJumbune
+				+ ", existingJobName=" + existingJobName + ", isLocalSystemJar=" + isLocalSystemJar
+				+ ", enableDataProfiling=" + enableDataProfiling + ", criteriaBasedDataProfiling="
+				+ criteriaBasedDataProfiling + ", dataProfilingBean=" + dataProfilingBean
+				+ ", dataQualityTimeLineConfig=" + dataQualityTimeLineConfig + ", enableXmlDataValidation="
+				+ enableXmlDataValidation + ", enableJsonDataValidation=" + enableJsonDataValidation
+				+ ", fieldValidationList=" + fieldValidationList + ", xmlElementBeanList=" + xmlElementBeanList + ", parameters=" + parameters +"]";
+	}	
+	
 }

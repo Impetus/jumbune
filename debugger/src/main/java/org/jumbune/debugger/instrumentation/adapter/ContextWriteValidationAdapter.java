@@ -18,7 +18,7 @@ import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
 import org.jumbune.debugger.instrumentation.utils.InstrumentationMessageLoader;
 import org.jumbune.debugger.instrumentation.utils.MessageConstants;
 import org.jumbune.debugger.instrumentation.utils.MethodByteCodeUtil;
-import org.jumbune.common.beans.InstructionsBean;
+import org.jumbune.debugger.log.processing.InstructionsBean;
 import org.jumbune.utils.beans.LogInfoBean;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
@@ -96,7 +96,7 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 							// write method
 							if (InstrumentUtil.isOutputMethod(min)) {
 
-								LOG.info(MessageFormat.format(
+								LOG.debug(MessageFormat.format(
 										InstrumentationMessageLoader
 												.getMessage(MessageConstants.LOG_ADDING_REGEX_VALIDATION_CALL),
 										getClassName() + "##" + mn.name,
@@ -329,7 +329,7 @@ public class ContextWriteValidationAdapter extends BaseAdapter {
 				validateingMessage, null);
 		InsnList patternMatcherInsnList = new InsnList();
 
-		LOG.info("User provided regEx " + regEx);
+		LOG.debug("User provided regEx " + regEx);
 
 		// Adding call for Key regular Expression
 		if (isNullString(regEx)) {

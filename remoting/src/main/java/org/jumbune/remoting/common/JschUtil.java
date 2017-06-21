@@ -6,11 +6,16 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.remoting.server.HadoopConfigurationPropertyLoader;
+import org.jumbune.remoting.common.command.CommandWritable;
+import org.jumbune.remoting.server.JumbuneAgent;
 
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
@@ -22,10 +27,11 @@ import com.jcraft.jsch.UserInfo;
 
 
 /**
- * The Class Jschutil is an utility class for handling the all channel related operations 
+ * The Class Jschutil is an utility class for handling the all channel related operations.
  */
 public final class JschUtil {
 	
+	/** The Constant LOGGER. */
 	private static final Logger LOGGER=LogManager.getLogger(JschUtil.class);
 	/**
 	 * Instantiates a new jsch util.
@@ -35,15 +41,26 @@ public final class JschUtil {
 	
 	/** The Constant STRICT_HOST_KEY_CHECKING. */
 	private static final String STRICT_HOST_KEY_CHECKING = "StrictHostKeyChecking";
+
+	/** The Constant NEW_LINE. */
 	private static final String NEW_LINE = "\n";
 	
+	/** The Constant GB. */
+	private static final String GB = "GB";
+	
+	/** The Constant LOGOUT. */
+	private static final String LOGOUT = "logout";
+
+	private static final String PID_COMMAND_PREFIX = "ps -ef | awk '/\\.";
+
+	private static final String PID_COMMAND_SUFFIX = "/{print $0}' && exit";
+		
 	/**
 	 * The logger.
 	 *
-	 * @param user the user
+	 * @param switchedIdentity the switched identity
 	 * @param host the host
-	 * @param rsaFilePath the rsa file path
-	 * @param dsaFilePath the dsa file path
+	 * @param commandType the command type
 	 * @return the session
 	 * @throws JSchException the j sch exception
 	 */
@@ -51,37 +68,42 @@ public final class JschUtil {
 	/**
 	 * For creating a JSCH session.
 	 * 
-	 * @param user
-	 *            the user
 	 * @param host
 	 *            the host
-	 * @param rsaFilePath
-	 *            the rsa file path
-	 * @param dsaFilePath
-	 *            the dsa file path
 	 * @return a JSCH session
 	 * @throws JSchException
-	 *             the j sch exception
+	 *             the jsch exception
 	 */
-	public static Session createSession(String user, String host, String rsaFilePath, String dsaFilePath, CommandType commandType) throws JSchException {
+	public static Session createSession(CommandWritable.Command.SwitchedIdentity switchedIdentity, String host, CommandType commandType) throws JSchException {
 		JSch jsch = new JSch();
 		Session session = null;
-	
-		SwitchedIdentity switchedIdentity = changeIdentityAsPerCommand(user, rsaFilePath, dsaFilePath, commandType);
-		if(commandType.equals(CommandType.FS)){
-			jsch.addIdentity(switchedIdentity.getPrivatePath());
+		if(switchedIdentity.getPrivatePath() != null && !switchedIdentity.getPrivatePath().isEmpty()){
+			jsch.addIdentity(switchedIdentity.getPrivatePath());	
 		}
 		java.util.Properties conf = new java.util.Properties();
 		session = jsch.getSession(switchedIdentity.getUser(), host, RemotingConstants.TWENTY_TWO);
-		UserInfo info = getSwitchedUser(commandType, switchedIdentity);
-		session.setUserInfo(info);
 		conf.put(STRICT_HOST_KEY_CHECKING, "no");
+		if(switchedIdentity.getPasswd()!=null){
+			try {
+				session.setPassword(StringUtil.getPlain(switchedIdentity.getPasswd()));
+			} catch (Exception e) {
+				LOGGER.error("Unable to get decrypted Password", e);
+			}
+		}
 		session.setConfig(conf);
-		LOGGER.debug("Session Established, for user ["+switchedIdentity.getUser()+"]");
 		return session;
 	}
 	
-	public static boolean verifyPassword(String user, String encryptedPasswrd) throws JSchException {
+	/**
+	 * Verify password.
+	 *
+	 * @param user the user
+	 * @param encryptedPasswrd the encrypted passwrd
+	 * @return true, if successful
+	 * @throws Exception the exception
+	 */
+	//TODO: Require to make sure we are not using localhost
+	public static boolean verifyPassword(String user, String encryptedPasswrd) throws Exception {
 		JSch jsch = new JSch();
 		Session session = null;
 		java.util.Properties conf = new java.util.Properties();
@@ -101,7 +123,17 @@ public final class JschUtil {
 		return isConnected;
 	}	
 	
-	private static UserInfo getSwitchedUser(CommandType commandType, SwitchedIdentity switchedIdentity){
+	/**
+	 * Gets the jumbune user info.
+	 *
+	 * @param commandType the command type
+	 * @param switchedIdentity the switched identity
+	 * @return the jumbune user info
+	 * @throws Exception the exception
+	 */
+	private static UserInfo getJumbuneUserInfo(CommandType commandType,
+			CommandWritable.Command.SwitchedIdentity switchedIdentity) throws Exception{
+		
 		UserInfo info;
 		if(commandType.equals(CommandType.HADOOP_FS)){
 			info = new JumbuneUserInfo(StringUtil.getPlain(switchedIdentity.getPasswd()));
@@ -109,42 +141,24 @@ public final class JschUtil {
 			info = new JumbuneUserInfo(StringUtil.getPlain(switchedIdentity.getPasswd()));
 		}else if(commandType.equals(CommandType.MAPRED)){
 			info = new JumbuneUserInfo(StringUtil.getPlain(switchedIdentity.getPasswd()));
+		}else if(commandType.equals(CommandType.USER)){
+			info = new JumbuneUserInfo();
 		}else{
 			info = new JumbuneUserInfo();
 		}
 		return info;
 	}
 	
-	private static SwitchedIdentity changeIdentityAsPerCommand(String user, String rsaFilePath, String dsaFilePath, CommandType commandType){
-		HadoopConfigurationPropertyLoader hcpl = HadoopConfigurationPropertyLoader.getInstance();
-		SwitchedIdentity switchedIdentity = new SwitchedIdentity();
-		if(commandType.equals(CommandType.HADOOP_FS)){
-			switchedIdentity.setUser(hcpl.getHdfsUser());
-			setPasswd(switchedIdentity, hcpl.getHdfsPasswd());
-		}else if(commandType.equals(CommandType.HADOOP_JOB)){
-			switchedIdentity.setUser(hcpl.getYarnUser());
-			setPasswd(switchedIdentity, hcpl.getYarnPasswd());	
-		}else if(commandType.equals(CommandType.MAPRED)){
-			switchedIdentity.setUser(hcpl.getMapredUser());
-			setPasswd(switchedIdentity, hcpl.getMapredPasswd());	
-		}else{
-			switchedIdentity.setUser(user);
-			String privateKeyFilePath;
-			if(rsaFilePath!= null && !"".equals(rsaFilePath)){
-				privateKeyFilePath = rsaFilePath;
-			}else{
-				privateKeyFilePath = dsaFilePath;
-			}
-			switchedIdentity.setPrivatePath(privateKeyFilePath);
-		}
-		LOGGER.warn("For commandType: "+ commandType+ " Switched Identity to: "+ switchedIdentity);
-		return switchedIdentity;
-	}
-		
-	private static void setPasswd(SwitchedIdentity switchedIdentity, String passwd){
-		if(passwd!= null && !"".equals(passwd)){
-				switchedIdentity.setPasswd(passwd);
-		}		
+	/**
+	 * Gets the command appender.
+	 *
+	 * @param switchedIdentity the switched identity
+	 * @return the command appender
+	 */
+	public static String getCommandAppender(CommandWritable.Command.SwitchedIdentity switchedIdentity){
+		String command = null ;
+		command = "sudo "+"-u " + switchedIdentity.getWorkingUser() + RemotingConstants.SINGLE_SPACE;
+		return command ;
 	}
 	
 	/**
@@ -162,7 +176,6 @@ public final class JschUtil {
 	 */
 	public static Channel getChannel(Session session, String command) throws JSchException, IOException {
 		session.connect();
-		LOGGER.debug("Session ["+session+"] connected");		
 		Channel channel = session.openChannel("exec");
 	
 		((ChannelExec) channel).setCommand(command);
@@ -185,7 +198,6 @@ public final class JschUtil {
 				break;
 			}
 		}
-		LOGGER.debug("Channel connected, mode [exec]");
 		return channel;
 	}
 
@@ -206,9 +218,7 @@ public final class JschUtil {
 		session.connect();
 		Channel channel = session.openChannel("exec");
 		if(command.contains("sudo")){
-			LOGGER.info("setting pty for sudo");
 			((ChannelExec) channel).setPty(true);
-			LOGGER.info("after setting pty for sudo");
 		}
 		((ChannelExec) channel).setCommand(command);
 		((ChannelExec) channel).setErrStream(System.err);		
@@ -224,8 +234,18 @@ public final class JschUtil {
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public static String execSlaveCleanUpTask(String[] commands, String directory) throws IOException {
-		ProcessBuilder pb = new ProcessBuilder(commands);
-		String agentHome = System.getenv(RemotingConstants.AGENT_HOME);
+        List<String> cmds = new ArrayList<>();  
+        String[] splits;
+
+        for (int i = 0; i < commands.length; i++) {
+		    splits = commands[i].split("\\s+");
+		    for (String split : splits) {
+				cmds.add(split);
+			}
+        }
+		
+		ProcessBuilder pb = new ProcessBuilder(cmds);
+		String agentHome = JumbuneAgent.getAgentDirPath();
 		if (directory != null && !directory.isEmpty()){
 			pb.directory(new File(directory));
 		}
@@ -263,51 +283,76 @@ public final class JschUtil {
 	 */
 	private static class JumbuneUserInfo implements UserInfo {
 
+		/** The passwd. */
 		String passwd;
 
+		/**
+		 * Instantiates a new jumbune user info.
+		 */
 		JumbuneUserInfo(){
 		}
 		
+		/**
+		 * Instantiates a new jumbune user info.
+		 *
+		 * @param passwd the passwd
+		 */
 		JumbuneUserInfo(String passwd){
 		  this.passwd = passwd;	
 		}
+		
 		/**
-		 * gets the password
+		 * gets the password.
+		 *
+		 * @return the password
 		 */
 		public String getPassword() {
 			return passwd;
 		}
 
 		/**
-		 * set prompt YES/NO
+		 * set prompt YES/NO.
+		 *
+		 * @param str the str
+		 * @return true, if successful
 		 */
 		public boolean promptYesNo(String str) {
 			return true;
 		}
 
 		/**
-		 * gets the passphrase
+		 * gets the passphrase.
+		 *
+		 * @return the passphrase
 		 */
 		public String getPassphrase() {
 			return null;
 		}
 
 		/**
-		 * set the passphrase
+		 * set the passphrase.
+		 *
+		 * @param message the message
+		 * @return true, if successful
 		 */
 		public boolean promptPassphrase(String message) {
 			return true;
 		}
 
 		/**
-		 * prompt for password
+		 * prompt for password.
+		 *
+		 * @param message the message
+		 * @return true, if successful
 		 */
 		public boolean promptPassword(String message) {
 			return true;
 		}
 
 		/**
-		 * set the message
+		 * set the message.
+		 *
+		 * @param message the message
 		 */
 		public void showMessage(String message) {
 		}
@@ -326,35 +371,37 @@ public final class JschUtil {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public static Channel getShellChannel(Session session, String command) throws JSchException, IOException {
+	public static Channel getShellChannel(Session session) throws JSchException, IOException {
 		session.connect();
 		return session.openChannel("shell");
 	}
-	/***
-	 * executes commands from shell
-	 * 
-	 * @param session
-	 * @param simpleCommand
+	
+	/**
+	 * *
+	 * executes commands from shell.
+	 *
+	 * @param session the session
+	 * @param simpleCommand the simple command
 	 * @param lineBreaker It is a small phrase for stoping the iteration of loop while checking response of executed command.
-	 * @return
-	 * @throws JSchException
-	 * @throws IOException
+	 * @return the string
+	 * @throws JSchException the j sch exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public static String executeCommandUsingShell(Session session, String simpleCommand, String lineBreaker) throws JSchException, IOException {
 		String response = null;
 		ChannelShell channelShell = null;
 		BufferedReader brIn = null;
 		DataOutputStream dataOut = null;
-
 		try {
 			session.connect();
 			channelShell = (ChannelShell) session.openChannel("shell");
 			channelShell.setPty(true);
 			channelShell.connect();
 			brIn = new BufferedReader(new InputStreamReader(channelShell.getInputStream()));
-			dataOut = new DataOutputStream(channelShell.getOutputStream());
-			dataOut.writeBytes(simpleCommand);
-			dataOut.flush();
+			
+			PrintStream ps = new PrintStream(channelShell.getOutputStream(), true);
+			ps.println(simpleCommand);
+
 			String line = null;
 			StringBuilder stringBuilder = new StringBuilder();
 			while ((line = brIn.readLine()) != null) {
@@ -364,7 +411,10 @@ public final class JschUtil {
 						stringBuilder.setLength(0);
 						stringBuilder = new StringBuilder(brIn.readLine());
 					}
-					break;
+					if(line.contains(LOGOUT) || lineBreaker.contains(GB) && line.contains(GB)){
+						stringBuilder = new StringBuilder(line);
+					}
+					break;					
 				}
 
 			}
@@ -383,43 +433,57 @@ public final class JschUtil {
 		}
 		return response;
 	}
+	
+	public static String getDaemonProcessId(Session session, String daemon) throws JSchException, IOException {
+		String command = PID_COMMAND_PREFIX + daemon + PID_COMMAND_SUFFIX;
+		session.connect();
+		Channel channel = session.openChannel("shell");
+		channel.connect();
+		OutputStream os = channel.getOutputStream();
+		InputStream is = channel.getInputStream();
+		PrintStream ps = new PrintStream(os, true);
+		String pid = "";
 
-	private static class SwitchedIdentity{
-		private String user;
-		
-		private String passwd;
-		
-		private String privatePath;
-
-		public String getUser() {
-			return user;
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
+			ps.println(command);
+			for (String line = br.readLine(); line != null; line = br.readLine()) {
+				if (line.contains(daemon) && !line.contains("awk ")) {
+					pid = line.split("\\s+")[1];
+				}
+			}
 		}
+		LOGGER.debug(" exit status - " + channel.getExitStatus() + ", daemon = " + daemon + ", PID = " + pid);
 
-		public void setUser(String user) {
-			this.user = user;
+		if (channel != null && channel.isConnected()) {
+			channel.disconnect();
 		}
-
-		public String getPasswd() {
-			return passwd;
+		if (session != null && session.isConnected()) {
+			session.disconnect();
 		}
-
-		public void setPasswd(String passwd) {
-			this.passwd = passwd;
-		}
-
-		public String getPrivatePath() {
-			return privatePath;
-		}
-
-		public void setPrivatePath(String privatePath) {
-			this.privatePath = privatePath;
-		}
-
-		@Override
-		public String toString() {
-			return "SwitchedIdentity [user=" + user + ", passwd=" + passwd
-					+ ", privatePath=" + privatePath + "]";
-		}
-
+		return pid;
 	}
+	
+	
+	
+	private static void logJsch(Channel channel, InputStream in) 
+	{
+	    try {
+	        byte[] tmp = new byte[1024];
+	        while (true) {
+	            while (in.available() > 0) {
+	                int i = in.read(tmp, 0, 1024);
+	                if (i < 0)
+	                    break;
+	                LOGGER.debug(new String(tmp, 0, i));
+	            }
+	            if (channel.isClosed()) {
+	            	LOGGER.debug("exit-status: " + channel.getExitStatus());
+	                break;
+	            }
+	        }
+	    } catch (Exception ex) {
+	    	LOGGER.error(ex);
+	    }
+	}
+	
 }

@@ -1,5 +1,6 @@
 package org.jumbune.profiling.beans;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -54,6 +55,27 @@ public class SystemStats {
 	 */
 	public void setOs(List<String> os) {
 		this.os = os;
+	}
+
+	public void addCpuStat(String stat) {
+		if (this.cpu == null) {
+			this.cpu = new ArrayList<String>(3);
+		}
+		this.cpu.add(stat);
+	}
+
+	public void addMemoryStat(String stat) {
+		if (this.memory == null) {
+			this.memory = new ArrayList<String>(3);
+		}
+		this.memory.add(stat);
+	}
+
+	public void addOsStat(String stat) {
+		if (this.os == null) {
+			this.os = new ArrayList<String>(3);
+		}
+		this.os.add(stat);
 	}
 
 }

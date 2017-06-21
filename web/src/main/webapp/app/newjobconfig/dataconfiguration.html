@@ -1,0 +1,36 @@
+<div class="container">
+	<div jumbune-header></div>
+	<div class="inner-container">
+	<h2>Data</h2>
+			<div class="col-md-12 main-container inner-container" ng-init="DataConfigController.init()">
+
+				<table class="frm-tbl">
+				    <tbody>
+						<tr>
+							<td colspan="2"><label class="option-label"><input type="checkbox" ng-model="DataConfigController.dataValidation"><span>Data Validation</span></label></td>
+						</tr>
+						<tr ng-show="DataConfigController.dataQualities.length">
+							<td><label class="option-label"><input type="checkbox" ng-model="DataConfigController.dataQuality"><span>View Data Quality</span></label></td>
+							<td>
+								<select ng-disabled="!DataConfigController.dataQuality" ng-model="DataConfigController.dataQualityVal" ng-options="dqs.name as dqs.name for dqs in DataConfigController.dataQualities">
+                                    <option value="">Please Select</option>
+                                </select>
+                            </td>
+						</tr>
+						<tr ng-show="DataConfigController.dataProfilers.length">
+							<td><label class="option-label"><input type="checkbox" ng-model="DataConfigController.dataProfiler"><span>View Data Profiler</span></label></td>
+							<td>
+								<select ng-disabled="!DataConfigController.dataProfiler" ng-model="DataConfigController.dataProfilerVal" ng-options="dps.name as dps.name for dps in DataConfigController.dataProfilers">
+                                    <option value="">Please Select</option>
+                                </select>
+                            </td>
+						</tr>
+					</tbody>
+				</table>
+				<div class="txt-rgt fixed-btn">
+					<button type="button" class="btn btn-default"  ng-click="DataConfigController.cancel()">Back</button>
+					<button type="button" class="btn btn-primary mrgrgt16" ng-class="{'disabled': DataConfigController.isFormInvalid()}" ng-disabled="DataConfigController.isFormInvalid()" ng-click="DataConfigController.next()">Next</button>
+				</div>
+			</div>
+	</div>
+</div>

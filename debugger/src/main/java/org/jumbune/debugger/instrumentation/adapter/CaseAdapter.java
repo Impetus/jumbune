@@ -198,7 +198,7 @@ public class CaseAdapter extends BaseAdapter {
 
 		InsnList[] il = new InsnList[logMsgs.length];
 		for (int i = 0; i < il.length; i++) {
-			LOGGER.info(i + "   " + lineNumbers[i]);
+			LOGGER.debug(i + "   " + lineNumbers[i]);
 			String cSymbol = env.getClassSymbol(getClassName()); 
 			String mSymbol = env.getMethodSymbol(getClassName(), cSymbol, currentMethodNode.name);
 			il[i] = InstrumentUtil.addLogMessage(cSymbol,mSymbol,

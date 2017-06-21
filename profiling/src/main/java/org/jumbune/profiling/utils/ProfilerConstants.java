@@ -42,7 +42,7 @@ public interface ProfilerConstants {
 	String PARTITION_LIST_COMMAND = "df -h";
 	String NO_PARTITION = "none";
 	String PARTITION_STATS_COMMAND = "vmstat -p ";
-	String VMSTAT_COMMAND = "vmstat -s";
+	String VMSTAT_COMMAND = "vmstat -s && exit";
 	String EXECUTION_MODE = "exec";
 	String HOME = "/home/";
 	String RSA_FILE = "/.ssh/id_rsa";
@@ -56,9 +56,9 @@ public interface ProfilerConstants {
 	String RPC_PROCESSING_AVG_TIME = "RpcProcessingTimeAvgTime";
 	String RPC_PROCESSING_MAX_TIME = "RpcProcessingTimeMaxTime";
 	String DFS_USED = "DfsUsed";
-	String CPU_USAGE_COMMAND = "top -b -n 2 |grep ^Cpu";
-	String CPU_USAGE_COMMAND_WITHOUT_CARET = "top -b -n 2 |grep Cpu";
-	String CPU_DETAILS_COMMAND = "cat /proc/cpuinfo";
+	String CPU_USAGE_COMMAND = "top -d 0.8 -b -n 2 |grep ^Cpu && exit";
+	String CPU_USAGE_COMMAND_WITHOUT_CARET = "top -d 0.8 -b -n 2 |grep Cpu && exit";
+	String CPU_DETAILS_COMMAND = "cat /proc/cpuinfo && exit";
 	String REMAINING = "Remaining";
 	String NETWORK_LATENCY_COMMAND = "mtr -l -c 1";
 	String JUMBUNE_CONTEXT_SERVICE = "ExposedJumbuneMetrics";
@@ -98,7 +98,8 @@ public interface ProfilerConstants {
 	int THIRTY_ONE = 31;
 	int THOUSAND = 1000;
 	int ONE_ZERO_TWO_FOUR = 1024;
-	long THOUSAND_L = 1000l;	
+	long THOUSAND_L = 1000l;
+	String COM_MAPR_CLDB = "com.mapr.cldb";	
 
 	/**
 	 * The Enum HEALTH_CATEGORIES.

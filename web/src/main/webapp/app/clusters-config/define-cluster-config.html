@@ -1,0 +1,53 @@
+<div class="container" ng-init="init()">
+    <header id="header" class="clearfix">
+        <div class="clearfix">
+            <strong class="logo"><a href="#/index"><img src="assets/images/logo.png" alt="image"></a></strong>
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                </button>
+            </div>
+            <nav class="main-nav collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <!-- <ul class="menu">
+                    <li class="active">
+                        <a href="#" class="home-sub-toggle">HOME</a>
+                    </li></ul> -->
+            </nav><!-- main-nav -->
+        </div>
+    </header><!-- header -->
+    <div class="inner-container">
+        <h2>Cluster Configuration</h2>
+        <div data-equal-height=".eq-height">
+            <div class="col-md-3 tab-head pane"> <!-- required for floating -->
+                <!-- Nav tabs -->
+                <ul class="nav nav-tabs tabs-left sideways">
+                    <li ng-show="switchTab == 'Cluster'" ng-class="{'active': switchTab == 'Cluster'}">
+                        <a ng-click="setCurrentTab('Cluster')">Cluster</a>
+                    </li>
+                    <li ng-show="switchTab != 'Cluster'" ng-class="{'active': switchTab == 'DataQuality'}">
+                        <a ng-click="setCurrentTab('DataQuality')">Data Quality</a>
+                    </li>
+                    <li  ng-show="switchTab != 'Cluster'" ng-class="{'active': switchTab == 'DataProfiling'}">
+                        <a ng-click="setCurrentTab('DataProfiling')">Data Profiling</a>
+                    </li>
+                </ul>
+            </div> 
+
+            <div class="col-md-9 tab-container main-container">
+                <!-- Tab panes -->
+                <div class="tab-content">
+                    <div class="active" id="Cluster" ng-show="switchTab == 'Cluster'">
+                        <div ng-include="'app/clusters-config/add-cluster-form.html'"></div>
+                    </div>
+                    <div class="active" id="DataQuality" ng-show="switchTab == 'DataQuality'">
+                        <div ng-include="'app/clusters-config/add-data-quality.html'"></div>
+                    </div>
+                    <div id="DataProfiling" ng-show="switchTab == 'DataProfiling'" >
+                        <div ng-include="'app/clusters-config/add-data-profile.html'"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="clear"></div>
+        </div>
+    </div><!-- info-holder -->
+</div>

@@ -20,6 +20,9 @@ for f in $JUMBUNE_HOME/lib/*.jar; do
 done
 
 #add dataValidation module to classpath
+for f in $JUMBUNE_HOME/modules/jumbune-tuning*.jar; do
+  CLASSPATH=${CLASSPATH}:$f;
+done
 for f in $JUMBUNE_HOME/modules/jumbune-datavalidation*.jar; do
   CLASSPATH=${CLASSPATH}:$f;
 done
@@ -36,13 +39,18 @@ done
 
 
 #SchedulerExecutorService is class which is to be executed for scheduling
-CLASS='org.jumbune.execution.service.DataQualityTimelineShellExecutor'
+CLASS='org.jumbune.execution.service.SchedulerExecutorService'
 
 #Set log4j properties
 CONFIGURATION=-Dlog4j.configuration=log4j2.xml
 
 
 ##The class takes in input two parameters 1) current Job directory 2)user's jumbune home
-COMMAND="$JAVA $CONFIGURATION -cp $CLASSPATH $CLASS $currentJobDir $JUMBUNE_HOME"
+COMMAND="$JAVA $CONFIGURATION -DJUMBUNE_HOME=$JUMBUNE_HOME -cp $CLASSPATH $CLASS $currentJobDir $JUMBUNE_HOME"
+
+##Print all the information to file
+echo "$now -- command:: $COMMAND " >> <JUMBUNE.HOME>/JumbuneLogs/CommandToExecute
 
 exec $COMMAND
+
+

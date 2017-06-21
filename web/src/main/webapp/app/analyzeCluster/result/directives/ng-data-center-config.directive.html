@@ -1,0 +1,92 @@
+<ul class="dropdown-menu  pull-right dropdown-menu-form" style="position:absolute;width:272px;" ng-style="{display: openPopup ? 'block' : 'none', top: dcY + 10 + 'px', left: dcX - 270 + 'px'}">
+	<li class="dropdown-linechart">
+		<div>
+			<strong>systemStats.cpu.CpuUsage</strong>
+		</div>
+	</li>
+	<li class="dropdown-linechart">
+		<div>
+			<span style="background-color: red;padding: 2px;height:12px;width: 12px;display: inline-block"></span>
+			<span style="display: inline-block;margin-left:5px ">Bad</span>
+			<span style="display: inline-block;margin-left:13px ">
+				<select ng-model="cpuOperatorBad" style="width: 66px;">
+					<option value="GREATER_THAN_OP" selected="selected">&gt;</option>
+					<option value="LESS_THAN_EQUALTO_OP">&lt;=</option>
+					<option value="EQUALT0_OP">=</option>
+					<option value="LESS_THAN_OP">&lt;</option>
+					<option value="GREATER_THAN_EQUALTO_OP">&gt;=</option>
+				</select>
+			</span>
+			<span style="display: inline-block;margin-left:5px ">
+				<input ng-model="cpuValueBad" type="text" style="width: 66px;" value="25"> </span>
+			<span style="display: inline-block;margin-left:5px ">%</span>
+		</div>
+	</li>
+	<li class="dropdown-linechart">
+		<div>
+			<span style="background-color: green;padding: 2px;height:12px;width: 12px;display: inline-block"></span>
+			<span style="display: inline-block;margin-left:5px ">Good</span>
+			<span style="display: inline-block;margin-left:5px ">
+				<select ng-model="cpuOperatorGood" style="width: 66px;">
+					<option value="LESS_THAN_OP">&lt;</option>
+					<option value="LESS_THAN_EQUALTO_OP">&lt;=</option>
+					<option value="EQUALT0_OP">=</option>
+					<option value="GREATER_THAN_OP" selected="selected">&gt;</option>
+					<option value="GREATER_THAN_EQUALTO_OP">&gt;=</option>
+				</select>
+			</span>
+			<span style="display: inline-block;margin-left:5px ">
+				<input ng-model="cpuValueGood" type="text" style="width: 66px;" value="75"> </span>
+			<span style="display: inline-block;margin-left:5px ">%</span>
+		</div>
+	</li>
+	<li class="divider"></li>
+	<li class="dropdown-linechart">
+		<div>
+			<strong>systemStats.memory.UsedMemory</strong>
+		</div>
+	</li>
+	<li class="dropdown-linechart">
+		<div>
+			<span style="background-color: red;padding: 2px;height:12px;width: 12px;display: inline-block"></span>
+			<span style="display: inline-block;margin-left:5px ">Bad</span>
+			<span style="display: inline-block;margin-left:13px ">
+				<select ng-model="memOperatorBad" style="width: 66px;">
+					<option value="GREATER_THAN_OP" selected="selected">&gt;</option>
+					<option value="LESS_THAN_EQUALTO_OP">&lt;=</option>
+					<option value="EQUALT0_OP">=</option>
+					<option value="LESS_THAN_OP">&lt;</option>
+					<option value="GREATER_THAN_EQUALTO_OP">&gt;=</option>
+				</select>
+			</span>
+			<span style="display: inline-block;margin-left:5px ">
+				<input ng-model="memValueBad" type="text" style="width: 66px;" value="25"> </span>
+			<span style="display: inline-block;margin-left:5px ">GB</span>
+		</div>
+	</li>
+	<li class="dropdown-linechart">
+		<div>
+			<span style="background-color: green;padding: 2px;height:12px;width: 12px;display: inline-block"></span>
+			<span style="display: inline-block;margin-left:5px ">Good</span>
+			<span style="display: inline-block;margin-left:5px ">
+				<select ng-model="memOperatorGood" style="width: 66px;">
+					<option value="LESS_THAN_OP">&lt;</option>
+					<option value="LESS_THAN_EQUALTO_OP">&lt;=</option>
+					<option value="EQUALT0_OP">=</option>
+					<option value="GREATER_THAN_OP" selected="selected">&gt;</option>
+					<option value="GREATER_THAN_EQUALTO_OP">&gt;=</option>
+				</select>
+			</span>
+			<span style="display: inline-block;margin-left:5px ">
+				<input ng-model="memValueGood" type="text" style="width: 66px;" value="75"> </span>
+			<span style="display: inline-block;margin-left:5px ">GB</span>
+		</div>
+	</li>
+	<li class="divider"></li>
+	<li class="dropdown-linechart">
+		<div>&nbsp;
+			<button style="margin-top: 0" class="btn btn-default" ng-click="setValue() ">Save</button>
+			&nbsp;<button style="margin-top: 0" class="btn btn-default" ng-click="openPopup = false;">Cancel</button>
+		</div>
+	</li>
+</ul>

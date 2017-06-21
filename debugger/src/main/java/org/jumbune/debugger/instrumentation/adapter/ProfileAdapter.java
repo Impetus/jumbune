@@ -64,14 +64,14 @@ public class ProfileAdapter extends BaseAdapter {
 					// finding job submission
 					if (InstrumentUtil.isJobSubmissionMethod(min)) {
 
-						LOGGER.info(MessageFormat.format(
+						LOGGER.debug(MessageFormat.format(
 								InstrumentationMessageLoader
 										.getMessage(MessageConstants.JOB_SUBMISSION_FOUND),
 								getClassName() + "##" + mn.name));
 
 						// validating that the owner of the method call is
 						if (InstrumentUtil.isOwnerJob(min)) {
-							LOGGER.info(MessageFormat.format(
+							LOGGER.debug(MessageFormat.format(
 									InstrumentationMessageLoader
 											.getMessage(MessageConstants.LOG_OWNER_IS_JOB),
 									getClassName() + "##" + mn.name));
@@ -81,7 +81,7 @@ public class ProfileAdapter extends BaseAdapter {
 								ain = ain.getPrevious();
 							}
 
-							VarInsnNode vin = (VarInsnNode) ain;
+/*							VarInsnNode vin = (VarInsnNode) ain;
 							int jobVariableIndex = vin.var;
 							InsnList il = null;
 
@@ -94,7 +94,7 @@ public class ProfileAdapter extends BaseAdapter {
 							}
 
 							insnList.insertBefore(vin, il);
-						}
+*/						}
 					}
 				}
 			}
@@ -138,10 +138,10 @@ public class ProfileAdapter extends BaseAdapter {
 	 *            Index of variable which stores the job
 	 * @return Instructions
 	 */
-	private InsnList addProfiling(int jobVariableIndex) {
+/*	private InsnList addProfiling(int jobVariableIndex) {
 		JobConfig jobConfig = (JobConfig)getConfig();
 		boolean iSHadoopJobProfiling = jobConfig.isHadoopJobProfileEnabled();
-		String hadoopJobProfilingParams = jobConfig.getHadoopJobProfileParams();
+//		String hadoopJobProfilingParams = jobConfig.getHadoopJobProfileParams();
 		String hadoopJobProfilingMaps = PROFILING_MAPPERS_INSTANCES;
 		String hadoopJobProfilingReduces = PROFILING_REDUCER_INSTANCES;
 
@@ -208,8 +208,9 @@ public class ProfileAdapter extends BaseAdapter {
 
 		return il;
 	}
+*/
 
-	/**
+/*	*//**
 	 * <p>
 	 * This method provides instructions to enable/disable profiling for the job
 	 * for old hadoop api
@@ -218,11 +219,11 @@ public class ProfileAdapter extends BaseAdapter {
 	 * @param jobVariableIndex
 	 *            Index of variable which stores the job
 	 * @return Instructions
-	 */
+	 *//*
 	private InsnList addProfilingForOldAPI(int jobVariableIndex) {
 		JobConfig jobConfig = (JobConfig)getConfig();
 		boolean isHadoopJobProfiling = jobConfig.isHadoopJobProfileEnabled();
-		String hadoopJobProfilingParams = jobConfig.getHadoopJobProfileParams();
+//		String hadoopJobProfilingParams = jobConfig.getHadoopJobProfileParams();
 		String hadoopJobProfilingMaps = PROFILING_MAPPERS_INSTANCES;
 		String hadoopJobProfilingReduces = PROFILING_REDUCER_INSTANCES ;
 
@@ -271,4 +272,4 @@ public class ProfileAdapter extends BaseAdapter {
 		}
 		return il;
 	}
-}
+*/}

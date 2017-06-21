@@ -12,18 +12,22 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.beans.LogConsolidationInfo;
-import org.jumbune.common.beans.Master;
-import org.jumbune.common.beans.Slave;
-import org.jumbune.common.job.Config;
+import org.jumbune.common.beans.cluster.Agent;
+import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.beans.cluster.NameNodes;
+import org.jumbune.common.beans.cluster.Workers;
 import org.jumbune.common.job.JobConfig;
+import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.remoting.client.Remoter;
+import org.jumbune.remoting.client.RemoterFactory;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.remoting.common.RemotingMethodConstants;
@@ -41,7 +45,8 @@ import com.jcraft.jsch.UserInfo;
 public class RemoteFileUtil {
 
 	/** The Constant LOGGER. */
-	private static final Logger LOGGER = LogManager.getLogger(RemoteFileUtil.class);
+	private static final Logger LOGGER = LogManager
+			.getLogger(RemoteFileUtil.class);
 
 	/** The Constant SCP_R_CMD. */
 	private static final String SCP_R_CMD = "scp -r";
@@ -52,7 +57,7 @@ public class RemoteFileUtil {
 	/** The Constant MKDIR_P_CMD. */
 	private static final String MKDIR_P_CMD = "mkdir -p ";
 
-	private static final String CHMOD_CMD = "chmod o+w ";
+	private static final String CHMOD_CMD = "chmod a+w ";
 
 	private static final String RM_CMD = "rm";
 
@@ -66,7 +71,6 @@ public class RemoteFileUtil {
 	 */
 	public RemoteFileUtil() {
 	}
-
 
 	/**
 	 * <p>
@@ -107,15 +111,13 @@ public class RemoteFileUtil {
 	 * @throws InterruptedException
 	 *             the interrupted exception
 	 */
-	public void clearRemoteLogFilesOnMaster(LogConsolidationInfo logCollection) throws JSchException, IOException, InterruptedException {
-
-		Master master = logCollection.getMaster();
-		String locationMaster = master.getLocation();
-		String hostMaster = master.getHost();
-		Integer agentPort = Integer.valueOf(master.getAgentPort());
-		Remoter remoter = new Remoter(hostMaster, agentPort);
-		String command = "rm -r " + getFolderName(locationMaster);
-		CommandWritableBuilder builder = new CommandWritableBuilder();
+	public void clearRemoteLogFilesOnMaster(Cluster cluster)
+			throws JSchException, IOException, InterruptedException {
+		//ToDo:  Change from getRelativeWorkingDirectory() to getLocation() if error occurs
+		String nameNodeLocation = cluster.getNameNodes().getRelativeWorkingDirectory();
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
+		String command = "rm -r " + getFolderName(nameNodeLocation);
+		CommandWritableBuilder builder = new CommandWritableBuilder(cluster);
 		builder.addCommand(command, false, null, CommandType.FS);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 		remoter.close();
@@ -128,27 +130,25 @@ public class RemoteFileUtil {
 	 * @param logCollection
 	 *            the log collection
 	 */
-	public void clearRemoteLogFilesOnNodes(LogConsolidationInfo logCollection) {
+	public void clearRemoteLogFilesOnNodes(Cluster cluster) {
 
-		List<Slave> listSlave = logCollection.getSlaves();
-		Master master = logCollection.getMaster();
-		String masterHost = master.getHost();
-		Integer agentPort = Integer.valueOf(master.getAgentPort());
-		Remoter remoter = null;
-		for (Slave slaveDefinition : listSlave) {
-			String[] hostsNode = slaveDefinition.getHosts();
-			String locationNode = slaveDefinition.getLocation();
-			CommandWritableBuilder builder = new CommandWritableBuilder();
+		Workers workers = cluster.getWorkers();
+		//ToDo:  Change from getRelativeWorkingDirectory() to getLocation() if error occurs
+		String workerLocation = workers.getRelativeWorkingDirectory();
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
+		for (String workerHost : workers.getHosts()) {
+			CommandWritableBuilder builder = new CommandWritableBuilder(cluster, workerHost);
 			// connecting to slave
-			for (String hostNode : hostsNode) {
-				remoter = new Remoter(masterHost, agentPort);
-				String command = RemotingConstants.REMOVE_FOLDER + RemotingConstants.SINGLE_SPACE + getFolderName(locationNode);
-				builder.addCommand(command, false, null, CommandType.FS).populateFromLogConsolidationInfo(logCollection, hostNode);
-				LOGGER.debug("Removing log file from Worker node [" + hostNode + "]" + ", command [" + "] command");
-				remoter.fireAndForgetCommand(builder.getCommandWritable());
-				remoter.close();
-			}
+			
+			String command = RemotingConstants.REMOVE_FOLDER
+					+ RemotingConstants.SINGLE_SPACE
+					+ getFolderName(workerLocation);
+			builder.addCommand(command, false, null, CommandType.FS);
+			LOGGER.debug("Removing log file from Worker node [" + workerHost
+					+ "]" + ", command [" + "] command");
+			remoter.fireAndForgetCommand(builder.getCommandWritable());
 		}
+		remoter.close();
 	}
 
 	/**
@@ -163,29 +163,26 @@ public class RemoteFileUtil {
 	 * @throws InterruptedException
 	 *             the interrupted exception
 	 */
-	public void makeRemoteSlaveLogDirectory(LogConsolidationInfo logCollection) throws JSchException, IOException, InterruptedException {
-		List<Slave> listSlave = logCollection.getSlaves();
-		Master master = logCollection.getMaster();
-		String masterHost = master.getHost();
-		Integer agentPort = Integer.valueOf(master.getAgentPort());
-		Remoter remoter = new Remoter(masterHost, agentPort);
-		for (Slave slaveDefinition : listSlave) {
-			String[] hostsNode = slaveDefinition.getHosts();
-			String locationNode = slaveDefinition.getLocation();
-			for (String hostNode : hostsNode) {
-			    String command = MKDIR_P_CMD + getFolderName(locationNode);
-				LOGGER.debug("Executing command on Worker node [" + command + "]");
-				CommandWritableBuilder builder = new CommandWritableBuilder();
-				builder.addCommand(command, false, null, CommandType.FS).populateFromLogConsolidationInfo(logCollection, hostNode);
-				builder.addCommand(CHMOD_CMD + getFolderName(locationNode), false, null, CommandType.FS).populateFromLogConsolidationInfo(logCollection, hostNode);
-				remoter.fireAndForgetCommand(builder.getCommandWritable());
-			}
+	public void makeRemoteSlaveLogDirectory(Cluster cluster)
+			throws JSchException, IOException, InterruptedException {
+
+		Workers workers = cluster.getWorkers();
+		String workerLocation = workers.getWorkDirectory();
+		String command = MKDIR_P_CMD + getFolderName(workerLocation);
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
+		for (String workerHost : workers.getHosts()) {
+			LOGGER.debug("Executing command on Worker node [" + command + "]");
+			CommandWritableBuilder builder = new CommandWritableBuilder(cluster, workerHost);
+			builder.addCommand(command, false, null, CommandType.FS);
+			builder.addCommand(CHMOD_CMD + getFolderName(workerLocation),
+					false, null, CommandType.FS).populate(cluster, workerHost);
+			remoter.fireAndForgetCommand(builder.getCommandWritable());
 		}
 		remoter.close();
 	}
 
 	/**
-	 * Copy remote log files.
+	 * Copy remote log files
 	 * 
 	 * @param logCollection
 	 *            the log collection
@@ -196,42 +193,49 @@ public class RemoteFileUtil {
 	 * @throws InterruptedException
 	 *             the interrupted exception
 	 */
-	public void copyRemoteLogFiles(LogConsolidationInfo logCollection) throws JumbuneException, IOException, InterruptedException {
-
-		Master master = logCollection.getMaster();
-		String locationMaster = master.getLocation();
-		String userMaster = master.getUser();
-		String hostMaster = master.getHost();
+	@SuppressWarnings("unchecked")
+	public void copyRemoteLogFiles(Cluster cluster)
+			throws JumbuneException, IOException, InterruptedException {
+		NameNodes nameNodes = cluster.getNameNodes();
+		String nameNodeLocation = nameNodes.getRelativeWorkingDirectory();
+		String hadoopFSUser = cluster.getHadoopUsers().getFsUser();
+		String nameNodeHost = cluster.getNameNode();
 		String appHome = JobConfig.getJumbuneHome();
-		String relativePath = locationMaster.substring(appHome.length() - 1, locationMaster.length());
-		Remoter remoter = new Remoter(hostMaster, Integer.valueOf(master.getAgentPort()));
+
+		String relativePath = nameNodeLocation.substring(appHome.length() - 1,
+				nameNodeLocation.length());
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
 		String remoteMkdir = MKDIR_P_CMD + AGENT_HOME + relativePath;
-		CommandWritableBuilder builder = new CommandWritableBuilder();
+		CommandWritableBuilder builder = new CommandWritableBuilder(cluster);
 		builder.addCommand(remoteMkdir, false, null, CommandType.FS);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
-		//Creating local directories in Jumbune Working Dir
-		String mkdirCmd = MKDIR_P_CMD + locationMaster;
+		// Creating local directories in Jumbune Working Dir
+		String mkdirCmd = MKDIR_P_CMD + nameNodeLocation;
 		execute(mkdirCmd.split(" "), null);
 
-		List<Slave> listSlave = logCollection.getSlaves();
+		Workers workers = cluster.getWorkers();
+		String workerUser = workers.getUser();
+		String workerLocation = workers.getRelativeWorkingDirectory();
+		
 		LOGGER.debug("Starting to copy remote log files...");
-		for (Slave slaveDefinition : listSlave) {
-			String userNode = slaveDefinition.getUser();
-			String[] hostsNode = slaveDefinition.getHosts();
-			String locationNode = slaveDefinition.getLocation();
-
-			for (String hostNode : hostsNode) {
-				LOGGER.debug("Copy log files from: " + hostNode + ":" + locationNode);
-				String command = "scp -r " + userNode + "@" + hostNode + ":" + locationNode + " " + userMaster + "@" + hostMaster + ":" + AGENT_HOME
-						+ relativePath;
-				CommandWritableBuilder copyBuilder = new CommandWritableBuilder();
-				copyBuilder.addCommand(command, false, null, CommandType.FS).populateFromLogConsolidationInfo(logCollection, null);
-				remoter.fireAndForgetCommand(copyBuilder.getCommandWritable());
+		for (String workerHost : workers.getHosts()) {
+			LOGGER.debug("Copy log files from: " + workerHost + ":" + workerLocation);
+			String command ;
+			if(cluster.getAgents().getSshAuthKeysFile() != null && cluster.getAgents().getSshAuthKeysFile().endsWith(".pem")){
+			command = "scp -i " + cluster.getAgents().getSshAuthKeysFile() + " -r " + workerUser + "@" + workerHost + ":"
+					+ workerLocation + " " + AGENT_HOME + relativePath;}
+			else{
+				command = "scp -r " + workerUser + "@" + workerHost + ":"
+						+ workerLocation + " " + AGENT_HOME + relativePath;
 			}
+			CommandWritableBuilder copyBuilder = new CommandWritableBuilder(cluster, null);
+			copyBuilder.addCommand(command, false, null, CommandType.FS);
+			remoter.fireAndForgetCommand(copyBuilder.getCommandWritable());
 		}
-		builder.getCommandBatch().clear();
+		builder.clear();
 		builder.addCommand(AGENT_HOME + relativePath, false, null,
-				CommandType.FS).setMethodToBeInvoked(RemotingMethodConstants.PROCESS_GET_FILES);
+				CommandType.FS).setMethodToBeInvoked(
+				RemotingMethodConstants.PROCESS_GET_FILES);
 		List<String> fileList = (List<String>) remoter
 				.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		for (String string : fileList) {
@@ -253,58 +257,69 @@ public class RemoteFileUtil {
 	 *             the interrupted exception
 	 */
 	// TODO:
-	public void copyRemoteDBLogFiles(LogConsolidationInfo logCollection) throws JumbuneException, IOException, InterruptedException {
+	@SuppressWarnings("unchecked")
+	public void copyRemoteDBLogFiles(Cluster cluster)
+			throws JumbuneException, IOException, InterruptedException {
 
-		Master master = logCollection.getMaster();
-		String locationMaster = master.getLocation();
-		String userMaster = master.getUser();
-		String hostMaster = master.getHost();
+		NameNodes nameNodes = cluster.getNameNodes();
+		String nameNodeLocation = nameNodes.getRelativeWorkingDirectory();
+		String hadoopFSUser = cluster.getHadoopUsers().getFsUser();
 		String appHome = JobConfig.getJumbuneHome();
-		String relativePath = locationMaster.substring(appHome.length() - 1, locationMaster.length());
-		Remoter remoter = new Remoter(hostMaster, Integer.valueOf(master.getAgentPort()));
+		String relativePath = nameNodeLocation.substring(appHome.length() - 1,
+				nameNodeLocation.length());
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
 		String remoteMkdir = MKDIR_P_CMD + AGENT_HOME + relativePath;
 
-		CommandWritableBuilder builder = new CommandWritableBuilder();
+		CommandWritableBuilder builder = new CommandWritableBuilder(cluster, null);
 		builder.addCommand(remoteMkdir, false, null, CommandType.FS);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 
-		String mkdirCmd = MKDIR_P_CMD + locationMaster;
+		String mkdirCmd = MKDIR_P_CMD + nameNodeLocation;
 		execute(mkdirCmd.split(" "), null);
 
-		List<Slave> listSlave = logCollection.getSlaves();
-		for (Slave slaveDefinition : listSlave) {
-			String userNode = slaveDefinition.getUser();
-			String[] hostsNode = slaveDefinition.getHosts();
-			String locationNode = slaveDefinition.getLocation();
+		Workers workers = cluster.getWorkers();
+		String workerUser = workers.getUser();
+		String workerLocation = workers.getRelativeWorkingDirectory();
+		
+		for (String workerHost : workers.getHosts()) {
+			ConsoleLogUtil.LOGGER.debug("Copy log file from: [" + workerHost
+					+ "] to [" + workerLocation + "]");
+			LOGGER.debug("Copy log file from: [" + workerHost + "] to ["
+					+ workerLocation + "]");
+			StringBuilder lsSb = new StringBuilder()
+					.append("-")
+					.append(workerHost)
+					.append("-")
+					.append(workerLocation.substring(0,
+							workerLocation.indexOf("*.log*"))).append("-")
+					.append(relativePath);
 
-			for (String hostNode : hostsNode) {
-				ConsoleLogUtil.LOGGER.debug("Copy log file from: [" + hostNode + "] to [" + locationNode + "]");
-				LOGGER.debug("Copy log file from: [" + hostNode + "] to [" + locationNode + "]");
-				StringBuilder lsSb = new StringBuilder().append("-").append(hostNode).append("-")
-						.append(locationNode.substring(0, locationNode.indexOf("*.log*"))).append("-").append(relativePath);
-
-				builder.getCommandBatch().clear();
-				builder.addCommand(lsSb.toString(), false, null, CommandType.FS)
-						.populateFromLogConsolidationInfo(logCollection, null)
-						.setMethodToBeInvoked(RemotingMethodConstants.PROCESS_DB_OPT_STEPS);
-				remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
-				String command = "scp -r " + userNode + "@" + hostNode + ":" + locationNode + " " + userMaster + "@" + hostMaster + ":" + AGENT_HOME
-						+ relativePath;
-
-				builder.getCommandBatch().clear();
-				builder.addCommand(command, false, null, CommandType.FS);
-				remoter.fireAndForgetCommand(builder.getCommandWritable());
+			builder.clear();
+			builder.addCommand(lsSb.toString(), false, null, CommandType.FS)
+					.setMethodToBeInvoked(RemotingMethodConstants.PROCESS_DB_OPT_STEPS);
+			remoter.fireCommandAndGetObjectResponse(builder
+					.getCommandWritable());
+			String command ;
+			if(cluster.getAgents().getSshAuthKeysFile()!=null && cluster.getAgents().getSshAuthKeysFile().endsWith(".pem")){
+			 command = "scp -i " + cluster.getAgents().getSshAuthKeysFile() + " -r " + workerUser + "@" + workerHost + ":"
+					+ workerLocation + " " + AGENT_HOME + relativePath;
+			}else{
+				command = "scp -r " + workerUser + "@" + workerHost + ":"
+						+ workerLocation + " " + AGENT_HOME + relativePath;
 			}
+			builder.clear();
+			builder.addCommand(command, false, null, CommandType.FS);
+			remoter.fireAndForgetCommand(builder.getCommandWritable());
 		}
-		builder.getCommandBatch().clear();
+		builder.clear();
 		builder.addCommand(AGENT_HOME + relativePath, false, null,
-				CommandType.FS).setMethodToBeInvoked(RemotingMethodConstants.PROCESS_GET_FILES);
+				CommandType.FS).setMethodToBeInvoked(
+				RemotingMethodConstants.PROCESS_GET_FILES);
 		List<String> fileList = (List<String>) remoter
 				.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		for (String string : fileList) {
 			remoter.receiveLogFiles(relativePath, relativePath + "/" + string);
 		}
-		remoter.close();
 		for (String string : fileList) {
 			if (!string.contains("mrChain")) {
 				execute(new String[] { "unzip", string }, appHome + relativePath + "/");
@@ -312,7 +327,6 @@ public class RemoteFileUtil {
 			}
 		}
 	}
-
 
 	/**
 	 * Copy remote lib files to master.
@@ -324,30 +338,39 @@ public class RemoteFileUtil {
 	 * @throws InterruptedException
 	 *             the interrupted exception
 	 */
-	public void copyRemoteLibFilesToMaster(Config config) throws IOException, InterruptedException {
-		JobConfig jobConfig = (JobConfig)config;
+	public void copyRemoteLibFilesToMaster(
+			JumbuneRequest jumbuneRequest) throws IOException, InterruptedException {
+		
+		JobConfig jobConfig = jumbuneRequest.getJobConfig();
 		String userLibLoc = jobConfig.getUserLibLocationAtMaster();
-		Master master = jobConfig.getMaster();
-
 		String jobName = jobConfig.getJumbuneJobName();
 
-		Remoter remoter = new Remoter(master.getHost(), Integer.valueOf(master.getAgentPort()), jobName);
+		Cluster cluster = jumbuneRequest.getCluster();
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
 		String mkdir = MKDIR_P_CMD + userLibLoc;
-		CommandWritableBuilder builder = new CommandWritableBuilder();
+		CommandWritableBuilder builder = new CommandWritableBuilder(cluster);
 		builder.addCommand(mkdir, false, null, CommandType.FS);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 
-		Slave slave = jobConfig.getFirstUserWorker();
-		String host = slave.getHosts()[0];
+		Workers workers= cluster.getWorkers();
+		if (workers.getHosts().isEmpty()) {
+			LOGGER.error("No Worker found in cluster");
+			return;
+		}
+		String workerHost = workers.getHosts().get(0);
 
-		List<String> fileList = ConfigurationUtil.getAllClasspathFiles(jobConfig.getClasspathFolders(ClasspathUtil.USER_SUPPLIED),
-				jobConfig.getClasspathExcludes(ClasspathUtil.USER_SUPPLIED), jobConfig.getClasspathFiles(ClasspathUtil.USER_SUPPLIED));
-
+		List<String> fileList = ConfigurationUtil.getAllClasspathFiles(
+				jobConfig.getClasspathFolders(ClasspathUtil.USER_SUPPLIED),
+				jobConfig.getClasspathExcludes(ClasspathUtil.USER_SUPPLIED),
+				jobConfig.getClasspathFiles(ClasspathUtil.USER_SUPPLIED));
+		String hadoopFSUser = cluster.getHadoopUsers().getFsUser();
 		for (String file : fileList) {
-			String command = "scp " + slave.getUser() + "@" + host + ":" + file + " " + master.getUser() + "@" + master.getHost() + ":" + userLibLoc;
+			String command = "scp " + workers.getUser() + "@" + workerHost + ":" + file
+					+ " " + hadoopFSUser + "@" + cluster.getNameNode()+ ":"
+					+ userLibLoc;
 			LOGGER.debug("Executing the cmd: " + command);
-			builder.getCommandBatch().clear();
-			builder.addCommand(command, false, null, CommandType.FS).populate(config, null);
+			builder.clear();
+			builder.addCommand(command, false, null, CommandType.FS).populate(cluster, null);
 			remoter.fireAndForgetCommand(builder.getCommandWritable());
 		}
 		remoter.close();
@@ -415,27 +438,31 @@ public class RemoteFileUtil {
 	 * @throws JumbuneException
 	 *             the hTF exception
 	 */
-	public static int getRemoteThreadsOrCore(Config config, String coreOrThread) throws JumbuneException {
+	public static int getRemoteThreadsOrCore(JumbuneRequest jumbuneRequest, String coreOrThread)
+			throws JumbuneException {
 
-		JobConfig jobConfig = (JobConfig)config;
-		Master master = jobConfig.getLogMaster();
-		String host = master.getHost();
-		Integer agentPort = Integer.valueOf(master.getAgentPort());
+		JobConfig jobConfig = jumbuneRequest.getJobConfig();
+		Cluster cluster = jumbuneRequest.getCluster();
 
 		String jobName = jobConfig.getJumbuneJobName();
 		String command = "lscpu | grep " + coreOrThread;
-		Remoter remoter = new Remoter(host, agentPort, jobName);
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
 
-		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(command, false, null, CommandType.FS).populate(config, null);
-		String line = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		CommandWritableBuilder builder = new CommandWritableBuilder(cluster, null);
+		builder.addCommand(command, false, null, CommandType.FS);
+		String line = (String) remoter.fireCommandAndGetObjectResponse(builder
+				.getCommandWritable());
 		remoter.close();
 		if (line == null || "".equals(line.trim())) {
-			throw JumbuneRuntimeException.throwUnresponsiveIOException(RemoteFileUtil.class.getName(),"getRemoteThreadsOrCore","",Constants.FOUR_HUNDERED_FIFTY_SEVEN);
+			throw JumbuneRuntimeException.throwUnresponsiveIOException(
+					RemoteFileUtil.class.getName(), "getRemoteThreadsOrCore",
+					"", Constants.FOUR_HUNDERED_FIFTY_SEVEN);
 		}
 		String[] array = line.split(":");
 		if (array.length != 2) {
-			throw JumbuneRuntimeException.throwUnresponsiveIOException(RemoteFileUtil.class.getName(),"getRemoteThreadsOrCore","",Constants.FOUR_HUNDERED_SIXTY_ONE);
+			throw JumbuneRuntimeException.throwUnresponsiveIOException(
+					RemoteFileUtil.class.getName(), "getRemoteThreadsOrCore",
+					"", Constants.FOUR_HUNDERED_SIXTY_ONE);
 		}
 		return Integer.parseInt(array[1].trim());
 	}
@@ -470,36 +497,6 @@ public class RemoteFileUtil {
 	}
 
 	/**
-	 * Find slave matched with IP.
-	 * 
-	 * @param nodeIp
-	 *            the nodeIp.
-	 * @param slaves
-	 *            the slave list
-	 * @return the matched slave.
-	 */
-	public static Slave findSlave(String nodeIp, List<Slave> slaves) {
-		Slave slave = null;
-		Iterator<Slave> itrSlave = slaves.iterator();
-
-		while (itrSlave.hasNext() && slave == null) {
-			Slave slaveNode = itrSlave.next();
-
-			for (String ip : slaveNode.getHosts()) {
-				if (nodeIp.equalsIgnoreCase(ip)) {
-					slave = slaveNode;
-					/*
-					 * Break this for loop once slave found.
-					 */
-					break;
-				}
-			}
-		}
-
-		return slave;
-	}
-
-	/**
 	 * Execute the given command.
 	 *
 	 * @param commands
@@ -522,7 +519,8 @@ public class RemoteFileUtil {
 			process = processBuilder.start();
 			inputStream = process.getInputStream();
 			if (inputStream != null) {
-				bufferReader = new BufferedReader(new InputStreamReader(inputStream));
+				bufferReader = new BufferedReader(new InputStreamReader(
+						inputStream));
 				String line = bufferReader.readLine();
 				while (line != null) {
 					line = bufferReader.readLine();
@@ -530,14 +528,14 @@ public class RemoteFileUtil {
 			}
 
 		} catch (IOException e) {
-			LOGGER.error(e);
+			LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));
 		} finally {
 			try {
 				if (bufferReader != null) {
 					bufferReader.close();
-				}	
+				}
 			} catch (IOException e) {
-				LOGGER.error(e);
+				LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));
 			}
 		}
 	}
@@ -551,7 +549,8 @@ public class RemoteFileUtil {
 	 *            the directory
 	 * @return the list
 	 */
-	public static List<String> executeResponseList(String[] commands, String directory) {
+	public static List<String> executeResponseList(String[] commands,
+			String directory) {
 
 		List<String> responseList = new ArrayList<String>();
 		ProcessBuilder processBuilder = new ProcessBuilder(commands);
@@ -567,26 +566,27 @@ public class RemoteFileUtil {
 			process = processBuilder.start();
 			inputStream = process.getInputStream();
 			if (inputStream != null) {
-				bufferReader = new BufferedReader(new InputStreamReader(inputStream));
+				bufferReader = new BufferedReader(new InputStreamReader(
+						inputStream));
 				String line = bufferReader.readLine();
 				while (line != null) {
 					responseList.add(line);
 					line = bufferReader.readLine();
 				}
 			}
-		  return responseList;
+			return responseList;
 		} catch (IOException e) {
-			LOGGER.error(e);
+			LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));
 		} finally {
 			try {
 				if (bufferReader != null) {
 					bufferReader.close();
 				}
-				if(inputStream != null){
+				if (inputStream != null) {
 					inputStream.close();
 				}
 			} catch (IOException e) {
-				LOGGER.error(e);
+				LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));
 			}
 		}
 		return responseList;
@@ -604,174 +604,449 @@ public class RemoteFileUtil {
 	 * @throws InterruptedException
 	 *             the interrupted exception
 	 */
-	public void copyRemoteSysStatsFiles(LogConsolidationInfo logCollection) throws JumbuneException, IOException, InterruptedException {
+	@SuppressWarnings("unchecked")
+	public void copyRemoteSysStatsFiles(Cluster cluster)
+			throws JumbuneException, IOException, InterruptedException {
 
-		Master master = logCollection.getMaster();
-		String locationMaster = master.getLocation();
-		String userMaster = master.getUser();
-		String hostMaster = master.getHost();
+		NameNodes nameNodes = cluster.getNameNodes();
+		String nameNodeLocation = nameNodes.getRelativeWorkingDirectory();
 		String appHome = JobConfig.getJumbuneHome();
-		String relativePath = locationMaster.substring(appHome.length() - 1, locationMaster.length());
-		Remoter remoter = new Remoter(hostMaster, Integer.valueOf(master.getAgentPort()));
+		String relativePath = nameNodeLocation.substring(appHome.length() - 1,
+				nameNodeLocation.length());
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
 		String remoteMkdir = MKDIR_P_CMD + AGENT_HOME + relativePath;
 
-		CommandWritableBuilder builder = new CommandWritableBuilder();
+		CommandWritableBuilder builder = new CommandWritableBuilder(cluster);
 		builder.addCommand(remoteMkdir, false, null, CommandType.FS);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 
-		String mkdirCmd = MKDIR_P_CMD + locationMaster;
+		String mkdirCmd = MKDIR_P_CMD + nameNodeLocation;
 		execute(mkdirCmd.split(SPACE), appHome);
 
-		List<Slave> listSlave = logCollection.getSlaves();
-		for (Slave slaveDefinition : listSlave) {
-			String userNode = slaveDefinition.getUser();
-			String[] hostsNode = slaveDefinition.getHosts();
-			String locationNode = slaveDefinition.getLocation();
+		Workers workers = cluster.getWorkers();
+		String workerUser = workers.getUser();
+		String workerLocation = workers.getRelativeWorkingDirectory();
+		
+		for (String workerHost : workers.getHosts()) {
 
-			for (String hostNode : hostsNode) {
-
-				// copy cpu stats file from slaves
-				StringBuffer copyCpuFile = new StringBuffer(SCP_R_CMD);
-				copyCpuFile.append(SPACE).append(userNode).append(AT_OP).append(hostNode).append(COLON).append(locationNode).append(File.separator)
-						.append(CPU_DUMP_FILE).append(UNDERSCORE).append(hostNode).append(SPACE).append(userMaster).append(AT_OP).append(hostMaster)
-						.append(COLON).append(AGENT_HOME).append(relativePath);
-
-				// copy memory stats file from slaves
-				StringBuffer copyMemFile = new StringBuffer(SCP_R_CMD);
-				copyMemFile.append(SPACE).append(userNode).append(AT_OP).append(hostNode).append(COLON).append(locationNode).append(File.separator)
-						.append(MEM_DUMP_FILE).append(UNDERSCORE).append(hostNode).append(SPACE).append(userMaster).append(AT_OP).append(hostMaster)
-						.append(COLON).append(AGENT_HOME).append(relativePath);
-				
-				String topDumpFile = locationNode + File.separator + TOP_DUMP_FILE;
-				
-				StringBuffer rmTopDumpFile = new StringBuffer(RM_CMD);
-				rmTopDumpFile.append(SPACE).append(topDumpFile);
-
-				
-				StringBuffer rmCpuFile = new StringBuffer(RM_CMD);
-				rmCpuFile.append(SPACE).append(locationNode).append(File.separator)
-						.append(CPU_DUMP_FILE).append(UNDERSCORE).append(hostNode);
-
-				// copy memory stats file from slaves
-				StringBuffer rmMemFile = new StringBuffer(SCP_R_CMD);
-				rmMemFile.append(SPACE).append(locationNode).append(File.separator)
-						.append(MEM_DUMP_FILE).append(UNDERSCORE).append(hostNode);				
-
-				builder.getCommandBatch().clear();
-				builder.addCommand(copyCpuFile.toString(), false, null, CommandType.FS).
-				addCommand(copyMemFile.toString(), false, null, CommandType.FS).
-				addCommand(rmCpuFile.toString(), false, null, CommandType.FS).
-				addCommand(rmMemFile.toString(), false, null, CommandType.FS).
-				addCommand(rmTopDumpFile.toString(), false, null, CommandType.FS);
-
-				remoter.fireAndForgetCommand(builder.getCommandWritable());
-			}
+			// copy cpu stats file from slaves
+			StringBuffer copyCpuFile = new StringBuffer(SCP_R_CMD);
+			
+			copyCpuFile.append(SPACE).append(workerUser).append(AT_OP)
+					.append(workerHost).append(COLON).append(workerLocation)
+					.append(File.separator).append(CPU_DUMP_FILE)
+					.append(UNDERSCORE).append(workerHost).append(SPACE)
+                    .append(AGENT_HOME).append(relativePath);
+			
+			// copy memory stats file from slaves
+			StringBuffer copyMemFile = new StringBuffer(SCP_R_CMD);
+			
+			copyMemFile.append(SPACE).append(workerUser).append(AT_OP)
+					.append(workerHost).append(COLON).append(workerLocation)
+					.append(File.separator).append(MEM_DUMP_FILE)
+					.append(UNDERSCORE).append(workerHost).append(SPACE)
+                    .append(AGENT_HOME).append(relativePath);
+			
+			String topDumpFile = workerLocation + File.separator
+					+ TOP_DUMP_FILE;
+			
+			StringBuffer rmTopDumpFile = new StringBuffer(RM_CMD);
+			rmTopDumpFile.append(SPACE).append(topDumpFile);
+			
+			StringBuffer rmCpuFile = new StringBuffer(RM_CMD);
+			rmCpuFile.append(SPACE).append(workerLocation)
+					.append(File.separator).append(CPU_DUMP_FILE)
+					.append(UNDERSCORE).append(workerHost);
+			
+			// copy memory stats file from slaves
+			StringBuffer rmMemFile = new StringBuffer(SCP_R_CMD);
+			rmMemFile.append(SPACE).append(workerLocation)
+					.append(File.separator).append(MEM_DUMP_FILE)
+					.append(UNDERSCORE).append(workerHost);
+			
+			builder.clear();
+			
+			builder.addCommand(copyCpuFile.toString(), false, null,
+					CommandType.FS)
+					.addCommand(copyMemFile.toString(), false, null,
+							CommandType.FS)
+					.addCommand(rmCpuFile.toString(), false, null,
+							CommandType.FS)
+					.addCommand(rmMemFile.toString(), false, null,
+							CommandType.FS)
+					.addCommand(rmTopDumpFile.toString(), false, null,
+							CommandType.FS);
+			
+			remoter.fireAndForgetCommand(builder.getCommandWritable());
 		}
-		builder.getCommandBatch().clear();
+		builder.clear();
 		builder.addCommand(AGENT_HOME + relativePath, false, null,
-				CommandType.FS).setMethodToBeInvoked(RemotingMethodConstants.PROCESS_GET_FILES);
+				CommandType.FS).setMethodToBeInvoked(
+				RemotingMethodConstants.PROCESS_GET_FILES);
 		List<String> fileList = (List<String>) remoter
 				.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		for (String string : fileList) {
-			remoter.receiveLogFiles(relativePath, relativePath + File.separator + string);
+			remoter.receiveLogFiles(relativePath, relativePath + File.separator
+					+ string);
 		}
 		remoter.close();
 	}
 
-
 	/**
 	 * <p>
 	 * This method Makes the log folder on nodes
-	 * </p>.
+	 * </p>
+	 * .
 	 *
-	 * @param logCollection log collection details
-	 * @throws JSchException the j sch exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws InterruptedException the interrupted exception
+	 * @param logCollection
+	 *            log collection details
+	 * @throws JSchException
+	 *             the j sch exception
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 * @throws InterruptedException
+	 *             the interrupted exception
 	 */
-	public void makeSlaveLogDirectory(LogConsolidationInfo logCollection) throws JSchException, IOException, InterruptedException {
-	
-		makeRemoteSlaveLogDirectory(logCollection);
-	
-	}
+	public void makeSlaveLogDirectory(Cluster cluster)
+			throws JSchException, IOException, InterruptedException {
 
+		makeRemoteSlaveLogDirectory(cluster);
+
+	}
 
 	/**
 	 * <p>
 	 * This method clears all the log files on master and nodes
-	 * </p>.
+	 * </p>
+	 * .
 	 *
-	 * @param logCollection log collection details
-	 * @throws JSchException the j sch exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws InterruptedException the interrupted exception
+	 * @param logCollection
+	 *            log collection details
+	 * @throws JSchException
+	 *             the j sch exception
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 * @throws InterruptedException
+	 *             the interrupted exception
 	 */
-	public  void clearAllLogFiles(LogConsolidationInfo logCollection) throws JSchException, IOException, InterruptedException {
-		
-		clearRemoteLogFilesOnMaster(logCollection);
-		clearRemoteLogFilesOnNodes(logCollection);
-	
-	
-	}
+	public void clearAllLogFiles(Cluster cluster)
+			throws JSchException, IOException, InterruptedException {
 
+		clearRemoteLogFilesOnMaster(cluster);
+		clearRemoteLogFilesOnNodes(cluster);
+
+	}
 
 	/**
 	 * <p>
 	 * This method clears all the log files on master
-	 * </p>.
+	 * </p>
+	 * .
 	 *
-	 * @param logCollection log collection details
-	 * @throws JSchException the j sch exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws InterruptedException the interrupted exception
+	 * @param logCollection
+	 *            log collection details
+	 * @throws JSchException
+	 *             the j sch exception
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 * @throws InterruptedException
+	 *             the interrupted exception
 	 */
-	public void clearLogFilesOnMaster(LogConsolidationInfo logCollection) throws JSchException, IOException, InterruptedException {
-	
-		clearRemoteLogFilesOnMaster(logCollection);
-	}
+	public void clearLogFilesOnMaster(Cluster cluster)
+			throws JSchException, IOException, InterruptedException {
 
+		clearRemoteLogFilesOnMaster(cluster);
+	}
 
 	/**
 	 * <p>
 	 * This method clears all the log files on all the nodes
-	 * </p>.
+	 * </p>
+	 * .
 	 *
-	 * @param logCollection log collection details
-	 * @throws JSchException the j sch exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws InterruptedException the interrupted exception
+	 * @param logCollection
+	 *            log collection details
+	 * @throws JSchException
+	 *             the j sch exception
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 * @throws InterruptedException
+	 *             the interrupted exception
 	 */
-	public void clearLogFilesOnNodes(LogConsolidationInfo logCollection) throws JSchException, IOException, InterruptedException {
-	
-		clearRemoteLogFilesOnNodes(logCollection);
+	public void clearLogFilesOnNodes(Cluster cluster)
+			throws JSchException, IOException, InterruptedException {
+
+		clearRemoteLogFilesOnNodes(cluster);
 	}
-
-
-	/**
-	 * Copy db log files to master.
-	 *
-	 * @param logCollection the log collection
-	 * @throws JumbuneException the hTF exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws InterruptedException the interrupted exception
-	 */
-	public  void copyDBLogFilesToMaster(LogConsolidationInfo logCollection) throws JumbuneException, IOException, InterruptedException {
-				copyRemoteDBLogFiles(logCollection);
-			}
-
 
 	/**
 	 * <p>
 	 * This method collects all the log files from all the cluster nodes
-	 * </p>.
+	 * </p>
+	 * .
 	 *
-	 * @param logCollection log collection details
-	 * @throws JumbuneException If any error occurred
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws InterruptedException the interrupted exception
+	 * @param logCollection
+	 *            log collection details
+	 * @throws JumbuneException
+	 *             If any error occurred
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 * @throws InterruptedException
+	 *             the interrupted exception
 	 */
-	public  void copyLogFilesToMaster(LogConsolidationInfo logCollection) throws JumbuneException, IOException, InterruptedException {
-	
-		copyRemoteLogFiles(logCollection);
+	public void copyLogFilesToMaster(Cluster cluster)
+			throws JumbuneException, IOException, InterruptedException {
+
+		copyRemoteLogFiles(cluster);
 	}
+	
+	/**
+	 * Gets the HDFS paths recursively. The output of this method depends on the output of command {@code hdfs dfs -ls -R  }.
+	 * Additionally, this parses and filters the output based on whether {@code includeDirs }  flag is true or false, if true, 
+	 * this includes directory entries also in the resulting list. 
+	 * 
+	 * The output is a list of all the files/directories in the following format. </br></br>
+	 * 
+	 * -rw-r--r--   1 impadmin supergroup    2805600 2016-04-29 14:53 /Jumbune/Demo/input/PREPROCESSED/data1
+	 *
+	 * @param cluster the cluster
+	 * @param parentPath the parent path
+	 * @param includeDirs whether to include directory entries in resulting list
+	 * @return the HDFS paths recursively
+	 */
+	public List<String> getHDFSPathsRecursively(Cluster cluster, String parentPath, boolean includeDirs) {
+		List<String> paths = null;
+		String response = fireLSRCommandOnHDFS(cluster, parentPath);
+		if (response != null && !response.isEmpty()) {
+			paths = new ArrayList<>();
+			String attrib[] = null;
+			try (BufferedReader br = new BufferedReader(new StringReader(response))) {
+				for (String line = br.readLine(); line != null; line = br.readLine()) {
+					attrib = line.split(Constants.SPACE_REGEX);
+					if (attrib.length == 8) {
+						if (includeDirs) {
+							paths.add(line);
+						} else {
+							if (!attrib[0].startsWith("d")) {
+								paths.add(line);
+							}
+						}
+					}
+				}
+			} catch (IOException e) {
+				LOGGER.error("unable to parse response of lsr command fired on HDFS for path " + parentPath);
+			}
+		}
+		return paths;
+	}
+
+	/**
+	 * Fires {@code hdfs dfs -ls -R  }command on hdfs on the given path.
+	 *
+	 * @param cluster the cluster
+	 * @param parentPath the parent path
+	 * @return the string
+	 */
+	private String fireLSRCommandOnHDFS(Cluster cluster, String parentPath) {
+		Remoter remoter = RemotingUtil.getRemoter(cluster, null);
+		StringBuilder command = new StringBuilder().append(Constants.HADOOP_HOME).append(Constants.BIN_HDFS)
+				.append(Constants.DFS_LSR).append(parentPath);
+		CommandWritableBuilder commandWritableBuilder = new CommandWritableBuilder(cluster);
+		commandWritableBuilder.addCommand(command.toString(), false, null, CommandType.HADOOP_FS);
+		return (String) remoter.fireCommandAndGetObjectResponse(commandWritableBuilder.getCommandWritable());
+	}
+
+	/**
+	 * Copies the validation files to Jumbune home 
+	 *
+	 * @param cluster the cluster
+	 * @param jumbuneRequest the jumbune request
+	 */
+	public void copyLogFilesToMasterForDV(Cluster cluster, JumbuneRequest jumbuneRequest) {
+		NameNodes nameNodes = cluster.getNameNodes();
+		String nameNodeLocation = nameNodes.getRelativeWorkingDirectory();
+		String appHome = JobConfig.getJumbuneHome();
+
+		String relativePath = nameNodeLocation.substring(appHome.length() - 1,
+				nameNodeLocation.length());
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
+		String remoteMkdir = MKDIR_P_CMD + AGENT_HOME + relativePath;
+		CommandWritableBuilder builder = new CommandWritableBuilder(cluster);
+		builder.addCommand(remoteMkdir, false, null, CommandType.FS);
+		remoter.fireAndForgetCommand(builder.getCommandWritable());
+		// Creating local directories in Jumbune Working Dir
+		String mkdirCmd = MKDIR_P_CMD + nameNodeLocation;
+		execute(mkdirCmd.split(" "), null);
+
+		Workers workers = cluster.getWorkers();
+		String workerUser = workers.getUser();
+		String workerLocation = workers.getRelativeWorkingDirectory();
+		
+		LOGGER.debug("Starting to copy remote log files...");
+		for (String workerHost : workers.getHosts()) {
+			LOGGER.debug("Copy log files from: " + workerHost + ":" + workerLocation);
+		String command ;
+		if(cluster.getAgents().getSshAuthKeysFile() != null && cluster.getAgents().getSshAuthKeysFile().endsWith(".pem")){
+			 command = "scp -i " + cluster.getAgents().getSshAuthKeysFile() + " -r " + workerUser + "@" + workerHost + ":"
+					+ workerLocation + " " + AGENT_HOME + relativePath;
+		}else{
+			command = "scp -r " + workerUser + "@" + workerHost + ":"
+					+ workerLocation + " " + AGENT_HOME + relativePath;
+		}
+			CommandWritableBuilder copyBuilder = new CommandWritableBuilder(cluster, null);
+			copyBuilder.addCommand(command, false, null, CommandType.FS);
+			remoter.fireAndForgetCommand(copyBuilder.getCommandWritable());
+		}
+		builder.clear();
+		builder.addCommand(AGENT_HOME + relativePath, false, null,
+				CommandType.FS).setMethodToBeInvoked(
+				RemotingMethodConstants.PROCESS_GET_FILES);
+		List<String> fileList = (List<String>) remoter
+				.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+		try {
+			accumulateFileOutput(jumbuneRequest.getJobConfig().getHdfsInputPath(), jumbuneRequest.getJobConfig(), cluster);
+		} catch (IOException e) {
+			LOGGER.error(e);
+		}
+		for (String file : fileList) {
+			remoter.receiveLogFiles(relativePath, relativePath + "/" + file);
+		}
+		
+		
+	}
+	
+	
+	/**
+	 * Accumulate file output into single file with sorted first thousand keys mantained.
+	 *
+	 * @param inputPath the input path
+	 * @param jobConfig the job config
+	 * @param cluster the cluster
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	public void accumulateFileOutput(String inputPath, JobConfig jobConfig, Cluster cluster) throws IOException {		
+		String dataValidationDirPath = null;
+		StringBuilder stringBuilder = new StringBuilder();
+		StringBuilder DtPath = new StringBuilder();
+		
+		List<String> dataViolationTypes = new ArrayList<>();
+		dataViolationTypes.add(Constants.NUM_OF_FIELDS_CHECK);
+		dataViolationTypes.add(Constants.USER_DEFINED_NULL_CHECK);
+		dataViolationTypes.add(Constants.USER_DEFINED_DATA_TYPE);
+		dataViolationTypes.add(Constants.USER_DEFINED_REGEX_CHECK);	
+		
+		CommandWritableBuilder builder = null;
+		Remoter remoter = null;
+		
+		String filePaths = getInputPaths(inputPath, jobConfig, getLsrCommandResponse(inputPath, cluster));	
+		
+		String[] listofFilesFromHDFS = filePaths.split(Constants.COMMA);		
+		
+		for (String fileFromList : listofFilesFromHDFS) {
+				
+			for (String violationType : dataViolationTypes) {	
+				
+				DtPath.append("AGENT_HOME").append(Constants.JOB_JARS_LOC).append(jobConfig.getFormattedJumbuneJobName()).append("dv/")
+				.append(violationType).append(Constants.FORWARD_SLASH);		
+				
+				stringBuilder.append("if ! [ `ls ").append(DtPath).append(" | wc -l` == 0 ]; then ").append("cat ").append(DtPath)				
+				.append(fileFromList.replaceFirst("\\.", "").trim()).append("-*").append(" >> ").append(DtPath)
+				.append("a1 && sort -n -t \"|\" -k 1 ").append(DtPath).append("a1 -o ").
+				append(DtPath).append("a1 && head -n 1000 ").append(DtPath).append("a1 >> ").append(DtPath).append(fileFromList.replaceFirst("\\.", "").trim()).append("&& rm ")
+				.append(DtPath).append("a1 ")
+				.append(DtPath).append(fileFromList.replaceFirst("\\.", "").trim()).append("-*;")
+				.append(" else echo \"No files found hence exiting\"; fi");
+				
+				dataValidationDirPath = stringBuilder.toString();
+				
+				builder = new CommandWritableBuilder(cluster);
+				builder.addCommand(dataValidationDirPath.trim(), false, null, CommandType.FS).populate(cluster, cluster.getNameNode());		
+				remoter = RemotingUtil.getRemoter(cluster);
+				remoter.fireAndForgetCommand(builder.getCommandWritable());				
+				DtPath.delete(0, DtPath.length());
+				stringBuilder.delete(0, stringBuilder.length());				
+			}
+		}
+	}
+
+	/**
+	 * Gets the lsr command response containing all the files in the given path.
+	 *
+	 * @param hdfsFilePath the hdfs file path
+	 * @param cluster the cluster
+	 * @return the lsr command response
+	 */
+	private String getLsrCommandResponse(String hdfsFilePath,
+			Cluster cluster) {
+		Remoter remoter = RemotingUtil.getRemoter(cluster, null);	
+		StringBuilder stringBuilder = new StringBuilder().append(Constants.HADOOP_HOME).append(Constants.BIN_HDFS).append(Constants.DFS_LSR).append(hdfsFilePath)
+		.append(" | sed 's/  */ /g' | cut -d\\  -f 1,8 --output-delimiter=',' | grep ^- | cut -d, -f2 ");
+		CommandWritableBuilder commandWritableBuilder = new CommandWritableBuilder(cluster, null);
+		commandWritableBuilder.addCommand(stringBuilder.toString(), false, null, CommandType.HADOOP_FS);
+		String commmandResponse = (String) remoter.fireCommandAndGetObjectResponse(commandWritableBuilder.getCommandWritable());		
+		return commmandResponse;
+	}
+	
+	
+	/**
+ * Gets the input paths.
+ *
+ * @param hdfsFilePath the hdfs file path
+ * @param jobConfig the job config
+ * @param commandResponse the command response
+ * @return the input paths
+ * @throws IOException Signals that an I/O exception has occurred.
+ */
+	private String getInputPaths(String hdfsFilePath,JobConfig jobConfig, String commandResponse) throws IOException{
+		
+		List<String> listOfFiles = new ArrayList<String>();
+		String[] fileResponse = commandResponse.split(Constants.NEW_LINE);
+		String filePath = null ;
+		for (int i = 0; i < fileResponse.length; i++) {			
+			String [] eachFileResponse = fileResponse[i].split("\\s+");
+			filePath = eachFileResponse[eachFileResponse.length-1];
+			if(filePath.contains(hdfsFilePath)){
+			filePath = filePath.replaceAll(File.separator, Constants.DOT);
+			listOfFiles.add(filePath);
+			}
+		}
+		return listOfFiles.toString().substring(1, listOfFiles.toString().length()-1);
+		
+	}
+	
+	/**
+	 * Gets the remote threads per core.
+	 *
+	 * @param loader
+	 *            the loader
+	 * @param coreOrThread
+	 *            the core or thread
+	 * @return the remote threads per core
+	 * @throws JumbuneException
+	 *             the hTF exception
+	 */
+	public static int getRemoteThreadsOrCore(Cluster cluster, String coreOrThread, String host)
+			throws JumbuneException {
+
+		String command = "lscpu |grep " + coreOrThread + " && exit";
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
+
+		CommandWritableBuilder builder = new CommandWritableBuilder(cluster, host);
+		builder.addCommand(command, false, null, CommandType.FS);
+		String line = (String) remoter.fireCommandAndGetObjectResponse(builder
+				.getCommandWritable());
+		if (line == null || "".equals(line.trim())) {
+			throw JumbuneRuntimeException.throwUnresponsiveIOException(
+					RemoteFileUtil.class.getName(), "getRemoteThreadsOrCore",
+					"", 1019);
+		}
+		String[] array = line.split(":");
+		if (array.length != 2) {
+			throw JumbuneRuntimeException.throwUnresponsiveIOException(
+					RemoteFileUtil.class.getName(), "getRemoteThreadsOrCore",
+					"", 1026);
+		}
+		return Integer.parseInt(array[1].trim());
+	}
+	
 }

@@ -76,7 +76,7 @@ public class UDVPatternValidator extends BaseAdapter {
 		boolean instrumentMapreduceUserdefinedValidation = jobConfig
 				.isInstrumentEnabled("instrumentUserDefValidate");
 
-		LOG.info(MessageFormat.format(InstrumentationMessageLoader
+		LOG.debug(MessageFormat.format(InstrumentationMessageLoader
 				.getMessage(MessageConstants.CLASS_BEING_INSTRUMENTED),
 				getClassName()));
 

@@ -9,6 +9,7 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.profiling.beans.DataCenterInfo;
 import org.jumbune.profiling.beans.NodeInfo;
 import org.jumbune.profiling.beans.RackInfo;
@@ -108,14 +109,14 @@ public class ViewHelper {
 	 * @throws IOException
 	 * @throws JSchException
 	 */
-	public List<NetworkLatencyInfo> getNetworkLatency(Config config,
-			Map<String, String> selectedNodesWithPassword)
-			throws HTFProfilingException {
+	public List<NetworkLatencyInfo> getNetworkLatency(JumbuneRequest jumbuneRequest,
+			Map<String, String> selectedNodesWithPassword) throws HTFProfilingException {
+		
 		List<NetworkLatencyInfo> networkLatencyInfoList;
 		try {
-			LOGGER.info("node details: " + selectedNodesWithPassword);
+			LOGGER.debug("node details: " + selectedNodesWithPassword);
 			networkLatencyInfoList = statsDump
-					.getRemoteNetworkLatencyForSelectedNodes(config,
+					.getRemoteNetworkLatencyForSelectedNodes(jumbuneRequest,
 							selectedNodesWithPassword);
 		} catch (JSchException ex) {
 

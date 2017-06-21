@@ -1,6 +1,7 @@
 package org.jumbune.execution.service;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,17 +13,17 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.HttpReportsBean;
 import org.jumbune.common.beans.ReportsBean;
-import org.jumbune.common.beans.ServiceInfo;
-import org.jumbune.common.utils.Constants;
-import org.jumbune.common.utils.ValidateInput;
-import org.jumbune.common.job.Config;
-import org.jumbune.common.job.JobConfig;
+import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.job.JumbuneRequest;
+import org.jumbune.common.utils.JobConfigUtil;
+import org.jumbune.utils.exception.ErrorCodesAndMessages;
+import org.jumbune.utils.exception.JumbuneException;
+import org.jumbune.utils.exception.JumbuneRuntimeException;
+
+import org.jumbune.common.job.EnterpriseJobConfig;
 import org.jumbune.execution.beans.Parameters;
 import org.jumbune.execution.processor.Processor;
 import org.jumbune.execution.utils.ExecutionConstants;
-import org.jumbune.utils.exception.ErrorCodesAndMessages;
-import org.jumbune.utils.exception.JumbuneException;
-
 
 /**
  * 
@@ -37,7 +38,7 @@ public class HttpExecutorService extends CoreExecutorService {
 			.getLogger(HttpExecutorService.class);
 
 	private ReportsBean reports;
-	
+		
 	private ExecutorService service;
 
 	/**
@@ -75,7 +76,24 @@ public class HttpExecutorService extends CoreExecutorService {
 		}
 	}
 
+	/**
+	 * This method will identify application flow and execute each processor
+	 * chain in a separate thread
+	 * 
+	 * @param is
+	 * @param reports
+	 * @return YamlLoader
+	 * @throws JumbuneException
+	 */
+	public JumbuneRequest runInSeperateThread(InputStream is,
+			HttpReportsBean reports) throws JumbuneException {
 
+		JumbuneRequest jumbuneRequest = JobConfigUtil.jumbuneRequest(is);
+		return runInSeperateThread(jumbuneRequest, reports);
+
+	}
+	
+	
 
 	/**
 	 * This method will identify application flow and execute each processor
@@ -83,50 +101,33 @@ public class HttpExecutorService extends CoreExecutorService {
 	 * 
 	 * @param config
 	 * @param reports
-	 * @return JobConfig
+	 * @return YamlLoader
 	 * @throws JumbuneException
 	 */
-	public Config runInSeperateThread(Config config,
-			HttpReportsBean reports) throws JumbuneException {
+	public JumbuneRequest runInSeperateThread(JumbuneRequest jumbuneRequest, HttpReportsBean reports) throws JumbuneException {
 		List<Processor> processors;
-		JobConfig jobConfig = (JobConfig)config;
-		if (ValidateInput.isEnable(jobConfig.getEnableStaticJobProfiling()) && !checkProfilingState()) {
+		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) jumbuneRequest.getConfig();
+		Cluster cluster = jumbuneRequest.getCluster();
+		if (JobConfigUtil.isEnable(enterpriseJobConfig.getEnableStaticJobProfiling()) && !checkProfilingState()) {
 			throw new JumbuneException(ErrorCodesAndMessages.COULD_NOT_EXECUTE_PROGRAM);
 		}
+
 		this.reports = reports;
 
-		
-		processors = getProcessorChain(jobConfig, reports, HTTP_BASED);
-		createJobJarFolderOnAgent(jobConfig);
-		ServiceInfo serviceInfo = new ServiceInfo();
-		serviceInfo.setRootDirectory(Constants.JOB_JARS_LOC);
-		serviceInfo.setJumbuneHome(JobConfig.getJumbuneHome());
-		serviceInfo.setJumbuneJobName(jobConfig
-				.getFormattedJumbuneJobName());
-		if (jobConfig.getSlaveWorkingDirectory() != null){
-			serviceInfo.setSlaveJumbuneHome(jobConfig
-					.getSlaveWorkingDirectory());
-		}
-		if (jobConfig.getMaster() != null){
-			serviceInfo.setMaster(jobConfig.getMaster());
-		}
-		if (jobConfig.getSlaves() != null){
-			serviceInfo.setSlaves(jobConfig.getSlaves());
-		}
+		processors = getProcessorChain(enterpriseJobConfig, reports, HTTP_BASED);
+		createJobJarFolderOnAgent(jumbuneRequest);
 		try {
-			persistJsonInfoForShutdownHook(config,JobConfig.getJumbuneHome());
+			persistJsonInfoForShutdownHook(jumbuneRequest,EnterpriseJobConfig.getJumbuneHome());
 		} catch (IOException e) {
-			LOGGER.error(e.getMessage(),e);
+			LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));
 		}
-		HELPER.writetoServiceFile(serviceInfo);
 		if (processors.size() > 0) {
 			service = Executors.newFixedThreadPool(processors.size());
 			int index = 1;
 			for (Processor p : processors) {
 				String processName = "PROCESS" + (index++);
 				reports.addInitialStatus(processName);
-				
-				Handler handler = new Handler(p, config, reports, processName);
+				Handler handler = new Handler(p, jumbuneRequest, reports, processName);
 
 				// setting handler to stop services after execution
 				handler.setProcessCompletionHandler(new Thread() {
@@ -138,36 +139,37 @@ public class HttpExecutorService extends CoreExecutorService {
 				service.execute(handler);
 			}
 		} else {
-			LOGGER.error("No processors identified to execute");			
+			LOGGER.error("No processors identified to execute");
+
 		}
-		return config;
+		return jumbuneRequest;
 	}
 
 	/**
 	 * 
 	 * Thread for running each process in a separate thread
-	 *
+	 * 
 	 * 
 	 */
 	private class Handler implements Runnable {
 
 		private Processor processor;
+		private JumbuneRequest jumbuneRequest;
 		private ReportsBean reports;
 		private String processName;
 		private Runnable processCompletionHandler;
-		private Config config;
 
 		/**
 		 * Constructor for Handler
 		 * @param processor
-		 * @param loader
+		 * @param config
 		 * @param reports
 		 * @param name
 		 */
-		public Handler(Processor processor, Config config,
+		public Handler(Processor processor, JumbuneRequest jumbuneRequest,
 				ReportsBean reports, String name) {
 			this.processor = processor;
-			this.config = config;
+			this.jumbuneRequest = jumbuneRequest;
 			this.reports = reports;
 			this.processName = name;	
 		}
@@ -185,25 +187,25 @@ public class HttpExecutorService extends CoreExecutorService {
 			try {
 				Map<Parameters, String> params = new HashMap<Parameters, String>();
 				params.put(Parameters.PROCESSOR_KEY, processName);
-				processor.process(config, reports, params);
+				processor.process(jumbuneRequest, reports, params);
 			} catch (JumbuneException e) {
-				LOGGER.error(processName + " completed with errors !!!", e);
+				LOGGER.error(processName + " completed with errors !!!");
 			} finally {
 				// marking the process as complete
 				reports.markProcessAsComplete(processName);
 				if (!reports.isAnyProcessRunning()
 						&& processCompletionHandler != null) {
-					LOGGER.info("Job Processing Completed. Shutting down service...");
+					LOGGER.debug("Job Processing Completed. Shutting down service...");
 					new Thread(processCompletionHandler).start();
 
 				}
 				try {
 					stopExecution();
-					cleanUpJumbuneAgentCurrentJobFolder(config);
-					cleanUpSlavesTempFldr(config);
-					LOGGER.info("Completed worker node cleanup");
+					cleanUpJumbuneAgentCurrentJobFolder(jumbuneRequest);
+					cleanUpSlavesTempFldr(jumbuneRequest);
+					LOGGER.debug("Completed worker node cleanup");
 				} catch (Exception e) {
-					LOGGER.error("An exception occurred: "+e);
+					LOGGER.error(JumbuneRuntimeException.throwException(e.getStackTrace()));
 				}
 			}
 		}

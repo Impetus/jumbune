@@ -3,6 +3,10 @@ package org.jumbune.common.beans;
 import java.util.List;
 import java.util.Properties;
 
+import javax.xml.bind.annotation.XmlElement;
+
+import org.jumbune.common.beans.JobInfo;
+
 
 
 /**
@@ -96,6 +100,8 @@ public class JobDetails {
 	
 	/** The job reduce mb. */
 	private long jobReduceMB;
+
+	private List<JobInfo> job ;
 
 	/**
 	 * Gets the priority.
@@ -619,4 +625,14 @@ public class JobDetails {
 		this.jobReduceMB = jobReduceMB;
 	}
 
+	public List<JobInfo> getJob() {
+		return job;
+	}
+
+	@XmlElement
+	public void setJob(List<JobInfo> job) {
+		this.job = job;
+	}
+
+	
 }

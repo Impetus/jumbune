@@ -69,16 +69,16 @@ public class JarInstrumenter extends Instrumenter {
 
 	public List<String> userDefValidationsClasses = new ArrayList<String>();
 	public List<String> regexValidationsClasses = new ArrayList<String>();
-
+	private String workerLogLocation;
 	/**
 	 * <p>
 	 * Create a new instance of JarInstrumenter.
 	 * </p>
-	 */	public JarInstrumenter(Config config) {
-		super(config);
-
-		env = new Environment();
-	}
+	 */	public JarInstrumenter(Config config, String workerLogLocation) {
+		 super(config);
+		 env = new Environment();
+		 this.workerLogLocation = workerLogLocation;
+	 }
 
 	/**
 	 * This method instruments a jar file. The source and destination files are
@@ -98,7 +98,7 @@ public class JarInstrumenter extends Instrumenter {
 	private void createSymbolTableFile(Config config , Environment env) throws IOException {
 		FileWriter fw = null;
 		try {
-			JobConfig jobConfig = (JobConfig)config;
+			JobConfig jobConfig = (JobConfig) config;
 			String absFilePath = jobConfig.getJumbuneJobLoc()+"/logs/symbolTable.log";
 			fw = new FileWriter(absFilePath);
 			Map<String,String> map = env.getSymbolTable();
@@ -265,7 +265,7 @@ public class JarInstrumenter extends Instrumenter {
 		if (InstrumentConfig.INSTRUMENT_MAPREDUCE_EXECUTION) {
 			cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 			instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
-					new ConfigureMapReduceAdapter(getConfig(), cw,env), cw);
+					new ConfigureMapReduceAdapter(getConfig(), cw,env, workerLogLocation), cw);
 		}
 
 		//add logging only if validations are enabled on a particular class. 

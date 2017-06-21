@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+</head>
+
+<body>
+	<style type="text/css">
+	.alertTable {
+		width: 100%;
+		min-width: 850px;
+		border-collapse: collapse;
+	}
+	
+	.alertTable table,
+	.alertTable td,
+	.alertTable th {
+		/*border: 1px solid green;*/
+		border: 1px solid #ACE6F7;
+	}
+	
+	.alertTable th {
+		background-color: #5bc0de;
+		color: white;
+	}
+	
+	.alertTable table {
+		width: 100%;
+	}
+	
+	.alertTable th {
+		height: 50px;
+		font-size: 16px;
+		padding-left: 5px;
+		margin: 0 auto;
+		text-align: center;
+		background-color: #fff;
+		color: #555;
+	}
+	
+	thead {
+		display: table-header-group;
+		vertical-align: middle;
+		border-color: inherit;
+	}
+	
+	th {
+		margin: 0 auto;
+		text-align: center;
+		background-color: #fff;
+		color: #555;
+	}
+	
+	* {
+		box-sizing: border-box;
+		font-family: Arial, sans-serif;
+		font-size: 14px;
+		line-height: 20px;
+		color: #222;
+	}
+	</style>
+	<table class="alertTable">
+		<thead>
+			<tr>
+				<th>Severity</th>
+				<th>Node(s)</th>
+				<th>Alert</th>
+				<th>Occurring since</th>
+			</tr>
+		</thead>
+		<tbody>
+		<#-- Create constructor object -->
+<#assign objectConstructor = "freemarker.template.utility.ObjectConstructor"?new()>
+
+<#-- Call calendar constructor -->
+<#assign clock = objectConstructor("java.util.GregorianCalendar")>
+
+<#-- Call formatter constructor -->
+<#assign mmddyy = objectConstructor("java.text.SimpleDateFormat","MM/dd/yyyy")>
+
+<#-- Call getTime method to return the date in milliseconds-->
+<#assign date = clock.getTime()>
+
+			<#list alerts as alert>
+				<tr>
+					<td style="margin:0 auto; text-align:center;padding-bottom:3px">
+						<span>${alert.level}</span>
+					</td>
+					<td style="text-align:center;padding-left:5px;padding-right:5px">
+						${alert.name}
+					</td>
+					<td style="padding-left:5px">
+						${alert.message}
+					</td>
+					<td style="margin:0 auto; text-align:center;padding:3px 10px 3px 10px;white-space:nowrap">
+						${alert.date}
+						
+					</td>
+				</tr>
+			</#list>
+		</tbody>
+	</table>
+	<div style="
+    font-size: 15px;
+    margin-top: 30px;
+    text-align: center;">
+    	<span style="
+    		margin-top: 46px !important;
+    		margin-bottom: 37px;
+    		border-bottom-width: 35px;
+    		padding-bottom: 9px;
+    		height: 10px;">Reported by </span>
+    	<br>
+    	<img src="cid:image"
+    		style="display: inline;
+    				height: 38px;
+    				margin-top: 6px;
+    				padding-right: 12px;"
+    		align="top">
+    </div>
+</body>
+
+</html>

@@ -15,7 +15,7 @@ public class BasicJobConfig implements java.io.Serializable{
 	private String jumbuneJobName;
 	
 	/** List of slave hosts **/
-	private String[] slaves;
+	private String[] workers;
 
 	/** Specifies the Jumbune tmp directory **/
 	private String tmpDir;
@@ -26,14 +26,12 @@ public class BasicJobConfig implements java.io.Serializable{
 	/** The port **/
 	private String port;
 	
-	/** The private key RSA file **/
-	private String rsaFile;
-	
-	/** The private key DSA file **/
-	private String dsaFile;
+	/** The ssh Auth Keys file. */
+	private String sshAuthKeysFile;
 	
 	/** The user **/
 	private String user;
+	
 	
 	/**
 	 * Constructor for creating new BasicYamlConfig object
@@ -67,17 +65,16 @@ public class BasicJobConfig implements java.io.Serializable{
 	 * gets the slaves
 	 * @return
 	 */
-	public String[] getSlaves() {
-		return slaves;
+	public String[] getWorkers() {
+		return workers;
 	}
 
 	/**
 	 * sets the slaves
 	 * @param slaves
 	 */
-	public void setSlaves(String[] slaves) {
-		String[] slavesTmp = slaves;
-		this.slaves = slavesTmp;
+	public void setWorkers(String[] workers) {
+		this.workers = workers;
 	}
 
 	/**
@@ -127,37 +124,19 @@ public class BasicJobConfig implements java.io.Serializable{
 	public void setPort(String port) {
 		this.port = port;
 	}
-	
+
 	/**
-	 * gets the rsaFile
-	 * @return
+	 * @return the sshAuthKeysFile
 	 */
-	public String getRsaFile() {
-		return rsaFile;
+	public String getSshAuthKeysFile() {
+		return sshAuthKeysFile;
 	}
 
 	/**
-	 * sets the rsaFile
-	 * @param rsaFile
+	 * @param sshAuthKeysFile the sshAuthKeysFile to set
 	 */
-	public void setRsaFile(String rsaFile) {
-		this.rsaFile = rsaFile;
-	}
-
-	/**
-	 * gets the dsaFile
-	 * @return
-	 */
-	public String getDsaFile() {
-		return dsaFile;
-	}
-
-	/**
-	 * sets the dsaFile
-	 * @param dsaFile
-	 */
-	public void setDsaFile(String dsaFile) {
-		this.dsaFile = dsaFile;
+	public void setSshAuthKeysFile(String sshAuthKeysFile) {
+		this.sshAuthKeysFile = sshAuthKeysFile;
 	}
 
 	/**
@@ -185,7 +164,7 @@ public class BasicJobConfig implements java.io.Serializable{
 	@Override
 	public String toString() {
 		return "JobConfigAgent [jumbuneJobName="+jumbuneJobName+
-		", slaves="+slaves+ ", tmpDir="+tmpDir+", host="+host+", port="+port+", rsaFile="+rsaFile+", dsaFile="+dsaFile+
+		", workers="+workers+ ", tmpDir="+tmpDir+", host="+host+", port="+port+", sshAuthKeysFile="+sshAuthKeysFile+
 		", user="+user+" ]";
 	}
 

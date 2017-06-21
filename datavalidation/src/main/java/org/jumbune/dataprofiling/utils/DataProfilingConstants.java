@@ -50,6 +50,7 @@ public interface DataProfilingConstants {
 
 	String CB = "CB";
 	
+	String  TEXTINPUTFORMAT_RECORD_DELIMITER = "textinputformat.record.delimiter";
 	
 
 }

@@ -1,5 +1,12 @@
 package org.jumbune.remoting.client;
 
+import java.net.ConnectException;
+import java.util.List;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jumbune.remoting.common.ChannelConnectException;
+
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
@@ -7,26 +14,20 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-
-import java.util.List;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 
 /**
  * The Class JumbuneAgentCommunicator.
  */
-public final class JumbuneAgentCommunicator {
+public class JumbuneAgentCommunicator {
 
 	/** The host. */
-	private final String host;
+	protected String host;
 	
 	/** The port. */
-	private final int port;
+	protected int port;
 	
 	private  static final Logger LOGGER = LogManager.getLogger(JumbuneAgentCommunicator.class);
 
@@ -39,12 +40,12 @@ public final class JumbuneAgentCommunicator {
 	 * @param host the host
 	 * @param port the port
 	 */
-	public JumbuneAgentCommunicator(String host,
-			int port) {
-		this.host = host;
-		this.port = port;		
+	public JumbuneAgentCommunicator(String zkHost,
+			int zkPort) {
+		this.host = zkHost;
+		this.port = zkPort;
 	}
-
+		
 	/**
 	 * Creates the future. This is used for each of the Remoter instance command. We are initializing event group only once. 
 	 *
@@ -53,8 +54,11 @@ public final class JumbuneAgentCommunicator {
 	 * @throws InterruptedException 
 	 */
 	public ChannelFuture getChannelFuture(
-			final List<ChannelHandler> handlers) throws InterruptedException {
+			final List<ChannelHandler> handlers) throws InterruptedException, ConnectException, ChannelConnectException {
 		ChannelFuture future;
+   		LOGGER.debug("Going to connect to leader Jumbune Agent on ["+ host + ":"
+					+ port +"]");
+
 		bootstrap = new Bootstrap();
 		bootstrap.group(SingleNIOEventGroup.eventLoopGroup());
          bootstrap.channel(NioSocketChannel.class)
@@ -71,6 +75,21 @@ public final class JumbuneAgentCommunicator {
            });
         // Make the connection attempt.         
         future = bootstrap.connect(host, port).sync();
+        if(future==null){
+        	throw new ChannelConnectException("Failed to get Future");
+        }
         return future;
 	}
+
+	public void close(){
+		EventLoopGroup loopGroup = bootstrap.group();
+		loopGroup.shutdownGracefully();
+		try {
+			loopGroup.terminationFuture().sync();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+	}
+
 }

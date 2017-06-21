@@ -74,12 +74,7 @@ function enableStaticProfilingTab(profilingJSONString)  {
 	var proJsonStringObj = newJSONString["staticProfilerData"];
 	var proJsonStringObj_Summary = newJSONString["HPROF_PROFILER_SUMMERY"];
 	var tabsLength = $('#tabs').tabs("length");
-	 for (var key in proJsonStringObj)
-		    if(proJsonStringObj.hasOwnProperty(key)){
-		    	document.getElementById('heading').style.display = 'block';
-				document.getElementById('cpu_cycle').style.display = 'block';
-				document.getElementById('heap_sites').style.display = 'block';
-		    }
+	
 	//count = tabsLength;
 	//alert(tabsLength);
 	//For Dashboard--

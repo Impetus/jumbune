@@ -15,27 +15,34 @@ import java.util.Scanner;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.beans.ClasspathElement;
-import org.jumbune.common.beans.Enable;
-import org.jumbune.common.beans.ReportsBean;
-import org.jumbune.common.beans.ServiceInfo;
-import org.jumbune.common.utils.ConfigurationUtil;
-import org.jumbune.common.utils.ConsoleLogUtil;
-import org.jumbune.common.utils.Constants;
-import org.jumbune.common.utils.JobConfigUtil;
-import org.jumbune.common.utils.MessageLoader;
-import org.jumbune.common.utils.RemotingUtil;
-import org.jumbune.common.job.Config;
-import org.jumbune.common.job.JobConfig;
+
+import org.jumbune.common.job.EnterpriseJobConfig;
 import org.jumbune.execution.beans.Parameters;
 import org.jumbune.execution.processor.Processor;
 import org.jumbune.execution.utils.ExecutionUtil;
 import org.jumbune.execution.utils.ReportGenerator;
+import com.google.gson.Gson;
+
+import org.jumbune.common.beans.ClasspathElement;
+import org.jumbune.common.beans.Enable;
+import org.jumbune.common.beans.ReportsBean;
+import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JumbuneRequest;
+import org.jumbune.common.utils.CollectionUtil;
+import org.jumbune.common.utils.ConfigurationUtil;
+import org.jumbune.common.utils.ConsoleLogUtil;
+import org.jumbune.common.utils.Constants;
+import org.jumbune.common.utils.MessageLoader;
+import org.jumbune.common.utils.RemotingUtil;
+import org.jumbune.common.utils.JobConfigUtil;
 import org.jumbune.utils.JobUtil;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
 import org.jumbune.utils.exception.JumbuneException;
+import org.jumbune.utils.exception.JumbuneRuntimeException;
 
 import com.jcraft.jsch.JSchException;
+
 
 /**
  * Executor service for shell based user
@@ -44,15 +51,12 @@ import com.jcraft.jsch.JSchException;
  */
 public class ShellExecutorService extends CoreExecutorService {
 
-	private static final Logger LOGGER = LogManager
-			.getLogger(ShellExecutorService.class);
+	private static final Logger LOGGER = LogManager.getLogger(ShellExecutorService.class);
 	private static final MessageLoader MESSAGES = MessageLoader.getInstance();
 	/** The Constant FORWARD_SLASH. */
 	private final String FORWARD_SLASH = "/";
-
 	/**
 	 * public constructor
-	 * 
 	 * @throws JumbuneException
 	 */
 	public ShellExecutorService() throws JumbuneException {
@@ -60,25 +64,20 @@ public class ShellExecutorService extends CoreExecutorService {
 	}
 
 	/**
-	 * Asks user to provide the json file path. Validates the location given by
-	 * user and then reads the file content to return InputStream
+	 * Asks user to provide the json file path. Validates the location given by user and then reads the file content to return InputStream
 	 * 
 	 * @return InputStream
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
-	private InputStream readFilePath() throws JumbuneException,
-			FileNotFoundException {
+	private InputStream readFilePath() throws JumbuneException, FileNotFoundException {
 		Scanner scanner = new Scanner(System.in);
-		String filePath = ExecutionUtil.readInputFromConsole(scanner,
-				MESSAGES.get(MESSAGE_VALID_INPUT),
-				MESSAGES.get(MESSAGE_YAML_PATH));
+		String filePath = ExecutionUtil.readInputFromConsole(scanner, MESSAGES.get(MESSAGE_VALID_INPUT), MESSAGES.get(MESSAGE_YAML_PATH));
 
 		if (JobUtil.validateFileSystemLocation(filePath)) {
 			return readFile(filePath);
 		} else {
-			throw new JumbuneException(
-					ErrorCodesAndMessages.MESSAGE_FILE_PATH_FORMAT_NOT_CORRECT);
+			throw new JumbuneException(ErrorCodesAndMessages.MESSAGE_FILE_PATH_FORMAT_NOT_CORRECT);
 		}
 	}
 
@@ -89,26 +88,24 @@ public class ShellExecutorService extends CoreExecutorService {
 	 * @return InputStream
 	 * @throws JumbuneException
 	 */
-	private InputStream readFile(String filePath) throws JumbuneException {
+	private InputStream readFile(String filePath) throws JumbuneException{
 		File file = new File(filePath);
 		InputStream inputStream = null;
 		try {
 			inputStream = new FileInputStream(file);
 		} catch (FileNotFoundException e) {
-			LOGGER.error("Json file not found." + e);
+			LOGGER.error(JumbuneRuntimeException.throwFileNotLoadedException(e.getStackTrace()));
 		}
 		return inputStream;
 	}
 
 	/**
 	 * main method for execution
-	 * 
 	 * @param args
 	 * @throws JumbuneException
 	 * @throws InterruptedException
 	 */
-	public static void main(String[] args) throws JumbuneException,
-			InterruptedException {
+	public static void main(String[] args) throws JumbuneException, InterruptedException {
 		// wait for execution of Signature validation
 		ShellExecutorService service = new ShellExecutorService();
 		InputStream jsonFileStream = null;
@@ -117,18 +114,18 @@ public class ShellExecutorService extends CoreExecutorService {
 			jsonFileStream = service.readFilePath();
 			service.run(jsonFileStream, reports);
 		} catch (IOException e) {
-			LOGGER.error(e);
+			LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));
 		} catch (JumbuneException e) {
 			ConsoleLogUtil.CONSOLELOGGER.error(e);
 		} catch (Exception e) {
-			LOGGER.error(e);
-		} finally {
+			LOGGER.error(JumbuneRuntimeException.throwException(e.getStackTrace()));
+		}finally{
 			try {
-				if (jsonFileStream != null) {
+				if(jsonFileStream != null){
 					jsonFileStream.close();
 				}
-			} catch (IOException io) {
-				LOGGER.error("Unable to close stream" + io.getMessage());
+			}catch (IOException io) {
+				LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(io.getStackTrace()));
 			}
 		}
 		System.exit(1);
@@ -137,68 +134,77 @@ public class ShellExecutorService extends CoreExecutorService {
 
 	/**
 	 * 
-	 * Method that create and executes the application flow in single thread
-	 * This method should be used for shell based application flow.
+	 * Method that create and executes the application flow in single thread This method should be used for shell based and scheduler based
+	 * application flow.
 	 * 
-	 * @param is
+	 * @param inputStream
 	 * @param reports
-	 * @return JobConfig
+	 * @return YamlLoader
 	 * @throws JumbuneException
 	 * @throws IOException
 	 * @throws FileNotFoundException
-	 * @throws InterruptedException
-	 * @throws JSchException
+	 * @throws InterruptedException 
+	 * @throws JSchException 
 	 */
-	private Config run(InputStream is, ReportsBean reports)
-			throws JumbuneException, IOException, JSchException,
-			InterruptedException {
+	private Config run(InputStream inputStream, ReportsBean reports) throws JumbuneException,IOException, JSchException, InterruptedException {
 
-		JobConfig jobConfig = JobConfigUtil.jobConfig(is);
+		JumbuneRequest jumbuneRequest = JobConfigUtil.jumbuneRequest(inputStream);
+		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) jumbuneRequest.getConfig();
+		Cluster cluster = jumbuneRequest.getCluster();
+
 		/***
-		 * Map<String, Map<String, List<String>>> validatedData = new
-		 * ValidateInput().validateYaml(yamlConfig); if
-		 * (validatedData.get(Constants.FAILURE_KEY) != null &&
-		 * !validatedData.get(Constants.FAILURE_KEY).isEmpty()) {
-		 * ConsoleLogUtil.CONSOLELOGGER.debug(validatedData); throw new
-		 * HTFException(ErrorCodesAndMessages.INVALID_YAML); }
+		 * Map<String, Map<String, List<String>>> validatedData = new ValidateInput().validateYaml(yamlConfig); if
+		 * (validatedData.get(Constants.FAILURE_KEY) != null && !validatedData.get(Constants.FAILURE_KEY).isEmpty()) {
+		 * ConsoleLogUtil.CONSOLELOGGER.debug(validatedData); throw new HTFException(ErrorCodesAndMessages.INVALID_YAML); }
 		 */
+		loadInitialSetup(jumbuneRequest);
+		disableModules(enterpriseJobConfig);
+		JobConfigUtil.createJumbuneDirectories(jumbuneRequest);
+		createJobJarFolderOnAgent(jumbuneRequest);
+		String scheduleJobTiming = enterpriseJobConfig.getJumbuneScheduleTaskTiming();
 
-		loadInitialSetup(jobConfig);
-		disableModules(jobConfig);
-		JobConfigUtil jobConfigUtil = new JobConfigUtil(jobConfig);
-		jobConfigUtil.createJumbuneDirectories();
-		createJobJarFolderOnAgent(jobConfig);
-		startExecution(reports, jobConfig);
-
+		// If the job is to be scheduled, then just schedule the job and return
+		// from here.
+		if (!CollectionUtil.isNullOrEmpty(scheduleJobTiming)) {
+			LOGGER.debug("Its a request to schedule job scheduleJobTiming " + scheduleJobTiming);
+			scheduleTask(enterpriseJobConfig, false);
+			return enterpriseJobConfig;
+		}
+		boolean isStartExecution = checkProfilingState();
+		saveJsonToJsonRepository(enterpriseJobConfig);
+		if (isStartExecution) {
+			startExecution(reports, jumbuneRequest);
+		} else {
+			String answer = isQueueTask();
+			if (!NO.equalsIgnoreCase(answer)) {
+				// Schedule this job
+				enterpriseJobConfig.setJumbuneScheduleTaskTiming(REATTEMPT_TASK_SCHEDULING_TIME);
+				scheduleTask(enterpriseJobConfig, true);
+			}
+		}
 		try {
 			LOGGER.debug("clean up process slave tmp + agent home shell case ");
-			cleanUpJumbuneAgentCurrentJobFolder(jobConfig);
-			cleanUpSlavesTempFldr(jobConfig);
-		} catch (Exception e) {
-			LOGGER.error("Exception occurred in clean up slaves tmp folder ", e);
+			cleanUpJumbuneAgentCurrentJobFolder(jumbuneRequest);
+			cleanUpSlavesTempFldr(jumbuneRequest);
+			}
+		 catch (Exception e) {
+			 LOGGER.error(JumbuneRuntimeException.throwException(e.getStackTrace()));
 		}
-		ConsoleLogUtil.CONSOLELOGGER.debug("clean up done");
-		return jobConfig;
+		 ConsoleLogUtil.CONSOLELOGGER.debug("clean up done");
+		return enterpriseJobConfig;
 	}
-
-	private void startExecution(ReportsBean reports, Config config)
-			throws IOException, JumbuneException {
-		JobConfig jobConfig = (JobConfig) config;
-		String reportFolderPath = new StringBuilder()
-				.append(jobConfig.getShellUserReportLocation())
-				.append(Constants.DIR_SEPARATOR)
-				.append(jobConfig.getJumbuneJobName().split(FORWARD_SLASH)[0])
-				.append(Constants.JUMBUNE_REPORT_EXTENTION).toString();
-		List<Processor> processors = getProcessorChain(jobConfig, CONSOLE_BASED);
-		ServiceInfo serviceInfo = new ServiceInfo();
-		serviceInfo.setRootDirectory(Constants.JOB_JARS_LOC);
-		serviceInfo.setJumbuneHome(JobConfig.getJumbuneHome());
-		serviceInfo.setSlaveJumbuneHome(jobConfig.getSlaveWorkingDirectory());
-		serviceInfo.setJumbuneJobName(jobConfig.getFormattedJumbuneJobName());
-		serviceInfo.setMaster(jobConfig.getMaster());
-		serviceInfo.setSlaves(jobConfig.getSlaves());
-		// pre-processing
-		HELPER.writetoServiceFile(serviceInfo);
+	
+	
+	private void saveJsonToJsonRepository(EnterpriseJobConfig enterpriseJobConfig) throws IOException {
+		String jsonRepoLocation = EnterpriseJobConfig.getJumbuneHome()+"/jsonrepo"+File.separator+enterpriseJobConfig.getJumbuneJobName()+".json";
+		ConfigurationUtil.writeToFile(jsonRepoLocation,enterpriseJobConfig);
+	}
+     
+	private void startExecution(ReportsBean reports, JumbuneRequest jumbuneRequest) throws IOException, FileNotFoundException, JumbuneException {
+		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) jumbuneRequest.getConfig();
+		String reportFolderPath = new StringBuilder().append(enterpriseJobConfig.getShellUserReportLocation()).append(Constants.DIR_SEPARATOR)
+				.append(enterpriseJobConfig.getJumbuneJobName().split(FORWARD_SLASH)[0]).append(Constants.JUMBUNE_REPORT_EXTENTION).toString();
+		List<Processor> processors = getProcessorChain(enterpriseJobConfig, CONSOLE_BASED);
 		int index = 0;
 		for (Processor p : processors) {
 			Map<Parameters, String> params = new HashMap<Parameters, String>();
@@ -206,54 +212,51 @@ public class ShellExecutorService extends CoreExecutorService {
 			reports.addInitialStatus(processName);
 			params.put(Parameters.PROCESSOR_KEY, processName);
 			try {
-				p.process(config, reports, params);
+				p.process(jumbuneRequest, reports, params);
 			} catch (JumbuneException e) {
-				LOGGER.error(processName + " completed with errors !!!", e);
+				LOGGER.error(processName + " completed with errors !!!");
 			} finally {
 				// marking the process as complete
 				reports.markProcessAsComplete(processName);
 			}
 		}
-		persistReportsInExcelFormat(reports, reportFolderPath, config);
 
-		ConsoleLogUtil.CONSOLELOGGER
-				.info("!!! Jumbune Job Processing completed Successfully !!!\n ");
-		ConsoleLogUtil.CONSOLELOGGER
-				.info("Persisted summary reports at location: "
-						+ reportFolderPath);
+		persistReportsInExcelFormat(reports, reportFolderPath, jumbuneRequest.getConfig());
+
+		ConsoleLogUtil.CONSOLELOGGER.info("!!! Jumbune Job Processing completed Successfully !!!\n ");
+		ConsoleLogUtil.CONSOLELOGGER.info("Persisted summary reports at location: " + reportFolderPath);
 	}
 
 	private void disableModules(Config config) {
-		JobConfig jobConfig = (JobConfig) config;
-		jobConfig.setEnableStaticJobProfiling(Enable.FALSE);
-		jobConfig.setHadoopJobProfile(Enable.FALSE);
+		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig)config;
+		enterpriseJobConfig.setEnableStaticJobProfiling(Enable.FALSE);
+		enterpriseJobConfig.setHadoopJobProfile(Enable.FALSE);
 
 	}
 
 	/***
-	 * This method load initial setup for json configuration.
+	 * This method load initial setup for job configuration.
 	 * 
 	 * @param config
 	 * @throws JumbuneException
 	 */
-	private void loadInitialSetup(Config config) throws JumbuneException {
-		String agentHome = RemotingUtil.getAgentHome(config);
+	private void loadInitialSetup(JumbuneRequest jumbuneRequest) throws JumbuneException {
+		Cluster cluster = jumbuneRequest.getCluster();
+		String agentHome = RemotingUtil.getAgentHome(cluster);
 		ClasspathElement cse = ConfigurationUtil.loadJumbuneSuppliedJarList();
 		processClassPathElement(cse, agentHome);
-		JobConfig jobConfig = (JobConfig) config;
-		jobConfig.getClasspath().setJumbuneSupplied(cse);
-		if (!org.jumbune.common.utils.JobConfigUtil
-				.isJumbuneSuppliedJarPresent(config)) {
-			org.jumbune.common.utils.JobConfigUtil
-					.sendJumbuneSuppliedJarOnAgent(config, cse, agentHome);
+		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) jumbuneRequest.getConfig();
+		enterpriseJobConfig.getClasspath().setJumbuneSupplied(cse);
+		if (!org.jumbune.common.utils.JobConfigUtil.isJumbuneSuppliedJarPresent(cluster)){
+			org.jumbune.common.utils.JobConfigUtil.sendJumbuneSuppliedJarOnAgent(cluster, cse, agentHome);
 		}
 	}
 
 	private void processClassPathElement(ClasspathElement cse, String agentHome) {
+
 		String[] files = cse.getFiles();
 		for (int iIndex = 0; iIndex < files.length; iIndex++) {
-			files[iIndex] = files[iIndex].replace(Constants.AGENT_ENV_VAR_NAME,
-					agentHome);
+			files[iIndex] = files[iIndex].replace(Constants.AGENT_ENV_VAR_NAME, agentHome);
 
 		}
 	}
@@ -267,16 +270,14 @@ public class ShellExecutorService extends CoreExecutorService {
 	 * @throws IOException
 	 * @throws FileNotFoundException
 	 */
-	private void persistReportsInExcelFormat(ReportsBean reports,
-			String reportFolderPath, Config config) throws IOException,
-			JumbuneException {
-		JobConfig jobConfig = (JobConfig) config;
+	private void persistReportsInExcelFormat(ReportsBean reports, String reportFolderPath, Config config) throws FileNotFoundException,
+			IOException, JumbuneException {
 		Map<String, String> map = reports.getAllReports();
 		@SuppressWarnings("unchecked")
-		Map<String, String> reportsJson = (Map<String, String>) ((HashMap<String, String>) reports
-				.getAllReports()).clone();
-		if (map.containsKey(Constants.DATA_VALIDATION) && jobConfig != null) {
-			map.put(Constants.DATA_VALIDATION, jobConfig.getJumbuneJobLoc());
+		Map<String, String> reportsJson = (Map<String, String>) ((HashMap<String, String>) reports.getAllReports()).clone();
+		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig)config;
+		if (map.containsKey(Constants.DATA_VALIDATION) && config != null) {
+			map.put(Constants.DATA_VALIDATION, enterpriseJobConfig.getJumbuneJobLoc());
 		}
 		ReportGenerator.writesToExcelFile(map, reportFolderPath, reportsJson);
 	}

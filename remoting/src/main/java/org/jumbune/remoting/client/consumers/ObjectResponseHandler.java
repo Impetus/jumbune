@@ -8,6 +8,7 @@ import java.util.concurrent.CyclicBarrier;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.remoting.common.RemotingConstants;
 
 /**
  * The Class ObjectResponseHandler.
@@ -23,7 +24,7 @@ public class ObjectResponseHandler extends SimpleChannelInboundHandler<Object> {
 
 	/** The response object. */
 	private Object responseObject;
-
+	
 	/**
 	 * Instantiates a new object response handler.
 	 *
@@ -49,9 +50,8 @@ public class ObjectResponseHandler extends SimpleChannelInboundHandler<Object> {
 			barrier.await();
 		} catch (InterruptedException e1) {
 			logger.error(e1);
-		} catch (BrokenBarrierException e1) {
-			logger.error(e1);
-		}
+		} 
+
 	}
 
 	/**

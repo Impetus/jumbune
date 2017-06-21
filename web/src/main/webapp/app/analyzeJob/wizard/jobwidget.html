@@ -1,0 +1,56 @@
+<div ng-controller="JobWidgetController"  class="container" ng-init="init()">
+	<div jumbune-header=""></div>
+	<div class="inner-container">
+		<div class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock" >{{blockMessage}}</div>
+		<h2>Debugger</h2>
+		<div data-equal-height=".eq-height">
+			<div class="col-md-3 tab-head pane"> <!-- required for floating -->
+			  <!-- Nav tabs -->
+			  <div ng-include="'app/analyzeJob/wizard/jobwidget_tabList.html'"></div>
+			</div>
+
+			<div class="col-md-12 tab-container main-container">
+			  <!-- Tab panes -->
+			  	<div class="tab-content">
+					<div class="tab-pane" id="Debugger" ng-show="methodDebuggerDiv" ng-controller="DebuggerController">
+						<form name="debuggerTab.debuggerForm" id="debuggerForm" novalidate>
+							<div ng-include="'app/analyzeJob/wizard/debugger-tab-form.html'"></div>
+						</form>
+						<div class="textCenter" ng-show="showLoader"><i class="fa fa-spinner fa-spin"></i> Please Wait</div>
+						<!-- <form-button></form-button> -->
+						<!-- <div jumbune-widget-form-buttons cancel="cancel()" next="preview()"></div> -->
+						<!-- <div jumbune-widget-form-buttons-three cancel="cancel()" back="backDebugger()" next="preview()"></div> -->
+					</div>
+
+					<div class="tab-pane" id="WhatIf" ng-show="methodWhatIfDiv" ng-controller="WhatIfController">
+						<form name="whatIfTab.whatIfForm" id="whatIfForm" novalidate>
+							<div ng-include="'app/newjobconfig/whatIf-tab-form.html'"></div>
+						</form>
+						 <form-button></form-button>
+					</div>
+					<div class="tab-pane" id="JobProfiling" ng-show="methodJobProfilingDiv" ng-controller="JobProfilingController">
+						<form name='jobProfilingTab.jobProfilingForm' id='jobProfilingForm' novalidate>	
+							<div ng-include="'app/newjobconfig/profiling-tab-form.html'"></div>
+						</form>
+						 <!-- <form-button></form-button> -->
+						 <div jumbune-widget-form-buttons cancel="cancel()" next="preview()"></div>
+					</div>
+					<!-- <div class="tab-pane" id="Tuning" ng-show="methodTuningDiv" ng-controller="TuningController">
+						<form name='tuningTab.tuningForm' id='tuningForm' novalidate>
+							<div ng-include="'app/newjobconfig/tuning-tab-form.html'"></div>
+						</form>
+						
+						 <div jumbune-widget-form-buttons cancel="cancel()" next="preview()"></div>
+					</div> -->
+<!-- 
+					<div class="tab-pane" id="DataValidation" ng-show="dataValidationDiv" ng-controller="dataValidationController">
+						<div ng-include="'app/newjobconfig/data-validation-tab-form.html'" ng-init="dataValidationTab.init()"></div>
+						<form-button></form-button>
+					</div> -->
+
+				</div>
+			</div>
+		</div>
+		<div class="clear"></div>
+	</div>
+</div><!-- info-holder -->

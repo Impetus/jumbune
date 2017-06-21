@@ -14,6 +14,7 @@ var uploader_mr;
 
 	<form method="POST" action="ExecutionServlet" name="yamlForm"
 		id="yamlForm" enctype="multipart/form-data">
+
 		<div id="wizard" class="swMain">
 			<ul>
 				<li><a href="#step-1"><label class="stepNumber">Basic</label>
@@ -44,6 +45,17 @@ var uploader_mr;
 				<li><a href="#step-2"><label class="stepNumber">HDFS Validation</label>
 				</a>
 				</li>
+				<li class="stepLine"></li>
+
+				<li><a href="#step-7"><label class="stepNumber">Tuning</label>
+				</a>
+				</li>
+				<li class="stepLine"></li>
+
+
+				<li><a href="#step-8"><label class="stepNumber">Schedule</label>
+				</a>
+				</li>
 				<li style="width: 12px;">&nbsp;</li>
 
 				<li id="previewTab" style="display: none;"><a href="#step-9"><label
@@ -51,7 +63,6 @@ var uploader_mr;
 				</a>
 				</li>
 			</ul>
-			
 			<div id="step-1" class="step-content">
 
 			<div class="status note">
@@ -90,7 +101,7 @@ var uploader_mr;
 								<label>Host</label><span class="asterix"> </span>
 							</div>
 							<div class="fld">
-								<input type="text" name="master.host" id="host" class="inputbox mediumInput" maxlength="15" />
+								<input type="text" name="master.agent.agentHost" id="host" class="inputbox mediumInput" maxlength="15" />
 								&nbsp;<span id="msg_host" class="asterix"></span>
 							</div>
 						</div>
@@ -122,7 +133,7 @@ var uploader_mr;
 								<label>Agent Port</label><span id="agentPort" class="asterix"> </span>
 							</div>
 							<div class="fld">								
-								<input type="text" name="master.agentPort" id="agentPort" class="inputbox smallInput" />								
+								<input type="text" name="master.agent.agentPort" id="agentPort" class="inputbox smallInput" />								
 							</div>
 						</div>
 						
@@ -323,6 +334,7 @@ var uploader_mr;
 					<span>Note: </span>Tab collects mapreduce job jar and dependent
 					jar information.
 				</div>
+				
 				<div class="fieldsetBox innerFieldsetBox">
 					<div class="paddBott">Specify job jar information</div>
 					<fieldset>
@@ -718,16 +730,270 @@ var uploader_mr;
 				</div>
 
 			</div>
-			<%					
+
+<%					
 					}
 				%>
 
+			<div id="step-7" class="step-content">
+
+				<div class="status note">
+					<span>Note: </span>Performs automatic self tuning of the Hadoop
+					cluster. Creates report depicting best Hadoop MapReduce Job
+					configuration for supplied Jar.
+				</div>
+
+				<div class="fieldsetBox">
+					<div class="paddBott">Cluster Tuning</div>
+					<fieldset>
+						<div class="commonBox previewInfo">
+							<div class="lbl">
+								<label>Enable Tuning</label>
+							</div>
+							<div class="fld">
+								<input type="checkbox" name="selfTuning" id="selfTuning"
+									value="TRUE" />
+							</div>
+						</div>
+
+						<div id="tuningFieldsBox" style="display: none;">
+							
+							<div class="commonBox">
+								<div class="lbl">
+									<label>Enable Quick Tuning</label>
+								</div>
+								<div class="fld">
+									<input type="checkbox" id="quickTuning" name="clusterTuning.quickTuning"  />
+								</div>
+							</div>
+							
+							<div id="quickTuningJobInput"></div>
+							<div id="slowTuning">
+							<div class="commonBox">
+								<div class="lbl">
+									<label>Objective</label>
+								</div>
+								<div class="fld">
+									<input type="radio" name="clusterTuning.objective"
+										id="tuneClusterReduceTimeOfJobExecution" value="REDUCE_TIME_OF_JOB_EXECUTION" checked="true" /> <label
+										for="tuneReduceTimeOfJobExecution">Reduce time of Job execution</label> <input
+										type="radio" name="clusterTuning.objective"
+										id="tuneClusterJobRunSuccess" value="MAKE_MY_JOB_RUN_SUCCESSFULLY" /> <label
+										for="tuneClusterJobRunSuccess">Make my job run successfully</label>
+								</div>
+							</div>
+							
+							<div class="commonBox" >
+								<div class="lbl">
+									<label>Resource Share</label>
+								</div>
+								<div class="fld">
+									<input type="radio" name="clusterTuning.isFairSchedulerEnabled" id="clusterTuningDefineInFairScheduler" value="TRUE" checked="true" /> <label
+										for="clusterTuningDefineInFairScheduler">Defined in Fair Scheduler</label> <input
+										type="radio" name="clusterTuning.isFairSchedulerEnabled"
+										id="clusterTuningManual" value="FALSE" /> <label
+										for="clusterTuningManual">Manual</label>
+								</div>
+							</div>
+							
+							<div class="commonBox" id="divClusterTuningManual" style="display:none">
+								<div class="fixWidthBoxFull">
+									<div class="lbl lbl-full">
+										<label>Max resources can be consumed on worker nodes</label>
+									</div>
+								</div>
+								
+								<div class="fixWidthBoxFull">
+									<div class="lbl">
+										<label for="clusterTuningMapSlots">Map slots</label>
+									</div>
+									<div class="fld">	
+										<input type="text" name="clusterTuning.availableMapTasks" id="clusterTuningMapSlots" class="inputbox"  />
+									</div>
+								</div>
+								
+								<div class="fixWidthBoxFull">
+									<div class="lbl">
+										 <label for="clusterTuningReduceSlots" style="margin-left:10px;">Reduce slots</label>
+									</div>
+									<div class="fld">	
+										 <input type="text" name="clusterTuning.availableReduceTasks" id="clusterTuningReduceSlots"  class="inputbox" /> 			
+									</div>
+								</div>
+							
+							</div>
+							
+							<div style="padding-bottom:15px;">&nbsp;</div>
+							
+							
+							
+							
+
+							<!-- <div class="commonBox">
+								<div class="lbl">
+									<label>Solution Duration</label>
+								</div>
+								<div class="fld">
+									<input type="text" name="clusterTuning.solutionDuration"
+										id="solutionDuration" class="inputbox" />
+								</div>
+							</div> -->
+							<div class="fieldsetBox innerFieldsetBox" style="margin:0 !important;">
+								<div class="paddBott">Job Information</div>
+									<fieldset>
+									
+										<div class="commonBox" >
+											<div class="lbl">
+												<label>MapReduce Jar</label>
+											</div>
+											<div class="fld">
+												<input type="radio" name="clusterTuning.useStandardWordCountJar"
+													id="tuneClusterWordCount" value="TRUE" checked="true" /> <label
+													for="tuneClusterWordCount">Standard word count</label> <input
+													type="radio" name="clusterTuning.useStandardWordCountJar"
+													id="tuneClusterUserSupplied" value="FALSE" /> <label
+													for="tuneClusterUserSupplied">User Supplied jar</label>
+											</div>
+										</div>
+										<div class="commonBox">
+											<div class="lbl">
+												<label>Job Input Data Path</label>
+											</div>
+											<div class="fld">
+												<input type="text" name="clusterTuning.jobInputPath" id="dataSize"
+													class="inputbox" /> <!-- <span>&nbsp;(in mb)<span> -->
+											</div>
+										</div>
+                                                                            
+                                                                                <div class="commonBox">
+											<div class="lbl">
+												<label>Output Directory/File</label>
+											</div>
+											<div class="fld">
+												<input type="text" name="clusterTuning.outputFolder" id="txtoutputFolder"
+													class="inputbox" /> <!-- <span>&nbsp;(in mb)<span> -->
+											</div>
+										</div>
+			
+										<!-- <div class="commonBox previewInfo">
+											<div class="lbl">
+												<label>App Intensitivity</label>
+											</div>
+											<div class="fld">
+												<select style="width: 170px;"
+													name="clusterTuning.hadoopPerformance" id="hadoopPerformance"
+													class="inputboxes">
+													<option value="">Please Select</option>
+													<option value="READ_INTENSIVE">Read Intensive</option>
+													<option value="MIX_READ_EXECUTION_INTENSIVE">Read &
+														Execution Intensive</option>
+													<option value="EXECUTION_INTENSIVE">Execution
+														Intensive</option>
+													<option value="MIX_WRITE_EXECUTION_INTENSIVE">Write &
+														Execution Intensive</option>
+													<option value="WRITE_INTENSIVE">Write Intensive</option>
+													<option value="READ_WRITE_INTENSIVE">Read & Write
+														Intensive</option>
+												</select>
+											</div>
+			
+										</div> -->
+			
+										 <div class="commonBox">
+											<div class="lbl">
+												<label>Job Type </label>
+											</div>
+											<div class="fld">
+												<select name="clusterTuning.hadoopPerformance"
+													id="incrementalInterval" class="inputboxes">
+													<option value="">Please Select</option>
+													<option value="READ_INTENSIVE">Job is analyzing huge data set</option>
+													<option value="EXECUTION_INTENSIVE">Job is computation intensive</option>
+													<option value="WRITE_INTENSIVE">Job intended to produce huge data set</option>
+													<option value="READ_WRITE_INTENSIVE">Job is read-write intensive</option>
+													<option value="VARYING_SIZED_FILE_READ_INTENSIVE">Data set contains varying sized files</option>
+													<option value="SMALL_FILES_READ_INTENSIVE">Data set contains small sized files</option>
+													<option value="CANT_BE_CLASSIFIED_IN_ABOVE">Can't be classified in above</option>
+												</select>
+											</div>
+										</div>
+										
+									<div class="commonBox">
+										<div class="lbl">
+											<label>Limit recommendation time</label>
+										</div>
+										<div class="fld">
+											<input type="checkbox" name="clusterTuning.limitTuningTime" id="limitTuningTime" checked="checked" />
+										</div>
+										<div class="lbl" style="width: 75px;">
+											<label>Duration</label>
+										</div>
+										<div class="fld">
+											<input type="text" name="clusterTuning.tuningTime" id="tuningTime" class="inputbox" placeholder="in minutes" style="min-width: 150px;max-width:150px" disabled/> 
+										</div>
+									</div>
+									
+								</fieldset>	
+							</div>
+							<!-- <div class="commonBox">
+								<div class="lbl">
+									<label>Incremental data size</label>
+								</div>
+								<div class="fld">
+									<input type="text" name="clusterTuning.incrementalDataSize"
+										id="incrementalDataSize" value="1" class="inputbox" />
+								</div>
+							</div>
+
+
+
+							<div class="commonBox">
+								<div class="lbl">
+									<label>Output Folder</label>
+								</div>
+								<div class="fld">
+									<input type="text" name="clusterTuning.outputFolder"
+										id="solutionDuration" class="inputbox" />
+								</div>
+							</div> -->
+							</div>
+						</div>
+					</fieldset>
+				</div>
+
+			</div>
+
+			<div id="step-8" class="step-content">
+
+				<div class="status note">
+					<span>Note: </span>Helps to schedule Jumbune Job execution.
+				</div>
+
+				<div class="fieldsetBox">
+					<div class="paddBott">Schedule entire workflow</div>
+					<fieldset>
+						<div class="commonBox">
+							<div class="lbl">
+								<label>Schedule Jumbune Job</label>
+							</div>
+							<div class="fld">
+								<input type="text" name="jumbuneScheduleTaskTiming"
+									id="jumbuneScheduleTaskTiming" value="" class="inputbox" />
+							</div>
+						</div>
+
+					</fieldset>
+				</div>
+
+			</div>
+
 			<div id="step-9" class="step-content">
-				<div id="step9LoaderWrap">
+         			<div id="step9LoaderWrap">
 					<div class="txtCenter">
 						<img src="./skins/images/loading.gif" width="200px" />
 					</div>		
 				</div>
+	
 				<div id="validateMsgBox"></div>
 				<div id="previewMainBox">
 					<div id="previewInputBox" class=""></div>
@@ -844,7 +1110,6 @@ var uploader_mr;
 		validateInputBoxes();
 	}
 
-
 	function removeTxtOnFocus(obj) {
 		if (obj.value == " ")
 			obj.value = '';
@@ -910,7 +1175,26 @@ var uploader_mr;
 	var isValid = false;
 	$(document)
 			.ready(
-					function() {													
+					function() {
+						
+						$('#tuningTime').keypress(function(event) {
+							  // Backspace, tab, enter, end, home, left, right
+							  // We don't support the del key in Opera because del == . == 46.
+							  var controlKeys = [8, 9, 13, 35, 36, 37, 39];
+							  // IE doesn't support indexOf
+							  var isControlKey = controlKeys.join(",").match(new RegExp(event.which));
+							  // Some browsers just don't raise events for control keys. Easy.
+							  // e.g. Safari backspace.
+							  if (!event.which || // Control keys in most browsers. e.g. Firefox tab is 0
+							      (49 <= event.which && event.which <= 57) || // Always 1 through 9
+							      (48 == event.which && $(this).attr("value")) || // No 0 first digit
+							      isControlKey) { // Opera assigns values for control keys.
+							    return;
+							  } else {
+							    event.preventDefault();
+							  }
+							});
+						
 						$("#step-1 input[type='text']:visible").live("propertychange keyup input paste", function() { 
 							validateInputBoxes();
 						});
@@ -919,7 +1203,6 @@ var uploader_mr;
 							validateInputBoxes();
 						});
 						
-										
 						uploader_mr = new plupload.Uploader({
 						runtimes : 'gears,html5,flash,silverlight,browserplus',
 						browse_button : 'pickfiles_mrf',
@@ -930,7 +1213,8 @@ var uploader_mr;
 						silverlight_xap_url : '/plupload/js/plupload.silverlight.xap',
 						filters : [
 					            {title : "Jar files", extensions : "jar"}					            
-					        ]						
+					        ]
+						
 						
 					});
 						uploader_mr.init();
@@ -1001,7 +1285,22 @@ var uploader_mr;
 						};*/
 	
 						
-
+						
+						$("#scheduleDate").datetimepicker({
+							minDate : 0,
+							dateFormat : 'dd mm D',
+							timeFormat : 'mm hh'
+						});
+						/*var jumbuneScheduleDate = new Date();
+        					var currentMonth = jumbuneScheduleDate.getMonth(); 
+        					var currentDate = jumbuneScheduleDate.getDate(); 
+        					var currentYear = jumbuneScheduleDate.getFullYear();*/
+						$("#jumbuneScheduleTaskTiming").datetimepicker({
+							/*minDate : new Date(currentYear, currentMonth, currentDate),*/
+							minDate : 0,
+							dateFormat : 'dd mm D',
+							timeFormat : 'mm hh'
+						});
 
 						// RSA and DSA field populate auto
 						$('#user').blur(
@@ -1501,19 +1800,54 @@ var uploader_mr;
 														.find(
 																'input[type="checkbox"]')
 														.prop('checked', false);
-												
-												
 												$(".fixWidthValidationCheck input[type='checkbox']").parent().parent().find(".fixWidthValidationCheckBox, .fixWidthValidationBox").addClass("disabledRow");
-												$(".fixWidthValidationCheck input[type='checkbox']").parent().parent().find("input[type='text'], select, input[type='checkbox']").attr("disabled", true);
+												$(".fixWidthValidationCheck input[type='checkbox']").parent().parent().find("input[type='text'], select, input[type='checkbox']").attr("disabled", true);														
 											}
+
 										});
-					
+						// enable Scheduling checkbox click event code
+						$('#enableScheduling')
+								.live(
+										'click',
+										function() {
 
+											if ($('#enableScheduling').prop(
+													'checked') == true) {
+												$(
+														'#dataValidationSchedulingBox')
+														.show('slow');
+											} else {
+												$(
+														'#dataValidationSchedulingBox')
+														.hide('slow');
+												$(
+														'#dataValidationSchedulingBox')
+														.find(
+																'input[type="text"], select')
+														.val('');
+											}
 
-						
+										});
 
-						
+						// enable tuning checkbox click event code
+						$('#selfTuning')
+								.click(
+										function() {
 
+											if ($('#selfTuning')
+													.prop('checked') == true) {
+												$('#tuningFieldsBox').show(
+														'slow');
+											} else {
+												$('#tuningFieldsBox').hide(
+														'slow');
+												$('#tuningFieldsBox')
+														.find(
+																'input[type="text"], select')
+														.val('');
+											}
+
+										});
 						// copySlaveMatser checkbox click event code
 						$('#copySlaveMaster')
 								.click(
@@ -1583,6 +1917,15 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 
 		});						
 						
+						$("input:radio[name='clusterTuning.isFairSchedulerEnabled']")
+						.click(
+								function() {									
+									if($(this).val()=="FALSE")
+										$("#divClusterTuningManual").show('slow');
+									else
+										$("#divClusterTuningManual").hide('slow');
+								
+								});
 						
 
 						// Smart Wizard        
@@ -1602,12 +1945,12 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 							return validateSteps(step_num); // return false to stay on step and true to continue navigation
 						}
 
-						function checkStepNumber(obj) { 
+						function checkStepNumber(obj) {
 							var step_num = obj.attr('rel'); // get the current step number	
 							<%
 							if (!hadoopDistValue.equals("m")) {
 							%>
-							if (step_num == 6) {
+							if (step_num == 8) {
 								$('#yaml-dialog-modal .actionBar a').hide();
 								if ( yamlValidate == true ) {
 									$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Json</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');	
@@ -1619,7 +1962,7 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 									$('#yaml-dialog-modal .actionBar').append('<a id="validateWizardBtn" style= "display:none" class="buttonPrevious validateWizard" href="javascript:void(0);">Validate</a>');
 								   $('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');
 								}*/
-							} else if (step_num == 5) {
+							} else if (step_num == 7) {
 								$('a.buttonNext').addClass('buttonDisabled');
 								$('#yaml-dialog-modal .actionBar a#validateWizardBtn').remove();
 								$('#yaml-dialog-modal .actionBar a#runWizardBtn').remove();
@@ -1636,7 +1979,7 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 							}else
 							{
 							%>
-								if (step_num == 5) {
+								if (step_num == 7) {
 									$('#yaml-dialog-modal .actionBar a').hide();
 									if ( yamlValidate == true ) {
 										$('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Json</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');	
@@ -1648,7 +1991,7 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 										$('#yaml-dialog-modal .actionBar').append('<a id="validateWizardBtn" style= "display:none" class="buttonPrevious validateWizard" href="javascript:void(0);">Validate</a>');
 									   $('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');
 									}*/
-								} else if (step_num == 4) {
+								} else if (step_num == 6) {
 									$('a.buttonNext').addClass('buttonDisabled');
 									$('#yaml-dialog-modal .actionBar a#validateWizardBtn').remove();
 									$('#yaml-dialog-modal .actionBar a#runWizardBtn').remove();
@@ -1745,7 +2088,7 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 								var jsonData = $('#jsonData').val();											
 								$.ajax({
 									type : "POST",
-									url : "ValidateJSONServlet",
+									url : "ValidateJsonServlet",
 									data : jsonData
 								})
 								.done(function(jsonData) {
@@ -1777,7 +2120,7 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 												
 												$('#validateMsgBox').show('slow').append('<div class="status info"><span>Suggestions: </span>' + suggestString + '</div>');
 												
-												if ( $("#wizard ul a.selected").attr("rel") == 6 ) {
+												if ( $("#wizard ul a.selected").attr("rel") == 8 ) {
 													$('#yaml-dialog-modal .actionBar a').hide();
 													
 													if ( $('#yaml-dialog-modal .actionBar #saveYamlBtn').size() > 0 ) {
@@ -1802,7 +2145,7 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 												
 												$('#validateMsgBox').show('slow').append('<div class="status error"><span>Failures: </span>' + ErrorString + '</div>');
 												
-												if ( $("#wizard ul a.selected").attr("rel") == 6 ) {
+												if ( $("#wizard ul a.selected").attr("rel") == 8 ) {
 													if ( $('#yaml-dialog-modal .actionBar #saveYamlBtn').size() > 0 ) {
 														$('#yaml-dialog-modal .actionBar #saveYamlBtn').addClass("disableNextStep").show();
 														$('#yaml-dialog-modal .actionBar #runWizardBtn').addClass("disableNextStep").show();
@@ -1844,7 +2187,7 @@ $('#validationFieldsBox').find("a[id^='removeHDFSValFields']").live('click',func
 																				
 										/* $('#yaml-dialog-modal .actionBar').append('<a id="saveYamlBtn" class="buttonPrevious" href="javascript:void(0);">Save Yaml</a><a id="runWizardBtn" class="buttonPrevious" href="javascript:void(0);">Run</a>');*/
 										
-										if ( $("#wizard ul a.selected").attr("rel") == 6 ) {
+										if ( $("#wizard ul a.selected").attr("rel") == 8 ) {
 											$('#yaml-dialog-modal .actionBar a').hide();
 											if ( $('#yaml-dialog-modal .actionBar #saveYamlBtn').size() > 0 ) {
 												$('#yaml-dialog-modal .actionBar #saveYamlBtn').removeClass("disableNextStep").show();
@@ -2134,6 +2477,7 @@ $(".msgBox").css("display","none");
 							if ($("#yamlForm").validationEngine('validate') == true /*&& ($("#jobName").val() != "" && $("#user").val() != "" && $("#host").val() != "" && $("#rsaFile").val() != "" && $("#agentPort").val() != "" && $("#master.nameNodeJmxPort").val() != "" && ($("#master.jobTrackerJmxPort").val() != "" || $("#master.resourceManagerJmxPort").val() != "")  || $("#sJumbuneHome").val() != "" && $("#slaveParam.dataNodeJmxPort").val() != "" && $("#slaveParam.taskTrackerJmxPort").val() != "" && $("#noOfSlaves").val() != "")*/ ) {																
 								isValid = true;
 							}
+
 							return isValid;
 						}
 
@@ -2172,6 +2516,20 @@ $(".msgBox").css("display","none");
 								$("#logKeyValues").attr("checked", true);
 								$("#logKeyValues").val("TRUE");
 							}
+							if (populatejson.selfTuning == "TRUE" && populatejson.clusterTuning.quickTuning == "TRUE") {
+								$('#quickTuning').prop('checked', true);
+								showQuickTuning();
+								$('#quickTuningJobID').val(populatejson.clusterTuning.quickTuningJobID);
+							}
+							if (populatejson.clusterTuning!= null && populatejson.clusterTuning.limitTuningTime == "TRUE") {
+									$('#limitTuningTime').prop('checked',true);
+									$('#limitTuningTime').val('TRUE');
+									$('#tuningTime').removeAttr('disabled');
+									if (populatejson.clusterTuning.tuningTime != null) {
+										$('#tuningTime').val(populatejson.clusterTuning.tuningTime);
+									}
+							}
+							
 							function populateForm() {
 								var popData = JSON
 										.stringify(eval(populatejson));
@@ -2189,7 +2547,7 @@ $(".msgBox").css("display","none");
 										'checked', false);
 							}
 
-							if ($('#debugAnalysis').prop('checked') != true) { 
+							if ($('#debugAnalysis').prop('checked') != true) {
 								$('#debugAnalysisBox').find(
 										'input[type="text"], select').val('');
 								$('#debugAnalysisBox').find(
@@ -2204,6 +2562,15 @@ $(".msgBox").css("display","none");
 										'input[type="checkbox"]').prop(
 										'checked', false);
 							}
+							
+							if ($('#selfTuning').prop('checked') != true) {
+								$('#tuningFieldsBox').find(
+										'input[type="text"], select').val('');
+								$('#tuningFieldsBox').find(
+										'input[type="checkbox"]').prop(
+										'checked', false);
+							}
+										
 							
 							/* if ($('#enableStaticJobProfiling').prop('checked') != true) {
 								$('#ProfilePreviewBox').find(
@@ -2230,6 +2597,11 @@ $(".msgBox").css("display","none");
 								$("a[href='#step-6']").trigger("click");								
 							} else if ( target == "HDFS-Validation" ) {
 								$("a[href='#step-2']").trigger("click");								
+							} else if ( target == "Self Tuning Job" ) {
+								$("a[href='#step-7']").trigger("click");								
+							}
+							else if ( target == "Scheduling Job" ) {
+								$("a[href='#step-8']").trigger("click");								
 							}
 						});
 						
@@ -2241,5 +2613,35 @@ $(".msgBox").css("display","none");
 						});
 						
 					});
+	function hideQuickTuning() {
+		$('#slowTuning').show();
+		$('#tuningFieldsBox').find('input[type="text"], select').val('');
+		$('#quickTuning').val("FALSE");
+		$('#quickTuningJobInput').html("");
+	}
+	
+	function showQuickTuning() {
+		$('#slowTuning').hide();
+		$('#quickTuning').val("TRUE");
+		$('#quickTuningJobInput').html('<div class="commonBox"><div class="lbl"><label>Job ID</label></div><div class="fld"><input  type="text" id="quickTuningJobID" class="inputbox" name="clusterTuning.quickTuningJobID"></div></div>');
+	}
+	
+	$('#quickTuning').click(function() {
+			if ($('#quickTuning').prop('checked') == true) {
+				showQuickTuning();
+			} else {
+				hideQuickTuning();
+			}
+	});
+	
+	$('#limitTuningTime').click(function() {
+				if ($('#limitTuningTime').prop('checked') == true) {
+					$('#limitTuningTime').val('TRUE');
+					$('#tuningTime').removeAttr('disabled');
+				} else {
+					$('#limitTuningTime').val('FALSE');
+					$('#tuningTime').attr('disabled', true);	
+				}
+	});
 </script>
 </body>

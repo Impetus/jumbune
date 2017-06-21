@@ -1,0 +1,64 @@
+<p>Ensure Quality of Data over the period of time.</p>
+                    <div ng-controller="QualityController">
+			            	<div class="txt-rgt" style="margin-bottom:12px;">
+			            		<a  href="#/add-data-quality" ng-click="addDataQuality()">Add Data Quality<i class="fa fa-plus circle-icon green-icon"></i></a>
+			            	</div>
+			            	<div class="row">
+				            	<div class="col-md-12">
+					            	<div style="border:1px solid #ddd">
+					            		<div class="col-md-4 col-layout config-list">
+				            				<div class="row">
+				            					<div class="hdr txt-rgt">
+				            						<a data-grid="#"><i class="fa fa-pencil circle-icon yel-icon" ng-click="editDQ(currDataQuality)"></i></a>
+				            						<a data-grid="#"><i class="fa fa-minus circle-icon red-icon" ng-click="deleteDQ(currDataQuality)"></i></a>
+				            					</div>
+					            				<div class="main-body">
+                                                    <ul class="list">
+                                                        <li ng-class="{active:(currDataQuality==dataQuality.name)}" ng-repeat="dataQuality in common.dataQualityNameArr" ng-click="selectDataQuality(dataQuality)">
+                                                            {{dataQuality.name}}
+                                                        </li>
+                                                    </ul>
+
+                                                </div>
+				            				</div>
+				            			</div>
+				            			<div class="col-md-8 col-layout">
+				            				<div class="row">
+					            				<div class="hdr">Data Quality Summary</div>
+					            				<div class="main-body">
+						            				<div class="content-wpr">
+						            					<table class="frm-tbl summery-tbl" ng-if="common.dataQualityNameArr.length > 0">
+						            						<tr>
+						            							<td>Time</td>
+						            							<td>{{selQualityObj.time}}</td>
+						            						</tr>
+						            						<tr>
+						            							<td>Repeat</td>
+						            							<td>{{selQualityObj.repeatInstance}} {{selQualityObj.repeatTime}}</td>
+						            						</tr>
+						            						<tr>
+						            							<td>HDFS Input Path</td>
+						            							<td>{{selQualityObj.inputPath}}</td>
+						            						</tr>
+						            						<tr>
+						            							<td>Tuple Record Separator</td>
+						            							<td>{{selQualityObj.tupleRS}}</td>
+						            						</tr>
+						            						<tr>
+						            							<td>Tuple Field Separator</td>
+						            							<td>{{selQualityObj.tupleFS}}</td>
+						            						</tr>
+						            					</table>
+						            				</div>
+					            				</div>
+					            			</div>
+				            			</div>
+				            			<div class="clear"></div>
+				            		</div>
+				            		<div class="txt-rgt">
+										<button type="button" class="btn btn-default" ng-click="gotoIndex()">cancel</button>
+										<button type="button" class="btn btn-primary" ng-click="submit()">Submit</button>
+									</div>
+			            		</div>
+			            	</div>
+                    </div>

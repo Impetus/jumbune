@@ -6,26 +6,33 @@ package org.jumbune.common.beans;
  */
 public class DataQualityTimeLineConfig {
 	
+	/**
+	 * Enable Cron Expression
+	 * 
+	 */
+	private String scheduleJob ;
+	
+	/***
+	 * Cron Expression
+	 */
+	private String cronExpression;
+
 	/***
 	 * Schedule occurrences of Data Quality task
 	 */
 	private SchedulingEvent schedulingEvent = SchedulingEvent.DAILY;
 	
 	/**
-	 * Enable Cron Expression
-	 * 
+	 * Interval at job should be run
 	 */
-	private Enable enableCronExpression = Enable.FALSE;
+	private Integer interval;
 	
 	/***
-	 * Cron Expression
-	 */
-	private String cronExpression;
-	
-	/***
-	 * time of launching Data Quality job
+	 * time of launching Data Quality job (if schedulingEvent is DAILY)
 	 */
 	private String time = null;
+	
+	private String browserGMT;
 	
 	/**
 	 * remove scheduled job.
@@ -37,15 +44,10 @@ public class DataQualityTimeLineConfig {
 	 */
 	private Enable showJobResult = Enable.FALSE;
 	
-	/**
-	 * Job name to show or delete.
-	 */
-	private String jobName;
 	
-	/**
-	 * Interval at job should be run
-	 */
-	private int interval;
+	
+	/** The data validation. */
+	private DataValidationBean dataValidation ;
 	
 	/**
 	 * @return the time
@@ -89,14 +91,6 @@ public class DataQualityTimeLineConfig {
 		this.showJobResult = showJobResult;
 	}
 
-	public String getJobName() {
-		return jobName;
-	}
-
-	public void setJobName(String jobName) {
-		this.jobName = jobName;
-	}
-
 	public Enable getRemoveJob() {
 		return removeJob;
 	}
@@ -108,14 +102,14 @@ public class DataQualityTimeLineConfig {
 	/**
 	 * @return the interval
 	 */
-	public int getInterval() {
+	public Integer getInterval() {
 		return interval;
 	}
 
 	/**
 	 * @param interval the interval to set
 	 */
-	public void setInterval(int interval) {
+	public void setInterval(Integer interval) {
 		this.interval = interval;
 	}
 
@@ -133,18 +127,49 @@ public class DataQualityTimeLineConfig {
 		this.cronExpression = cronExpression;
 	}
 
+	
 	/**
-	 * @return the enableCronExpression
+	 * Gets the data validation.
+	 *
+	 * @return the data validation
 	 */
-	public Enable getEnableCronExpression() {
-		return enableCronExpression;
+	public DataValidationBean getDataValidation() {
+		return dataValidation;
 	}
 
 	/**
-	 * @param enableCronExpression the enableCronExpression to set
+	 * Sets the data validation.
+	 *
+	 * @param dataValidation the new data validation
 	 */
-	public void setEnableCronExpression(Enable enableCronExpression) {
-		this.enableCronExpression = enableCronExpression;
+	public void setDataValidation(DataValidationBean dataValidation) {
+		this.dataValidation = dataValidation;
 	}
+
+	public String getScheduleJob() {
+		return scheduleJob;
+	}
+
+	public void setScheduleJob(String scheduleJob) {
+		this.scheduleJob = scheduleJob;
+	}
+
+	@Override
+	public String toString() {
+		return "DataQualityTimeLineConfig [schedulingEvent=" + schedulingEvent + ", scheduleJob=" + scheduleJob
+				+ ", cronExpression=" + cronExpression + ", time=" + time + ", removeJob=" + removeJob
+				+ ", showJobResult=" + showJobResult + ", interval=" + interval + ", dataValidation=" + dataValidation
+				+ "]";
+	}
+
+	public String getBrowserGMT() {
+		return browserGMT;
+	}
+
+	public void setBrowserGMT(String browserGMT) {
+		this.browserGMT = browserGMT;
+	}
+
+	
 
 }

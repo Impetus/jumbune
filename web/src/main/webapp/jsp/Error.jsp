@@ -37,6 +37,14 @@
 	</div>
 </div>
 
+<div id="dataScienceErrorsBox" class="fleft" style="display:none;">
+	<div class="widget-container">
+		<div class="widget-header">Data Science Errors</div>
+		<div class="widget-body">		
+			<div id="dataScienceErrorDiv"></div>
+		</div>
+	</div>
+</div>
 
 <div id="debugAnalyzerErrorsBox" class="fleft" style="display:none;">
 	<div class="widget-container">
@@ -56,7 +64,14 @@
 	</div>
 </div>
 
-
+<div id="tuningErrorsBox" class="fleft" style="display:none;">
+	<div class="widget-container">
+		<div class="widget-header">Tuning Errors</div>
+		<div class="widget-body">		
+			<div id="tuningErrorDiv"></div>
+		</div>
+	</div>
+</div>
 
 
 

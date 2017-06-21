@@ -10,14 +10,12 @@ import java.util.Map;
 public class DataValidationReport {
 
 	/** total number of violations for a particular type of check. */
-	private int totalViolations;
+	private long totalViolations;
 	
-	private int dirtyTuple;
+	private long dirtyTuple;
 	
-	private int cleanTuple;
-
 	/** Map containing number of violations corresponding each field for a particular data validation check. */
-	private Map<Integer, Integer> fieldMap;
+	private Map<Integer, Long> fieldMap;
 
 	/** List of violations to be displayed on UI. */
 	private List<FileViolationsWritable> violationList;
@@ -27,7 +25,7 @@ public class DataValidationReport {
 	 *
 	 * @return the totalViolations
 	 */
-	public int getTotalViolations() {
+	public long getTotalViolations() {
 		return totalViolations;
 	}
 
@@ -36,7 +34,7 @@ public class DataValidationReport {
 	 *
 	 * @param totalViolations the totalViolations to set
 	 */
-	public void setTotalViolations(int totalViolations) {
+	public void setTotalViolations(long totalViolations) {
 		this.totalViolations = totalViolations;
 	}
 
@@ -45,7 +43,7 @@ public class DataValidationReport {
 	 *
 	 * @return the fieldMap
 	 */
-	public Map<Integer, Integer> getFieldMap() {
+	public Map<Integer, Long> getFieldMap() {
 		return fieldMap;
 	}
 
@@ -54,7 +52,7 @@ public class DataValidationReport {
 	 *
 	 * @param fieldMap the fieldMap to set
 	 */
-	public void setFieldMap(Map<Integer, Integer> fieldMap) {
+	public void setFieldMap(Map<Integer, Long> fieldMap) {
 		this.fieldMap = fieldMap;
 	}
 
@@ -77,31 +75,23 @@ public class DataValidationReport {
 	}
 
 	/**
-	 * @return the pureTuple
-	 */
-	public int getCleanTuple() {
-		return cleanTuple;
-	}
-
-	/**
-	 * @param cleanTuple the pureTuple to set
-	 */
-	public void setCleanTuple(int cleanTuple) {
-		this.cleanTuple = cleanTuple;
-	}
-
-	/**
 	 * @return the infectedTuple
 	 */
-	public int getDirtyTuple() {
+	public long getDirtyTuple() {
 		return dirtyTuple;
 	}
 
 	/**
 	 * @param dirtyTuple the infectedTuple to set
 	 */
-	public void setDirtyTuple(int dirtyTuple) {
+	public void setDirtyTuple(long dirtyTuple) {
 		this.dirtyTuple = dirtyTuple;
 	}
 
+	@Override
+	public String toString() {
+		return "DataValidationReport [totalViolations=" + totalViolations + ", dirtyTuple=" + dirtyTuple
+				+ ", fieldMap=" + fieldMap + ", violationList=" + violationList + "]";
+	}
+	
 }

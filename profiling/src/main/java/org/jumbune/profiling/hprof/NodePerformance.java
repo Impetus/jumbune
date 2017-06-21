@@ -5,6 +5,6 @@ package org.jumbune.profiling.hprof;
  */
 public enum NodePerformance {
 
-	Good, Average, Bad, Unavailable
+	Good, Average, Bad, Unavailable, Warn
 
 }

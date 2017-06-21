@@ -15,6 +15,21 @@
 	<name>jumbune</name>
 	<dependencies>
 			<dependency>
+				<groupId>org.jumbune</groupId>
+				<artifactId>remoting-jsch</artifactId>
+				<version>${build.number}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jumbune</groupId>
+				<artifactId>remoting-common</artifactId>
+				<version>${build.number}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.httpcomponents</groupId>
+				<artifactId>httpclient</artifactId>
+				<version>4.5.2</version>
+			</dependency>
+			<dependency>
 				<groupId>org.apache.poi</groupId>
 				<artifactId>poi</artifactId>
 				<version>3.8</version>
@@ -25,6 +40,21 @@
 				<artifactId>gson</artifactId>
 				<version>2.2.4</version>
 				<scope>compile</scope>
+			</dependency>
+			<dependency>
+				<groupId>xmlbeans</groupId>
+				<artifactId>xbean</artifactId>
+				<version>2.2.0</version>
+			</dependency>
+			<dependency>
+				<groupId>com.sun.xsom</groupId>
+				<artifactId>xsom</artifactId>
+				<version>20140925</version>
+			</dependency>
+			<dependency>
+				<groupId>com.sun.xml</groupId>
+				<artifactId>relaxngDatatype</artifactId>
+				<version>1.0</version>
 			</dependency>
 			<dependency>
 				<groupId>io.netty</groupId>
@@ -80,7 +110,7 @@
 			<dependency>
 				<groupId>commons-cli</groupId>
 				<artifactId>commons-cli</artifactId>
-				<version>1.2</version>
+				<version>1.4</version>
 			</dependency>
 
 			<dependency>
@@ -199,6 +229,11 @@
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
+				<artifactId>jumbune-cluster-profiling</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-web</artifactId>
 				<version>${project.version}</version>
 				<type>war</type>
@@ -210,29 +245,39 @@
 				<type>pom</type>
 			</dependency>
 			<dependency>
-				<groupId>org.jumbune</groupId>
-				<artifactId>examples-usregionportouts</artifactId>
-				<version>${project.version}</version>
+				<groupId>org.apache.curator</groupId>
+				<artifactId>curator-recipes</artifactId>
+				<version>2.9.0</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jumbune</groupId>
-				<artifactId>examples-wordcount</artifactId>
-				<version>${project.version}</version>
+				<groupId>org.apache.curator</groupId>
+				<artifactId>curator-client</artifactId>
+				<version>2.9.0</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jumbune</groupId>
-				<artifactId>examples-movierating</artifactId>
-				<version>${project.version}</version>
+				<groupId>org.apache.curator</groupId>
+				<artifactId>curator-framework</artifactId>
+				<version>2.9.0</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jumbune</groupId>
-				<artifactId>examples-bankdefaulters</artifactId>
-				<version>${project.version}</version>
+				<groupId>org.apache.zookeeper</groupId>
+				<artifactId>zookeeper</artifactId>
+				<version>3.4.6</version>
 			</dependency>
 			<dependency>
-				<groupId>org.jumbune</groupId>
-				<artifactId>examples-clickstreamanalysis</artifactId>
-				<version>${project.version}</version>
+				<groupId>com.google.guava</groupId>
+				<artifactId>guava</artifactId>
+				<version>11.0.2</version>
+			</dependency>
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-api</artifactId>
+				<version>1.7.5</version>
+			</dependency>
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-simple</artifactId>
+				<version>1.6.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
@@ -240,10 +285,10 @@
 				<version>${project.version}</version>
 			</dependency> 
 			<!-- jetty runner dependencies -->
-			<dependency>
-				<groupId>org.mortbay.jetty</groupId>
+     			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
 				<artifactId>jetty-runner</artifactId>
-				<version>8.1.3.v20120416</version>
+				<version>9.2.11.v20150529</version>
 				<exclusions>
 					<exclusion>
 						<artifactId>jetty-plus</artifactId>
@@ -263,7 +308,6 @@
 					</exclusion>
 				</exclusions>
 			</dependency>
-
 		<dependency>
 			<groupId>org.jumbune</groupId>
 			<artifactId>jumbune-deploy</artifactId>

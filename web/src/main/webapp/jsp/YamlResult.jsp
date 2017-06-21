@@ -10,17 +10,28 @@
 </head>
 <body>
 
+<%! 
+String jobJson=null;
+%>
+
 	<%
 		String tabs = (String) request.getAttribute("tabs");
 		String clusterProfilerCategoriesJson=(String)request.getAttribute("clusterProfilerCategoriesJson");
 		int stats_interval = 10000;
+		String isScheduledJob="FALSE";
 		if (request.getAttribute("stats_interval") != null) {
 			stats_interval = (Integer) request
-					.getAttribute("stats_interval");   
+					.getAttribute("stats_interval");
 			
 		}
-		String jobJson=(String)request.getAttribute("jobJson");
-		
+
+		String scheduledJobName = null;
+		if (request.getAttribute("scheduledJobName") != null) {
+			scheduledJobName = (String) request
+					.getAttribute("scheduledJobName");
+			isScheduledJob="TRUE";
+		 jobJson=(String)request.getAttribute("jobJson");
+	}	
 	%>
 
 
@@ -88,29 +99,11 @@
 						</li>
 						<%
 							}
-							if (tabs.contains("Data Profiling")) {
+							
+							if (tabs.contains("Self Tuning")) {
 						%>
-						<li class="ui-state-default"><a
-							href="#dataProfilingTabContent" class="first"><span>Data
-								Profiling</span>
-						</a>
-						</li>
-						<%
-							}
-						if (tabs.contains("NoCriteriaBasedDP")) {
-						%>
-						<li class="ui-state-default"><a
-							href="#dataProfilingTabContent" class="first"><span>Data
-								Profiling Chart</span>
-						</a>
-						</li>
-						<%
-							}  if (tabs.contains("DataQuality Timeline")) {
-								
-						%>
-						<li class="ui-state-default"><a
-							href="#DQTTabContent" class="first"><span>Data
-								Quality Timeline</span>
+						<li class="ui-state-default"><a href="#tuningTabContent"
+							class="first"><span>Tuner</span>
 						</a>
 						</li>
 						<%
@@ -207,49 +200,19 @@
 
 						<%
 							}
-							if (tabs.contains("Data Profiling")) {
+							if (tabs.contains("Self Tuning")) {
 						%>
-						<div id="dataProfilingTabContent">
-							<div id="dataProfilingJSPContent" style="display: none;">
-								<jsp:include page="DataProfiling.jsp" />
+						<div id="tuningTabContent">
+							<div id="tuningJSPContent" style="display: none;">
+								<jsp:include page="Tuning.jsp" />
 							</div>
-							<div id="dataProfilingTabLoader" class="loaderMainBox">
+							<div id="tuningTabLoader" class="loaderMainBox">
 								<div class="txtCenter">
 									<img src="./skins/images/loading.gif" />
 								</div>
 							</div>
 						</div>
 
-						<%
-							}
-						if (tabs.contains("NoCriteriaBasedDP")) {
-						%>
-						<div id="dataProfilingTabContent">
-							<div id="dataProfilingJSPContent" style="display: none;">
-								<jsp:include page="DataProfilingChart.jsp" />
-							</div>
-							<div id="dataProfilingTabLoader" class="loaderMainBox">
-								<div class="txtCenter">
-									<img src="./skins/images/loading.gif" />
-								</div>
-							</div>
-						</div>
-
-						<%
-							}  if (tabs.contains("DataQuality Timeline")) {
-								
-						%>
-							<div id="DQTTabContent">
-							<div id="DQTJSPContent" style="display: none;">
-								<jsp:include page="DataQualityTimeline.jsp" />
-							</div>
-							<div id="DQTTabLoader" class="loaderMainBox">
-								<div class="txtCenter">
-									<img src="./skins/images/loading.gif" />
-								</div>
-							</div>
-						</div>
-					
 						<%
 							}
 						%>
@@ -272,6 +235,7 @@
 
 	<script language="javascript">
 	var ajaxInterval = '<%=stats_interval%>';	
+	scheduledJobName = '<%=scheduledJobName%>';
 	profilerSchInterval = '<%=stats_interval%>';
 
 		var counter = 0;
@@ -293,7 +257,10 @@
 		$(document)
 				.ready(
 						function() {
-								//Click on export button
+							var isScheduledJob='<%=isScheduledJob%>';
+							var yamlLocation='<%=jobJson%>';
+							var params ="isScheduledJob="+isScheduledJob+"&yamlLocation="+yamlLocation;
+							//Click on export button
 							$('#exportXlData')
 									.click(
 											function() {
@@ -303,6 +270,7 @@
 																	type : "POST",
 																	cache : false,
 																	async : true,
+																	data  : params,
 																	url : "ExportExcelServlet"
 																})
 														.done(
@@ -352,7 +320,6 @@
 								}
 							});
 							$("#tabs").tabs("refresh");
-                                                
 	<%if (tabs.contains("Static Profiling")) {%>
 		//$('#summary-profiler').show();
 		timerId = setInterval(callServletForJSON, ajaxInterval);
@@ -371,18 +338,13 @@
 		$('#summary-data-validation').show();
 		timerId = setInterval(callServletForJSON, ajaxInterval);
 	<%}%>
-	<%if (tabs.contains("Data Profiling")) {%>
-		$('#summary-dataprofiling-validation').show();
+
+	<%if (tabs.contains("Self Tuning")) {%>
+		$('#summary-self-tuning').show();
 		timerId = setInterval(callServletForJSON, ajaxInterval);
 	<%}%>
-	
-	<%if (tabs.contains("NoCriteriaBasedDP")) {%>
-		$('#summary-dataprofiling-validation').show();
-		timerId = setInterval(callServletForJSON, ajaxInterval);
-	<%}if (tabs.contains("DataQuality Timeline")) {%>
-	    $('#summary-DQT').show();
-	timerId = setInterval(callServletForJSON, ajaxInterval);			
-	<%}if (tabs.contains("Cluster Profiling")) {%>
+		
+	<%if (tabs.contains("Cluster Profiling")) {%>
 		profileTimerId = setInterval(function() {callProfileServletForJSON('');}, ajaxInterval);
 	<%}%>
 		tabsLength = $('#tabs').tabs("length");
@@ -437,6 +399,8 @@
 									cache : false,
 									async : false,
 									url : "ResultServlet",
+									data : 'scheduledJobName='
+											+ scheduledJobName,
 									error : function(xhr, ajaxOptions,
 											thrownError) {
 										$('.loaderMainBox')
@@ -447,7 +411,6 @@
 								})
 						.done(
 								function(finalJSON) {
-									console.log("callservletforjson() called");
 									finalJSON = jQuery.parseJSON(finalJSON);
 
 									profilerSchInterval = finalJSON.stats_interval;
@@ -460,9 +423,8 @@
 
 									$.each(
 													finalJSON,
-													function(finalJSONKey,
-															finalJSONVal) {
-														
+													function(finalJSONKey, finalJSONVal) {
+
 														if (finalJSONKey == "PURE_PROFILING") {
 															loadedModules.push('staticProfilingTabContent');
 															$('#staticProfilingJSPContent').show();
@@ -486,65 +448,31 @@
 															enableDebugAnalysis(finalJSONVal);
 															
 														}
-														if (finalJSONKey == "PURE_JAR_COUNTER") {
-															loadedModules.push('pureJobsJSPContent');
-															$(
-																	'#pureJobsJSPContent')
-																	.show();
-															$(
-																	'#pureJobsTabLoader')
-																	.hide();
-															showExcel = true;
-															enablePureJobGrid(finalJSONVal);
+														if (finalJSONKey == "SELF_TUNING") {
+															$('#tuningJSPContent').show();
+															$('#tuningTabLoader').remove();
+															createTuningMultiAxisChart(finalJSONVal);
 														}
-														if (finalJSONKey == "INSTRUMENTED_JAR_COUNTER") {
-															loadedModules.push('pureJobsTabContent');
-															$(
-																	'#pureJobsJSPContent')
-																	.show();
-															$(
-																	'#pureJobsTabLoader')
-																	.hide();
-															showExcel = true;
-															enableInstrumentJobGrid(finalJSONVal);
+														if (finalJSONKey == "SELF_TUNING_3D") {
+															$('#tuningJSPContent').show();
+															$('#tuningTabLoader').remove();
+															createTuning3DChart(finalJSONVal);
 														}
-														if (finalJSONKey == "DATA_SCIENCE_REQUEST") {
-															// todo
-															populateDsForm(finalJSONVal);
-														}
-														
-														if (finalJSONKey == "DATA_PROFILING") {
-															loadedModules.push('dataProfilingTabContent');
-															$('#dataProfilingJSPContent').show();
-															$('#dataProfilingTabLoader').remove();
-															showExcel = false;
-															stopAjaxCall=true;
-															enableDataProfilingTab(finalJSONVal);
-														}
-														if (finalJSONKey == "DATA_QUALITY_TIMELINE") {
-             												loadedModules.push('DQTTabContent');
-															$('#DQTJSPContent').show();
-															$('#DQTTabLoader').remove();
-															showExcel = false;
-															stopAjaxCall=true;
-															makeAndShowGraph(finalJSONVal);
+														if (finalJSONKey == "QUICK_TUNING") {
+															$('#tuningJSPContent').show();
+															$('#tuningTabLoader').remove();
+															createQuickTuningTable(finalJSONVal);
 														}
 														if (finalJSONKey == "AJAXCALL") {
 															checkAllAJAXComplete();
 															$('.loaderMainBox').html('<div class="status info"><span>Information: </span>Unable to process the module as the dependent component(s) failed</div>');
 															
 															if (showExcel == true) {
-																$(
-																		'#exportlinkBox')
-																		.show(
-																				'slow');
+																$('#exportlinkBox').show('slow');
 															}
 														}
 														if (showExcel == true) {
-															$(
-																	'#exportlinkBox')
-																	.show(
-																			'slow');
+															$('#exportlinkBox').show('slow');
 														}
 
 													});
@@ -557,15 +485,17 @@
 		function callProfileServletForJSON(generalSettingJson) {
 
 			var ajaxParam = '';
-			if (generalSettingJson) {
+			if (scheduledJobName != 'null') {
+				ajaxParam += 'scheduledJobName=' + scheduledJobName;
+			} else if (generalSettingJson) {
 				ajaxParam += 'general_settings=' + generalSettingJson;
 			}
 
-			if (generalSettingJson && nameNodeFlag ==  false) {
+			if (scheduledJobName == 'null' && generalSettingJson && nameNodeFlag ==  false) {
 	                        ajaxParam += '&NAME_NODE=TRUE';
 	                        nameNodeFlag = true;
                         }
-			else if (nameNodeFlag ==  false) {
+			else if (scheduledJobName == 'null' && nameNodeFlag ==  false) {
 	                        ajaxParam += 'NAME_NODE=TRUE';
 	                        nameNodeFlag = true;
                         }

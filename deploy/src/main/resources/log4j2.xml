@@ -13,7 +13,7 @@
 		<RollingFile name="rollingFileAppender" fileName="JumbuneLogs/jumbune.log"
 			filePattern="JumbuneLogs/jumbune.log.%d{yyyy-MM-dd}">
 			<PatternLayout>
-				<pattern>%d{ISO8601} %-5level [%thread][%logger{0}] %m%n</pattern>
+				<pattern>%5p [%t] %d{ISO8601} %F (line %L) %m%n</pattern>
 			</PatternLayout>
 			<Policies>
 				<OnStartupTriggeringPolicy />

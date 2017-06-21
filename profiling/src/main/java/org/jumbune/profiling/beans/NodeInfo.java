@@ -27,6 +27,9 @@ public class NodeInfo {
 	
 	/** The data load stats. */
 	private String dataLoadStats;
+	
+	// Message to display the user why the node performance is Average or Bad, used by data center heat map
+	private String message;
 
 	/**
 	 * Gets the data load stats.
@@ -45,9 +48,6 @@ public class NodeInfo {
 	public void setDataLoadStats(String dataLoadStats) {
 		this.dataLoadStats = dataLoadStats;
 	}
-
-	/** Message to be shown if the Datanode,Tasktracker or the node itself is not reachable. */
-	private String message;
 
 	/**
 	 * Instantiates a new node info.
@@ -183,21 +183,13 @@ public class NodeInfo {
 		this.performance = performance;
 	}
 
-	/**
-	 * Gets the message.
-	 *
-	 * @return the message
-	 */
 	public String getMessage() {
 		return message;
 	}
-
-	/**
-	 * Sets the message.
-	 *
-	 * @param message the message to set
-	 */
+	
 	public void setMessage(String message) {
 		this.message = message;
 	}
+
+	
 }

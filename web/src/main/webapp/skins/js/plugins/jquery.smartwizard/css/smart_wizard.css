@@ -147,7 +147,8 @@
   z-index:99;
 }
 .swMain ul.anchor li a.done:hover {
-  background: #f2f2f2; 
+  color:#fff;  
+  background: #8CC63F; 
   border: 1px solid #63991c;   
 }
 .swMain ul.anchor li a.disabled {
@@ -222,8 +223,8 @@
   width:100px;
   color:#FFF;
   outline-style:none;
-  background-color:   #369044;
-  border: 1px solid #369044;      
+  background-color:  green;
+  border: 1px solid green;      
 }
 
 /* Form Styles */

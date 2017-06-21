@@ -3,12 +3,10 @@ package org.jumbune.profiling.utils;
 import java.io.IOException;
 import java.util.Map;
 
-import org.jumbune.common.beans.Slave;
-import org.jumbune.common.beans.SupportedHadoopDistributions;
-import org.jumbune.common.job.Config;
-import org.jumbune.common.yarn.beans.YarnMaster;
-import org.jumbune.common.yarn.beans.YarnSlaveParam;
-import org.jumbune.common.job.JobConfig;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.profiling.beans.JMXDeamons;
 import org.jumbune.profiling.beans.JumbuneInferredStats;
 import org.jumbune.profiling.beans.NodeInfo;
@@ -33,13 +31,12 @@ public class ProfilerStats {
 
 	/** The jt port. */
 	private String jtPort;
-	
+
 	/** The nm port. */
 	private String nmPort;
-	
+
 	/** The rm port. */
 	private String rmPort;
-	
 
 	/** The dn stats. */
 	private Map<String, String> dnStats;
@@ -64,28 +61,28 @@ public class ProfilerStats {
 
 	/** The cpu stats. */
 	private Map<String, String> cpuStats;
-	
+
 	/** The node manager stats. */
 	private Map<String, String> nmStats;
 
 	/** The resource manager stats **/
-	private Map<String, String> rmStats;	 	
+	private Map<String, String> rmStats;
 
-	/** The config. */
-	private JobConfig jobConfig;
+	/** The cluster **/
+	private Cluster cluster;
 
 	/** The profiler jmx dump. */
 	private ProfilerJMXDump profilerJMXDump;
 
 	/** The node ip. */
-	private String nodeIp;
+	private String nodeIP;
 
 	/** The reset. */
 	private boolean reset;
 
-	
-	
 	private static final String COLLECTJMXSTATSFAILED = "Collecting JMX stats failed for Node ";
+
+	private static final Logger LOGGER = LogManager.getLogger(ProfilerStats.class);
 
 	/**
 	 * Instantiates a new profiler stats.
@@ -95,11 +92,11 @@ public class ProfilerStats {
 	 * @param nodeIp
 	 *            the node ip
 	 */
-	public ProfilerStats(Config config, String nodeIp) {
-		this.jobConfig = (JobConfig) config;
-		this.nodeIp = nodeIp;
+	public ProfilerStats(Cluster cluster, String nodeIp) {
+		this.cluster = cluster;
+		this.nodeIP = nodeIp;
 		profilerJMXDump = new ProfilerJMXDump();
-		
+
 	}
 
 	/**
@@ -108,7 +105,7 @@ public class ProfilerStats {
 	 * @return the name node ip
 	 */
 	public String getNameNodeIP() {
-		return jobConfig.getMaster().getHost();
+		return cluster.getNameNode();
 	}
 
 	/**
@@ -117,8 +114,8 @@ public class ProfilerStats {
 	 * @param config
 	 *            the config
 	 */
-	public ProfilerStats(Config config) {
-		this.jobConfig = (JobConfig) config;
+	public ProfilerStats(Cluster cluster) {
+		this.cluster = cluster;
 		profilerJMXDump = new ProfilerJMXDump();
 	}
 
@@ -129,7 +126,7 @@ public class ProfilerStats {
 	 */
 	public String getDnPort() {
 		if (dnPort == null) {
-			dnPort = jobConfig.getSlaveParam().getDataNodeJmxPort();
+			dnPort = cluster.getWorkers().getDataNodeJmxPort();
 		}
 		return dnPort;
 	}
@@ -151,7 +148,7 @@ public class ProfilerStats {
 	 */
 	public String getTtPort() {
 		if (ttPort == null) {
-			ttPort = jobConfig.getSlaveParam().getTaskTrackerJmxPort();
+			ttPort = cluster.getWorkers().getTaskExecutorJmxPort();
 		}
 		return ttPort;
 	}
@@ -173,7 +170,7 @@ public class ProfilerStats {
 	 */
 	public String getNnPort() {
 		if (nnPort == null) {
-			nnPort = jobConfig.getMaster().getNameNodeJmxPort();
+			nnPort = cluster.getNameNodes().getNameNodeJmxPort();
 		}
 		return nnPort;
 	}
@@ -195,7 +192,7 @@ public class ProfilerStats {
 	 */
 	public String getJtPort() {
 		if (jtPort == null) {
-			jtPort = jobConfig.getMaster().getJobTrackerJmxPort();
+			jtPort = cluster.getTaskManagers().getTaskManagerJmxPort();
 		}
 		return jtPort;
 	}
@@ -222,16 +219,33 @@ public class ProfilerStats {
 	public String getDnStats(String attribute) throws HTFProfilingException {
 		if ((dnStats == null) || reset) {
 			try {
-				dnStats = profilerJMXDump.getAllJMXStats(JMXDeamons.DATA_NODE, nodeIp, getDnPort());
+				dnStats = profilerJMXDump.getAllJMXStats(JMXDeamons.DATA_NODE, nodeIP, getDnPort(),
+						cluster.isJmxPluginEnabled());
 			} catch (Exception e) {
 				/*
-				 * Catching generic exception as profilerJMXDump.getAllJmxStats(...) throwing lots of exceptions.
+				 * Catching generic exception as
+				 * profilerJMXDump.getAllJmxStats(...) throwing lots of
+				 * exceptions.
 				 */
-				throw new HTFProfilingException( COLLECTJMXSTATSFAILED + nodeIp + ", " + NodeType.DataNode.toString() + ", "
-						+ getDnPort() , e);
+				throw new HTFProfilingException(COLLECTJMXSTATSFAILED + nodeIP + ", "
+						+ NodeType.DataNode.toString() + ", " + getDnPort(), e);
 			}
 		}
 		return dnStats.get(attribute);
+	}
+
+	public boolean isDatanodeStatsAvailable() {
+		if ((dnStats == null) || reset) {
+			try {
+				dnStats = profilerJMXDump.getAllJMXStats(JMXDeamons.DATA_NODE, nodeIP, getDnPort(),
+						cluster.isJmxPluginEnabled());
+			} catch (Exception e) {
+				LOGGER.error(COLLECTJMXSTATSFAILED + nodeIP + ", " + NodeType.DataNode.toString()
+						+ ", " + getDnPort(), e);
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**
@@ -256,17 +270,35 @@ public class ProfilerStats {
 	public String getTtStats(String attribute) throws HTFProfilingException {
 		if ((ttStats == null) || reset) {
 			try {
-				ttStats = profilerJMXDump.getAllJMXStats(JMXDeamons.TASK_TRACKER, nodeIp, getTtPort());
+				ttStats = profilerJMXDump.getAllJMXStats(JMXDeamons.TASK_TRACKER, nodeIP,
+						getTtPort(), cluster.isJmxPluginEnabled());
 			} catch (Exception e) {
 				/*
-				 * Catching generic exception as profilerJMXDump.getAllJmxStats(...) throwing lots of exceptions.
+				 * Catching generic exception as
+				 * profilerJMXDump.getAllJmxStats(...) throwing lots of
+				 * exceptions.
 				 */
-				throw new HTFProfilingException(COLLECTJMXSTATSFAILED + nodeIp + ", " + NodeType.TaskTracker.toString() + ", "
-						+ getTtPort() , e);
+				throw new HTFProfilingException(COLLECTJMXSTATSFAILED + nodeIP + ", "
+						+ NodeType.TaskTracker.toString() + ", " + getTtPort(), e);
 			}
 
 		}
 		return ttStats.get(attribute);
+	}
+
+	public boolean isTaskTrackerStatsAvailable() {
+		if ((ttStats == null) || reset) {
+			try {
+				ttStats = profilerJMXDump.getAllJMXStats(JMXDeamons.TASK_TRACKER, nodeIP,
+						getTtPort(), cluster.isJmxPluginEnabled());
+			} catch (Exception e) {
+				LOGGER.error(COLLECTJMXSTATSFAILED + nodeIP + ", " + NodeType.TaskTracker.toString()
+						+ ", " + getTtPort(), e);
+				return false;
+			}
+
+		}
+		return true;
 	}
 
 	/**
@@ -291,17 +323,35 @@ public class ProfilerStats {
 	public String getNnStats(String attribute) throws HTFProfilingException {
 		if ((nnStats == null) || reset) {
 			try {
-				nnStats = profilerJMXDump.getAllJMXStats(JMXDeamons.NAME_NODE, getNameNodeIP(), getNnPort());
+				nnStats = profilerJMXDump.getAllJMXStats(JMXDeamons.NAME_NODE, nodeIP, getNnPort(),
+						cluster.isJmxPluginEnabled());
 			} catch (Exception e) {
 				/*
-				 * Catching generic exception as profilerJMXDump.getAllJmxStats(...) throwing lots of exceptions.
+				 * Catching generic exception as
+				 * profilerJMXDump.getAllJmxStats(...) throwing lots of
+				 * exceptions.
 				 */
-				throw new HTFProfilingException(COLLECTJMXSTATSFAILED+ nodeIp + ", " + NodeType.NameNode.toString() + ", "
-						+ getNnPort() , e);
+				throw new HTFProfilingException(COLLECTJMXSTATSFAILED + nodeIP + ", "
+						+ NodeType.NameNode.toString() + ", " + getNnPort(), e);
 			}
 
 		}
 		return nnStats.get(attribute);
+	}
+
+	public boolean isNamenodeStatsAvailable() {
+		if ((nnStats == null) || reset) {
+			try {
+				nnStats = profilerJMXDump.getAllJMXStats(JMXDeamons.NAME_NODE, nodeIP, getNnPort(),
+						cluster.isJmxPluginEnabled());
+			} catch (Exception e) {
+				LOGGER.error(COLLECTJMXSTATSFAILED + nodeIP + ", " + NodeType.NameNode.toString()
+						+ ", " + getNnPort(), e);
+				return false;
+			}
+
+		}
+		return true;
 	}
 
 	/**
@@ -326,17 +376,35 @@ public class ProfilerStats {
 	public String getJtStats(String attribute) throws HTFProfilingException {
 		if ((jtStats == null) || reset) {
 			try {
-				jtStats = profilerJMXDump.getAllJMXStats(JMXDeamons.JOB_TRACKER, getNameNodeIP(), getJtPort());
+				jtStats = profilerJMXDump.getAllJMXStats(JMXDeamons.JOB_TRACKER, nodeIP,
+						getJtPort(), cluster.isJmxPluginEnabled());
 			} catch (Exception e) {
 				/*
-				 * Catching generic exception as profilerJMXDump.getAllJmxStats(...) throwing lots of exceptions.
+				 * Catching generic exception as
+				 * profilerJMXDump.getAllJmxStats(...) throwing lots of
+				 * exceptions.
 				 */
-				throw new HTFProfilingException(COLLECTJMXSTATSFAILED + nodeIp + ", " + NodeType.JobTracker.toString() + ", "
-						+ getJtPort() , e);
+				throw new HTFProfilingException(COLLECTJMXSTATSFAILED + nodeIP + ", "
+						+ NodeType.JobTracker.toString() + ", " + getJtPort(), e);
 			}
 
 		}
 		return jtStats.get(attribute);
+	}
+
+	public boolean isJobTrackerStatsAvailable() {
+		if ((jtStats == null) || reset) {
+			try {
+				jtStats = profilerJMXDump.getAllJMXStats(JMXDeamons.JOB_TRACKER, nodeIP,
+						getJtPort(), cluster.isJmxPluginEnabled());
+			} catch (Exception e) {
+				LOGGER.error(COLLECTJMXSTATSFAILED + nodeIP + ", " + NodeType.JobTracker.toString()
+						+ ", " + getJtPort(), e);
+				return false;
+			}
+
+		}
+		return true;
 	}
 
 	/**
@@ -365,21 +433,23 @@ public class ProfilerStats {
 		try {
 			switch (jStat) {
 			case localDataUsage:
-				double localUsage = profilerJMXDump.getLocalDataUsage(jobConfig, nodeIp);
+				double localUsage = profilerJMXDump.getLocalDataUsage(cluster, nodeIP);
 				statValue = String.valueOf(localUsage);
 				break;
 			default:
 				if ((jumbuneContextStats == null) || reset) {
-					jumbuneContextStats = profilerJMXDump.getAllJMXStats(JMXDeamons.TASK_TRACKER, nodeIp, getTtPort());
+					jumbuneContextStats = profilerJMXDump.getAllJMXStats(JMXDeamons.TASK_TRACKER,
+							nodeIP, getTtPort(), cluster.isJmxPluginEnabled());
 				}
 				statValue = jumbuneContextStats.get(jumbuneStat);
 			}
 		} catch (Exception e) {
 			/*
-			 * Catching generic exception as profilerJMXDump.getAllJmxStats(...) throwing lots of exceptions.
+			 * Catching generic exception as profilerJMXDump.getAllJmxStats(...)
+			 * throwing lots of exceptions.
 			 */
 
-			throw new HTFProfilingException(COLLECTJMXSTATSFAILED + nodeIp , e);
+			throw new HTFProfilingException(COLLECTJMXSTATSFAILED + nodeIP, e);
 		}
 		return statValue;
 	}
@@ -387,7 +457,7 @@ public class ProfilerStats {
 	/**
 	 * Gets the data load partition stats.
 	 * 
-	 * @param nodeIp
+	 * @param nodeIP
 	 *            the node ip
 	 * @param node
 	 *            the node
@@ -395,19 +465,11 @@ public class ProfilerStats {
 	 * @throws HTFProfilingException
 	 *             the hTF profiling exception
 	 */
-	public String getDataLoadPartitionStats(String nodeIp, NodeInfo node, Config config) throws HTFProfilingException {
-		double dataLoad;
-		String statValue;
-		try {
-			dataLoad = profilerJMXDump.getDataLoadonNodes(nodeIp, node, config);
-			statValue = String.valueOf(dataLoad);
-		} catch (Exception e) {
-			/*
-			 * Catching generic exception as profilerJMXDump.getAllJmxStats(...) throwing lots of exceptions.
-			 */
-			throw new HTFProfilingException(COLLECTJMXSTATSFAILED + nodeIp , e);
-		}
-		return statValue;
+	public String getDataLoadPartitionStats(String nodeIP, NodeInfo node, Cluster cluster, String[] dataLoadResult)
+			throws Exception {
+		double dataLoad = profilerJMXDump.getDataLoadonNodes(nodeIP, node, cluster, dataLoadResult);
+		return String.valueOf(dataLoad);
+		
 	}
 
 	/**
@@ -430,41 +492,99 @@ public class ProfilerStats {
 				String tempReduceSlot = null;
 				String tempMapRunning = null;
 				String tempReduceRuning = null;
-				for (Slave slave : jobConfig.getSlaves()) {
-					for (String hostIp : slave.getHosts()) {
-						clusterWideStats = profilerJMXDump.getAllJMXStats(JMXDeamons.TASK_TRACKER, hostIp, getTtPort());
-						tempMapSlot = clusterWideStats.get("MapTaskSlots");
-						tempReduceSlot = clusterWideStats.get("ReduceTaskSlots");
-						tempMapRunning = clusterWideStats.get("Maps_running");
-						tempReduceRuning = clusterWideStats.get("Reduces_running");
-						if (tempMapSlot != null) {
-							totalMapSlotsAvailable = totalMapSlotsAvailable + Integer.parseInt(tempMapSlot);
-						}
-						if (tempMapRunning != null) {
-							totalMapRunning = totalMapRunning + Integer.parseInt(tempMapRunning);
-						}
-						if (tempReduceRuning != null) {
-							totalReducerRunning = totalReducerRunning + Integer.parseInt(tempReduceRuning);
-						}
-						if (tempReduceSlot != null) {
-							totalReduceSlotsAvailable = totalReduceSlotsAvailable + Integer.parseInt(tempReduceSlot);
-						}
+				boolean jmxPluginEnabled = cluster.isJmxPluginEnabled();
+				for (String workerHost : cluster.getWorkers().getHosts()) {
+					clusterWideStats = profilerJMXDump.getAllJMXStats(JMXDeamons.TASK_TRACKER,
+							workerHost, getTtPort(), jmxPluginEnabled);
+					tempMapSlot = clusterWideStats.get("MapTaskSlots");
+					tempReduceSlot = clusterWideStats.get("ReduceTaskSlots");
+					tempMapRunning = clusterWideStats.get("Maps_running");
+					tempReduceRuning = clusterWideStats.get("Reduces_running");
+					if (tempMapSlot != null) {
+						totalMapSlotsAvailable = totalMapSlotsAvailable
+								+ Integer.parseInt(tempMapSlot);
+					}
+					if (tempMapRunning != null) {
+						totalMapRunning = totalMapRunning + Integer.parseInt(tempMapRunning);
+					}
+					if (tempReduceRuning != null) {
+						totalReducerRunning = totalReducerRunning
+								+ Integer.parseInt(tempReduceRuning);
+					}
+					if (tempReduceSlot != null) {
+						totalReduceSlotsAvailable = totalReduceSlotsAvailable
+								+ Integer.parseInt(tempReduceSlot);
 					}
 					totalMapSlotsAvailable = totalMapSlotsAvailable - totalMapRunning;
 					totalReduceSlotsAvailable = totalReduceSlotsAvailable - totalReducerRunning;
-					clusterWideStats.put("totalMapSlotsAvailable", Integer.toString(totalMapSlotsAvailable));
-					clusterWideStats.put("totalReduceSlotsAvailable", Integer.toString(totalReduceSlotsAvailable));
+					clusterWideStats.put("totalMapSlotsAvailable",
+							Integer.toString(totalMapSlotsAvailable));
+					clusterWideStats.put("totalReduceSlotsAvailable",
+							Integer.toString(totalReduceSlotsAvailable));
 
 				}
 			} catch (Exception e) {
 				/*
-				 * Catching generic exception as profilerJMXDump.getAllJmxStats(...) throwing lots of exceptions.
+				 * Catching generic exception as
+				 * profilerJMXDump.getAllJmxStats(...) throwing lots of
+				 * exceptions.
 				 */
-				throw new HTFProfilingException(COLLECTJMXSTATSFAILED + nodeIp + ", " + NodeType.JobTracker.toString() + ", "
-						+ getJtPort() , e);
+				throw new HTFProfilingException(COLLECTJMXSTATSFAILED + nodeIP + ", "
+						+ NodeType.JobTracker.toString() + ", " + getJtPort(), e);
 			}
 		}
 		return clusterWideStats.get(attribute);
+	}
+
+	public boolean isClusterWideStatsAvailable() {
+		if ((clusterWideStats == null) || reset) {
+			try {
+				int totalMapSlotsAvailable = 0;
+				int totalReduceSlotsAvailable = 0;
+				int totalMapRunning = 0;
+				int totalReducerRunning = 0;
+				String tempMapSlot = null;
+				String tempReduceSlot = null;
+				String tempMapRunning = null;
+				String tempReduceRuning = null;
+				boolean jmxPluginEnabled = cluster.isJmxPluginEnabled();
+				for (String workerHost : cluster.getWorkers().getHosts()) {
+					clusterWideStats = profilerJMXDump.getAllJMXStats(JMXDeamons.TASK_TRACKER,
+							workerHost, getTtPort(), jmxPluginEnabled);
+					tempMapSlot = clusterWideStats.get("MapTaskSlots");
+					tempReduceSlot = clusterWideStats.get("ReduceTaskSlots");
+					tempMapRunning = clusterWideStats.get("Maps_running");
+					tempReduceRuning = clusterWideStats.get("Reduces_running");
+					if (tempMapSlot != null) {
+						totalMapSlotsAvailable = totalMapSlotsAvailable
+								+ Integer.parseInt(tempMapSlot);
+					}
+					if (tempMapRunning != null) {
+						totalMapRunning = totalMapRunning + Integer.parseInt(tempMapRunning);
+					}
+					if (tempReduceRuning != null) {
+						totalReducerRunning = totalReducerRunning
+								+ Integer.parseInt(tempReduceRuning);
+					}
+					if (tempReduceSlot != null) {
+						totalReduceSlotsAvailable = totalReduceSlotsAvailable
+								+ Integer.parseInt(tempReduceSlot);
+					}
+					totalMapSlotsAvailable = totalMapSlotsAvailable - totalMapRunning;
+					totalReduceSlotsAvailable = totalReduceSlotsAvailable - totalReducerRunning;
+					clusterWideStats.put("totalMapSlotsAvailable",
+							Integer.toString(totalMapSlotsAvailable));
+					clusterWideStats.put("totalReduceSlotsAvailable",
+							Integer.toString(totalReduceSlotsAvailable));
+
+				}
+			} catch (Exception e) {
+				LOGGER.error(COLLECTJMXSTATSFAILED + nodeIP + ", " + NodeType.JobTracker.toString()
+						+ ", " + getJtPort(), e);
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**
@@ -489,18 +609,32 @@ public class ProfilerStats {
 	public String getMemoryStats(String attribute) throws HTFProfilingException {
 		if ((memoryStats == null) || reset) {
 			try {
-				memoryStats = profilerJMXDump.getRemoteMemoryUtilisation(jobConfig, nodeIp);
+				memoryStats = profilerJMXDump.getRemoteMemoryUtilisation(cluster, nodeIP);
 
 			} catch (JSchException jsche) {
 				throw new HTFProfilingException("Unable to connect and make the session", jsche);
 			} catch (IOException ioe) {
-				throw new HTFProfilingException("Error executing shell command to get memeory stats", ioe);
+				throw new HTFProfilingException(
+						"Error executing shell command to get memeory stats", ioe);
 			}
 		}
-		if(memoryStats!= null){
+		if (memoryStats != null) {
 			return memoryStats.get(attribute);
 		}
 		return null;
+	}
+
+	public boolean isMemoryStatsAvailable() {
+		if (memoryStats == null || reset) {
+			try {
+				memoryStats = profilerJMXDump.getRemoteMemoryUtilisation(cluster, nodeIP);
+			} catch (JSchException jsche) {
+				LOGGER.error("Unable to connect and make the session", jsche);
+			} catch (IOException ioe) {
+				LOGGER.error("Error executing shell command to get memeory stats", ioe);
+			}
+		}
+		return true;
 	}
 
 	/**
@@ -525,16 +659,30 @@ public class ProfilerStats {
 	public String getCpuStats(String attribute) throws HTFProfilingException {
 		if ((cpuStats == null) || reset) {
 			try {
-				cpuStats = profilerJMXDump.getRemoteCPUStats(jobConfig, nodeIp);
+				cpuStats = profilerJMXDump.getRemoteCPUStats(cluster, nodeIP);
 			} catch (Exception e) {
 				/*
-				 * Catching generic exception as profilerJMXDump.getCPUStats(...) throwing lots of exceptions.
+				 * Catching generic exception as
+				 * profilerJMXDump.getCPUStats(...) throwing lots of exceptions.
 				 */
+
 				throw new HTFProfilingException("Error ocurred while fetching cpu stats", e);
 			}
 
 		}
 		return cpuStats.get(attribute);
+	}
+
+	public boolean isCpuStatsAvailable() {
+		if (cpuStats == null || reset) {
+			try {
+				cpuStats = profilerJMXDump.getRemoteCPUStats(cluster, nodeIP);
+			} catch (Exception e) {
+				LOGGER.error("Error ocurred while fetching cpu stats", e);
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**
@@ -553,7 +701,7 @@ public class ProfilerStats {
 	 * @return the nodeIp
 	 */
 	public String getNodeIp() {
-		return nodeIp;
+		return nodeIP;
 	}
 
 	/**
@@ -563,10 +711,10 @@ public class ProfilerStats {
 	 *            the nodeIp to set
 	 */
 	public void setNodeIp(String nodeIp) {
-		this.nodeIp = nodeIp;
+		this.nodeIP = nodeIp;
 		reset = true;
 	}
-	
+
 	/**
 	 * @return the nmStats
 	 * @throws HTFProfilingException
@@ -574,20 +722,33 @@ public class ProfilerStats {
 	public String getNmStats(String attribute) throws HTFProfilingException {
 		if ((nmStats == null) || reset) {
 			try {
-				nmStats = profilerJMXDump.getAllJMXStats(
-						JMXDeamons.NODE_MANAGER, nodeIp, getNmPort());
+				nmStats = profilerJMXDump.getAllJMXStats(JMXDeamons.NODE_MANAGER, nodeIP,
+						getNmPort(), cluster.isJmxPluginEnabled());
 			} catch (Exception e) {
 				/*
 				 * Catching generic exception as
 				 * profilerJMXDump.getAllJmxStats(...) throwing lots of
 				 * exceptions.
 				 */
-				throw new HTFProfilingException(COLLECTJMXSTATSFAILED + nodeIp
-						+ ", " + NodeType.NodeManager.toString() + ", "
-						+ getNmPort(), e);
+				throw new HTFProfilingException(COLLECTJMXSTATSFAILED + nodeIP + ", "
+						+ NodeType.NodeManager.toString() + ", " + getNmPort(), e);
 			}
 		}
 		return nmStats.get(attribute);
+	}
+
+	public boolean isNodeManagerStatsAvailable() {
+		if ((nmStats == null) || reset) {
+			try {
+				nmStats = profilerJMXDump.getAllJMXStats(JMXDeamons.NODE_MANAGER, nodeIP,
+						getNmPort(), cluster.isJmxPluginEnabled());
+			} catch (Exception e) {
+				LOGGER.error(COLLECTJMXSTATSFAILED + nodeIP + ", " + NodeType.NodeManager.toString()
+						+ ", " + getNmPort(), e);
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**
@@ -605,21 +766,34 @@ public class ProfilerStats {
 	public String getRmStats(String attribute) throws HTFProfilingException {
 		if ((rmStats == null) || reset) {
 			try {
-				rmStats = profilerJMXDump.getAllJMXStats(
-						JMXDeamons.RESOURCE_MANAGER, getNameNodeIP(),
-						getRmPort());
+				rmStats = profilerJMXDump.getAllJMXStats(JMXDeamons.RESOURCE_MANAGER, nodeIP,
+						getRmPort(), cluster.isJmxPluginEnabled());
 			} catch (Exception e) {
 				/*
 				 * Catching generic exception as
 				 * profilerJMXDump.getAllJmxStats(...) throwing lots of
 				 * exceptions.
 				 */
-				throw new HTFProfilingException(COLLECTJMXSTATSFAILED + nodeIp
-						+ ", " + NodeType.ResourceManager.toString() + ", "
-						+ getRmPort(), e);
+
+				throw new HTFProfilingException(COLLECTJMXSTATSFAILED + nodeIP + ", "
+						+ NodeType.ResourceManager.toString() + ", " + getRmPort(), e);
 			}
 		}
 		return rmStats.get(attribute);
+	}
+
+	public boolean isResourceManagerStatsAvailable() {
+		if ((rmStats == null) || reset) {
+			try {
+				rmStats = profilerJMXDump.getAllJMXStats(JMXDeamons.RESOURCE_MANAGER, nodeIP,
+						getRmPort(), cluster.isJmxPluginEnabled());
+			} catch (Exception e) {
+				LOGGER.error(COLLECTJMXSTATSFAILED + nodeIP + ", "
+						+ NodeType.ResourceManager.toString() + ", " + getRmPort(), e);
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**
@@ -635,8 +809,7 @@ public class ProfilerStats {
 	 */
 	public String getNmPort() {
 		if (nmPort == null) {
-			YarnSlaveParam ySlaveParam = jobConfig.getSlaveParam();
-			nmPort = ySlaveParam.getNodeManagerJmxPort();
+			nmPort = cluster.getWorkers().getTaskExecutorJmxPort();
 		}
 		return nmPort;
 	}
@@ -654,8 +827,7 @@ public class ProfilerStats {
 	 */
 	public String getRmPort() {
 		if (rmPort == null) {
-			YarnMaster yMaster = jobConfig.getMaster();
-			rmPort = yMaster.getResourceManagerJmxPort();
+			rmPort = cluster.getTaskManagers().getTaskManagerJmxPort();
 		}
 		return rmPort;
 	}
@@ -666,6 +838,18 @@ public class ProfilerStats {
 	 */
 	public void setRmPort(String rmPort) {
 		this.rmPort = rmPort;
+	}
+
+	@Override
+	public String toString() {
+		return "ProfilerStats [dnPort=" + dnPort + ", ttPort=" + ttPort + ", nnPort=" + nnPort
+				+ ", jtPort=" + jtPort + ", nmPort=" + nmPort + ", rmPort=" + rmPort + ", dnStats="
+				+ dnStats + ", ttStats=" + ttStats + ", nnStats=" + nnStats + ", jtStats=" + jtStats
+				+ ", jumbuneContextStats=" + jumbuneContextStats + ", clusterWideStats="
+				+ clusterWideStats + ", memoryStats=" + memoryStats + ", cpuStats=" + cpuStats
+				+ ", nmStats=" + nmStats + ", rmStats=" + rmStats + ", cluster=" + cluster
+				+ ", profilerJMXDump=" + profilerJMXDump + ", nodeIp=" + nodeIP + ", reset=" + reset
+				+ "]";
 	}
 
 }

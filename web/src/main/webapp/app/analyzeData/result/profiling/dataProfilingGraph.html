@@ -1,0 +1,28 @@
+<!-- header -->
+<div jumbune-header=""></div>
+
+<div class="resultWrapper">
+    <div class="widgetRow" ng-init="init()">
+        <!--<div class="widgetWrapper" style="height:400px;">-->
+          <div class="widgetWrapper">
+          <h2><span class="tracking"><i class="fa fa-home" style="font-size:30px;cursor:pointer;" ng-click="clickedHomeIcon()"></i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Job&nbsp;&nbsp;-&nbsp;&nbsp;{{showJobName}}(Data Profiling Job)</span><span class="tracking1" style="float:right;"></span><span style="float:right;margin-top:5px;padding-right:15px;"><i class="fa fa-key rotateClass tip" data-toggle="tooltip" ng-show="licenseExpireTrue" title="License will expire soon." data-placement="right" style="color:#F44336"></i>
+            <i ng-show="licenseExpireDays" class="fa fa-key rotateClass tip" data-toggle="tooltip" title="License will expire in {{daysDiffShow}} day." data-placement="right" style="color:#F44336"></i> </span></h2> 
+            <div id="resultWidgetContainer">
+               <div class="ring-loader" alt="alternate text" style="margin-top:145px;margin-bottom:145px;"></div>
+                <div ng-if="dataRecievedFlag" ui-grid="gridOptions" class="profilingGrid"></div>
+                <div style="width:800px;height: 600px;" id="dataProfilingGrid"></div>
+            </div>
+        </div> 
+ <p id="errorMessage" style="text-align: center;
+            color: rgb(169, 68, 66);
+            width: 600px;
+            padding: 20px;
+            border-radius: 5px;
+            background: rgb(235, 204, 209);
+            margin: 0 auto;
+            position: relative;
+            top: 150px;
+            display: none"
+    ></p>
+    </div>
+</div>

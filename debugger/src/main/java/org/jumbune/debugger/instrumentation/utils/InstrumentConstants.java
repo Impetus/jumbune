@@ -196,10 +196,10 @@ public interface InstrumentConstants {
 	String VALIDATION_MESSAGE = "Validating";
 	String CLASS_FILE_EXTENSION = ".class";
 	String PROFILE_TASK = "mapred.task.profile";
-	String PROFILE_PARAMS = "mapred.task.profile.params";
+/*	String PROFILE_PARAMS = "mapred.task.profile.params";
 	String PROFILE_MAPS = "mapred.task.profile.maps";
 	String PROFILE_REDUCES = "mapred.task.profile.reduces";
-
+*/
 	String JOB_CLIENT = "jobClient";
 	String JOB_INFO = "info";
 	String JOB_CONF = "conf";

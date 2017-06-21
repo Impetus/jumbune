@@ -14,22 +14,79 @@
 	<version>${project.parent.version}</version>
 	<packaging>war</packaging>
 	<name>web</name>
-
+	<properties>
+		<jetty.version>9.2.11.v20150529</jetty.version>
+	</properties>
+	<profiles>
+		<profile>
+			<id>yarn</id>
+			<dependencies>
+				<dependency>
+					<groupId>org.apache.hadoop</groupId>
+					<artifactId>hadoop-mapreduce-client-jobclient</artifactId>
+					<version>2.4.1</version>
+					<exclusions>
+						<exclusion>
+							<groupId>org.apache.hadoop</groupId>
+							<artifactId>hadoop-mapreduce-client-shuffle</artifactId>
+						</exclusion>
+						<exclusion>
+							<groupId>com.sun.jersey</groupId>
+							<artifactId>jersey-client</artifactId>
+						</exclusion>
+					</exclusions>
+				</dependency>
+			</dependencies>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-compiler-plugin</artifactId>
+						<configuration>
+							<excludes>
+								<exclude>com/impetus/jumbune/web/servlet/*</exclude>
+							</excludes>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 	<dependencies>
-
 		<dependency>
-			<groupId>org.mortbay.jetty</groupId>
+			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-runner</artifactId>
 		</dependency>
+		<!--Jetty dependencies start here -->
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-server</artifactId>
+			<version>${jetty.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-servlet</artifactId>
+			<version>${jetty.version}</version>
+		</dependency>
+		<!--Jetty dependencies end here -->
+
 		<dependency>
 			<groupId>org.jumbune</groupId>
 			<artifactId>jumbune-common</artifactId>
+			<version>${build.number}</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>jmockit</artifactId>
 					<groupId>com.googlecode.jmockit</groupId>
 				</exclusion>
 			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-all</artifactId>
+			<version>1.8.5</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.easymock</groupId>
@@ -40,6 +97,7 @@
 		<dependency>
 			<groupId>org.jumbune</groupId>
 			<artifactId>jumbune-debugger</artifactId>
+			<version>${build.number}</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>jmockit</artifactId>
@@ -50,6 +108,7 @@
 		<dependency>
 			<groupId>org.jumbune</groupId>
 			<artifactId>jumbune-exec</artifactId>
+			<version>${project.version}</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>jmockit</artifactId>
@@ -57,9 +116,24 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+
+		<dependency>
+			<groupId>org.jumbune</groupId>
+			<artifactId>jumbune-cluster-profiling</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jumbune</groupId>
+			<artifactId>jumbune-common</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+
 		<dependency>
 			<groupId>org.jumbune</groupId>
 			<artifactId>jumbune-datavalidation</artifactId>
+			<version>${build.number}</version>
 			<exclusions>
 				<exclusion>
 					<artifactId>jmockit</artifactId>
@@ -75,31 +149,73 @@
 			<groupId>javax.servlet</groupId>
 			<artifactId>servlet-api</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-io</artifactId>
-		</dependency>
 
 		<dependency>
-			<groupId>com.google.code.gson</groupId>
-			<artifactId>gson</artifactId>
-			<scope>compile</scope>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>commons-lang</groupId>
+			<artifactId>commons-lang</artifactId>
+			<version>2.4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jumbune</groupId>
 			<artifactId>jumbune-remoting</artifactId>
-			<version>1.5.2-SNAPSHOT</version>
+			<version>${build.number}</version>
 		</dependency>
+
+		<!-- Jersey Dependencies -->
+		<dependency>
+			<groupId>org.glassfish.jersey.containers</groupId>
+			<artifactId>jersey-container-servlet</artifactId>
+			<version>2.21</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.jersey.media</groupId>
+			<artifactId>jersey-media-multipart</artifactId>
+			<version>2.21</version>
+		</dependency>
+		<dependency>
+			<groupId>org.codehaus.jackson</groupId>
+			<artifactId>jackson-jaxrs</artifactId>
+			<version>1.9.13</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.jersey.media</groupId>
+			<artifactId>jersey-media-json-jackson</artifactId>
+			<version>2.21</version>
+			<scope>runtime</scope>
+		</dependency>
+
+
 	</dependencies>
+
 	<build>
 		<finalName>jumbune-${project.version}</finalName>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>com/impetus/jumbune/web/servlet/*</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
 			<plugin>
 				<artifactId>maven-war-plugin</artifactId>
 				<version>2.2</version>
 				<configuration>
 					<packagingExcludes>
-						WEB-INF/lib/jetty-runner*.jar
+						WEB-INF/lib/jetty-runner*.jar,
+						WEB-INF/lib/jetty-security*.jar,
+						WEB-INF/lib/jetty-jaas*.jar,
+						WEB-INF/lib/jetty-io*.jar,
+						WEB-INF/lib/jetty-http*.jar,
+						WEB-INF/lib/jetty-util-6*.jar,
+						WEB-INF/lib/websocket-client*.jar
 					</packagingExcludes>
 				</configuration>
 			</plugin>

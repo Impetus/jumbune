@@ -1,0 +1,37 @@
+<div ng-init="NewJobConfigController.init()"  class="container" >
+	<div jumbune-header=""></div>
+	<form name="myForm">
+	<div class="inner-container">
+		<h2>Analyze Cluster</h2>
+		<div data-equal-height=".eq-height">
+			<div class="col-md-12 tab-container main-container">
+			  <!-- Tab panes -->
+			  	<div class="tab-content">
+				<form>
+					<table class="frm-tbl">
+					    <tbody>
+	                        <tr>
+	                            <!-- <td>Select Clusters</td> -->
+	                            <td  width="72%"><label class="fieldLabel">Select Cluster<s>*</s></label></td>
+	                            <td>
+	                                <select name="clusters" ng-model="NewJobConfigController.selectedCluster" ng-options="clus as clus for clus in NewJobConfigController.clusterList">
+	                                    <option value="">Please Select</option>
+
+	                                </select>
+	                            </td>
+	                        </tr>
+
+						</tbody>
+					</table>
+						<div class="textCenter fixed-btn"><!-- <div class="txt-rgt fixed-btn"> -->
+						<button type="button" class="btn btn-default"  ng-click="NewJobConfigController.cancelAnalyzeClus()">Back</button>
+							<button type="button" ng-disabled="NewJobConfigController.disableSubmitSelectCluster()" class="btn btn-primary" ng-click="NewJobConfigController.submit()">Submit</button>
+						</div>
+				</form>	
+				</div>
+			</div>
+		</div>
+		<div class="clear"></div>
+	</div>
+	</form>
+</div><!-- info-holder -->

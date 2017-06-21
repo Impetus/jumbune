@@ -1,5 +1,7 @@
 package org.jumbune.remoting.common;
 
+import org.jumbune.remoting.server.JumbuneAgent;
+
 /***
  * This class provide utility methods to other classes
  * 
@@ -16,10 +18,7 @@ public final class RemoterUtility {
 	 */
 	public static String getAgentHome() {
 		if (agentHome == null) {
-			agentHome = System.getenv("AGENT_HOME");
-			if (agentHome.trim().endsWith("/")) {
-				agentHome += "/";
-			}
+			agentHome = JumbuneAgent.getAgentDirPath();
 		}
 		return agentHome;
 	}

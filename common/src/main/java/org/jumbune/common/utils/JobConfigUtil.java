@@ -1,23 +1,27 @@
 package org.jumbune.common.utils;
 
 import java.io.File;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.ClasspathElement;
-import org.jumbune.common.beans.LogConsolidationInfo;
-import org.jumbune.common.beans.Master;
-import org.jumbune.common.beans.Slave;
+import org.jumbune.common.beans.Enable;
+import org.jumbune.common.beans.cluster.Agent;
+import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.beans.cluster.NameNodes;
+import org.jumbune.common.beans.cluster.Workers;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
+import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.remoting.client.Remoter;
+import org.jumbune.remoting.client.RemoterFactory;
 import org.jumbune.remoting.common.CommandType;
-import com.google.gson.Gson;
 
+import com.google.gson.Gson;
 import com.jcraft.jsch.JSchException;
 
 
@@ -30,29 +34,13 @@ public final class JobConfigUtil {
 	/** The Constant CONSOLELOGGER. */
 	public static final Logger CONSOLELOGGER = LogManager
 			.getLogger("EventLogger");
-
-	
-	/** Specify the Job Configuration **/
-	private JobConfig jobConfig;
-	
-	/** Specify the static Job Configuration **/
-	private static JobConfig staticJobConfig;
 	
 	/** The Constant LOGGER. */
 	public static final Logger LOGGER = LogManager.getLogger(JobConfigUtil.class);
-	
-	
-	
-	public JobConfigUtil(Config config) {
-		this.jobConfig = (JobConfig) config;
-	}
 
-
-	public static JobConfig jobConfig(InputStream is) {
+	public static JumbuneRequest jumbuneRequest(InputStream is) {
 		Gson gson = new Gson();
-		staticJobConfig = (JobConfig) gson.fromJson(new InputStreamReader(is),
-				JobConfig.class);
-		return staticJobConfig;
+		return (JumbuneRequest) gson.fromJson(new InputStreamReader(is), JumbuneRequest.class);
 	}
 	
 	
@@ -77,15 +65,12 @@ public final class JobConfigUtil {
 	/**
 	 * Checks if is jumbune supplied jar present.
 	 * 
-	 * @param config
-	 *            the config
+	 * @param jumbuneRequest the jumbune Request
 	 * @return true, if is jumbune supplied jar present
 	 */
-	public static boolean isJumbuneSuppliedJarPresent(Config config) {
-		JobConfig jobConfig = (JobConfig)config;
-		Master master = jobConfig.getMaster();
-		Remoter remoter = new Remoter(master.getHost(), Integer.valueOf(master.getAgentPort()));
-		CommandWritableBuilder builder = new CommandWritableBuilder();
+	public static boolean isJumbuneSuppliedJarPresent(Cluster cluster) {
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
+		CommandWritableBuilder builder = new CommandWritableBuilder(cluster);
 		builder.addCommand("ls lib/", false, null, CommandType.FS);
 		String result = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		remoter.close();
@@ -95,17 +80,15 @@ public final class JobConfigUtil {
 	/**
 	 * Checks if is mR job jar present.
 	 *
-	 * @param config the config
+	 * @param jumbuneRequest the jumbune Request
 	 * @param jarFilepath the jar filepath
 	 * @return true, if is mR job jar present
 	 */
-	public static boolean isMRJobJarPresent(Config config, String jarFilepath){
-		JobConfig jobConfig = (JobConfig)config;
-		Master master = jobConfig.getMaster();
+	public static boolean isMRJobJarPresent(Cluster cluster, String jarFilepath){
 		File resourceDir = new File(jarFilepath);
 		if(resourceDir.exists()){
-			Remoter remoter = new Remoter(master.getHost(), Integer.valueOf(master.getAgentPort()));
-			CommandWritableBuilder builder = new CommandWritableBuilder();
+			Remoter remoter = RemotingUtil.getRemoter(cluster);
+			CommandWritableBuilder builder = new CommandWritableBuilder(cluster);
 			builder.addCommand("ls "+jarFilepath, false, null, CommandType.FS);
 			String result = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 			remoter.close();
@@ -123,10 +106,11 @@ public final class JobConfigUtil {
 	 * @param config the config
 	 * @param command the command
 	 */
-	public static void sendLibJarCommand(Remoter remoter, Config config, String command) {
+	public static void sendLibJarCommand(
+			Remoter remoter, Cluster cluster, String command) {
 		
-		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(command, false, null, CommandType.FS).populate(config, null);
+		CommandWritableBuilder builder = new CommandWritableBuilder(cluster, null);
+		builder.addCommand(command, false, null, CommandType.FS);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 	
 	}
@@ -134,17 +118,19 @@ public final class JobConfigUtil {
 	/**
 	 * Send jumbune supplied jar on agent.
 	 * 
-	 * @param config
-	 *            the config
+	 * @param jumbuneRequest the jumbune Request
 	 * @param cse
 	 *            the cse
 	 * @param agentHome
 	 *            the agent home
 	 */
-	public static void sendJumbuneSuppliedJarOnAgent(Config config, ClasspathElement cse, String agentHome) {
+	@SuppressWarnings("deprecation")
+	public static void sendJumbuneSuppliedJarOnAgent(
+			Cluster cluster, ClasspathElement cse, String agentHome) {
+		
 		String jumbuneHome = JobConfig.getJumbuneHome();
-		Remoter remoter = RemotingUtil.getRemoter(config, jumbuneHome);
-		String hadoopHome = RemotingUtil.getHadoopHome(remoter, config);
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
+		String hadoopHome = RemotingUtil.getHadoopHome(remoter, cluster);
 		String[] files = cse.getFiles();
 		for (String string : files) {
 			remoter.sendJar("lib/", string.replace(agentHome, jumbuneHome));
@@ -152,7 +138,7 @@ public final class JobConfigUtil {
 			if (string.contains("log4j")) {
 				StringBuilder copyJarToHadoopLib = new StringBuilder().append(Constants.COPY_COMMAND).append(string).append(" ").append(hadoopHome)
 						.append(Constants.LIB_DIRECTORY);
-				sendLibJarCommand(remoter, config, copyJarToHadoopLib.toString());
+				sendLibJarCommand(remoter, cluster, copyJarToHadoopLib.toString());
 			}
 		}
 		remoter.close();
@@ -161,13 +147,15 @@ public final class JobConfigUtil {
 	/**
 	 * Send mr job jar on agent.
 	 *
-	 * @param config the config
+	 * @param jumbuneRequest the jumbune Request
 	 * @param jarFilepath the jar filepath
 	 */
-	public static void sendMRJobJarOnAgent(Config config, String jarFilepath){
-		JobConfig jobConfig = (JobConfig)config;
+	public static void sendMRJobJarOnAgent(
+			JumbuneRequest jumbuneRequest, String jarFilepath){
+		JobConfig jobConfig =  jumbuneRequest.getJobConfig();
 		String jumbuneHome =JobConfig.getJumbuneHome() + File.separator;
-		Remoter remoter = RemotingUtil.getRemoter(config, jumbuneHome);
+		Cluster cluster = jumbuneRequest.getCluster();
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
 		File resourceDir =new File(jarFilepath);
 		File[] files=resourceDir.listFiles();
 			for(File file : files){
@@ -187,19 +175,6 @@ public final class JobConfigUtil {
 			}
 			}
 		remoter.close();
-	}
-
-	/**
-	 * Check if jumbune home ends with slash.
-	 *
-	 * @param config checks of Jumbune Home ends with slash or not.
-	 */
-	public static  void checkIfJumbuneHomeEndsWithSlash(Config config) {
-		JobConfig jobConfig = (JobConfig)config;
-		if (!(jobConfig.getSlaveWorkingDirectory().endsWith(File.separator))) {
-			String jumbuneHome = jobConfig.getSlaveWorkingDirectory();
-			jobConfig.setSlaveWorkingDirectory(jumbuneHome + File.separator);
-		}
 	}
 
 	/**
@@ -226,6 +201,7 @@ public final class JobConfigUtil {
 	/**
 	 * Creates the jumbune directories.
 	 *
+	 *@param cluster cluster
 	 * @throws JSchException
 	 *             the j sch exception
 	 * @throws IOException
@@ -233,18 +209,19 @@ public final class JobConfigUtil {
 	 * @throws InterruptedException
 	 *             the interrupted exception
 	 */
-	public void createJumbuneDirectories() throws JSchException, IOException,
-			InterruptedException {
-		createMasterDirectories();
-		if (jobConfig.getSlaves().size() > 0) {
-			createSlaveDirectories();
+	public static void createJumbuneDirectories(JumbuneRequest jumbuneRequest)
+			throws JSchException, IOException, InterruptedException {
+		createNameNodeDirectories(jumbuneRequest.getJobConfig());
+		Cluster cluster = jumbuneRequest.getCluster();
+		if (! cluster.getWorkers().getHosts().isEmpty()) {
+			createWorkingDirectories(jumbuneRequest);
 		}
 	}
 	
 	/**
 	 * Creates the master directories.
 	 */
-	public void createMasterDirectories() {
+	public static void createNameNodeDirectories(JobConfig jobConfig) {
 		File joblocaion = new File(jobConfig.getJobJarLoc()
 				+ jobConfig.getFormattedJumbuneJobName());
 		joblocaion.mkdirs();
@@ -252,10 +229,10 @@ public final class JobConfigUtil {
 		File reportLocation = new File(jobConfig.getShellUserReportLocation());
 		reportLocation.mkdirs();
 
-		File profilejarLocation = new File(getProfiledJarLocation());
+		File profilejarLocation = new File(getProfiledJarLocation(jobConfig));
 		profilejarLocation.mkdirs();
 
-		File insturmentedjarLocation = new File(getInstrumentedJarLocation());
+		File insturmentedjarLocation = new File(getInstrumentedJarLocation(jobConfig));
 		insturmentedjarLocation.mkdirs();
 
 		File consolidationLocation = new File(
@@ -278,10 +255,14 @@ public final class JobConfigUtil {
 	 * @throws InterruptedException
 	 *             the interrupted exception
 	 */
-	private void createSlaveDirectories() throws JSchException, IOException,
-			InterruptedException {
-		makeRemoteSlaveLogDirectory(jobConfig.getLogDefinition());
-		makeRemoteSlaveLogDirectory(jobConfig.getDVDefinition());
+	private static void createWorkingDirectories(JumbuneRequest jumbuneRequest)
+			throws JSchException, IOException, InterruptedException {
+		
+		setRelativeWorkingDirectoryForLog(jumbuneRequest);
+		makeWorkerLogDirectory(jumbuneRequest.getCluster());
+		
+		setRelativeWorkingDirectoryForDV(jumbuneRequest);
+		makeWorkerLogDirectory(jumbuneRequest.getCluster());
 	}
 	
 	/**
@@ -296,49 +277,39 @@ public final class JobConfigUtil {
 	 * @throws InterruptedException
 	 *             the interrupted exception
 	 */
-	private static void makeRemoteSlaveLogDirectory(
-			LogConsolidationInfo logCollection) throws JSchException,
-			IOException, InterruptedException {
+	private static void makeWorkerLogDirectory(Cluster cluster)
+			throws JSchException, IOException, InterruptedException {
 
-		List<Slave> listSlave = logCollection.getSlaves();
-		Master master = logCollection.getMaster();
-		String masterHost = master.getHost();
-		Integer agentPort = Integer.valueOf(master.getAgentPort());
-
-		Remoter remoter = new Remoter(masterHost, agentPort);
-		for (Slave slaveDefinition : listSlave) {
-
-			String[] hostsNode = slaveDefinition.getHosts();
-			String locationNode = slaveDefinition.getLocation();
-
-			for (String hostNode : hostsNode) {
-				String command = Constants.MKDIR_P_CMD + getFolderName(locationNode);
-				LOGGER.debug("Log directory generation command on WorkerNode ["
-						+ command + "]");
-
-				CommandWritableBuilder builder = new CommandWritableBuilder();
-				builder.addCommand(command, false, null, CommandType.FS)
-						.populateFromLogConsolidationInfo(logCollection,
-								hostNode);
-				String parentOfLocationNode = null;
-				if (locationNode.lastIndexOf(File.separator) > -1) {
-					parentOfLocationNode = locationNode.substring(0,
-							locationNode.lastIndexOf(File.separator));
-					LOGGER.info("Location Node " + locationNode);
-					LOGGER.info("Parent of Location Node "
-							+ parentOfLocationNode);
-					builder.addCommand(Constants.CHMOD_CMD + parentOfLocationNode, false,
-							null, CommandType.FS)
-							.populateFromLogConsolidationInfo(logCollection,
-									hostNode);
-				}
-				remoter.fireAndForgetCommand(builder.getCommandWritable());
-			}
-			LOGGER.info("Log directory created on WorkerNodes ");
-			CONSOLELOGGER.info("Log directory generation on WorkerNodes ");
-
+		Workers workers = cluster.getWorkers();
+		String nameNodeHost = cluster.getNameNode();
+		Integer agentPort = Integer.valueOf(cluster.getJumbuneAgent().getPort());
+		String locationNode = workers.getRelativeWorkingDirectory();
+		String parentOfLocationNode = null;
+		parentOfLocationNode = locationNode.substring(0, locationNode.lastIndexOf(File.separator));
+		boolean loop = locationNode.lastIndexOf(File.separator) > -1 ? true : false;
+		
+		if (loop) {
+			parentOfLocationNode = locationNode.substring(0, locationNode.lastIndexOf(File.separator));
+			LOGGER.debug("Location Node " + locationNode);
+			LOGGER.debug("Parent of Location Node " + parentOfLocationNode);
 		}
-		remoter.close();
+		String command = Constants.MKDIR_P_CMD + getFolderName(locationNode);
+		LOGGER.debug("Log directory generation command on WorkerNode [" + command + "]");
+
+		for (String workerHost : workers.getHosts()) {
+			CommandWritableBuilder builder = new CommandWritableBuilder(cluster, workerHost);
+			builder.addCommand(command, false, null, CommandType.FS);
+
+			if (loop) {
+				builder.addCommand(Constants.CHMOD_CMD + parentOfLocationNode, false,
+						null, CommandType.FS).populate(cluster, workerHost);
+			}
+			Remoter remoter = RemotingUtil.getRemoter(cluster);
+			remoter.fireAndForgetCommand(builder.getCommandWritable());
+			LOGGER.debug("Log directory created on WorkerNodes ");
+			CONSOLELOGGER.info("Log directory generation on WorkerNodes ");
+		}
+		
 	}
 	/**
 	 * <p>
@@ -372,7 +343,8 @@ public final class JobConfigUtil {
 	 *
 	 * @return the profiled jar location
 	 */
-	public final String getProfiledJarLocation() {
+	public static String getProfiledJarLocation(Config config) {
+		JobConfig jobConfig = (JobConfig) config;
 		return jobConfig.getJobJarLoc() + jobConfig.getFormattedJumbuneJobName()
 				+ Constants.PROFILED_JAR_LOC;
 	}
@@ -382,8 +354,75 @@ public final class JobConfigUtil {
 	 *
 	 * @return the instrumented jar location
 	 */
-	public final String getInstrumentedJarLocation() {
+	public static String getInstrumentedJarLocation(Config config) {
+		JobConfig jobConfig = (JobConfig) config;
 		return jobConfig.getJobJarLoc() + jobConfig.getFormattedJumbuneJobName()
 				+ Constants.INSTRUMENTED_JAR_LOC;
 	}
+	
+	public static void setRelativeWorkingDirectoryForLog(JumbuneRequest jumbuneRequest) {
+		JobConfig jobConfig = jumbuneRequest.getJobConfig();
+		Cluster cluster = jumbuneRequest.getCluster();
+		NameNodes nameNodes = cluster.getNameNodes();
+		nameNodes.setRelativeWorkingDirectory(jobConfig.getMasterConsolidatedLogLocation());
+		Workers workers = cluster.getWorkers();
+		String relativeWorkingDirWorkers = workers.getWorkDirectory() + Constants.JOB_JARS_LOC
+				+ getFormattedJumbuneJobName(jobConfig.getJumbuneJobName())  + Constants.SLAVE_LOG_LOC;
+		workers.setRelativeWorkingDirectory(relativeWorkingDirWorkers);
+	}
+	
+	public static void setRelativeWorkingDirectoryForDV(JumbuneRequest jumbuneRequest) {
+		JobConfig jobConfig = jumbuneRequest.getJobConfig();
+		Cluster cluster = jumbuneRequest.getCluster();
+		NameNodes nameNodes = cluster.getNameNodes();
+		nameNodes.setRelativeWorkingDirectory(jobConfig.getMasterConsolidatedDVLocation());
+		Workers workers = cluster.getWorkers();
+		String relativeWorkingDirWorkers = workers.getWorkDirectory() + Constants.JOB_JARS_LOC
+				+ getFormattedJumbuneJobName(jobConfig.getJumbuneJobName())  + Constants.SLAVE_DV_LOC;
+		workers.setRelativeWorkingDirectory(relativeWorkingDirWorkers);
+	}
+	
+	public static void setRelativeWorkingDirectoryForXmlDV(JumbuneRequest jumbuneRequest) {
+		JobConfig jobConfig = jumbuneRequest.getJobConfig();
+		Cluster cluster = jumbuneRequest.getCluster();
+		NameNodes nameNodes = cluster.getNameNodes();
+		nameNodes.setRelativeWorkingDirectory(jobConfig.getMasterConsolidatedXmlDVLocation());
+		Workers workers = cluster.getWorkers();
+		String relativeWorkingDirWorkers = workers.getWorkDirectory() + Constants.JOB_JARS_LOC
+				+ getFormattedJumbuneJobName(jobConfig.getJumbuneJobName())  + Constants.SLAVE_XML_DV_LOC;
+		workers.setRelativeWorkingDirectory(relativeWorkingDirWorkers);
+	}
+	
+	public static void setRelativeWorkingDirectoryForJsonDV(JumbuneRequest jumbuneRequest) {
+		JobConfig jobConfig = jumbuneRequest.getJobConfig();
+		Cluster cluster = jumbuneRequest.getCluster();
+		NameNodes nameNodes = cluster.getNameNodes();
+		nameNodes.setRelativeWorkingDirectory(jobConfig.getMasterConsolidatedJsonDVLocation());
+		Workers workers = cluster.getWorkers();
+		String relativeWorkingDirWorkers = workers.getWorkDirectory() + Constants.JOB_JARS_LOC
+				+ getFormattedJumbuneJobName(jobConfig.getJumbuneJobName())  + Constants.SLAVE_JSON_DV_LOC;
+		workers.setRelativeWorkingDirectory(relativeWorkingDirWorkers);
+	}
+	
+	/**
+	 * Gets the formatted jumbune job name.
+	 * 
+	 * @return the formatted jumbune job name
+	 */
+	public static String getFormattedJumbuneJobName(String jobNameTemp) {
+		if (jobNameTemp == null) {
+			return null;
+		}
+
+		if (!jobNameTemp.endsWith(File.separator)) {
+			jobNameTemp += File.separator;
+		}
+		return jobNameTemp;
+	}
+	
+	public static boolean isEnable(Enable enable) {
+		return (enable != null && Enable.TRUE.equals(enable) ? true : false);
+
+	}
+	
 }

@@ -66,8 +66,15 @@ var js2form = (function()
 			
 			if (typeof formFieldsByName[fieldName] != 'undefined')
 			{
+				if(fieldName === 'jumbuneScheduleTaskTiming'){
+					if(backDateAndTimeCheck(fieldValue)){
+						setValue(formFieldsByName[fieldName], fieldValue);	
+					} else {
+						setValue(formFieldsByName[fieldName], '');	
+					}
+				} else {
 					setValue(formFieldsByName[fieldName], fieldValue);	
-							
+				}			
 				
 			}
 			else if (typeof formFieldsByName[fieldName.replace(_arrayItemRegexp, '[]')] != 'undefined')
@@ -143,7 +150,7 @@ var js2form = (function()
 		{			
 			if(typeof data.dataValidation.fieldValidationList != 'undefined')
 			{
-				$('#noOfFields').val(data.dataValidation.fieldValidationList.length);				
+				$('#noOfFields').val(data.dataValidation.fieldValidationList.length);
 			}
 		}
 
@@ -183,6 +190,12 @@ var js2form = (function()
 			data.dataValidation.recordSeparator=data.dataValidation.recordSeparator.replace("\n", "\\n");
 		}
 		
+		
+		if(typeof data.clusterTuning!= 'undefined')
+		{
+			if(typeof data.clusterTuning.isFairSchedulerEnabled!= 'undefined' && data.clusterTuning.isFairSchedulerEnabled=="FALSE")
+			$("#divClusterTuningManual").show('slow');
+		}
 		
 		if(typeof data.slaves!= 'undefined' && typeof data.slaves.length != 'undefined')
 		{
@@ -297,6 +310,33 @@ var js2form = (function()
 		}		
 		
 				
+		if(typeof data.selfTuning != 'undefined')
+		{			
+			if(data.jarInputType=='local filesystem path')
+			{
+				$('#localMachineClassPathBox').show('slow');
+				$('#masterMachineClassPathBox').hide('slow');
+				$('#slaveMachineClassPathBox').hide('slow');
+			}
+			else if(data.jarInputType=='master machine path')
+			{
+				$('#localMachineClassPathBox').hide('slow');
+				$('#masterMachineClassPathBox').show('slow');
+				$('#slaveMachineClassPathBox').hide('slow');
+			}
+			else if(data.jarInputType=='slave machine path')
+			{
+				$('#localMachineClassPathBox').hide('slow');
+				$('#masterMachineClassPathBox').hide('slow');
+				$('#slaveMachineClassPathBox').show('slow');
+			}
+			else
+			{
+				$('#localMachineClassPathBox').hide('slow');
+				$('#masterMachineClassPathBox').hide('slow');
+				$('#slaveMachineClassPathBox').hide('slow');
+			}
+		}
 
 		if(typeof data.jobjar != 'undefined' && typeof data.jobjar.machinePath != 'undefined')
 		{				
@@ -364,12 +404,9 @@ var js2form = (function()
 				{
 				//alert(data.dataValidation.fieldValidationList[i]);
 					if(typeof data.dataValidation.fieldValidationList[i] != 'undefined' && typeof data.dataValidation.fieldValidationList[i].fieldNumber != 'undefined')
-					{												
+					{	
+						//alert('#extraDataValidationRow'+i);
 						$('#extraDataValidationRow'+i).show('slow');
-						//console.log($('#extraDataValidationRow'+i).find(".fixWidthValidationCheckBox, .fixWidthValidationBox"));
-						//console.log($('#extraDataValidationRow'+i).find("input[type='text'], select"));
-						//$('#extraDataValidationRow'+i).find(".fixWidthValidationCheckBox, .fixWidthValidationBox").removeClass("disabledRow");
-						//$('#extraDataValidationRow'+i).find("input[type='text'], select").removeAttr("disabled");
 						$('#dataType'+i).closest('.fixWidthValidationBox').show('slow');
 						$('#dataValidationRegex'+i).closest('.fixWidthValidationBox').show('slow');				
 					
@@ -456,6 +493,11 @@ var js2form = (function()
 			$('#includeClassJarBox').show('slow');			
 		}
 
+		//Check tuning section is enable 
+		if(typeof data.selfTuning != 'undefined' && data.selfTuning == 'TRUE')
+		{
+			$('#tuningFieldsBox').show('slow');
+		}
 		
 	}
 

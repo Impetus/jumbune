@@ -92,7 +92,7 @@ public class ChainedTaskMethodAdapter extends BaseMethodAdpater {
 	 */
 	@Override
 	public void visitEnd() {
-		logger.info(MessageFormat.format(InstrumentationMessageLoader
+		logger.debug(MessageFormat.format(InstrumentationMessageLoader
 				.getMessage(MessageConstants.LOG_INSTRUMENTING_METHOD),
 				getClassName() + "##" + name + "##" + desc));
 

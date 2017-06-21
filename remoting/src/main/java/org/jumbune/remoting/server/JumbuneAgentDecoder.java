@@ -4,23 +4,24 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import io.netty.handler.codec.compression.ZlibCodecFactory;
-import io.netty.handler.codec.compression.ZlibWrapper;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
+import io.netty.util.concurrent.DefaultEventExecutorGroup;
+import io.netty.util.concurrent.EventExecutor;
 
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.remoting.codecs.ArchiveDecoder;
-import org.jumbune.remoting.codecs.ArchiveEncoder;
-import org.jumbune.remoting.codecs.LogFilesDecoder;
-import org.jumbune.remoting.codecs.LogFilesEncoder;
 import org.jumbune.remoting.common.RemotingConstants;
+import org.jumbune.remoting.common.codecs.ArchiveDecoder;
+import org.jumbune.remoting.common.codecs.ArchiveEncoder;
+import org.jumbune.remoting.common.codecs.LogFilesDecoder;
+import org.jumbune.remoting.common.codecs.LogFilesEncoder;
+import org.jumbune.remoting.server.ha.sync.SyncExecutor;
 
 /**
  * The Class JumbuneAgentDecoder  
@@ -41,20 +42,29 @@ public class JumbuneAgentDecoder extends ByteToMessageDecoder {
 	/** The receive directory. */
 	private String receiveDirectory;
 	
+	/** The sync executor. */
+	private SyncExecutor syncExecutor;
+	
+	private boolean haEnabled;
+	
 	public static final Logger LOGGER = LogManager.getLogger(JumbuneAgentDecoder.class);
+
+	private static final String HEARTBEAT_HANDLER = "heartbeat";
 
 	/**
 	 * Instantiates a new jumbune agent decoder.
 	 *
 	 * @param receiveDirectory the receive directory
 	 */
-	public JumbuneAgentDecoder(final String receiveDirectory) {
+	public JumbuneAgentDecoder(final String receiveDirectory, SyncExecutor syncExecutor, boolean haEnabled) {
 		String tempDir=receiveDirectory;
 		if (receiveDirectory.charAt(receiveDirectory.length() - 1) == '/') {
 			tempDir = receiveDirectory.substring(0,
 					receiveDirectory.length() - 1);
 		}
+		this.haEnabled = haEnabled;
 		this.receiveDirectory = tempDir;
+		this.syncExecutor = syncExecutor;
 	}
 
 	@Override
@@ -84,19 +94,45 @@ public class JumbuneAgentDecoder extends ByteToMessageDecoder {
 		} else if(isCma(magic1, magic2, magic3)){
 			throwAwayReadUnsignedBytes(in);
 			invokeAsyncFireAndForgetCommandHandler(ctx);
-		}else if (isCmg(magic1, magic2, magic3)) {
+		}/*else if (isCmg(magic1, magic2, magic3)) {
 			throwAwayReadUnsignedBytes(in);
 			invokeFireAndGetCommandHandler(ctx);
-		} else if (isCmo(magic1, magic2, magic3)) {
+		}*/ else if (isCmo(magic1, magic2, magic3)) {
 			throwAwayReadUnsignedBytes(in);
 			invokeFireAndGetObjectResponseCommandHandler(ctx);
+		} else if (isCmoHA(magic1, magic2, magic3)) {
+			throwAwayReadUnsignedBytes(in);
+			invokeFireAndGetObjectResponseCommandHandlerForHA(ctx);
+		} else if (isCmdHA(magic1, magic2, magic3)) {
+			throwAwayReadUnsignedBytes(in);
+			invokeFireAndForgetCommandHandlerForHA(ctx);
+		} else if (isTxrHA(magic1, magic2, magic3)) {
+			throwAwayReadUnsignedBytes(in);
+			invokeLogFilesReceiveHandlerForHA(ctx);
+		} else if (isTxsHA(magic1, magic2, magic3)) {
+			throwAwayReadUnsignedBytes(in);
+			invokeLogFilesSendHandlerForHA(ctx);
+		} else if (isJarHA(magic1, magic2, magic3)) {
+			throwAwayReadUnsignedBytes(in);
+			invokeJarReceiveHandlerForHA(ctx);
+		} else if (isJasHA(magic1, magic2, magic3)) {
+			throwAwayReadUnsignedBytes(in);
+			invokeJarSendHandlerForHA(ctx);
+		}else if (isSdaHA(magic1, magic2, magic3)) {
+			throwAwayReadUnsignedBytes(in);
+			invokeAgentShutdownHandler(ctx);
 		} else {
 	        // Unknown protocol; discard everything and close the connection.
 	        in.clear();
 	        ctx.close();
 		}
+
+		if (haEnabled) {
+			syncExecutor.sync();
+		}
 	}
 	
+
 /*	*//**
 	 * Throw away read unsigned bytes.
 	 *
@@ -212,7 +248,89 @@ public class JumbuneAgentDecoder extends ByteToMessageDecoder {
 				&& magic2 == RemotingConstants.CMO_MAGIC_2
 				&& magic3 == RemotingConstants.CMO_MAGIC_3;
 	}
+	
+	/**
+	 * Checks if is cmo.
+	 *
+	 * @param magic1 the magic1
+	 * @param magic2 the magic2
+	 * @param magic3 the magic3
+	 * @return true, if is cmo
+	 */
+	private boolean isCmoHA(int magic1, int magic2, int magic3) {
+		return magic1 == RemotingConstants.CMO_HA_MAGIC_1
+				&& magic2 == RemotingConstants.CMO_HA_MAGIC_2
+				&& magic3 == RemotingConstants.CMO_HA_MAGIC_3;
+	}
+	
+	private boolean isCmdHA(int magic1, int magic2, int magic3) {
+		return magic1 == RemotingConstants.CMD_HA_MAGIC_1
+				&& magic2 == RemotingConstants.CMD_HA_MAGIC_2
+				&& magic3 == RemotingConstants.CMD_HA_MAGIC_3;
+	}
+	
+	/**
+	 * Checks if is txr in case of HA.
+	 *
+	 * @param magic1 the magic1
+	 * @param magic2 the magic2
+	 * @param magic3 the magic3
+	 * @return true, if is txr
+	 */
+	private boolean isTxrHA(int magic1, int magic2, int magic3) {
+		return magic1 == RemotingConstants.TXR_HA_MAGIC_1
+				&& magic2 == RemotingConstants.TXR_HA_MAGIC_2
+				&& magic3 == RemotingConstants.TXR_HA_MAGIC_3;
+	}
 
+	/**
+	 * Checks if is txs in case of HA.
+	 *
+	 * @param magic1 the magic1
+	 * @param magic2 the magic2
+	 * @param magic3 the magic3
+	 * @return true, if is txs
+	 */
+	private boolean isTxsHA(int magic1, int magic2, int magic3) {
+		return magic1 == RemotingConstants.TXS_MAGIC_1
+				&& magic2 == RemotingConstants.TXS_MAGIC_2
+				&& magic3 == RemotingConstants.TXS_MAGIC_3;
+	}
+	
+	/**
+	 * Checks if is jar in case of HA
+	 *
+	 * @param magic1 the magic1
+	 * @param magic2 the magic2
+	 * @param magic3 the magic3
+	 * @return true, if is jar
+	 */
+	private boolean isJarHA(int magic1, int magic2, int magic3) {
+		return magic1 == RemotingConstants.JAR_HA_MAGIC_1
+				&& magic2 == RemotingConstants.JAR_HA_MAGIC_2
+				&& magic3 == RemotingConstants.JAR_HA_MAGIC_3;
+	}
+	
+	
+	/**
+	 * Checks if is jas.
+	 *
+	 * @param magic1 the magic1
+	 * @param magic2 the magic2
+	 * @param magic3 the magic3
+	 * @return true, if is jas
+	 */
+	private boolean isJasHA(int magic1, int magic2, int magic3) {
+		return magic1 == RemotingConstants.JAS_HA_MAGIC_1
+				&& magic2 == RemotingConstants.JAS_HA_MAGIC_2
+				&& magic3 == RemotingConstants.JAS_HA_MAGIC_3;
+	}
+	
+	private boolean isSdaHA(int magic1, int magic2, int magic3) {
+		return magic1 == RemotingConstants.SDA_HA_MAGIC_1
+				&& magic2 == RemotingConstants.SDA_HA_MAGIC_2
+				&& magic3 == RemotingConstants.SDA_HA_MAGIC_3;
+	}
 	
 	/**
 	 * Invoke jar receive handler.
@@ -230,6 +348,22 @@ public class JumbuneAgentDecoder extends ByteToMessageDecoder {
 
 	
 	/**
+	 * Invoke jar receive handler in case of HA.
+	 *
+	 * @param ctx the ctx
+	 */
+	private void invokeJarReceiveHandlerForHA(ChannelHandlerContext ctx) {
+		ChannelPipeline p = ctx.pipeline();
+		EventExecutor e1 = new DefaultEventExecutorGroup(1).next();
+		p.addLast("stringDecoder", new StringDecoder());
+		p.addLast("delegator", new Delegator(receiveDirectory));
+		p.addLast(HEARTBEAT_HANDLER, new HeartbeatHandler(JumbuneAgent.getHeartBeatMillis(), 
+				JumbuneAgent.getHeartBeatMillis(), JumbuneAgent.getHeartBeatMillis()));
+		p.addLast(e1, new ArchiveEncoder());
+		p.remove(this);
+	}
+	
+	/**
 	 * Invoke jar send handler.
 	 *
 	 * @param ctx the ctx
@@ -242,6 +376,21 @@ public class JumbuneAgentDecoder extends ByteToMessageDecoder {
 		p.remove(this);
 	}
 
+	/**
+	 * Invoke jar send handler.
+	 *
+	 * @param ctx the ctx
+	 */
+	private void invokeJarSendHandlerForHA(ChannelHandlerContext ctx) {
+		ChannelPipeline p = ctx.pipeline();
+		EventExecutor e1 = new DefaultEventExecutorGroup(1).next();
+		p.addLast(e1, new ArchiveDecoder(10485760, receiveDirectory));
+		p.addLast(ACK_RESPONSER, new AckResponser());
+		p.addLast(HEARTBEAT_HANDLER, new HeartbeatHandler(JumbuneAgent.getHeartBeatMillis(), 
+				JumbuneAgent.getHeartBeatMillis(), JumbuneAgent.getHeartBeatMillis()));
+		p.addLast(ENCODER, new StringEncoder());
+		p.remove(this);
+	}
 	
 	/**
 	 * Invoke log files receive handler.
@@ -257,6 +406,32 @@ public class JumbuneAgentDecoder extends ByteToMessageDecoder {
 		p.addLast("logStreamer", new LogFilesEncoder());
 		p.remove(this);
 	}
+
+	/**
+	 * Invoke log files receive handler.
+	 *
+	 * @param ctx the ctx
+	 */
+	private void invokeLogFilesReceiveHandlerForHA(ChannelHandlerContext ctx) {
+		ChannelPipeline p = ctx.pipeline();		
+		EventExecutor e1 = new DefaultEventExecutorGroup(1).next();
+		p.addLast("stringDecoder", new StringDecoder());
+		p.addLast("delegator", new Delegator(receiveDirectory));
+		p.addLast(HEARTBEAT_HANDLER, new HeartbeatHandler(JumbuneAgent.getHeartBeatMillis(), 
+				JumbuneAgent.getHeartBeatMillis(), JumbuneAgent.getHeartBeatMillis()));
+		p.addLast("stringEncoder", new StringEncoder());
+		p.addLast(e1, new LogFilesEncoder());
+		p.remove(this);
+	}
+	
+	   private void invokeAgentShutdownHandler(ChannelHandlerContext ctx) {
+			ChannelPipeline p = ctx.pipeline();
+			p.addLast(ACK_RESPONSER, new AckResponser());
+			p.addLast(ENCODER, new StringEncoder());
+			JumbuneAgent.shutdown();
+			p.remove(this);
+			
+		}
 
 	
 	/**
@@ -300,11 +475,11 @@ public class JumbuneAgentDecoder extends ByteToMessageDecoder {
 		p.remove(this);
 	}
 	
-	/**
+/*	*//**
 	 * Invoke fire and get command handler.
 	 *
 	 * @param ctx the ctx
-	 */
+	 *//*
 	private void invokeFireAndGetCommandHandler(ChannelHandlerContext ctx) {
 		ChannelPipeline p = ctx.pipeline();
 		p.addLast(DECODER, new StringDecoder());
@@ -312,7 +487,7 @@ public class JumbuneAgentDecoder extends ByteToMessageDecoder {
 		p.addLast(ENCODER, new StringEncoder());
 		p.remove(this);
 	}
-
+*/
 	/**
 	 * Invoke fire and get object response command handler.
 	 *
@@ -327,11 +502,61 @@ public class JumbuneAgentDecoder extends ByteToMessageDecoder {
 		p.remove(this);
 	}
 	
+	
+	/**
+	 * Invoke fire and get object response command handler for HA
+	 *
+	 * @param ctx the ctx
+	 */
+	private void invokeFireAndGetObjectResponseCommandHandlerForHA(
+			ChannelHandlerContext ctx) {
+		EventExecutor e1 = new DefaultEventExecutorGroup(1).next();
+		ChannelPipeline p = ctx.pipeline();
+		p.addLast(DECODER, new ObjectDecoder(ClassResolvers.cacheDisabled(null)));
+		p.addLast(HEARTBEAT_HANDLER, new HeartbeatHandler(JumbuneAgent.getHeartBeatMillis(), 
+				JumbuneAgent.getHeartBeatMillis(), JumbuneAgent.getHeartBeatMillis()));
+		p.addLast(e1, new CommandAsObjectResponserHA());
+		p.addLast(ENCODER, new ObjectEncoder());
+		p.remove(this);
+	}
+	
+	/**
+	 * Invoke fire and forget command handler for HA
+	 *
+	 * @param ctx the ctx
+	 */
+	private void invokeFireAndForgetCommandHandlerForHA(ChannelHandlerContext ctx) {
+		EventExecutor e1 = new DefaultEventExecutorGroup(1).next();
+		ChannelPipeline p = ctx.pipeline();
+		p.addLast(DECODER, new ObjectDecoder(ClassResolvers.cacheDisabled(null)));
+		p.addLast(HEARTBEAT_HANDLER, new HeartbeatHandler(JumbuneAgent.getHeartBeatMillis(), 
+				JumbuneAgent.getHeartBeatMillis(), JumbuneAgent.getHeartBeatMillis()));
+		p.addLast(e1, new CommandDelegator());
+		p.addLast(ENCODER, new ObjectEncoder());
+		p.remove(this);
+	}
+	
+	/**
+	 * Invoke log files send handler.
+	 *
+	 * @param ctx the ctx
+	 */
+	private void invokeLogFilesSendHandlerForHA(ChannelHandlerContext ctx) {
+		ChannelPipeline p = ctx.pipeline();
+		EventExecutor e1 = new DefaultEventExecutorGroup(1).next();
+		p.addLast(e1, new LogFilesDecoder(receiveDirectory));
+		p.addLast(ACK_RESPONSER, new AckResponser());
+		p.addLast(HEARTBEAT_HANDLER, new HeartbeatHandler(JumbuneAgent.getHeartBeatMillis(), 
+				JumbuneAgent.getHeartBeatMillis(), JumbuneAgent.getHeartBeatMillis()));
+		p.addLast(ENCODER, new StringEncoder());
+		p.remove(this);
+	}
+	
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         // Close the connection when an exception is raised.
         LOGGER.error(cause);
         ctx.close();
-    }    
+    }
 
 }

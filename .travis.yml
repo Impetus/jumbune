@@ -12,4 +12,4 @@ notifications:
     recipients:
       - dev@collaborate.jumbune.org
     on_success: change # default: change
-    on_failure: change # default: always
+    on_failure: change # default: change

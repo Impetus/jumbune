@@ -1,9 +1,8 @@
 package org.jumbune.profiling.utils;
 
 import static org.jumbune.profiling.utils.ProfilerConstants.CPU_DETAILS_COMMAND;
-import static org.jumbune.profiling.utils.ProfilerConstants.CPU_USAGE_COMMAND_WITHOUT_CARET;
 import static org.jumbune.profiling.utils.ProfilerConstants.CPU_USAGE_COMMAND;
-import static org.jumbune.profiling.utils.ProfilerConstants.DATANODE;
+import static org.jumbune.profiling.utils.ProfilerConstants.CPU_USAGE_COMMAND_WITHOUT_CARET;
 import static org.jumbune.profiling.utils.ProfilerConstants.EXECUTION_MODE;
 import static org.jumbune.profiling.utils.ProfilerConstants.JMX_URL_POSTFIX;
 import static org.jumbune.profiling.utils.ProfilerConstants.JMX_URL_PREFIX;
@@ -20,16 +19,18 @@ import static org.jumbune.profiling.utils.ProfilerConstants.VMSTAT_COMMAND;
 import static org.jumbune.profiling.utils.ProfilerConstants.WRITE_BLOCK_OP_MAX_TIME;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.management.ThreadInfo;
+import java.lang.reflect.Type;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.management.AttributeNotFoundException;
@@ -44,16 +45,19 @@ import javax.management.ReflectionException;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXServiceURL;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.WordUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.beans.Slave;
-import org.jumbune.common.beans.SupportedHadoopDistributions;
+import org.jumbune.common.beans.cluster.Agent;
+import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.Constants;
-import org.jumbune.common.utils.RemoteFileUtil;
+import org.jumbune.common.utils.FileUtil;
 import org.jumbune.common.utils.RemoteFileUtil.JumbuneUserInfo;
-import org.jumbune.common.job.Config;
-import org.jumbune.common.job.JobConfig;
+import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.profiling.beans.JMXDeamons;
 import org.jumbune.profiling.beans.NodeInfo;
 import org.jumbune.profiling.healthview.AdjacencyInfo;
@@ -65,14 +69,21 @@ import org.jumbune.profiling.healthview.ResultInfo;
 import org.jumbune.profiling.hprof.DFSEnum;
 import org.jumbune.profiling.hprof.NodePerformance;
 import org.jumbune.remoting.client.Remoter;
+import org.jumbune.remoting.client.RemoterFactory;
 import org.jumbune.remoting.common.CommandType;
+import org.jumbune.remoting.jmx.client.JumbuneJMXClient;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
+
+
 
 /**
  * This class is used to fetch the JMX stats based on the pre-defined intervals through MXBean.
@@ -94,7 +105,13 @@ public class ProfilerJMXDump {
 	
 	private static final String TAGSESSIONID = "tag.sessionId";
 
+	private static final String LOGOUT = "logout";
+
 	private static String weight = "weight";
+	
+
+	private Type mapType = new TypeToken<HashMap<String, String>>(){}.getType();
+
 
 	/**
 	 * Getting JMX parameters for different services are DATANODE,NAMENODE,TASKTRACKER. >>>>>>> Stashed changes
@@ -186,14 +203,30 @@ public class ProfilerJMXDump {
 	 * @throws IntrospectionException
 	 *             the introspection exception
 	 */
-	public Map<String, String> getAllJMXStats(JMXDeamons jmxDaemon, String host, String port) throws IOException,
+	public Map<String, String> getAllJMXStats(JMXDeamons jmxDaemon, String host, String port, boolean jmxPluginEnabled) throws IOException,
 			AttributeNotFoundException, InstanceNotFoundException, MBeanException, ReflectionException, IntrospectionException {
+	
+		if (jmxPluginEnabled) {
+			JumbuneJMXClient client = new JumbuneJMXClient();
+			try {
+				return client.fetchJmxStatsMap(host, jmxDaemon.toString());
+			} catch (ClassNotFoundException e) {
+				LOGGER.error("error fetching jmx stats through plugin - " + e.getMessage());
+			}
+		}
+		
 		List<String> jmxAttributeList = new ArrayList<String>();
 		JMXConnector connector = null;
 		MBeanServerConnection connection = null;
 		Map<String, String> serviceStats = null;
 		JMXServiceURL url = new JMXServiceURL(JMX_URL_PREFIX + host + ":" + port + JMX_URL_POSTFIX);
-		String serviceUrl = ProfilerConstants.HADOOP + ProfilerConstants.HADOOP_SERVICE_URL + jmxDaemon;
+		String serviceUrl = null;
+		if (jmxDaemon == JMXDeamons.CLDB) {
+			serviceUrl = ProfilerConstants.COM_MAPR_CLDB + ProfilerConstants.HADOOP_SERVICE_URL + jmxDaemon;
+		} else {
+			serviceUrl = ProfilerConstants.HADOOP + ProfilerConstants.HADOOP_SERVICE_URL + jmxDaemon;
+		}
+		
 		connector = JMXConnectorInstance.getJMXConnectorInstance(url);
 		connection = connector.getMBeanServerConnection();
 		Set<ObjectName> names = connection.queryNames(null, null);
@@ -203,6 +236,7 @@ public class ProfilerJMXDump {
 
 		for (ObjectName objName : names) {
 			objectName = objName.toString();
+			if(!objectName.contains("ContainerResource_container_")){
 			if (ProfilerConstants.JUMBUNE_CONTEXT_URL.equals(objectName) || (objectName.indexOf(serviceUrl) > -1)) {
 				if (serviceStats == null) {
 					serviceStats = new HashMap<String, String>();
@@ -223,17 +257,27 @@ public class ProfilerJMXDump {
 
 				}
 			}
-		}
+		}}
 		return serviceStats;
 
 	}
 
-	public Map<String, String> getOSJMXStats(JMXDeamons jmxDaemon, String host, String port) throws IOException,
+	public Map<String, Object> getOSJMXStats(JMXDeamons jmxDaemon, String host, String port, boolean jmxPluginEnabled) throws IOException,
 	AttributeNotFoundException, InstanceNotFoundException, MBeanException, ReflectionException, IntrospectionException {
+		
+		if (jmxPluginEnabled) {
+			JumbuneJMXClient client = new JumbuneJMXClient();
+			try{
+				return client.getOSStats(host, jmxDaemon.toString()+Constants.OS_IDENTIFIER);
+			}catch(ClassNotFoundException e){
+				LOGGER.error("error fetching jmx stats through plugin - " + e.getMessage());
+			}
+		}
+
 	List<String> jmxAttributeList = new ArrayList<String>();
 	JMXConnector connector = null;
 	MBeanServerConnection connection = null;
-	Map<String, String> serviceStats = null;
+	Map<String, Object> serviceStats = null;
 	JMXServiceURL url = new JMXServiceURL(JMX_URL_PREFIX + host + ":" + port + JMX_URL_POSTFIX);
 	String serviceUrl = ProfilerConstants.OS_URL;
 	connector = JMXConnectorInstance.getJMXConnectorInstance(url);
@@ -247,7 +291,7 @@ public class ProfilerJMXDump {
 		objectName = objName.toString();
 		if(objectName.indexOf(serviceUrl) > -1) {
 			if (serviceStats == null) {
-				serviceStats = new HashMap<String, String>();
+				serviceStats = new HashMap<String, Object>();
 			}
 			info = connection.getMBeanInfo(objName);
 			mbi = info.getAttributes();
@@ -257,7 +301,7 @@ public class ProfilerJMXDump {
 				jmxAttributeList.add(name);
 				Object attributeValue = connection.getAttribute(objName, name);
 				if (attributeValue != null) {
-					serviceStats.put(objName.getKeyProperty(NAME)+"."+name, String.valueOf(attributeValue));
+					serviceStats.put(name, String.valueOf(attributeValue));
 				}
 				if("".equals(attributeValue) || "[]".equals(attributeValue)){
 					serviceStats.put(getKeyName(objName, name), "-");
@@ -284,9 +328,22 @@ public class ProfilerJMXDump {
 	 * @throws ReflectionException
 	 * @throws IntrospectionException
 	 */
-	public List<String> getAllJMXAttribute(JMXDeamons jmxDaemon, String host, String port) throws IOException,
+	public List<String> getAllJMXAttribute(JMXDeamons jmxDaemon, String host, String port, boolean jmxPluginEnabled) throws IOException,
 			AttributeNotFoundException, InstanceNotFoundException, MBeanException, ReflectionException, IntrospectionException {
 		List<String> jmxAttributeList = new ArrayList<String>();
+		JumbuneJMXClient client = new JumbuneJMXClient();
+		if (jmxPluginEnabled) {
+			try {
+				Map<String, String> jmxStats = client.fetchJmxStatsMap(host, jmxDaemon.toString());
+				for(Entry<String, String> entry : jmxStats.entrySet()) {
+					jmxAttributeList.add(entry.getKey());
+				}
+			} catch (ClassNotFoundException e) {
+				LOGGER.error("error fetching jmx stats through plugin - " + e.getMessage());
+			}
+		  return jmxAttributeList;
+		}
+		
 		JMXConnector connector = null;
 		MBeanServerConnection connection = null;
 		String objectName;
@@ -300,6 +357,7 @@ public class ProfilerJMXDump {
 		Set<ObjectName> names = connection.queryNames(null, null);
 		for (ObjectName objName : names) {
 			objectName = objName.toString();
+			if(!objectName.contains("ContainerResource_container_")){
 			if (ProfilerConstants.JUMBUNE_CONTEXT_URL.equals(objectName) || (objectName.indexOf(serviceUrl) > -1)) {
 				info = connection.getMBeanInfo(objName);
 				mbi = info.getAttributes();
@@ -309,7 +367,7 @@ public class ProfilerJMXDump {
 					jmxAttributeList.add(getKeyName(objName, name));
 				}
 			}
-		}
+		}}
 		return suppressMultipleOccurrenceAttributes(jmxAttributeList);
 		
 
@@ -349,17 +407,13 @@ public class ProfilerJMXDump {
 	 * @throws JSchException
 	 *             the j sch exception
 	 */
-	public Session createSession(String user, String host, String rsaFilePath, String dsaFilePath) throws JSchException {
+	public Session createSession(String user, String host, String sshAuthKeyFilePath) throws JSchException {
 		JSch jsch = new JSch();
-		File rsaFile = new File(rsaFilePath);
-		File dsaFile = new File(dsaFilePath);
+		File sshAuthKeyFile = new File(sshAuthKeyFilePath);
 		Session session = null;
 
-		if (rsaFile.exists()) {
-			jsch.addIdentity(rsaFile.getAbsolutePath());
-		}
-		if (dsaFile.exists()) {
-			jsch.addIdentity(dsaFile.getAbsolutePath());
+		if (sshAuthKeyFile.exists()) {
+			jsch.addIdentity(sshAuthKeyFile.getAbsolutePath());
 		}
 		session = jsch.getSession(user, host, ProfilerConstants.TWENTY_TWO);
 		return session;
@@ -428,35 +482,49 @@ public class ProfilerJMXDump {
 	 *             Signals that an I/O exception has occurred.
 	 */
 	private Map<String, String> getRemoteVmStats(String response) throws JSchException, IOException {
-		String line;
-		String lineArray[];
-		BufferedReader br = null;
-		Map<String, String> vmStats = null;
-		try {
-			br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(response.getBytes())));
-			vmStats = new HashMap<String, String>();
-			while ((line = br.readLine()) != null) {
-				line = line.trim();
-				lineArray = line.split(" ");
-				int len = lineArray.length;
-				if (len < ProfilerConstants.THREE) {
-					vmStats.put(lineArray[1], lineArray[0]);
-				} else {
-					StringBuffer sb = new StringBuffer(lineArray[2]);
-					if (len > ProfilerConstants.THREE) {
-						for (int i = ProfilerConstants.THREE; i < len; i++) {
-							sb.append(lineArray[i]);
-						}
-					}
-					vmStats.put(sb.toString(), lineArray[0]);
-				}
+		String[] words, lines = response.split(System.lineSeparator());
+		Map<String, String> vmStats = new HashMap<String, String>();
+		int unit, startingIndex, i;
+		long finalValue;
+		StringBuffer sb;
+		
+		//Parsing each line
+		for (String line : lines) {
+			// extract each word
+			words = line.trim().split("\\s+");
+			// Checking if total words should be greater than 2 and first word should be a number
+			if ( words.length < 2 || ! StringUtils.isNumeric(words[0])) {
+				continue;
 			}
-		} finally {
-			if (br != null) {
-				br.close();
+			// Checking  if the 2nd word represents the unit (ie. k, K , m or M) of that number
+			unit = getValue(words[1]);
+			// Creating stat name, if 2nd word is unit then start appending all the words from 3rd word, otherwise from 2nd word
+			startingIndex = (unit == 1) ? 1 : 2;
+			sb = new StringBuffer();
+			for (i = startingIndex; i < words.length; i++) {
+				sb.append(WordUtils.capitalize(words[i]));
 			}
+			// Get final value by multiplying it with its unit
+			finalValue = Long.parseLong(words[0]) * unit;
+			// Putting stat name and its value into map
+			vmStats.put(sb.toString(), String.valueOf(finalValue));
 		}
 		return vmStats;
+	}
+	
+	private int getValue(String unit) {
+		switch (unit) {
+			case "K" :
+				return 1024;
+			case "M" :
+				return 1048576;
+			case "k" :
+				return 1000;
+			case "m" :
+				return 1000000;
+			default :
+				return 1;
+		}
 	}
 
 	/**
@@ -541,17 +609,14 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public Map<String, String> getMemoryUtilisation(Config config, String nodeIp) throws JSchException, IOException {
+	public Map<String, String> getMemoryUtilisation(Cluster cluster, String nodeIp) throws JSchException, IOException {
 		
-		JobConfig jobConfig = (JobConfig)config;
-		Slave slave = RemoteFileUtil.findSlave(nodeIp, jobConfig.getSlaves());
-		String user = slave.getUser();
-		String rsaFilePath = jobConfig.getMaster().getRsaFile();
-		String dsaFilePath = jobConfig.getMaster().getDsaFile();
+		String user = cluster.getWorkers().getUser();
+		String sshAuthKeyFilePath = cluster.getAgents().getSshAuthKeysFile();
 		Session session = null;
 		Map<String, String> vmStats = null;
 		try {
-			session = createSession(user, nodeIp, rsaFilePath, dsaFilePath);
+			session = createSession(user, nodeIp, sshAuthKeyFilePath);
 			UserInfo ui = new JumbuneUserInfo();
 			session.setUserInfo(ui);
 			session.connect();
@@ -567,7 +632,7 @@ public class ProfilerJMXDump {
 	 * 
 	 * @param config
 	 *            the config
-	 * @param nodeIp
+	 * @param nodeIP
 	 *            the node ip
 	 * @return the remote memory utilisation
 	 * @throws JSchException
@@ -575,29 +640,22 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public Map<String, String> getRemoteMemoryUtilisation(Config config, String nodeIp) throws JSchException, IOException {
-
-		Slave slave;
-		String[] hosts;
-		JobConfig jobConfig = (JobConfig)config;
-		if (nodeIp == null) {
-			slave = jobConfig.getFirstUserWorker();
-			hosts = slave.getHosts();
+	public Map<String, String> getRemoteMemoryUtilisation(Cluster cluster, String nodeIP) throws JSchException, IOException {
+		List<String> hosts;
+		if (nodeIP == null) {
+			hosts = cluster.getWorkers().getHosts();
 		} else {
-			slave = RemoteFileUtil.findSlave(nodeIp, jobConfig.getSlaves());
-			hosts = new String[1];
-			hosts[0] = nodeIp;
+			hosts = new ArrayList<String>();
+			hosts.add(nodeIP);
 		}
 		Map<String, String> vmStats = null;
 
-		Remoter remoter = null;
-		remoter = new Remoter(jobConfig.getMaster().getHost(), Integer.valueOf(jobConfig.getMaster().getAgentPort()),
-				jobConfig.getFormattedJumbuneJobName());
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
 
 		for (String host : hosts) {
 			
-			CommandWritableBuilder builder = new CommandWritableBuilder();
-			builder.addCommand(VMSTAT_COMMAND, false, null, CommandType.FS).populate(config, host);
+			CommandWritableBuilder builder = new CommandWritableBuilder(cluster, host);
+			builder.addCommand(VMSTAT_COMMAND, false, null, CommandType.FS);
 			String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 			if (response == null || "".equals(response.trim())){
 				LOGGER.error("Invalid response!!!");
@@ -610,6 +668,33 @@ public class ProfilerJMXDump {
 		return vmStats;
 	}
 
+	
+	public String getFreeMemoryResponse(Cluster cluster, String nodeIP)throws JSchException, IOException{
+		List<String> hosts;
+		if (nodeIP == null) {
+			hosts = cluster.getWorkers().getHosts();
+		} else {
+			hosts = new ArrayList<String>();
+			hosts.add(nodeIP);
+		}
+		String response = null;
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
+		for (String host : hosts) {
+			
+			CommandWritableBuilder builder = new CommandWritableBuilder(cluster, host);
+			builder.addCommand("free -m && exit", false, null, CommandType.FS);
+			response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+			if (response == null || "".equals(response.trim())){
+				LOGGER.error("Invalid response!!!");
+			}
+		}
+		remoter.close();
+		return response;
+	}
+	
+	
+	
+	
 	/**
 	 * 
 	 * 
@@ -625,22 +710,17 @@ public class ProfilerJMXDump {
 	 */
 	// TODO: Note used anywhere
 	@Deprecated
-	public List<ResultInfo> getPartitionEfficiency(Config config, String nodeIp) throws JSchException, IOException {
+	public List<ResultInfo> getPartitionEfficiency(Cluster cluster, String nodeIp) throws JSchException, IOException {
 
-		JobConfig jobConfig = (JobConfig)config;
-		Slave slave;
-		String[] hosts;
+		List<String> hosts;
 		if (nodeIp == null) {
-			slave = jobConfig.getFirstUserWorker();
-			hosts = slave.getHosts();
+			hosts = cluster.getWorkers().getHosts();
 		} else {
-			slave = RemoteFileUtil.findSlave(nodeIp, jobConfig.getSlaves());
-			hosts = new String[1];
-			hosts[0] = nodeIp;
+			hosts = new ArrayList<String>();
+			hosts.add(nodeIp);
 		}
-		String user = slave.getUser();
-		String rsaFilePath = jobConfig.getMaster().getRsaFile();
-		String dsaFilePath = jobConfig.getMaster().getDsaFile();
+		String user = cluster.getWorkers().getUser();
+		String sshAuthKeyFilePath = cluster.getAgents().getSshAuthKeysFile();
 		Session session = null;
 		UserInfo ui;
 		NodeDiskPartitionsInfo ndpi = null;
@@ -649,7 +729,7 @@ public class ProfilerJMXDump {
 
 		for (String host : hosts) {
 			try {
-				session = createSession(user, host, rsaFilePath, dsaFilePath);
+				session = createSession(user, host, sshAuthKeyFilePath);
 				ui = new JumbuneUserInfo();
 				session.setUserInfo(ui);
 				session.connect();
@@ -683,18 +763,7 @@ public class ProfilerJMXDump {
 	 */
 	@Deprecated
 	public List<ResultInfo> getRemotePartitionEfficiency(Config config, String nodeIp) throws JSchException, IOException {
-
-		Slave slave;
-		String[] hosts;
-		JobConfig jobConfig = (JobConfig)config;
-		if (nodeIp == null) {
-			slave = jobConfig.getFirstUserWorker();
-			hosts = slave.getHosts();
-		} else {
-			slave = RemoteFileUtil.findSlave(nodeIp, jobConfig.getSlaves());
-			hosts = new String[1];
-			hosts[0] = nodeIp;
-		}
+		
 		List<ResultInfo> nodeInfoList = new ArrayList<ResultInfo>();
 
 		return nodeInfoList;
@@ -721,19 +790,15 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public List<ResultInfo> getNodeThroughput(Config config,  String nodeIp) throws AttributeNotFoundException,
+	public List<ResultInfo> getNodeThroughput(Cluster cluster,  String nodeIp) throws AttributeNotFoundException,
 			InstanceNotFoundException, IntrospectionException, MBeanException, ReflectionException, IOException {
 
-		JobConfig jobConfig = (JobConfig)config;
-		Slave slave;
-		String[] hosts;
+		List<String> hosts;
 		if (nodeIp == null) {
-			slave = jobConfig.getFirstUserWorker();
-			hosts = slave.getHosts();
+			hosts = cluster.getWorkers().getHosts();
 		} else {
-			slave = RemoteFileUtil.findSlave(nodeIp, jobConfig.getSlaves());
-			hosts = new String[1];
-			hosts[0] = nodeIp;
+			hosts = new ArrayList<String>();
+			hosts.add(nodeIp);
 		}
 		List<ResultInfo> nodesThroughput = new ArrayList<ResultInfo>();
 		Map<String, String> allJmxStats;
@@ -741,10 +806,10 @@ public class ProfilerJMXDump {
 
 		for (String host : hosts) {
 			throughput = new NodeThroughputInfo();
-			allJmxStats = getAllJMXStats(JMXDeamons.DATA_NODE,  host, jobConfig.getProfilingParams().getDataNodeJmxPort());
+			allJmxStats = getAllJMXStats(JMXDeamons.DATA_NODE,  host, cluster.getWorkers().getDataNodeJmxPort(), cluster.isJmxPluginEnabled());
 			throughput.setReadThroughput(Integer.parseInt(allJmxStats.get(READ_BLOCK_OP_MAX_TIME)));
 			throughput.setWriteThroughput(Integer.parseInt(allJmxStats.get(WRITE_BLOCK_OP_MAX_TIME)));
-			allJmxStats = getAllJMXStats(JMXDeamons.TASK_TRACKER, host, jobConfig.getProfilingParams().getTaskTrackerJmxPort());
+			allJmxStats = getAllJMXStats(JMXDeamons.TASK_TRACKER, host, cluster.getWorkers().getTaskExecutorJmxPort(), cluster.isJmxPluginEnabled());
 			throughput.setProcessingThroughput(Integer.parseInt(allJmxStats.get(RPC_PROCESSING_MAX_TIME)));
 			nodesThroughput.add(throughput);
 		}
@@ -772,15 +837,14 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public double getLocalDataUsage(Config config, String nodeIp) throws AttributeNotFoundException, InstanceNotFoundException,
+	public double getLocalDataUsage(Cluster cluster, String nodeIp) throws AttributeNotFoundException, InstanceNotFoundException,
 			IntrospectionException, MBeanException, ReflectionException, IOException {
 
 		long localReads;
 		long remoteReads;
 		double localDataUsage;
 		Map<String, String> allJmxStats;
-		JobConfig jobConfig = (JobConfig)config;
-		allJmxStats = getAllJmxStats(nodeIp, jobConfig.getProfilingParams().getDataNodeJmxPort(), DATANODE);
+		allJmxStats = getAllJMXStats(JMXDeamons.DATA_NODE, nodeIp, cluster.getWorkers().getDataNodeJmxPort(), cluster.isJmxPluginEnabled());
 		localReads = Long.parseLong(allJmxStats.get(READS_FROM_LOCAL_CLIENT));
 		remoteReads = Long.parseLong(allJmxStats.get(READS_FROM_REMOTE_CLIENT));
 		if ((remoteReads == 0) && (localReads == 0)) {
@@ -815,33 +879,64 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public double getDataLoadonNodes(String nodeIp, NodeInfo node, Config config) throws AttributeNotFoundException,
-			InstanceNotFoundException, IntrospectionException, MBeanException, ReflectionException, IOException {
+	public double getDataLoadonNodes(String nodeIp, NodeInfo node, Cluster cluster, String[] dataLoadResult) throws Exception {
 		
-		JobConfig jobConfig = (JobConfig)config;
+		int numOfWorkerNodes = cluster.getWorkers().getHosts().size();
+		double idealDataLoadPercent = 100 / numOfWorkerNodes;
+		long totalDfsUsed = 0;
+		long localDfsUsed = 0;
+		double dataLoadPercent = 0;
+		Map<String, String> allStats;
+		
+		String hadoopDistribution = FileUtil.getClusterInfoDetail(Constants.HADOOP_DISTRIBUTION);
+		boolean isMapr = Constants.MAPR.equalsIgnoreCase(hadoopDistribution) || Constants.EMRMAPR.equalsIgnoreCase(hadoopDistribution);
+		String sLocalDfsUsed;
+		if (isMapr) {
+			allStats = parseMapRInformationFromNodes(cluster, nodeIp, dataLoadResult);
+			sLocalDfsUsed = allStats.get(nodeIp);
+		} else {
+			// Getting info through ip address
+			allStats = parseInformationFromNodes(nodeIp, dataLoadResult);
+			sLocalDfsUsed = allStats.get(nodeIp);
+			if (sLocalDfsUsed == null) {
+				// Getting info through hostname
+				String hostName = InetAddress.getByName(nodeIp).getHostName();
+				allStats = parseInformationFromNodes(hostName, dataLoadResult);
+				sLocalDfsUsed = allStats.get(hostName);
+				if (sLocalDfsUsed == null) {
+					throw new Exception(
+							"Node [" + nodeIp + "] details not found in dfsadmin command");
+				}
+			}
+		}
+		totalDfsUsed = Long.parseLong(allStats.get("TotalDfsUsed"));
+		localDfsUsed = Long.parseLong(sLocalDfsUsed);
+		dataLoadPercent = (localDfsUsed * ProfilerConstants.HUNDRED  * 1.0 ) / totalDfsUsed;
+		double differencePercent = dataLoadPercent - idealDataLoadPercent;
+		dataLoadPercent = ProfilerUtil.roundTwoDecimals(dataLoadPercent);
+		if (Math.abs(differencePercent) <= 10.0) {
+			node.setPerformance(NodePerformance.Good);
+		} else if (Math.abs(differencePercent) <= 20.0) {
+			node.setPerformance(NodePerformance.Warn);
+		} else {
+			node.setPerformance(NodePerformance.Bad);
+		}
+		return dataLoadPercent;		
+/*		
 		int length = 0;
 		long offsetData = 0;
 		long avgDfsUsedOnNode = 0;
 		long lowDataLevel = 0;
 		long highDataLevel = 0;
-		long totalDfsUsed = 0;
-		long localDfsUsed = 0;
-		double dataLoad = 0;
-		Slave slave = jobConfig.getFirstUserWorker();
-		String[] hosts = slave.getHosts();
-		Map<String, String> allStats;
-		String[] commandResult = ProfilerUtil.getDFSAdminReportCommandResult(config);
 
-		allStats = parseInformationFromNodes(nodeIp, commandResult);
-		totalDfsUsed = Long.parseLong(allStats.get("TotalDfsUsed"));
-		localDfsUsed = Long.parseLong(allStats.get(nodeIp));
-		length = hosts.length;
-		dataLoad = (localDfsUsed * ProfilerConstants.HUNDRED / totalDfsUsed);
+
+		length = cluster.getWorkers().getHosts().size();
 		avgDfsUsedOnNode = totalDfsUsed / length;
+		
 		offsetData = (long) (avgDfsUsedOnNode * (ProfilerConstants.DOT_TWO));
 		lowDataLevel = avgDfsUsedOnNode - offsetData;
 		highDataLevel = avgDfsUsedOnNode + offsetData;
-		dataLoad = ProfilerUtil.roundTwoDecimals(dataLoad);
+		dataLoadPercent = ProfilerUtil.roundTwoDecimals(dataLoadPercent);
 		if (lowDataLevel >= localDfsUsed) {
 			node.setPerformance(NodePerformance.Good);
 		} else if (highDataLevel <= localDfsUsed) {
@@ -849,7 +944,40 @@ public class ProfilerJMXDump {
 		} else {
 			node.setPerformance(NodePerformance.Average);
 		}
-		return dataLoad;
+*/
+	}
+	
+	
+
+	/**
+	* Parses the mapR information from nodes.
+	*
+	* @param cluster the cluster
+	* @param hostName the host name
+	* @param commandResult the command result
+	* @return the map
+	*/
+	@SuppressWarnings("unchecked")
+	private Map<String, String> parseMapRInformationFromNodes(Cluster cluster, String hostName, String[] commandResult) {
+		Map<String, String> dfsUsedMap = new HashMap<String, String>();
+		Map<String, String> processedMap = new HashMap<String, String>();
+		Gson gson=new GsonBuilder().create();
+		long totalDfsUsed=0;
+		for (String line : commandResult) {
+			if(line.contains("{")){
+				dfsUsedMap.putAll((Map<? extends String, ? extends String>) gson.fromJson(line, mapType));
+			}
+		}
+		/*Converting all the host names in the Map into IP Address*/
+
+		for (Entry<String, String> entry : dfsUsedMap.entrySet()) {
+			String value=entry.getValue();
+			totalDfsUsed=totalDfsUsed+Long.parseLong(value);
+			processedMap.put(RemotingUtil.getIPfromHostName(cluster, entry.getKey()), value);
+		}
+		processedMap.put("TotalDfsUsed", Long.toString(totalDfsUsed));
+		LOGGER.debug("Result of the command is "+processedMap);
+		return processedMap;
 	}
 
 	/**
@@ -860,31 +988,37 @@ public class ProfilerJMXDump {
 	 * @return the map
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	private Map<String, String> parseInformationFromNodes(String nodeIP, String[] commandResult) throws IOException {
+	private Map<String, String> parseInformationFromNodes(String nodeIP, String[] commandResult) throws Exception{
 		Map<String, String> dfsResp = new HashMap<String, String>();
 		DFSEnum dfsEnum = DFSEnum.DfsUsed;
+		String dfsUsedPercent = "DFS Used%";
 		String tempValue = null;
 		String[] tempArray = null;
-		boolean flag = false, internalFlag = false;
-
+		boolean flag = true, internalFlag = true, internalFlag2 = true;
+		long dfsUsed = 0;
 		for (String line : commandResult) {
 			tempArray = line.split("\\:");
 			if (tempArray.length > 1) {
 				tempValue = tempArray[0].trim().toString();
-				if (!flag) {
+				if (flag) {
 					if (dfsEnum.getName().equals(tempValue)) {
 						dfsResp.put("TotalDfsUsed", tempArray[1].split("\\(")[0].trim().toString());
-						flag = true;
+						flag = false;
 					}
-				} else if (!internalFlag) {
+				} else if (internalFlag) {
 					if (nodeIP.equals(tempArray[1].trim().toString())) {
-						internalFlag = true;
+						internalFlag = false;
 					}
-				} else {
-					if (dfsEnum.getName().equals(tempValue)) {
-						dfsResp.put(nodeIP, tempArray[1].split("\\(")[0].trim().toString());
+				} else if (internalFlag2 && dfsEnum.getName().equals(tempValue)) {
+					internalFlag2 = false;
+					dfsUsed = Long.parseLong(tempArray[1].split("\\(")[0].trim());
+					dfsResp.put(nodeIP, String.valueOf(dfsUsed));
+				} else if (dfsUsedPercent.equals(tempValue)) {
+						double percent = Double.parseDouble(tempArray[1].trim().replace("%", ""));
+						if (dfsUsed == 0 && percent == 100) {
+							throw new Exception("Node [" + nodeIP + "] down");
+						}
 						break;
-					}
 				}
 			}
 		}
@@ -916,25 +1050,22 @@ public class ProfilerJMXDump {
 	 * @throws JSchException
 	 *             the j sch exception
 	 */
-	public Map<String, String> getCPUStats(Config config, String nodeIp) throws AttributeNotFoundException, InstanceNotFoundException,
+	public Map<String, String> getCPUStats(Cluster cluster, String nodeIp) throws AttributeNotFoundException, InstanceNotFoundException,
 			IntrospectionException, MBeanException, ReflectionException, IOException, JSchException {
 
-		JobConfig jobConfig = (JobConfig)config;
-		Slave slave = RemoteFileUtil.findSlave(nodeIp, jobConfig.getSlaves());
-		String user = slave.getUser();
-		String rsaFilePath = jobConfig.getMaster().getRsaFile();
-		String dsaFilePath = jobConfig.getMaster().getDsaFile();
+		String user = cluster.getWorkers().getUser();
+		String sshAuthKeyFilePath = cluster.getAgents().getSshAuthKeysFile();
 		Session session = null;
 		Map<String, String> cpuStats = new HashMap<String, String>();
 		try {
-			session = createSession(user, nodeIp, rsaFilePath, dsaFilePath);
+			session = createSession(user, nodeIp, sshAuthKeyFilePath);
 			UserInfo ui = new JumbuneUserInfo();
 			session.setUserInfo(ui);
 			session.connect();
-			cpuStats.put("cpuUsage", String.valueOf(getCPUUsage(session)));
+			cpuStats.put("CpuUsage", String.valueOf(getCPUUsage(session)));
 			List<Integer> cpuDetails = getCPUDetails(session);
-			cpuStats.put("numberOfCores", String.valueOf(cpuDetails.get(1)));
-			cpuStats.put("threadsPerCore", String.valueOf(cpuDetails.get(0)));
+			cpuStats.put("NumberOfCores", String.valueOf(cpuDetails.get(1)));
+			cpuStats.put("ThreadsPerCore", String.valueOf(cpuDetails.get(0)));
 		} finally {
 			if (session != null) {
 				session.disconnect();
@@ -967,40 +1098,33 @@ public class ProfilerJMXDump {
 	 * @throws JSchException
 	 *             the j sch exception
 	 */
-	public Map<String, String> getRemoteCPUStats(Config config, String nodeIp) throws AttributeNotFoundException, InstanceNotFoundException,
+	public Map<String, String> getRemoteCPUStats(Cluster cluster, String nodeIp) throws AttributeNotFoundException, InstanceNotFoundException,
 			IntrospectionException, MBeanException, ReflectionException, IOException, JSchException {
-
-		Slave slave;
-		String[] hosts;
-		JobConfig jobConfig = (JobConfig) config;
-		
+		List<String> hosts;
 		if (nodeIp == null) {
-			slave = jobConfig.getFirstUserWorker();
-			hosts = slave.getHosts();
+			hosts = cluster.getWorkers().getHosts();
 		} else {
-			slave = RemoteFileUtil.findSlave(nodeIp, jobConfig.getSlaves());
-			hosts = new String[1];
-			hosts[0] = nodeIp;
-		}
-		
+			hosts = new ArrayList<String>();
+			hosts.add(nodeIp);
+		}	
 		
 		List<Integer> cpuDetails;
 		Map<String, String> cpuStats = null;
 		Remoter remoter = null;
 		String response = null;
-		remoter = new Remoter(jobConfig.getMaster().getHost(), Integer.valueOf(jobConfig.getMaster().getAgentPort()),
-				jobConfig.getFormattedJumbuneJobName());
+	    remoter = RemotingUtil.getRemoter(cluster);
 		
 		for (String host : hosts) {
 			
 			
-			CommandWritableBuilder builder = new CommandWritableBuilder();
-			builder.addCommand(CPU_USAGE_COMMAND, false, null, CommandType.FS).populate(config, host);
+			CommandWritableBuilder builder = new CommandWritableBuilder(cluster, host);
+			builder.addCommand(CPU_USAGE_COMMAND_WITHOUT_CARET, false, null, CommandType.FS);
 			response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
+			LOGGER.debug("CPU_USAGE_COMMAND response - " + response);
 			if (response == null || "".equals(response.trim())) {
 				LOGGER.warn("No response from remote machine on command " + CPU_USAGE_COMMAND);
-				CommandWritableBuilder builderWoCaret = new CommandWritableBuilder();
-				builderWoCaret.addCommand(CPU_USAGE_COMMAND_WITHOUT_CARET, false, null, CommandType.FS).populate(config, host);
+				CommandWritableBuilder builderWoCaret = new CommandWritableBuilder(cluster, host);
+				builderWoCaret.addCommand(CPU_USAGE_COMMAND, false, null, CommandType.FS);
 				
 				response = (String) remoter.fireCommandAndGetObjectResponse(builderWoCaret.getCommandWritable());
 
@@ -1008,10 +1132,10 @@ public class ProfilerJMXDump {
 			cpuStats = new HashMap<String, String>();
 			ResultParser resultParser = new ResultParser();
 			float usage = resultParser.parseRemoteCPUUSageResult(response);
-			cpuStats.put("cpuUsage", String.valueOf(usage));
-			cpuDetails = getRemoteCPUDetails(config, host);
-			cpuStats.put("numberOfCores", String.valueOf(cpuDetails.get(1)));
-			cpuStats.put("threadsPerCore", String.valueOf(cpuDetails.get(0)));
+			cpuStats.put("CpuUsage", String.valueOf(usage));
+			cpuDetails = getRemoteCPUDetails(cluster, host);
+			cpuStats.put("NumberOfCores", String.valueOf(cpuDetails.get(1)));
+			cpuStats.put("ThreadsPerCore", String.valueOf(cpuDetails.get(0)));
 		}
 		remoter.close();
 		return cpuStats;
@@ -1090,15 +1214,12 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	private List<Integer> getRemoteCPUDetails(Config config, String host)
+	private List<Integer> getRemoteCPUDetails(Cluster cluster, String host)
 			throws JSchException, IOException {
-
 		List<Integer> cpuStats = null;
-		JobConfig jobConfig = (JobConfig)config;
-		Remoter remoter = new Remoter(jobConfig.getMaster().getHost(), Integer.valueOf(jobConfig.getMaster().getAgentPort()),
-				jobConfig.getFormattedJumbuneJobName());
-		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand("cat /proc/cpuinfo", false, null, CommandType.FS).populate(config, host);
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
+		CommandWritableBuilder builder = new CommandWritableBuilder(cluster, host);
+		builder.addCommand(ProfilerConstants.CPU_DETAILS_COMMAND, false, null, CommandType.FS);
 		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		remoter.close();
 		ResultParser resultParser = new ResultParser();
@@ -1144,17 +1265,14 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public List<NetworkLatencyInfo> getNetworkLatencyForSelectedNodes(Config config, Map<String, String> selectedNodesWithPassword)
+	public List<NetworkLatencyInfo> getNetworkLatencyForSelectedNodes(Cluster cluster, Map<String, String> selectedNodesWithPassword)
 			throws JSchException, IOException {
 
 		// TODO: support for slaves with different user names
 		LOGGER.debug("inside getNetworkLatencyForSelectedNodes method");
-		JobConfig jobConfig = (JobConfig)config;
-		Slave slave = jobConfig.getSlaves().get(0);
-		String user = slave.getUser();
+		String user = cluster.getWorkers().getUser();
 		LOGGER.debug("user is:" + user);
-		String rsaFilePath = jobConfig.getMaster().getRsaFile();
-		String dsaFilePath = jobConfig.getMaster().getDsaFile();
+		String sshAuthKeyFilePath = cluster.getAgents().getSshAuthKeysFile();
 		Session session = null;
 		UserInfo ui;
 
@@ -1174,7 +1292,7 @@ public class ProfilerJMXDump {
 
 				node1 = nodeDetails.getKey();
 
-				session = createSession(user, node1, rsaFilePath, dsaFilePath);
+				session = createSession(user, node1, sshAuthKeyFilePath);
 				ui = new JumbuneUserInfo();
 				session.setUserInfo(ui);
 				java.util.Properties conf = new java.util.Properties();
@@ -1284,7 +1402,8 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public List<NetworkLatencyInfo> getRemoteNetworkLatencyForSelectedNodes(Config config, Map<String, String> selectedNodesWithPassword)
+	public List<NetworkLatencyInfo> getRemoteNetworkLatencyForSelectedNodes(
+			JumbuneRequest jumbuneRequest, Map<String, String> selectedNodesWithPassword)
 			throws JSchException, IOException {
 
 		// TODO: support for slaves with different user names
@@ -1305,7 +1424,7 @@ public class ProfilerJMXDump {
 				node1 = nodeDetails.getKey();
 				int innerCounter = 0;
 				for (String node2 : selectedNodesWithPassword.keySet()) {
-					calNWLatencyForGreaterInnerCounter(config, networkLatencyList,
+					calNWLatencyForGreaterInnerCounter(jumbuneRequest, networkLatencyList,
 							networkLatencyInfo1, node1, outerCounter,
 							innerCounter, node2);
 					innerCounter++;
@@ -1337,7 +1456,7 @@ public class ProfilerJMXDump {
 	 * @throws JSchException the j sch exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	private void calNWLatencyForGreaterInnerCounter(Config config,
+	private void calNWLatencyForGreaterInnerCounter(JumbuneRequest jumbuneRequest,
 			List<NetworkLatencyInfo> networkLatencyList,
 			NetworkLatencyInfo networkLatencyInfo1, String node1,
 			int outerCounter, int innerCounter, String node2)
@@ -1357,7 +1476,7 @@ public class ProfilerJMXDump {
 			} else {
 				networkLatencyInfo2 = networkLatencyList.get(innerCounter);
 			}
-			latency = getRemoteNetworkLatency(config, node1,  node2);
+			latency = getRemoteNetworkLatency(jumbuneRequest, node1,  node2);
 			networkLatencyInfo1.setId(node1);
 			networkLatencyInfo1.setName(node1);
 			adjacencies1 = networkLatencyInfo1.getAdjacencies();
@@ -1443,17 +1562,16 @@ public class ProfilerJMXDump {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	private float getRemoteNetworkLatency(Config config,  String host, String node2)
+	private float getRemoteNetworkLatency(JumbuneRequest jumbuneRequest,  String host, String node2)
 			throws JSchException, IOException {
-
+		Cluster cluster = jumbuneRequest.getCluster();
 		float latency;
-		JobConfig jobConfig = (JobConfig)config;
-		Remoter remoter = new Remoter(jobConfig.getMaster().getHost(), Integer.valueOf(jobConfig.getMaster().getAgentPort()),
-				jobConfig.getFormattedJumbuneJobName());
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
+				
 		StringBuilder sb = new StringBuilder();
 				sb.append(NETWORK_LATENCY_COMMAND).append(" ").append(node2);
-		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(sb.toString(), false, null, CommandType.FS).populate(config, host);
+		CommandWritableBuilder builder = new CommandWritableBuilder(cluster, host);
+		builder.addCommand(sb.toString(), false, null, CommandType.FS);
 		String response = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		remoter.close();
 		latency = 0.0f;

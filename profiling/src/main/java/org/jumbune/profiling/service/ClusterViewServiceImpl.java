@@ -4,13 +4,13 @@ import static org.jumbune.profiling.utils.ProfilerConstants.DATANODE;
 import static org.jumbune.profiling.utils.ProfilerConstants.DOT_SEPARATOR;
 import static org.jumbune.profiling.utils.ProfilerConstants.JOBTRACKER;
 import static org.jumbune.profiling.utils.ProfilerConstants.NAMENODE;
-import static org.jumbune.profiling.utils.ProfilerConstants.RESOURCEMANAGER;
 import static org.jumbune.profiling.utils.ProfilerConstants.NODEMANAGER;
+import static org.jumbune.profiling.utils.ProfilerConstants.RESOURCEMANAGER;
 import static org.jumbune.profiling.utils.ProfilerConstants.SUBCAT_CPU;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -23,21 +23,20 @@ import javax.management.remote.JMXServiceURL;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.beans.Slave;
-import org.jumbune.common.beans.UnavailableHost;
+import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.beans.cluster.ClusterDefinition;
+import org.jumbune.common.beans.cluster.Workers;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.FileUtil;
 import org.jumbune.common.utils.RemoteFileUtil;
-import org.jumbune.common.job.Config;
-import org.jumbune.common.job.JobConfig;
-import org.jumbune.common.yarn.beans.YarnMaster;
-import org.jumbune.common.yarn.beans.YarnSlaveParam;
+import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.profiling.beans.CategoryInfo;
 import org.jumbune.profiling.beans.ClusterInfo;
 import org.jumbune.profiling.beans.ClusterWideInfo;
 import org.jumbune.profiling.beans.ClusterWideResponse;
 import org.jumbune.profiling.beans.DataCenterInfo;
 import org.jumbune.profiling.beans.HadoopJMXResponse;
+import org.jumbune.profiling.beans.JMXDeamons;
 import org.jumbune.profiling.beans.NodeConfig;
 import org.jumbune.profiling.beans.NodeInfo;
 import org.jumbune.profiling.beans.NodeStats;
@@ -50,18 +49,18 @@ import org.jumbune.profiling.beans.SystemStats;
 import org.jumbune.profiling.beans.SystemStatsResponse;
 import org.jumbune.profiling.beans.WorkerJMXInfo;
 import org.jumbune.profiling.hprof.NodePerformance;
-import org.jumbune.profiling.utils.DataDistributionStats;
 import org.jumbune.profiling.utils.HTFProfilingException;
-import org.jumbune.profiling.utils.JMXConnectorCache;
 import org.jumbune.profiling.utils.JMXConnectorInstance;
 import org.jumbune.profiling.utils.ProfilerConstants;
 import org.jumbune.profiling.utils.ProfilerConstants.HADOOP_JMX_CAT;
 import org.jumbune.profiling.utils.ProfilerConstants.Operator;
+import org.jumbune.profiling.utils.ProfilerJMXDump;
+import org.jumbune.profiling.utils.ProfilerStats;
+import org.jumbune.profiling.utils.ProfilerUtil;
+import org.jumbune.profiling.utils.ViewHelper;
 import org.jumbune.profiling.yarn.beans.YarnClusterWideInfo;
 import org.jumbune.profiling.yarn.beans.YarnWorkerJMXInfo;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
-import org.jumbune.profiling.utils.ProfilerStats;
-import org.jumbune.profiling.utils.ViewHelper;
 
 ;
 
@@ -69,181 +68,333 @@ import org.jumbune.profiling.utils.ViewHelper;
  * Service to prepare various cluster view.
  */
 public class ClusterViewServiceImpl implements ProfilingViewService {
-	private Config config;
-	private boolean isYarnEnable = false;	
-	private static final Logger LOGGER = LogManager
-			.getLogger(ClusterViewServiceImpl.class);
-
+	private static final String DC = "DC/";
+	private static final String NODE_UNAVAILABLE = "Node Unavailable";
+	private static final String PERCENT = " %";
+	private static final String CPU = "CPU : ";
+	private static final String MEMORY = "Memory : ";
+	private static final String GB = " GB";
+	private static final String CPU_USAGE = "CpuUsage";
+	private static final String USED_MEMORY = "UsedMemory";
+	private static final String JOB_TRACKER = "jobTracker";
+	private static final String RESOURCE_MANAGER = "resourceManager";
+	private Cluster cluster;
+	private boolean isYarnEnable = false;
+	private static final Logger LOGGER = LogManager.getLogger(ClusterViewServiceImpl.class);
+	/** The Constant DEFAULT_RACK_SUFFIX. */
+	private static final String DEFAULT_RACK_SUFFIX = "/default-rack/";
 	/**
 	 * Instantiates a new cluster view service impl.
 	 * 
 	 * @param yamlLoader
 	 *            the yaml loader
 	 */
-    public ClusterViewServiceImpl(Config config) {
-      this.config = config;
-	  JobConfig jobConfig = (JobConfig)config;
-	  String hadoopType = FileUtil.getClusterInfoDetail(Constants.HADOOP_TYPE);
-      isYarnEnable = hadoopType.equalsIgnoreCase(Constants.YARN);
-      
-    }
+	public ClusterViewServiceImpl(Cluster cluster) {
+		this.cluster = cluster;
+		String hadoopType = FileUtil.getClusterInfoDetail(Constants.HADOOP_TYPE);
+		isYarnEnable = hadoopType.equalsIgnoreCase(Constants.YARN);
+
+	}
 
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * org.jumbune.profiling.service.ClusterViewService#getClusterDCView
+	 * @see org.jumbune.profiling.service.ClusterViewService#getClusterDCView
 	 * (YamlConfig config)
 	 */
 	@Override
-	public ClusterInfo getMainView(List<PerformanceStats> genSettings,
-			String viewName) throws JumbuneRuntimeException, HTFProfilingException {
-		JobConfig jobConfig = (JobConfig)config;
-	    ViewHelper viewHelper = new ViewHelper();
+	public ClusterInfo getMainView(List<PerformanceStats> genSettings, String viewName)
+			throws JumbuneRuntimeException, HTFProfilingException {
+
+		return getClusterInfo(genSettings, viewName);
+	}
+
+	private ClusterInfo getClusterInfo(List<PerformanceStats> genSettings, String viewName)
+			throws HTFProfilingException {
+
+		ClusterDefinition clusterDefinition = (ClusterDefinition) cluster;
+		ViewHelper viewHelper = new ViewHelper();
 		ClusterInfo clusterInfo = new ClusterInfo();
-		DataDistributionStats dataDistributionStats = null;
 		String dcId;
 		String rackId;
 		String clusterId = null;
+		boolean isUnavailable;
+		NodeInfo node;
 		HashMap<String, DataCenterInfo> dataCenters = new HashMap<String, DataCenterInfo>();
 		HashMap<String, RackInfo> racks = new HashMap<String, RackInfo>();
-		ProfilerStats pfStats = new ProfilerStats(jobConfig);
-		YarnSlaveParam slaveParam = jobConfig.getSlaveParam();
-		YarnMaster master = jobConfig.getMaster();
-		String masterIp = master.getHost();
-		String dataNodePort = slaveParam.getDataNodeJmxPort();
-		String workerDaemonPort = isYarnEnable? slaveParam.getNodeManagerJmxPort():slaveParam.getTaskTrackerJmxPort();
-		String nameNodePort = master.getNameNodeJmxPort();
-		String clusterwideDaemonPort = isYarnEnable? master.getResourceManagerJmxPort():master.getJobTrackerJmxPort();
-		Set<UnavailableHost> unavailableHosts = new HashSet<UnavailableHost>();
-		JMXConnector dataNodeInstance = null;
-		JMXConnector nameNodeInstance = null;
-		JMXConnector clusterwideDaemonInstance = null;
-		JMXConnector workerDaemonInstance = null;
-		UnavailableHost unavailableHost;
-		if (viewName.equals("DATA_DISTRIBUTION_VIEW")) {
-			dataDistributionStats = new DataDistributionStats(jobConfig);
-			try {
-				clusterInfo.setDistributedDataInfo(dataDistributionStats.calculateBlockReport());
-			} catch (Exception e) {
-				throw JumbuneRuntimeException.throwUnresponsiveIOException(ClusterViewServiceImpl.class.getName(),"getMainView","",Constants.ONE_THREE_THREE);
+		ProfilerStats profilerStats = new ProfilerStats(cluster);
+		Workers workers = cluster.getWorkers();
+		String nameNodeHost = cluster.getNameNode();
+		List<String> unavailableHosts = new ArrayList<String>();
+		String dataNodeInstance = null;
+		String nameNodeInstance = null;
+		String clusterwideDaemonInstance = null;
+		String workerDaemonInstance = null;
+		String hadoopDistribution = FileUtil.getClusterInfoDetail(Constants.HADOOP_DISTRIBUTION);//mapr code changes
+		boolean isMapr = Constants.MAPR.equalsIgnoreCase(hadoopDistribution);//mapr code changes
+
+		//begin mapr code changes
+		if(!isMapr){
+			nameNodeInstance = RemotingUtil.getDaemonProcessId(cluster, nameNodeHost, JMXDeamons.NAME_NODE.toString()); 
+		}
+		//end mapr code changes
+		
+		clusterwideDaemonInstance = RemotingUtil.getDaemonProcessId(cluster,
+				cluster.getTaskManagers().getActive(), JMXDeamons.RESOURCE_MANAGER.toString());
+
+		if (!StringUtils.isBlank(nameNodeHost)) {
+			// master.setIsNodeAvailable(true);
+			//begin mapr code changes
+			if ((isMapr && clusterwideDaemonInstance.isEmpty()) || (nameNodeInstance.isEmpty() && clusterwideDaemonInstance.isEmpty()) ) {
+					unavailableHosts.add(nameNodeHost);
 			}
+			//end mapr code changes
 		}
-		try {
-			nameNodeInstance = getJMXConnectorInstance(masterIp, nameNodePort);
-		} catch (IOException e) {
-		}
-		try {
-			clusterwideDaemonInstance = getJMXConnectorInstance(masterIp,
-					clusterwideDaemonPort);
-		} catch (IOException ioExceptione) {
-
-		}
-		if (!StringUtils.isBlank(masterIp)) {
-			master.setIsNodeAvailable(true);
-			if (nameNodeInstance == null && clusterwideDaemonInstance == null) {
-				master.setIsNodeAvailable(false);
-				unavailableHost = new UnavailableHost();
-				unavailableHost.setNodeIp(masterIp);
-				unavailableHost.setMessage("Hadoop Daemons are down");
-				unavailableHosts.add(unavailableHost);
-			}
-		}
-	
-		for (Slave slave : jobConfig.getSlaves()) {
-			for (String slaveIp : slave.getHosts()) {
-				boolean isUnavailable = false;
-				if (!StringUtils.isBlank(slaveIp)) {
-					try {
-						dataNodeInstance = getJMXConnectorInstance(slaveIp,
-								dataNodePort);
-					} catch (IOException e) {
-					}
-					try {
-						workerDaemonInstance = getJMXConnectorInstance(slaveIp,
-								workerDaemonPort);
-					} catch (IOException e) {
-					}
-					if (masterIp != slaveIp) {
-						if (dataNodeInstance == null
-								&& workerDaemonInstance == null) {
-							unavailableHost = new UnavailableHost();
-							unavailableHost.setNodeIp(slaveIp);
-							unavailableHost
-									.setMessage("Hadoop Daemons are down");
-							unavailableHosts.add(unavailableHost);
-							isUnavailable = true ;
-						}
-					} else if (masterIp.equalsIgnoreCase(slaveIp)) {
-						isUnavailable = checkHadoopDeamonsAlive(
-								unavailableHosts, dataNodeInstance,
-								nameNodeInstance, clusterwideDaemonInstance,
-								workerDaemonInstance, slaveIp, isUnavailable);
-					}
-
-					if (!isUnavailable) {
-						NodeInfo node = new NodeInfo();
-						node.setNodeIp(slaveIp);
-						pfStats.setNodeIp(slaveIp);
-						rackId = RemoteFileUtil.getRackId(slaveIp);
-						dcId = RemoteFileUtil.getDataCentreId(slaveIp);
-						node.setPerformance(getNodePerformance(pfStats,
-								genSettings));
-						if (viewName.equals("DATALOAD_VIEW")) {
-							node.setDataLoadStats(pfStats
-									.getDataLoadPartitionStats(slaveIp, node,
-											jobConfig));
-						}
-						if (viewName.equals("DATA_DISTRIBUTION_VIEW")) {
-							if (dataDistributionStats.getNodeWeight()
-									.containsKey(node.getNodeIp())) {
-								node.setPerformance(NodePerformance.Good);
-							} else {
-								node.setPerformance(NodePerformance.Unavailable);
-							}
-						}
-
-						clusterId = "DC/" + dcId;
-						viewHelper.bindNodeToRack(node, rackId, racks);
-						viewHelper.bindRackToDC(racks.get(rackId), dcId,
-								clusterId, dataCenters);
-					}
+		for (String workerHost : workers.getHosts()) {
+			if (!StringUtils.isBlank(workerHost)) {
+				isUnavailable = false;
+				//begin mapr code changes
+				if(!isMapr){
+					dataNodeInstance = RemotingUtil.getDaemonProcessId(cluster, workerHost, JMXDeamons.DATA_NODE.toString());	
 				}
-				UnavailableHost[] unAvailableHostsArray = new UnavailableHost[unavailableHosts.size()];
-				unavailableHosts.toArray(unAvailableHostsArray);
-				slave.setUnavailableHosts(Arrays.asList(unAvailableHostsArray));
+				//end mapr code changes
+				workerDaemonInstance = RemotingUtil.getDaemonProcessId(cluster, workerHost,
+						JMXDeamons.NODE_MANAGER.toString());
+
+				if (nameNodeHost != workerHost) {
+					//begin mapr code changes
+				
+					if ((isMapr && workerDaemonInstance.isEmpty()) || (dataNodeInstance.isEmpty() && workerDaemonInstance.isEmpty())) { 
+						unavailableHosts.add(workerHost);
+						isUnavailable = true ;
+					}
+					
+					//end mapr code changes
+				} else if (nameNodeHost.equalsIgnoreCase(workerHost)) {
+					isUnavailable = checkHadoopDeamonsAlive(unavailableHosts, dataNodeInstance,
+							nameNodeInstance, clusterwideDaemonInstance, workerDaemonInstance,
+							workerHost, isUnavailable);
+				}
+				if (!isUnavailable) {
+					node = new NodeInfo();
+					node.setNodeIp(workerHost);
+					profilerStats.setNodeIp(workerHost);
+					rackId = RemoteFileUtil.getRackId(workerHost);
+					dcId = RemoteFileUtil.getDataCentreId(workerHost);
+					if (viewName.equals("PRE_CLUSTER_VIEW")) {
+						node.setPerformance(NodePerformance.Average);
+					} else {
+						try {
+							node.setPerformance(getNodePerformance(profilerStats, genSettings));
+						} catch (Exception e) {
+							LOGGER.error(e.getMessage());
+							node.setPerformance(NodePerformance.Unavailable);
+						}
+					}
+					clusterId = DC + dcId;
+					viewHelper.bindNodeToRack(node, rackId, racks);
+					viewHelper.bindRackToDC(racks.get(rackId), dcId, clusterId, dataCenters);
+				}
+				clusterDefinition.setUnavailableHosts(unavailableHosts);
 			}
-			List<UnavailableHost> unavailableHostsAll = slave
-					.getUnavailableHosts();
-			unavailableHosts.addAll(unavailableHostsAll);
-			clusterId = processUnavailableHosts(viewHelper, clusterId,
-					dataCenters, racks, unavailableHosts);	
-			
 		}
+
+		// Case for data center heat map, for nodes other than worker nodes
+		if (viewName.contains("CLUSTER_VIEW")) {
+			// For namenodes
+			List<String> nameNodesHost = new ArrayList<String>();
+			nameNodesHost.addAll(cluster.getNameNodes().getHosts());
+			nameNodesHost.removeAll(cluster.getWorkers().getHosts());
+			String nodeInstance = null;
+			for (String host : nameNodesHost) {
+				nodeInstance = null;
+				if (!StringUtils.isBlank(host)) {
+					nodeInstance = RemotingUtil.getDaemonProcessId(cluster, host,
+							JMXDeamons.NAME_NODE.toString());
+				}
+				if (!nodeInstance.isEmpty()) {
+					node = new NodeInfo();
+					node.setNodeIp(host);
+					profilerStats.setNodeIp(host);
+					rackId = RemoteFileUtil.getRackId(host);
+					dcId = RemoteFileUtil.getDataCentreId(host);
+					if (viewName.equals("PRE_CLUSTER_VIEW")) {
+						node.setPerformance(NodePerformance.Average);
+					} else {
+						try {
+							node.setPerformance(getNodePerformance(profilerStats, genSettings));
+						} catch (Exception e) {
+							LOGGER.error(e.getMessage());
+							node.setPerformance(NodePerformance.Unavailable);
+						}
+					}
+					clusterId = DC + dcId;
+					viewHelper.bindNodeToRack(node, rackId, racks);
+					viewHelper.bindRackToDC(racks.get(rackId), dcId, clusterId, dataCenters);
+				}
+			}
+
+			// For task manager nodes
+			List<String> taskManagerHosts = new ArrayList<String>();
+			taskManagerHosts.addAll(cluster.getTaskManagers().getHosts());
+			taskManagerHosts.removeAll(cluster.getNameNodes().getHosts());
+			taskManagerHosts.removeAll(cluster.getWorkers().getHosts());
+
+			for (String host : taskManagerHosts) {
+				nodeInstance = null;
+				if (!StringUtils.isBlank(host)) {
+					nodeInstance = RemotingUtil.getDaemonProcessId(cluster, host,
+							JMXDeamons.RESOURCE_MANAGER.toString());
+				}
+				if (!nodeInstance.isEmpty()) {
+					node = new NodeInfo();
+					node.setNodeIp(host);
+					profilerStats.setNodeIp(host);
+					rackId = RemoteFileUtil.getRackId(host);
+					dcId = RemoteFileUtil.getDataCentreId(host);
+					if (viewName.equals("PRE_CLUSTER_VIEW")) {
+						node.setPerformance(NodePerformance.Average);
+					} else {
+						node.setPerformance(
+								getNodePerformanceForTaskManager(profilerStats, genSettings));
+					}
+					clusterId = DC + dcId;
+					viewHelper.bindNodeToRack(node, rackId, racks);
+					viewHelper.bindRackToDC(racks.get(rackId), dcId, clusterId, dataCenters);
+				}
+			}
+		}
+
+		List<String> unavailableHostsAll = clusterDefinition.getUnavailableHosts();
+		unavailableHosts.addAll(unavailableHostsAll);
+		clusterId = processUnavailableHosts(viewHelper, clusterId, dataCenters, racks,
+				unavailableHosts);
+
 		clusterInfo.setClusterId(clusterId);
 		clusterInfo.setDataCenters(dataCenters.values());
+
+		return clusterInfo;
+
+	}
+	
+	public ClusterInfo getDataCenterDetails(List<PerformanceStats> genSettings) {
 		
+		NodeInfo node = null;
+		NodePerformance nodePerformance = null;
+		ViewHelper viewHelper = new ViewHelper();
+		ClusterInfo clusterInfo = new ClusterInfo();
+		Set<String> clusterNodes = getClusterNodes();
+		ProfilerStats profilerStats = new ProfilerStats(cluster);
+		HashMap<String, RackInfo> racks = new HashMap<String, RackInfo>();
+		HashMap<String, DataCenterInfo> dataCenters = new HashMap<String, DataCenterInfo>();
+		String rackId = null, dcId = null,  clusterId = null, statValue = null, statName = null;
+		
+		for (String nodeIP : clusterNodes) {
+			try {
+				nodeIP = convertHostNameToIP(nodeIP);
+				profilerStats.setNodeIp(nodeIP);
+				
+				rackId = RemoteFileUtil.getRackId(nodeIP);
+				dcId = RemoteFileUtil.getDataCentreId(nodeIP);
+				node = new NodeInfo();
+				node.setNodeIp(nodeIP);
+				
+				for (PerformanceStats settings : genSettings) {
+					statName = settings.getStat();
+					statValue = calculateStatValue(profilerStats, statName,
+							settings.getCategory());
+					if (statValue == null || statValue.trim().isEmpty()) {
+						throw new Exception("Invalid stat value !");
+					}
+					if (comparePerformance(statValue, settings.getGood())) {
+						nodePerformance = NodePerformance.Good;
+						continue;
+					} else if (comparePerformance(statValue, settings.getBad())) {
+						nodePerformance = NodePerformance.Bad;
+						break;
+					} else {
+						nodePerformance = NodePerformance.Average;
+						break;
+					}
+				}
+				node.setPerformance(nodePerformance);
+				if (nodePerformance != NodePerformance.Good) {
+					if (statName.equals(USED_MEMORY)) {
+						node.setMessage(MEMORY + (Long.parseLong(statValue) / 1073741824) + GB);
+					} else if (statName.equals(CPU_USAGE)) {
+						node.setMessage(CPU + statValue + PERCENT);
+					} 
+					
+				}
+				
+				
+			//	return nodePerformance;
+			} catch (Exception e) {
+				node.setPerformance(NodePerformance.Unavailable);
+				node.setMessage(NODE_UNAVAILABLE);
+			}
+			clusterId = DC + dcId;
+			viewHelper.bindNodeToRack(node, rackId, racks);
+			viewHelper.bindRackToDC(racks.get(rackId), dcId, clusterId, dataCenters);
+		}
+		clusterId = processUnavailableHosts(viewHelper, clusterId, dataCenters, racks,
+				new ArrayList<String>());
+		clusterInfo.setClusterId(clusterId);
+		clusterInfo.setDataCenters(dataCenters.values());
 		return clusterInfo;
 	}
-
-	private boolean checkHadoopDeamonsAlive(
-			Set<UnavailableHost> unavailableHosts,
-			JMXConnector dataNodeInstance, JMXConnector nameNodeInstance,
-			JMXConnector jobTrackerInstance, JMXConnector taskTrackerInstance,
-			String slaveIp, boolean isUnavailable) {
-		UnavailableHost unavailableHost;
-		boolean isUnavailableVal = isUnavailable;
-		if (nameNodeInstance == null
-				&& jobTrackerInstance == null
-				&& dataNodeInstance == null
-				&& taskTrackerInstance == null) {
-			unavailableHost = new UnavailableHost();
-			unavailableHost.setNodeIp(slaveIp);
-			unavailableHost
-					.setMessage("Hadoop Daemons are down");
-			unavailableHosts.add(unavailableHost);
-			isUnavailableVal = true ;
+	
+	public Set<String> getClusterNodes() {
+		Set<String> clusterNodeSet = new HashSet<String>();
+		clusterNodeSet.addAll(cluster.getWorkers().getHosts());
+		clusterNodeSet.addAll(cluster.getNameNodes().getHosts());
+		clusterNodeSet.addAll(cluster.getTaskManagers().getHosts());
+		return clusterNodeSet;
+	}
+	
+	
+	public List<NodeInfo> getDataLoadAndDistributionDetails() {
+		String[] dataLoadResult = ProfilerUtil.getDFSAdminReportCommandResult(cluster);
+		List<String> workersHosts = cluster.getWorkers().getHosts();
+		List<NodeInfo> list = new ArrayList<NodeInfo>(workersHosts.size());
+		
+		NodeInfo node;
+		ProfilerJMXDump profilerJMXDump = new ProfilerJMXDump();
+		double statValue;
+		for (String workerHost : workersHosts) {
+			node = new NodeInfo();
+			node.setNodeIp(workerHost);
+			try {
+				statValue = profilerJMXDump.getDataLoadonNodes(workerHost, node, cluster, dataLoadResult);
+				node.setDataLoadStats(String.valueOf(statValue));
+			} catch (Exception e) {
+				node.setDataLoadStats("0");
+				node.setPerformance(NodePerformance.Unavailable);
+			}
+			list.add(node);
 		}
+		return list;
+	}
+
+	private boolean checkHadoopDeamonsAlive(List<String> unavailableHosts, String dataNodeInstance,
+			String nameNodeInstance, String clusterwideDaemonInstance, String workerDaemonInstance,
+			String workerHost, boolean isUnavailable) {
+		boolean isUnavailableVal = isUnavailable;
+		//begin mapr code changes
+		String hadoopDistribution = FileUtil.getClusterInfoDetail(Constants.HADOOP_DISTRIBUTION);
+		if(Constants.MAPR.equalsIgnoreCase(hadoopDistribution)){
+			if (clusterwideDaemonInstance.isEmpty() && workerDaemonInstance.isEmpty()) {
+				unavailableHosts.add(workerHost);
+				isUnavailableVal = true;
+			}
+		} else {
+			if (nameNodeInstance.isEmpty() && clusterwideDaemonInstance.isEmpty()
+					&& dataNodeInstance.isEmpty() && workerDaemonInstance.isEmpty()) {
+				unavailableHosts.add(workerHost);
+				isUnavailableVal = true;
+			}
+		}
+		//end mapr code changes
 		return isUnavailableVal;
 	}
 
@@ -262,47 +413,40 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 *            the unavailable hosts
 	 * @return the string
 	 */
-	private String processUnavailableHosts(ViewHelper viewHelper,
-			String clusterId, Map<String, DataCenterInfo> dataCenters,
-			Map<String, RackInfo> racks, Set<UnavailableHost> unavailableHosts) {
+	private String processUnavailableHosts(ViewHelper viewHelper, String clusterId,
+			Map<String, DataCenterInfo> dataCenters, Map<String, RackInfo> racks,
+			List<String> unavailableHosts) {
 		String dcId;
 		String rackId;
-		String slaveIp;
 		String clusterIdTmp = clusterId;
 		if (unavailableHosts != null) {
-			for (UnavailableHost unavailableHost : unavailableHosts) {
-				slaveIp = unavailableHost.getNodeIp();
-				if (!StringUtils.isBlank(slaveIp)) {
+			for (String unavailableHost : unavailableHosts) {
+				if (!StringUtils.isBlank(unavailableHost)) {
 					NodeInfo node = new NodeInfo();
-					node.setNodeIp(slaveIp);
+					node.setNodeIp(unavailableHost);
 					node.setPerformance(NodePerformance.Unavailable);
-					node.setMessage(unavailableHost.getMessage());
 
-					rackId = RemoteFileUtil.getRackId(slaveIp);
-					dcId = RemoteFileUtil.getDataCentreId(slaveIp);
+					rackId = RemoteFileUtil.getRackId(unavailableHost);
+					dcId = RemoteFileUtil.getDataCentreId(unavailableHost);
 
-					clusterIdTmp = "DC/" + dcId;
+					clusterIdTmp = DC + dcId;
 					viewHelper.bindNodeToRack(node, rackId, racks);
-					viewHelper.bindRackToDC(racks.get(rackId), dcId,
-							clusterIdTmp, dataCenters);
+					viewHelper.bindRackToDC(racks.get(rackId), dcId, clusterIdTmp, dataCenters);
 				}
 			}
 		}
 		return clusterIdTmp;
 	}
 
-	private JMXConnector getJMXConnectorInstance(String masterNode,
-			String dataNodePort) throws IOException {
-		
-		JMXServiceURL url = new JMXServiceURL(ProfilerConstants.JMX_URL_PREFIX
-				+ masterNode + ":" + dataNodePort
-				+ ProfilerConstants.JMX_URL_POSTFIX);
+	private JMXConnector getJMXConnectorInstance(String masterNode, String dataNodePort)
+			throws IOException {
+
+		JMXServiceURL url = new JMXServiceURL(ProfilerConstants.JMX_URL_PREFIX + masterNode + ":"
+				+ dataNodePort + ProfilerConstants.JMX_URL_POSTFIX);
 		return JMXConnectorInstance.getJMXConnectorInstance(url);
-		
 
 	}
-	
-	
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -311,23 +455,22 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 * (java.lang.String)
 	 */
 	@Override
-	public NodeStats getNodeView(NodeConfig nodeConfig,
-			List<PerformanceStats> clrSettings) throws HTFProfilingException {
-		JobConfig jobConfig = (JobConfig)config;
+	public NodeStats getNodeView(NodeConfig nodeConfig, List<PerformanceStats> clrSettings)
+			throws HTFProfilingException {
 		String nodeIp = nodeConfig.getNodeIp();
-		ProfilerStats pfStats = new ProfilerStats(jobConfig, nodeIp);
+		ProfilerStats profilerStats = new ProfilerStats(cluster, nodeIp);
 		CategoryInfo favourities = nodeConfig.getFavourities();
 		CategoryInfo trends = nodeConfig.getTrends();
 		NodeStats nodeStats = null;
 
 		if (favourities != null) {
-			StatsResult fav = calculateStats(favourities, pfStats);
+			StatsResult fav = calculateStats(favourities, profilerStats);
 
 			nodeStats = new NodeStats(nodeIp);
 			nodeStats.setFavourities(fav);
 		}
 		if (trends != null) {
-			StatsResult trnds = calculateStats(trends, pfStats);
+			StatsResult trnds = calculateStats(trends, profilerStats);
 			if (nodeStats == null) {
 				nodeStats = new NodeStats(nodeIp);
 			}
@@ -337,8 +480,7 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 			Map<String, NodePerformance> favColorPerf = new HashMap<String, NodePerformance>();
 			for (PerformanceStats settings : clrSettings) {
 
-				nodeStats.setColorConfig(getFavPerformance(pfStats, settings,
-						favColorPerf));
+				nodeStats.setColorConfig(getFavPerformance(profilerStats, settings, favColorPerf));
 			}
 		}
 		return nodeStats;
@@ -349,20 +491,20 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 * given node
 	 * 
 	 * @param info
-	 * @param pfStats
+	 * @param profilerStats
 	 * @return
 	 * @throws HTFProfilingException
 	 */
-	private StatsResult calculateStats(CategoryInfo info, ProfilerStats pfStats)
+	private StatsResult calculateStats(CategoryInfo info, ProfilerStats profilerStats)
 			throws HTFProfilingException {
 		StatsResult stats = new StatsResult();
 
 		// check and calculate stats for various categories
-		calculateClusterWideStats(info.getClusterWide(), pfStats, stats);
+		calculateClusterWideStats(info.getClusterWide(), profilerStats, stats);
 
-		calculateHadoopJMXStats(info.getWorkerJMXInfo(), pfStats, stats);
+		calculateHadoopJMXStats(info.getWorkerJMXInfo(), profilerStats, stats);
 
-		calculateSystemStats(info.getSystemStats(), pfStats, stats);
+		calculateSystemStats(info.getSystemStats(), profilerStats, stats);
 
 		return stats;
 	}
@@ -371,39 +513,35 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 * Checks and calculates Worker Hadoop JMX stats
 	 * 
 	 * @param workerJmxStats
-	 * @param pfStats
+	 * @param profilerStats
 	 * @param stats
 	 * @throws HTFProfilingException
 	 */
-	private void calculateHadoopJMXStats(WorkerJMXInfo workerJmxInfo,
-			ProfilerStats pfStats, StatsResult stats)
-			throws HTFProfilingException {
+	private void calculateHadoopJMXStats(WorkerJMXInfo workerJmxInfo, ProfilerStats profilerStats,
+			StatsResult stats) throws HTFProfilingException {
 		if (workerJmxInfo != null) {
 			HadoopJMXResponse hadoopJMXResp = new HadoopJMXResponse();
-			if(isYarnEnable){
-			  calculateNodeManagerStats(workerJmxInfo, pfStats,hadoopJMXResp);
-			}else{
-			  calculateTaskTrackerStats(workerJmxInfo.getTaskTracker(), pfStats,
-                  hadoopJMXResp);
+			if (isYarnEnable) {
+				calculateNodeManagerStats(workerJmxInfo, profilerStats, hadoopJMXResp);
+			} else {
+				calculateTaskTrackerStats(workerJmxInfo.getTaskTracker(), profilerStats,
+						hadoopJMXResp);
 			}
-			calculateDataNodeStats(workerJmxInfo.getDataNode(), pfStats,
-                hadoopJMXResp);
+			calculateDataNodeStats(workerJmxInfo.getDataNode(), profilerStats, hadoopJMXResp);
 			stats.setHadoopJMX(hadoopJMXResp);
-			LOGGER.debug("Worker hadoop JMX stats response [" + hadoopJMXResp
-					+ "]");
+			LOGGER.debug("Worker hadoop JMX stats response [" + hadoopJMXResp + "]");
 		}
 
 	}
-	  
-	private void calculateNodeManagerStats(WorkerJMXInfo workerJmxInfo,
-			ProfilerStats pfStats, HadoopJMXResponse hadoopJMXResp)
-			throws HTFProfilingException {
+
+	private void calculateNodeManagerStats(WorkerJMXInfo workerJmxInfo, ProfilerStats profilerStats,
+			HadoopJMXResponse hadoopJMXResp) throws HTFProfilingException {
 		YarnWorkerJMXInfo yarnWorker = (YarnWorkerJMXInfo) workerJmxInfo;
-		List<String> statList = yarnWorker.getNodeManager();
-		if (statList != null) {
+		Set<String> statList = yarnWorker.getNodeManager();
+		if (statList != null && profilerStats.isNodeManagerStatsAvailable()) {
 			Map<String, String> dfsResp = new HashMap<String, String>();
 			for (String dfsStat : statList) {
-				dfsResp.put(dfsStat, pfStats.getNmStats(dfsStat));
+				dfsResp.put(dfsStat, profilerStats.getNmStats(dfsStat));
 			}
 			hadoopJMXResp.setNodeManager(dfsResp);
 		}
@@ -414,19 +552,21 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 * Checks and calculates System stats
 	 * 
 	 * @param hadoopJMX
-	 * @param pfStats
+	 * @param profilerStats
 	 * @param stats
 	 * @throws HTFProfilingException
 	 */
-	private void calculateSystemStats(SystemStats systemStats,
-			ProfilerStats pfStats, StatsResult stats)
-			throws HTFProfilingException {
+	private void calculateSystemStats(SystemStats systemStats, ProfilerStats profilerStats,
+			StatsResult stats) throws HTFProfilingException {
 		if (systemStats != null) {
 			SystemStatsResponse systemStatsResp = new SystemStatsResponse();
-			calculateCPUStats(systemStats.getCpu(), pfStats, systemStatsResp);
-			calculateMemoryStats(systemStats.getMemory(), pfStats,
-					systemStatsResp);
-			calculateOsStats(systemStats.getOs(), pfStats, systemStatsResp);
+			if (profilerStats.isCpuStatsAvailable()) {
+				calculateCPUStats(systemStats.getCpu(), profilerStats, systemStatsResp);
+			}
+			if (profilerStats.isMemoryStatsAvailable()) {
+				calculateMemoryStats(systemStats.getMemory(), profilerStats, systemStatsResp);
+				calculateOsStats(systemStats.getOs(), profilerStats, systemStatsResp);
+			}
 			stats.setSystemStats(systemStatsResp);
 			LOGGER.debug("System level stats response [" + systemStats + "]");
 		}
@@ -436,17 +576,16 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 * Checks and calculates profiling stats for DataNode category
 	 * 
 	 * @param statList
-	 * @param pfStats
+	 * @param profilerStats
 	 * @param hadoopJMXResp
 	 * @throws HTFProfilingException
 	 */
-	private void calculateDataNodeStats(List<String> statList,
-			ProfilerStats pfStats, HadoopJMXResponse hadoopJMXResp)
-			throws HTFProfilingException {
-		if (statList != null) {
+	private void calculateDataNodeStats(List<String> statList, ProfilerStats profilerStats,
+			HadoopJMXResponse hadoopJMXResp) throws HTFProfilingException {
+		if (statList != null && profilerStats.isDatanodeStatsAvailable()) {
 			Map<String, String> dfsResp = new HashMap<String, String>();
 			for (String dfsStat : statList) {
-				dfsResp.put(dfsStat, pfStats.getDnStats(dfsStat));
+				dfsResp.put(dfsStat, profilerStats.getDnStats(dfsStat));
 			}
 			hadoopJMXResp.setDataNode(dfsResp);
 		}
@@ -456,17 +595,16 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 * Checks and calculates profiling stats for TaskTracker category
 	 * 
 	 * @param statList
-	 * @param pfStats
+	 * @param profilerStats
 	 * @param hadoopJMXResp
 	 * @throws HTFProfilingException
 	 */
-	private void calculateTaskTrackerStats(List<String> statList,
-			ProfilerStats pfStats, HadoopJMXResponse hadoopJMXResp)
-			throws HTFProfilingException {
-		if (statList != null) {
+	private void calculateTaskTrackerStats(Set<String> statList, ProfilerStats profilerStats,
+			HadoopJMXResponse hadoopJMXResp) throws HTFProfilingException {
+		if (statList != null && profilerStats.isTaskTrackerStatsAvailable()) {
 			Map<String, String> dfsResp = new HashMap<String, String>();
 			for (String dfsStat : statList) {
-				dfsResp.put(dfsStat, pfStats.getTtStats(dfsStat));
+				dfsResp.put(dfsStat, profilerStats.getTtStats(dfsStat));
 			}
 			hadoopJMXResp.setTaskTracker(dfsResp);
 		}
@@ -476,17 +614,16 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 * Checks and calculates profiling stats for CPU category
 	 * 
 	 * @param statList
-	 * @param pfStats
+	 * @param profilerStats
 	 * @param stats
 	 * @throws HTFProfilingException
 	 */
-	private void calculateCPUStats(List<String> statList,
-			ProfilerStats pfStats, SystemStatsResponse systemStatsResp)
-			throws HTFProfilingException {
+	private void calculateCPUStats(List<String> statList, ProfilerStats profilerStats,
+			SystemStatsResponse systemStatsResp) throws HTFProfilingException {
 		if (statList != null) {
 			Map<String, String> cpuResp = new HashMap<String, String>();
 			for (String cpuStat : statList) {
-				cpuResp.put(cpuStat, pfStats.getCpuStats(cpuStat));
+				cpuResp.put(cpuStat, profilerStats.getCpuStats(cpuStat));
 			}
 			systemStatsResp.setCpu(cpuResp);
 		}
@@ -496,17 +633,16 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 * Checks and calculates profiling stats for Memory category
 	 * 
 	 * @param statList
-	 * @param pfStats
+	 * @param profilerStats
 	 * @param stats
 	 * @throws HTFProfilingException
 	 */
-	private void calculateMemoryStats(List<String> statList,
-			ProfilerStats pfStats, SystemStatsResponse systemStatsResp)
-			throws HTFProfilingException {
+	private void calculateMemoryStats(List<String> statList, ProfilerStats profilerStats,
+			SystemStatsResponse systemStatsResp) throws HTFProfilingException {
 		if (statList != null) {
 			Map<String, String> memResp = new HashMap<String, String>();
 			for (String memStat : statList) {
-				memResp.put(memStat, pfStats.getMemoryStats(memStat));
+				memResp.put(memStat, profilerStats.getMemoryStats(memStat));
 			}
 			systemStatsResp.setMemory(memResp);
 		}
@@ -516,16 +652,16 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 * Checks and calculates profiling stats for OS category
 	 * 
 	 * @param statList
-	 * @param pfStats
+	 * @param profilerStats
 	 * @param stats
 	 * @throws HTFProfilingException
 	 */
-	private void calculateOsStats(List<String> statList, ProfilerStats pfStats,
+	private void calculateOsStats(List<String> statList, ProfilerStats profilerStats,
 			SystemStatsResponse systemStatsResp) throws HTFProfilingException {
 		if (statList != null) {
 			Map<String, String> osResp = new HashMap<String, String>();
 			for (String osStat : statList) {
-				osResp.put(osStat, pfStats.getMemoryStats(osStat));
+				osResp.put(osStat, profilerStats.getMemoryStats(osStat));
 			}
 			systemStatsResp.setOs(osResp);
 		}
@@ -535,33 +671,32 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 * Checks and calculates profiling stats for Cluster Wide category
 	 * 
 	 * @param clusterWide
-	 * @param pfStats
+	 * @param profilerStats
 	 * @param stats
 	 * @throws HTFProfilingException
 	 */
-	private void calculateClusterWideStats(ClusterWideInfo clusterWide,
-			ProfilerStats pfStats, StatsResult stats)
-			throws HTFProfilingException {
+	private void calculateClusterWideStats(ClusterWideInfo clusterWide, ProfilerStats profilerStats,
+			StatsResult stats) throws HTFProfilingException {
 
 		if (clusterWide != null) {
 			ClusterWideResponse clusterWideResp = new ClusterWideResponse();
-			if(isYarnEnable){
-			  calculateYarnClusterWideInfo(pfStats, clusterWide, clusterWideResp); 
-			}else {
-			  if (clusterWide.getJobTracker() != null) {
-				  Map<String, String> jobTrackerResp = new HashMap<String, String>();
-				  for (String jobTrackerStat : clusterWide.getJobTracker()) {
-					  jobTrackerResp.put(jobTrackerStat,
-							pfStats.getJtStats(jobTrackerStat));
-				  }
-				  clusterWideResp.setJobTracker(jobTrackerResp);
-			  }
+			if (isYarnEnable) {
+				calculateYarnClusterWideInfo(profilerStats, clusterWide, clusterWideResp);
+			} else {
+				if (clusterWide.getJobTracker() != null
+						&& profilerStats.isJobTrackerStatsAvailable()) {
+					Map<String, String> jobTrackerResp = new HashMap<String, String>();
+					for (String jobTrackerStat : clusterWide.getJobTracker()) {
+						jobTrackerResp.put(jobTrackerStat,
+								profilerStats.getJtStats(jobTrackerStat));
+					}
+					clusterWideResp.setJobTracker(jobTrackerResp);
+				}
 			}
 			if (clusterWide.getNameNode() != null) {
 				Map<String, String> nameNodeResp = new HashMap<String, String>();
 				for (String nameNodeStat : clusterWide.getNameNode()) {
-					nameNodeResp.put(nameNodeStat,
-							pfStats.getNnStats(nameNodeStat));
+					nameNodeResp.put(nameNodeStat, profilerStats.getNnStats(nameNodeStat));
 				}
 				clusterWideResp.setNameNode(nameNodeResp);
 			}
@@ -569,48 +704,45 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 			LOGGER.debug("Calculated cluster wide stats");
 		}
 	}
-	
-	private void calculateYarnClusterWideInfo(ProfilerStats pfStats,
+
+	private void calculateYarnClusterWideInfo(ProfilerStats profilerStats,
 			ClusterWideInfo clusterWide, ClusterWideResponse clusterWideResp)
-			throws HTFProfilingException {
+					throws HTFProfilingException {
 		YarnClusterWideInfo yarnCluster = (YarnClusterWideInfo) clusterWide;
-		if (yarnCluster.getResourceManager() != null) {
+		if (yarnCluster.getResourceManager() != null
+				&& profilerStats.isResourceManagerStatsAvailable()) {
 			Map<String, String> resourceManagerResp = new HashMap<String, String>();
 			for (String resourceMangerStat : yarnCluster.getResourceManager()) {
 				resourceManagerResp.put(resourceMangerStat,
-						pfStats.getRmStats(resourceMangerStat));
+						profilerStats.getRmStats(resourceMangerStat));
 			}
 			clusterWideResp.setResourceManager(resourceManagerResp);
 		}
-	}	
+	}
 
 	/**
 	 * Gets the node performance on the basis of criteria defined by the user
 	 * 
-	 * @param pfStats
+	 * @param profilerStats
 	 * @param genSettings
 	 * @return
 	 * @throws HTFProfilingException
 	 */
-	private NodePerformance getNodePerformance(ProfilerStats pfStats,
+	private NodePerformance getNodePerformance(ProfilerStats profilerStats,
 			List<PerformanceStats> genSettings) throws HTFProfilingException {
 
-		String catName;
-		String stat;
 		String statValue = null;
 		List<NodePerformance> performances = new ArrayList<NodePerformance>();
 		for (PerformanceStats settings : genSettings) {
-			stat = settings.getStat();
-			catName = settings.getCategory();
-			statValue = calculateStatValue(pfStats, stat, catName);
-			if (statValue == null || "".equals(statValue.trim())) {
-				throw new HTFProfilingException("invalid statvalue !!!!!!!!1");
+			
+			statValue = calculateStatValue(profilerStats, settings.getStat(),
+					settings.getCategory());
+			if (statValue == null || statValue.trim().isEmpty()) {
+				throw new HTFProfilingException("Invalid stat value !");
 			}
-			PerformanceEval good = settings.getGood();
-			PerformanceEval bad = settings.getBad();
-			if (comparePerformance(statValue, good)) {
+			if (comparePerformance(statValue, settings.getGood())) {
 				performances.add(NodePerformance.Good);
-			} else if (comparePerformance(statValue, bad)) {
+			} else if (comparePerformance(statValue, settings.getBad())) {
 				performances.add(NodePerformance.Bad);
 			} else {
 				performances.add(NodePerformance.Average);
@@ -620,10 +752,39 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 		return calculatePerformance(performances);
 	}
 
+	private NodePerformance getNodePerformanceForTaskManager(ProfilerStats profilerStats,
+			List<PerformanceStats> genSettings) throws HTFProfilingException {
+
+		String catName;
+		String statValue = null;
+		List<NodePerformance> performances = new ArrayList<NodePerformance>();
+		for (PerformanceStats settings : genSettings) {
+
+			catName = settings.getCategory();
+
+			if (catName.contains(RESOURCE_MANAGER) || catName.contains(JOB_TRACKER)) {
+
+				statValue = calculateStatValue(profilerStats, settings.getStat(), catName);
+
+				if (statValue == null || statValue.trim().isEmpty()) {
+					throw new HTFProfilingException("Invalid stat value !");
+				}
+				if (comparePerformance(statValue, settings.getGood())) {
+					performances.add(NodePerformance.Good);
+				} else if (comparePerformance(statValue, settings.getBad())) {
+					performances.add(NodePerformance.Bad);
+				} else {
+					performances.add(NodePerformance.Average);
+				}
+			}
+		}
+		return calculatePerformance(performances);
+	}
+
 	/**
 	 * This api gets the favourite performance.
 	 * 
-	 * @param pfStats
+	 * @param profilerStats
 	 *            the pf stats
 	 * @param settings
 	 *            the settings
@@ -633,17 +794,16 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 * @throws HTFProfilingException
 	 *             the hTF profiling exception
 	 */
-	private Map<String, NodePerformance> getFavPerformance(
-			ProfilerStats pfStats, PerformanceStats settings,
-			Map<String, NodePerformance> favColorPerf)
-			throws HTFProfilingException {
+	private Map<String, NodePerformance> getFavPerformance(ProfilerStats profilerStats,
+			PerformanceStats settings, Map<String, NodePerformance> favColorPerf)
+					throws HTFProfilingException {
 
 		String statValue = null;
 		PerformanceEval good = settings.getGood();
 		PerformanceEval bad = settings.getBad();
 		String catName = settings.getCategory();
 		String stat = settings.getStat();
-		statValue = calculateStatValue(pfStats, stat, catName);
+		statValue = calculateStatValue(profilerStats, stat, catName);
 		if (comparePerformance(statValue, good)) {
 			favColorPerf.put(stat, NodePerformance.Good);
 		} else if (comparePerformance(statValue, bad)) {
@@ -657,7 +817,7 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	/**
 	 * This method calculates the stats value.
 	 * 
-	 * @param pfStats
+	 * @param profilerStats
 	 *            the pf stats
 	 * @param stat
 	 *            the stat
@@ -667,9 +827,8 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 * @throws HTFProfilingException
 	 *             the hTF profiling exception
 	 */
-	private String calculateStatValue(ProfilerStats pfStats, String stat,
-			String catName) throws HTFProfilingException {
-
+	private String calculateStatValue(ProfilerStats profilerStats, String stat, String catName)
+			throws HTFProfilingException {
 		String statValue = null;
 		String[] catArray = null;
 		String subCat = null;
@@ -686,15 +845,15 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 		if (category == null) {
 			throw new HTFProfilingException("Invalid Category");
 		}
-		statValue = processStatValueByCategory(pfStats, stat, catName,
-				statValue, subCat, category);
+		statValue = processStatValueByCategory(profilerStats, stat, catName, statValue, subCat,
+				category);
 		return statValue;
 	}
 
 	/**
 	 * This api processes the stats value by category.
 	 * 
-	 * @param pfStats
+	 * @param profilerStats
 	 *            the pf stats
 	 * @param stat
 	 *            the stat
@@ -710,43 +869,43 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 * @throws HTFProfilingException
 	 *             the hTF profiling exception
 	 */
-	private String processStatValueByCategory(ProfilerStats pfStats,
-			String stat, String catName, String statValue, String subCat,
-			StatCategory category) throws HTFProfilingException {
+	private String processStatValueByCategory(ProfilerStats profilerStats, String stat,
+			String catName, String statValue, String subCat, StatCategory category)
+					throws HTFProfilingException {
 
 		String statValueTmp = statValue;
 		switch (category) {
 		case jumbuneInferences:
-			statValueTmp = pfStats.getJumbuneContextStats(stat);
+			statValueTmp = profilerStats.getJumbuneContextStats(stat);
 			break;
 		case clusterWide:
 			if (NAMENODE.equalsIgnoreCase(subCat)) {
-				statValueTmp = pfStats.getNnStats(stat);
+				statValueTmp = profilerStats.getNnStats(stat);
 			} else if (JOBTRACKER.equalsIgnoreCase(subCat)) {
-				statValueTmp = pfStats.getJtStats(stat);
-			} else if(RESOURCEMANAGER.equalsIgnoreCase(subCat)){
-				statValueTmp = pfStats.getRmStats(stat);
-			} else{
-			  statValueTmp = pfStats.getClusterWideStats(stat);
- 			}
+				statValueTmp = profilerStats.getJtStats(stat);
+			} else if (RESOURCEMANAGER.equalsIgnoreCase(subCat)) {
+				statValueTmp = profilerStats.getRmStats(stat);
+			} else {
+				statValueTmp = profilerStats.getClusterWideStats(stat);
+			}
 			break;
 		case hadoopJMX:
-			statValueTmp = getHadoopJMXStats(stat, catName, pfStats);
+			statValueTmp = getHadoopJMXStats(stat, catName, profilerStats);
 			break;
 		case systemStats:
 			if (SUBCAT_CPU.equals(subCat)) {
-				statValueTmp = pfStats.getCpuStats(stat);
+				statValueTmp = profilerStats.getCpuStats(stat);
 			} else {
-				statValueTmp = pfStats.getMemoryStats(stat);
+				statValueTmp = profilerStats.getMemoryStats(stat);
 			}
 			break;
 		case workerJMXInfo:
 			if (ProfilerConstants.TASKTRACKER.equalsIgnoreCase(subCat)) {
-				statValueTmp = pfStats.getTtStats(stat);
+				statValueTmp = profilerStats.getTtStats(stat);
 			} else if (NODEMANAGER.equalsIgnoreCase(subCat)) {
-              statValueTmp = pfStats.getNmStats(stat);
+				statValueTmp = profilerStats.getNmStats(stat);
 			} else {
-				statValueTmp = pfStats.getDnStats(stat);
+				statValueTmp = profilerStats.getDnStats(stat);
 			}
 		}
 		return statValueTmp;
@@ -757,35 +916,35 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 * 
 	 * @param stat
 	 * @param subCat
-	 * @param pfStats
+	 * @param profilerStats
 	 * @return
 	 * @throws HTFProfilingException
 	 */
-	public String getHadoopJMXStats(String stat, String catName,
-			ProfilerStats pfStats) throws HTFProfilingException {
+	public String getHadoopJMXStats(String stat, String catName, ProfilerStats profilerStats)
+			throws HTFProfilingException {
 		String[] catArray = catName.split("\\.");
 		String subCat = catArray[1];
 		String statValue = null;
 		HADOOP_JMX_CAT hadoopJmxCat = HADOOP_JMX_CAT.valueOf(subCat);
 		switch (hadoopJmxCat) {
 		case dfs:
-			statValue = pfStats.getDnStats(stat);
+			statValue = profilerStats.getDnStats(stat);
 			break;
 		case rpc:
 			if (DATANODE.equalsIgnoreCase(catArray[2])) {
-				statValue = pfStats.getDnStats(stat);
+				statValue = profilerStats.getDnStats(stat);
 			} else {
-				statValue = pfStats.getTtStats(stat);
+				statValue = profilerStats.getTtStats(stat);
 			}
 			break;
 		case io:
-			statValue = pfStats.getDnStats(stat);
+			statValue = profilerStats.getDnStats(stat);
 			break;
 		case dataNodeMisc:
-			statValue = pfStats.getDnStats(stat);
+			statValue = profilerStats.getDnStats(stat);
 			break;
 		case ttMisc:
-			statValue = pfStats.getTtStats(stat);
+			statValue = profilerStats.getTtStats(stat);
 			break;
 		}
 		return statValue;
@@ -800,8 +959,7 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 * @param perfStat
 	 * @return
 	 */
-	private boolean comparePerformance(String statValue,
-			PerformanceEval perfStat) {
+	private boolean comparePerformance(String statValue, PerformanceEval perfStat) {
 		double perfval = Double.parseDouble(perfStat.getVal());
 		double statVal = Double.parseDouble(statValue);
 		Operator operator = Operator.valueOf(perfStat.getOperator());
@@ -834,8 +992,7 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 		return eval;
 	}
 
-	private boolean processSmallStatVal(double perfval, double statVal,
-			boolean eval) {
+	private boolean processSmallStatVal(double perfval, double statVal, boolean eval) {
 		boolean evalTmp = eval;
 		if (statVal < perfval) {
 			evalTmp = true;
@@ -849,8 +1006,7 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 	 * @param performances
 	 * @return
 	 */
-	private NodePerformance calculatePerformance(
-			List<NodePerformance> performances) {
+	private NodePerformance calculatePerformance(List<NodePerformance> performances) {
 		int perfSum = 0;
 		boolean isBad = false;
 		NodePerformance nodePerformance;
@@ -870,5 +1026,22 @@ public class ClusterViewServiceImpl implements ProfilingViewService {
 		}
 		return nodePerformance;
 	}
+
+	/**
+	 * Replaces defualt rack suffix and converts host name to node IP.
+	 *
+	 * @param hostName
+	 *            the host name
+	 * @return the string
+	 * @throws UnknownHostException
+	 *             the unknown host exception
+	 */
+	private String convertHostNameToIP(final String hostName)
+			throws UnknownHostException {
+		String hostNameTemp = hostName;
+		hostNameTemp = hostNameTemp.replace(DEFAULT_RACK_SUFFIX, "");
+		return RemotingUtil.getIPfromHostName(cluster, hostNameTemp);
+	}
+
 
 }

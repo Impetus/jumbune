@@ -9,13 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-
-import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
+import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.profiling.beans.BlockInfo;
 import org.jumbune.profiling.beans.DistributedDataInfo;
 import org.jumbune.profiling.beans.NodeBlockStats;
-
 
 import com.google.gson.Gson;
 
@@ -26,7 +24,7 @@ import com.google.gson.Gson;
  */
 public class DataDistributionStats {
 	private static final String COPY = "copy";
-	private Config config;
+	private JumbuneRequest jumbuneRequest;
 	private int noOfBlocks = 0;
 	private int underReplicatedBlocks = 0;
 	private int corruptedBlocks = 0;
@@ -40,18 +38,18 @@ public class DataDistributionStats {
 	 *
 	 * @param yamlLoader the yaml loader
 	 */
-	public DataDistributionStats(Config config) {
-		this.config =  config;
+	public DataDistributionStats(JumbuneRequest jumbuneRequest) {
+		this.jumbuneRequest =  jumbuneRequest;
 	}
 
 	public DistributedDataInfo calculateBlockReport() {
-		JobConfig jobConfig = (JobConfig)config;
+		JobConfig jobConfig = jumbuneRequest.getJobConfig();
 	
 		DistributedDataInfo distributedDataInfo = new DistributedDataInfo();
 		String pathOfFileInHadoop = null;
 		pathOfFileInHadoop = jobConfig.getDistributedHDFSPath();
-		String commadResult = ProfilerUtil.getBlockStatusCommandResult(jobConfig,
-				pathOfFileInHadoop);
+		String commadResult = ProfilerUtil.getBlockStatusCommandResult(
+				jumbuneRequest.getCluster(), pathOfFileInHadoop);
 		populateBlockInformationReport(jobConfig, commadResult, distributedDataInfo);
 		return distributedDataInfo;
 	}
@@ -117,10 +115,8 @@ public class DataDistributionStats {
 					blockCopyInfo = new HashMap<String, Integer>();
 					fileWeight = new HashMap<String, String>();
 					blockCopyInfo.put(COPY + nodeIndex, 1);
-					fileWeight
-							.put(COPY + nodeIndex, String
-									.valueOf(parseInformation
-											.getLengthOfBlock()));
+					fileWeight.put(COPY + nodeIndex, 
+							String.valueOf(parseInformation.getLengthOfBlock()));
 					nodeBlockStats.setTotalBlocksOfFile(1);
 					nodeBlockStats.setFileWeight(fileWeight);
 					nodeBlockStats.setBlockCopyInfo(blockCopyInfo);

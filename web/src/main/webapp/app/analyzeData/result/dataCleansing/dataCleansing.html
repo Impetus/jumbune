@@ -1,0 +1,65 @@
+<!-- header -->
+<div jumbune-header=""></div>
+<div class="resultWrapper" id="dataValidationWrap">
+    <div class="widgetRow" ng-init="init()">
+        <div class="widgetWrapper" id="dataValidationWidget">
+            <h2 class="my-tool-tip"><span class="tracking"><i class="fa fa-home" style="font-size:30px;cursor:pointer;" ng-click="clickedHomeIcon()" data-toggle="tooltip" title="Back to dashboard"></i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Job&nbsp;&nbsp;-&nbsp;&nbsp;{{showJobName}}(Data Cleansing Job)</span><span class="tracking1" style="float:right;"></span><span style="float:right;margin-top:5px;padding-right:15px;"><i class="fa fa-key rotateClass tip" data-toggle="tooltip" ng-show="licenseExpireTrue" title="License will expire soon." data-placement="right" style="color:#F44336"></i>
+            <i ng-show="licenseExpireDays" class="fa fa-key rotateClass tip" data-toggle="tooltip" title="License will expire in {{daysDiffShow}} day." data-placement="right" style="color:#F44336"></i> </span></h2> 
+            <div class="col-md-12" ng-show="loaderFlag">
+                <div style="margin-top:15px;">
+                    <div class="panel-body">
+                       <!--  <ul class="chartContainer countersList" style="margin: 0px; padding: 0px;">
+                            <li>
+                                <h1><span style="color:#FFCA28;cursor:pointer" id="nullViolationsId" ng-click="generateTableForViolations('Null Check')"></span>
+                                 </h1> Clean
+                            </li>
+                            <li>
+                                <h1>
+                                    <span style="color:#FF7043;cursor:pointer" id="regexViolationsId" ng-click="generateTableForViolations('Regex')"></span>
+                                </h1>Dirty
+                            </li>
+                        </ul> -->
+                        <ul class="countersList" style="text-align:center;">
+                        <div class="col-md-6"> <li style="border:5px solid white;border-radius: 4px;margin: .5em;padding: .3em 0;position: relative;left: 0;height:100px;background:#999;min-width: 250px;">
+                                    <div class="my-tool-tip" style="right: 5px;position: absolute;right: 10px;top: 10px;height: 50px;width: 50px;"><i data-toggle="tooltip" title="Data Validation" style="color: white;font-size: 23px;position: relative;top: 5px;right: 15px;background: #999;" class="fa fa-check green-iconTable fontIcon"></i></div>
+                                    <div style="height:60px;"><span style="font-size: 20px;position: relative;top: 10px;right: 65px;color: white;">Clean Files</span>
+                                    </div>
+                                    <div style="color: white;"><span style="position: relative;bottom: 5px;font-size:35px;font-weight: bold;">{{totalNumberOfCleanFiles}}</span></div>
+                                </li></div>
+                               <div class="col-md-6"><li style="border:5px solid white;border-radius: 4px;margin: .5em;padding: .3em 0;position: relative;left: 0;height:100px; background:#999;min-width: 250px;">
+                                      <div class="my-tool-tip" style="right: 5px;position: absolute;right: 10px;top: 10px;"><i data-toggle="tooltip" title="Data Validation" style="color: white;font-size: 20px;position: relative;top: 11px;right: 15px;background: #999;" class="fa fa-exclamation fontIcon"></i></div>
+                                    <div style="height:60px;"><span style="font-size: 20px;position: relative;top: 10px;right: 65px;color: white;">Dirty Files</span></div>
+                                    <div style="color: white;"><span style="position: relative;bottom: 5px;font-size:35px;font-weight: bold;">{{totalNumberOfDirtyFiles}}</span></div></li>
+                                    </div></ul>
+                    </div>
+                </div>
+            </div>
+        <div class="clearfix dataValidationChartWrapper dataValidationChartWrapperClean" id="resultWidgetContainer">
+         <div class="ring-loader" alt="alternate text" style="margin-top:145px;margin-bottom:145px"></div>
+              <div class="col-md-6 borderClass">
+                    <h2 ng-show="loaderFlag" style="background:#f6f6f6;" class="my-tool-tip">Clean Data Location - {{cleanDataRootLocation}}
+                    </h2>
+                    <div style="max-height: 480px;overflow-y: auto;"><ul style="display: list-item;list-style-position: inside;margin:35px 156px 35px 0px;" ng-repeat="(key, value) in cleanFilesList"><li style="text-align: center;word-break:break-all">{{key}} - {{value}}</li></ul></div>
+                    <div align="left"></div>
+                </div>
+                <div class="col-md-6" style="border-left:none;">
+                    <h2 ng-show="loaderFlag" style="background:#f6f6f6;" class="my-tool-tip">DLC Location - {{dlcRootLocation}}
+                    </h2>
+                     <div style="max-height: 480px;overflow-y: auto;"><ul style="display: list-item;list-style-position: inside;margin:35px 156px 35px 0px;" ng-repeat="(key, value) in dlcFilesList"><li style="text-align: center;word-break:break-all">{{key}} - {{value}}</li></ul></div>
+                </div>
+        </div>
+        </div> 
+ <p id="errorMessage"
+   style="text-align: center;
+            color: rgb(169, 68, 66);
+            width: 600px;
+            padding: 20px;
+            border-radius: 5px;
+            background: rgb(235, 204, 209);
+            margin: 0 auto;
+            position: relative;
+            top: 150px;
+            display: none"
+    ></p>
+    </div>
+</div>

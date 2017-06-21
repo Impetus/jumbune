@@ -1,0 +1,92 @@
+<div class="container" ng-init="DefineJobInfoController.init()">
+	<div jumbune-header=""></div>
+	<div class="inner-container">
+		<h2>Job Details</h2>
+		<div class="col-md-12 tab-container main-container" style="min-height:550px">
+			<p><strong>Note:</strong>Tab collects map-reduces job and dependant jar information</p>
+			
+				<form name="DefineJobInfoController.jobInfoForm" id="defineJobForm" novalidate enctype="multipart/form-data">
+				<div class="form-group row my-tool-tip"><h5 style="color: #23b4c0;border-bottom:#e2e2e2 solid 1px">Specify job jar information</h5></div>
+					<div class="form-group row my-tool-tip">
+						<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Choose system</label>
+						<div>
+							<label class="option-label">
+								<input type="radio" name="optionsRadios" value="local" ng-model="DefineJobInfoController.systemType" /><span>Local</span><i data-toggle="tooltip" title="Location of the MapReduce jar file on filesystem. Local- Jar location on local filesystem when accessing Jumbune UI remotely from deveoper laptop/workstation, Jumbune- location of jar file, when jar is located at Jumbune container machine" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i></label>
+							<label class="option-label">
+								<input type="radio" name="optionsRadios" value="server" ng-model="DefineJobInfoController.systemType" /><span>Jumbune</span><!-- <i data-toggle="tooltip" title="Location of the MapReduce jar file on filesystem. Local- Jar location on local filesystem when accessing Jumbune UI remotely from deveoper laptop/workstation, Jumbune- location of jar file, when jar is located at Jumbune container machine" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i> --></label>
+						</div>
+					</div>
+					<div class="form-group row my-tool-tip">
+						<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">File path
+							<s>*</s>
+						</label>
+						<div ng-if="DefineJobInfoController.systemType !== 'local'">
+							<input type="text" ng-model="DefineJobInfoController.filePathServer" name="filePathServer" required ng-class="{'has-error':DefineJobInfoController.hasError('filePathServer')}" />
+							<div class="error">
+								<span class="error" ng-show="DefineJobInfoController.errorMessageShowFile">{{DefineJobInfoController.errorMessageFile}}</span>
+							</div>
+						</div>
+						<div ng-if="DefineJobInfoController.systemType === 'local'">
+							<input type="file" file-model="myFile" id="filePathLocal" name="inputFile" />
+							<div class="error">
+								<span class="error" ng-show="DefineJobInfoController.errorFile">Please Select .jar File</span>
+							</div>
+							<span class="has-error-txt" ng-show="DefineJobInfoController.showError">Please Select .jar File</span>
+						</div>
+					</div>
+					<div class="form-group row my-tool-tip "><h5 style="color: #23b4c0;border-bottom:#e2e2e2 solid 1px">Jobs</h5></div>
+					<div class="form-group row my-tool-tip">
+						<!-- <label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Sender Password</label> -->
+						<label style="text-align:right;color:#747474;font-weight:300" class="option-label col-md-5">
+							<input type="checkbox" ng-model="DefineJobInfoController.jarManifest" ng-click="DefineJobInfoController.setClassJarMani($event.target.checked)" /> <span>Job class defined in the jar manifest</span></label>
+					</div>
+					<div ng-repeat="arr in DefineJobInfoController.fieldArray">
+						<div class="form-group row my-tool-tip">
+							<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Job Submission User
+								<s>*</s>
+							</label>
+							<div>
+								<input type="text" name="jobName" ng-model="DefineJobInfoController.jobName" required ng-class="{'error':DefineJobInfoController.hasError('jobName')}" />
+								<div class="error" ng-show="DefineJobInfoController.jobInfoForm.jobName.$dirty && DefineJobInfoController.jobInfoForm.jobName.$invalid">
+									<span class="error" ng-show="DefineJobInfoController.jobInfoForm.jobName.$error.required">Please enter the job submission user.</span>
+								</div>
+							</div>
+						</div>
+						<div class="form-group row my-tool-tip" ng-show="!DefineJobInfoController.jarManifest">
+							<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Job Class Name
+								<br>
+								<span class="hintText">(Fully qualified class name)</span></label>
+							<div ng-if="!DefineJobInfoController.jarManifest">
+								<input type="text" required name="jobClassName" ng-model="DefineJobInfoController.allJobInfo[$index].name" ng-class="{'error':DefineJobInfoController.hasError('jobClassName')}" />
+								<div class="error" ng-show="DefineJobInfoController.jobInfoForm.jobClassName.$dirty && DefineJobInfoController.jobInfoForm.jobClassName.$invalid">
+									<span class="error" ng-show="DefineJobInfoController.jobInfoForm.jobClassName.$error.required">Please enter the job class name.</span>
+								</div>
+							</div>
+						</div>
+						<div class="form-group row my-tool-tip">
+							<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Parameters
+								<br>
+								<span class="hintText">(space separated)</span></label>
+							<!-- <div class="col-md-4"> -->
+							<div>
+								<input type="text" name="jobParameter" ng-model="DefineJobInfoController.allJobInfo[$index].parameters" ng-class="{'error':DefineJobInfoController.hasError('jobParameter')}" />
+								<div class="error" ng-show="DefineJobInfoController.jobInfoForm.jobParameter.$dirty && DefineJobInfoController.jobInfoForm.jobParameter.$invalid">
+									<span class="error" ng-show="DefineJobInfoController.jobInfoForm.jobParameter.$error.required">Please enter the parameters.</span>
+								</div>
+							</div>
+						</div>
+					</div>
+			
+					<div class="textCenter" ng-show="DefineJobInfoController.showLoader"><i class="fa fa-spinner fa-spin"></i> Please Wait ></div>
+					<div class="textCenter fixed-btn">
+						<button type="button" class="btn btn-default" ng-click="DefineJobInfoController.cancel()">Back</button>
+						<button type="button" ng-disabled="!DefineJobInfoController.jobInfoForm.$valid" class="btn btn-primary" ng-click="DefineJobInfoController.next()">Next</button>
+					</div>
+			</form>
+		</div>
+		
+
+	<div class="clear"></div>
+	</div>
+<!-- info-holder -->
+</div>

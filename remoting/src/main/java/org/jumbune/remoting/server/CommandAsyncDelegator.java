@@ -21,8 +21,8 @@ import io.netty.channel.ChannelHandlerContext;
 
 import org.jumbune.remoting.common.JschUtil;
 import org.jumbune.remoting.common.RemotingConstants;
-import org.jumbune.remoting.writable.CommandWritable;
-import org.jumbune.remoting.writable.CommandWritable.Command;
+import org.jumbune.remoting.common.command.CommandWritable;
+import org.jumbune.remoting.common.command.CommandWritable.Command;
 
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
@@ -94,7 +94,7 @@ public class CommandAsyncDelegator extends SimpleChannelInboundHandler<CommandWr
 			if (commandWritable.isAuthenticationRequired()) {
 				executeCommandsWithJsch(commandWritable, command);
 			} else {
-				String agentHome = System.getenv(RemotingConstants.AGENT_HOME);
+				String agentHome = JumbuneAgent.getAgentDirPath();
 				rippedCommand = command.getCommandString()
 						.replace(RemotingConstants.AGENT_HOME, agentHome)
 						.trim();
@@ -111,7 +111,7 @@ public class CommandAsyncDelegator extends SimpleChannelInboundHandler<CommandWr
 	 */
 	private static void execute(String... commands) {
 		ProcessBuilder pb = new ProcessBuilder(commands);
-		pb.directory(new File(System.getenv(RemotingConstants.AGENT_HOME)));
+		pb.directory(new File(JumbuneAgent.getAgentDirPath()));
 		Process p = null;
 		InputStream is = null;
 		BufferedReader br = null;
@@ -153,22 +153,19 @@ public class CommandAsyncDelegator extends SimpleChannelInboundHandler<CommandWr
 			Command command) {
 		LOGGER.debug("Processing parameterized command");
 
-		String user = commandWritable.getUsername();
-		String rsaFile = commandWritable.getRsaFilePath();
-		String dsaFile = commandWritable.getDsaFilePath();
-		String host = commandWritable.getMasterHostname();
+		String host = commandWritable.getNameNodeHost();
 
 		if (host == null) {
 			// command to be executed on slave
-			host = commandWritable.getSlaveHost();
+			host = commandWritable.getWorkerHost();
 		}
 		Session session = null;
 		try {
-			session = JschUtil.createSession(user, host, rsaFile, dsaFile, null);
+			session = JschUtil.createSession(command.getSwitchedIdentity(), host, null);
 			String commandStr = command.getCommandString();
 			if (commandStr.contains(RemotingConstants.AGENT_HOME)) {
 				commandStr = commandStr.replace(RemotingConstants.AGENT_HOME,
-						System.getenv(RemotingConstants.AGENT_HOME));
+					JumbuneAgent.getAgentDirPath());
 			}
 			LOGGER.debug("processing command : " + commandStr);
 
@@ -198,8 +195,7 @@ public class CommandAsyncDelegator extends SimpleChannelInboundHandler<CommandWr
 			LOGGER.debug("Executing command on slaves");
 
 			String line = null;
-			com.jcraft.jsch.Channel channel = JschUtil.getShellChannel(session,
-					commandStr);
+			com.jcraft.jsch.Channel channel = JschUtil.getShellChannel(session);
 			OutputStream os = channel.getOutputStream();
 			ps = new PrintStream(os, true);
 			in = channel.getInputStream();

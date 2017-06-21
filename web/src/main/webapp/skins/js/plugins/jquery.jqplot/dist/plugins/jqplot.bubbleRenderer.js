@@ -41,7 +41,7 @@
      * colored circles with an optional text label inside.  To use
      * the bubble renderer, you must include the bubble renderer like:
      * 
-     * > <script language="javascript" type="text/javascript" src="../src/plugins/jqplot.bubbleRenderer.js"></script>
+     * > <script language="javascript" type="text/javascript" src="../plugins/jqplot.bubbleRenderer.js"></script>
      * 
      * Data must be supplied in 
      * the form:

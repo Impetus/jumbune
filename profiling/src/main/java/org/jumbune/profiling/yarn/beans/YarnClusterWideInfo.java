@@ -1,5 +1,6 @@
 package org.jumbune.profiling.yarn.beans;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.jumbune.profiling.beans.ClusterWideInfo;
@@ -14,6 +15,13 @@ public class YarnClusterWideInfo extends ClusterWideInfo {
   public void setResourceManager(List<String> resourceManager) {
     this.resourceManager = resourceManager;
   }
+  
+  public void addResourceManagerStat(String resourceManagerStat) {
+		if (this.resourceManager == null) {
+			this.resourceManager = new ArrayList<String>(2);
+		}
+		this.resourceManager.add(resourceManagerStat);
+	}
 
   public void setClusterWideInfoConfiguration(ClusterWideInfo clusterWideInfo) {
     List<String> nameNodeList = clusterWideInfo.getNameNode();

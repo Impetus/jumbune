@@ -41,7 +41,6 @@ import org.objectweb.asm.tree.VarInsnNode;
  * 
 
  */
-@SuppressWarnings("deprecation")
 public class ConfigureMapReduceAdapter extends BaseAdapter {
 	
 	/** The Constant SET_LOG_NUM_METHOD. */
@@ -57,6 +56,8 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 	/** The env. */
 	private Environment env;
 	
+	private String workerLogLocation;
+	
 	/**
 	 * <p>
 	 * Create a new instance of MapreduceCounterAdapter.
@@ -65,9 +66,10 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 	 * @param loader the loader
 	 * @param cv Class visitor
 	 */
-	public ConfigureMapReduceAdapter(Config config, ClassVisitor cv) {
+	public ConfigureMapReduceAdapter(Config config, ClassVisitor cv, String workerLogLocation) {
 		super(config, Opcodes.ASM4);
 		this.cv = cv;
+		this.workerLogLocation = workerLogLocation;
 	}
 
 	/**
@@ -77,10 +79,11 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 	 * @param cv the cv
 	 * @param env the env
 	 */
-	public ConfigureMapReduceAdapter(Config config, ClassVisitor cv,Environment env) {
+	public ConfigureMapReduceAdapter(Config config, ClassVisitor cv, Environment env, String workerLogLocation) {
 		super(config, Opcodes.ASM4);
 		this.cv = cv;
 		this.env = env;
+		this.workerLogLocation = workerLogLocation;
 	}
 
 	/* (non-Javadoc)
@@ -128,7 +131,7 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 
 				// validating if the method is map/reduce
 				if (InstrumentUtil.isExitMethod(mn)) {
-					LOGGER.info(MessageFormat.format(
+					LOGGER.debug(MessageFormat.format(
 							InstrumentationMessageLoader
 									.getMessage(MessageConstants.LOG_CLEANUP_METHOD_FOUND),
 							getClassName()));
@@ -136,7 +139,7 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 					// modifying cleanup method
 					modifyConfigureMethods(mn, false);
 				} else if (InstrumentUtil.isInitMethod(mn)) {
-					LOGGER.info(MessageFormat.format(
+					LOGGER.debug(MessageFormat.format(
 							InstrumentationMessageLoader
 									.getMessage(MessageConstants.LOG_SETUP_METHOD_FOUND),
 							getClassName()));
@@ -149,7 +152,7 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 
 			// adding setup/configure method
 			if (!setupMethodExists) {
-				LOGGER.info(MessageFormat.format(
+				LOGGER.debug(MessageFormat.format(
 						InstrumentationMessageLoader
 								.getMessage(MessageConstants.LOG_SETUP_METHOD_NOT_FOUND),
 						getClassName()));
@@ -158,7 +161,7 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 
 			// adding cleanup/close method
 			if (!cleanupMethodExists) {
-				LOGGER.info(MessageFormat.format(
+				LOGGER.debug(MessageFormat.format(
 						InstrumentationMessageLoader
 								.getMessage(MessageConstants.LOG_CLEANUP_METHOD_NOT_FOUND),
 						getClassName()));
@@ -261,14 +264,14 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 	 */
 	private InsnList addPartitionerLogging(String methodName, boolean isSetup) {
 
-		LOGGER.info("Add logging of partitioner !!! ");
+		LOGGER.debug("Add logging of partitioner !!! ");
 
 		InsnList il = new InsnList();
 
 		if (!isSetup) {
 			il.add(new LabelNode());
 			String cSymbol = env.getClassSymbol(getClassName());
-			String mSymbol = env.getMethodSymbol(getClassName(), cSymbol, methodName);
+			String mSymbol = Environment.getMethodSymbol(getClassName(), cSymbol, methodName);
 
 			LogInfoBean logBean = new LogInfoBean(cSymbol,
 					mSymbol,InstrumentationMessageLoader
@@ -312,7 +315,7 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 					CLASSNAME_MAPREDUCEEXECUTIL, SET_PARTITIONER_METHOD,
 					methodDesc));
 		} else {
-			LOGGER.info("Remvoing partitioner from ThreadLocal in cleanup method !!");
+			LOGGER.debug("Remvoing partitioner from ThreadLocal in cleanup method !!");
 
 			String methodName = null;
 
@@ -352,7 +355,7 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 
 		InsnList il = new InsnList();
 
-		LOGGER.info(MessageFormat.format(InstrumentationMessageLoader
+		LOGGER.debug(MessageFormat.format(InstrumentationMessageLoader
 				.getMessage(MessageConstants.LOG_ADD_PATTERN_COMPILE),
 				getClassName()));
 
@@ -397,7 +400,7 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 		InsnList il = null;
 		if (keyValidationClass != null || valueValidationClass != null) {
 			il = new InsnList();
-			LOGGER.info(MessageFormat.format(
+			LOGGER.debug(MessageFormat.format(
 					InstrumentationMessageLoader
 							.getMessage(MessageConstants.LOG_INITIALIZE_PATTERN_VALIDATOR),
 					getClassName()));
@@ -445,11 +448,11 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 	 */
 	private void modifyConfigureMethods(MethodNode mn, boolean isSetup) {
 		if (isSetup) {
-			LOGGER.info(MessageFormat.format(InstrumentationMessageLoader
+			LOGGER.debug(MessageFormat.format(InstrumentationMessageLoader
 					.getMessage(MessageConstants.LOG_MODIFY_SETUP_METHOD),
 					getClassName()));
 		} else {
-			LOGGER.info(MessageFormat.format(InstrumentationMessageLoader
+			LOGGER.debug(MessageFormat.format(InstrumentationMessageLoader
 					.getMessage(MessageConstants.LOG_MODIFY_CLEANUP_METHODD),
 					getClassName()));
 		}
@@ -485,12 +488,12 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 
 		// method name
 		if (isSetup) {
-			LOGGER.info(MessageFormat.format(InstrumentationMessageLoader
+			LOGGER.debug(MessageFormat.format(InstrumentationMessageLoader
 					.getMessage(MessageConstants.LOG_ADDING_SETUP_METHOD),
 					getClassName()));
 			newMN.name = SETUP_METHOD;
 		} else {
-			LOGGER.info(MessageFormat.format(InstrumentationMessageLoader
+			LOGGER.debug(MessageFormat.format(InstrumentationMessageLoader
 					.getMessage(MessageConstants.LOG_ADDING_CLEANUP_METHODD),
 					getClassName()));
 			newMN.name = CLEANUP_METHOD;
@@ -654,7 +657,7 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 		il.add(new LabelNode());
 		// method name
 		if (isSetup) {
-			LOGGER.info(MessageFormat.format(InstrumentationMessageLoader
+			LOGGER.debug(MessageFormat.format(InstrumentationMessageLoader
 					.getMessage(MessageConstants.LOG_ADDING_SETUP_METHOD),
 					getClassName()));
 			newMN.name = CONFIGURE_METHOD;
@@ -662,7 +665,7 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 			il.add(new VarInsnNode(Opcodes.ALOAD, 0));
 			il.add(new VarInsnNode(Opcodes.ALOAD, 1));
 		} else {
-			LOGGER.info(MessageFormat.format(InstrumentationMessageLoader
+			LOGGER.debug(MessageFormat.format(InstrumentationMessageLoader
 					.getMessage(MessageConstants.LOG_ADDING_CLEANUP_METHODD),
 					getClassName()));
 			newMN.name = CLOSE_METHOD;
@@ -690,17 +693,12 @@ public class ConfigureMapReduceAdapter extends BaseAdapter {
 	 * @return InsnList Instructions
 	 */
 	private InsnList loadLogger() {
-		LOGGER.info(MessageFormat.format(InstrumentationMessageLoader
+		LOGGER.debug(MessageFormat.format(InstrumentationMessageLoader
 				.getMessage(MessageConstants.LOG_LOAD_LOGGER), getClassName()));
 
 		InsnList il = new InsnList();
 		il.add(new LabelNode());
-		JobConfig jobConfig = (JobConfig)getConfig();
-		String logFileDir = jobConfig.getSlaveLogLocation()
-				.substring(
-						0,
-						jobConfig.getSlaveLogLocation()
-								.lastIndexOf('/') + 1);
+		String logFileDir = workerLogLocation.substring(0, workerLogLocation.lastIndexOf('/') + 1);
 
 		// getting task attempt id
 		il.add(new LdcInsnNode(logFileDir));

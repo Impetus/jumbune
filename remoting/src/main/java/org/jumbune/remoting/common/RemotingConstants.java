@@ -2,6 +2,8 @@ package org.jumbune.remoting.common;
 
 import java.util.concurrent.CyclicBarrier;
 
+import org.jumbune.utils.Versioning;
+
 import io.netty.channel.ChannelInboundHandler;
 import io.netty.util.AttributeKey;
 
@@ -108,6 +110,80 @@ public interface RemotingConstants {
 	/** The CM o_ magi c_3. */
 	char CMO_MAGIC_3 = 'O';
 
+	// Command Fire and Get Object Response in case of HA
+	char CMO_HA_MAGIC_1 = 'c';
+	
+	char CMO_HA_MAGIC_2 = 'm';
+	
+	char CMO_HA_MAGIC_3 = 'o';
+	
+	// Command Fire and Forget in case of HA
+	char CMD_HA_MAGIC_1 = 'c';
+
+	char CMD_HA_MAGIC_2 = 'm';
+
+	char CMD_HA_MAGIC_3 = 'd';	
+	
+	// Text Receive in case of HA
+	/** The TX r_ magi c_1. */
+	char TXR_HA_MAGIC_1 = 't';
+	
+	/** The TX r_ magi c_2. */
+	char TXR_HA_MAGIC_2 = 'x';
+	
+	/** The TX r_ magi c_3. */
+	char TXR_HA_MAGIC_3 = 'r';
+	
+	// Text Send in case of HA
+	/** The TX s_ magi c_1. */
+	char TXS_HA_MAGIC_1 = 't';
+	
+	/** The TX s_ magi c_2. */
+	char TXS_HA_MAGIC_2 = 'x';
+	
+	/** The TX s_ magi c_3. */
+	char TXS_HA_MAGIC_3 = 's';
+	
+	// Jar Receive in case of HA
+	/** The JA r_ magi c_1. */
+	char JAR_HA_MAGIC_1 = 'j';
+	
+	/** The JA r_ magi c_2. */
+	char JAR_HA_MAGIC_2 = 'a';
+	
+	/** The JA r_ magi c_3. */
+	char JAR_HA_MAGIC_3 = 'r';
+	
+	// Jar Send
+	 /** The JA s_ magi c_1. */
+	char JAS_HA_MAGIC_1 = 'j';
+	 
+	/** The JA s_ magi c_2. */
+	char JAS_HA_MAGIC_2 = 'a';
+	 
+	/** The JA s_ magi c_3. */
+	char JAS_HA_MAGIC_3 = 's';
+	
+	char SDA_HA_MAGIC_1 = 's';
+	
+	char SDA_HA_MAGIC_2 = 'd';
+	
+	char SDA_HA_MAGIC_3 = 'a';
+	
+	String[] CMO_HA = new String[] { "c", "m", "o" };
+	
+	String[] CMD_HA = new String[] { "c", "m", "d" };
+	
+	String[] TXR_HA = new String[] { "t", "x", "r" };
+	
+	String[] TXS_HA = new String[] { "t", "x", "s" };
+	
+	String[] JAR_HA = new String[] { "j", "a", "r" };
+	
+	String[] JAS_HA = new String[] { "j", "a", "s" };
+	
+	String[] SDA_HA = new String[] { "s", "d", "a" };
+	
 	/** The path demarker. */
 	String PATH_DEMARKER = "--!--";
 	
@@ -144,8 +220,14 @@ public interface RemotingConstants {
 	
 	/** The execution mode. */
 	String EXECUTION_MODE = "exec";
+		
 	
-
+	String CHMOD_CMD = "chmod o+w ";
+	
+	String CHMOD_GROUP = "chmod g+w ";
+	
+	/** The Constant MKDIR_CMD. */
+	String MKDIR_CMD = "mkdir -p ";
 	
 	/** The fetch hadoop masters and slaves. */
 	String FETCH_HADOOP_MASTERS_AND_SLAVES = "fetchHadoopMastersAndSlaves";
@@ -194,7 +276,7 @@ public interface RemotingConstants {
 	String JUMBUNE_REMOTE_COMMAND_SEPARATOR = "@JRSC@";
     
     /** The remove folder. */
-    String REMOVE_FOLDER = "rm -r";
+    String REMOVE_FOLDER = "rm -rf";
 	
 	/** The ssh. */
 	String SSH = "ssh";
@@ -205,7 +287,8 @@ public interface RemotingConstants {
 	/** The redirect symbol. */
 	String REDIRECT_SYMBOL = ">";
 	
-	String DATA_VALIDATION_JAR = "jumbune-datavalidation-1.5.2-SNAPSHOT.jar";
+	/** The data validation jar. */
+	String DATA_VALIDATION_JAR = "jumbune-datavalidation-" + Versioning.ENTERPRISE_BUILD_VERSION+Versioning.ENTERPRISE_DISTRIBUTION_NAME + ".jar";
 	
 	/** The job jars loc. */
 	String JOB_JARS_LOC = "jobJars/";
@@ -260,5 +343,67 @@ public interface RemotingConstants {
 
 	/** The remove. */
 	String REMOVE = "rm";
+
+	String RSYNC = "rsync";
+	
+	String JUMBUNE_JMX_JAR = "jumbune-jmx-agent.jar";
+
+	String COLON = ":";
+
+	String LIB_DIR = "/lib/";
+
+	String SCP = "scp";
+
+	String LOCALHOST = "localhost";
+
+	String AT_SIGN = "@";
+	
+	String PIPE_OP = "|";
+
+	String sudoEoption = "-E";
+
+	String BASH = "bash";
+	
+	String BASH_ARG_C = "-c";
+	
+	/** The mapr. */
+	String MAPR = "m";//mapr code changes
+	
+	/** The datanode */
+	String DATANODE = "datanode";//mapr code changes
+		
+	String SLASH = "/";
+
+	String HEART_BEAT_MSG = "HEART_BEAT";
+	
+	String COMMAND_EXEC_DRIVER = "org.jumbune.remoting.server.jsch.CommandExecDriver";
+	
+	String JAVA_HOME_PROP_KEY = "java.home";
+
+	String CLASSPATH_ARG = "-cp"; 
+	
+	String HA_CONF_PROPERTIES = "ha_conf.properties";
+	
+	String CONF_DIR = "/conf/";
+	
+	String CLUSTERS_CONFIGURATIONS_DIR = "clustersConfigurations/";
+	
+	String HEART_BEAT_MILLIS = "HEART_BEAT_MILLIS";
+	
+	String THRESHOLD_BEATS_TO_MISS = "THRESHOLD_BEATS_TO_MISS";
+	
+	String NUM_RETRIES_AGENT_CONN = "NUM_RETRIES_AGENT_CONN";
+	
+	String AGENT_CONN_MILLIS = "AGENT_CONN_MILLIS";
+	
+	String NUM_RETRIES_REMOTER_APIS = "NUM_RETRIES_REMOTER_APIS";
+	
+	String COMMAND_LOG_DIR = "COMMAND_LOG_DIR";
+	
+	String ACK = "Ack";
+	
+	String AMPERSAND = "&";
+
+	String NAMENODE = "NameNode";
 
 }

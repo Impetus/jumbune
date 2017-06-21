@@ -4,31 +4,43 @@ import static org.jumbune.common.utils.Constants.COLON;
 import static org.jumbune.common.utils.Constants.SPACE;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.beans.AttemptDetails;
-import org.jumbune.common.beans.JobDetails;
-import org.jumbune.common.beans.JobOutput;
-import org.jumbune.common.beans.PhaseDetails;
-import org.jumbune.common.beans.PhaseOutput;
-import org.jumbune.common.beans.TaskDetails;
-import org.jumbune.common.beans.TaskOutputDetails;
-import org.jumbune.common.job.Config;
+import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.beans.profiling.AttemptDetails;
+import org.jumbune.common.beans.profiling.JobDetails;
+import org.jumbune.common.beans.profiling.JobOutput;
+import org.jumbune.common.beans.profiling.PhaseDetails;
+import org.jumbune.common.beans.profiling.PhaseOutput;
+import org.jumbune.common.beans.profiling.TaskDetails;
+import org.jumbune.common.beans.profiling.TaskOutputDetails;
 import org.jumbune.common.job.JobConfig;
+import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.remoting.common.RemotingMethodConstants;
+import org.jumbune.utils.Versioning;
+import org.jumbune.utils.exception.JumbuneRuntimeException;
 
 import com.google.gson.Gson;
 
@@ -45,77 +57,86 @@ public class HadoopLogParser {
 
 	/** The Constant CONVERSION_FACTOR_BYTES_TO_KB. */
 	private static final int CONVERSION_FACTOR_BYTES_TO_KB = 1000;
-	
+
 	/** The Constant LIB. */
 	private static final String LIB = "lib/";
-	
+
 	/** The Constant RUMEN. */
 	private static final String RUMEN = "rumen";
-	
+
 	/** The Constant SETUP. */
 	private static final String SETUP = "SETUP";
-	
+
 	/** The Constant REDUCE. */
 	private static final String REDUCE = "REDUCE";
-	
+
 	/** The Constant SUCCESS. */
 	private static final String SUCCESS = "SUCCESS";
-	
+
 	/** The Constant FILE_PREFIX. */
 	private static final String FILE_PREFIX = "file://";
-	
+
 	/** The Constant TOPOLOGY_FILE. */
 	private static final String TOPOLOGY_FILE = "topology";
-	
+
 	/** The Constant JSON_FILE. */
 	private static final String JSON_FILE = "job-trace.json";
-	
-	
+
+
 	/** The Constant MKDIR_CMD. */
 	private static final String MKDIR_CMD = "mkdir -p ";
-	
+
 	/** The Constant RM_CMD. Command to remove Files and Directories recursively. */
 	private static final String RM_CMD="rm -r ";
-	
+
 	/** The Constant JAVA_CP_CMD. */
 	private static final String JAVA_CP_CMD = "java -cp ";
-	
+
 	/** The Constant HADOOP_JAR_CONFIF_FILE. */
 	private static final String HADOOP_JAR_CONFIF_FILE = "RumenReqJars.properties";
-	
+
 	/** The Constant RUMEN_MAIN_CLASS_OLD. */
 	private static final String RUMEN_MAIN_CLASS_OLD = "org.jumbune.org.apache.hadoop.tools.rumen.TraceBuilder";
-	
+
 	private static final String YARN_JOB_STATS_UTILITY_CLASS = "org.jumbune.common.yarn.utils.YarnJobStatsUtility";
-	
+
 	private static final String YARN_JOB_STATS_UTILITY_CLASS_PARSE_METHOD = "parseAndGetJobStats";	
-	
+
 	/** The Constant LOGS **/
 	private static final String LOGS = "/logs/";
-	
+
 	/** The Constant HISTORY_DIR_SUFFIX. */
 	private static final String HISTORY_DIR_SUFFIX = "/history/done/version-1";
-	
-	private static final String HISTORY_INT_DIR_SUFFIX_YARN = "/tmp/hadoop-yarn/staging/history/done_intermediate/*/";
-	
-	private static String HISTORY_DIR_SUFFIX_YARN = "/tmp/hadoop-yarn/staging/history/done/*/*/*/*/";
-	
-	private static final String HISTORY_DIR_SUFFIX_MAPR_NY = "/var/mapr/cluster/mapred/jobTracker/history/done/";
-	
-	private static String USER_INT_HISTORY_DIR_SUFFIX = "/history/done_intermediate/*/";
-	
-	private static String USER_HISTORY_DIR_SUFFIX = "/history/done/*/*/*/*/";
-		
+
+	private static final String HISTORY_DIR_SUFFIX_MAPR_NY = "/var/mapr/cluster/yarn/rm/staging/history/done/*/*/*/*/";
+
 	private static final String HDFS_FILE_GET_COMMAND = "/bin/hadoop fs -get";
-	
+
 	private static final String HDFS_LS_COMMAND = "/bin/hadoop fs -ls";
-	
+
 	private static final String HDFS_RM_COMMAND="/bin/hadoop fs -rmr";
-	
+
 	/** The Constant wildcard**/
 	private static final String WILDCARD="/*";
 
 	private static final String CHMOD_CMD = "chmod o+w ";
+
+	private static final Pattern CONTAINER_ID_EPOCH_PATTERN = Pattern.compile("container_(?:[e\\d]+)_([\\d]+)_([\\d]+)_([\\d]+)_([\\d]+)");
+
+	private static final Pattern LINE_PATTERN = Pattern.compile("(.*)(container_(?:[e\\d]+)_(?:[\\d]+)_(?:[\\d]+)_(?:[\\d]+)_(?:[\\d]+))(.*)");
+	
+	/** The Constant JHIST. */
+	private static final String JHIST = ".jhist";
+	String localPath;
+
+	public JobOutput getJobDetails(JumbuneRequest jumbuneRequest, String jobID) throws IOException{
+		return getJobDetails(jumbuneRequest.getCluster(), jobID, jumbuneRequest.getJobConfig().getFormattedJumbuneJobName());
+	}
+
+	public JobOutput getJobDetails(Cluster cluster, String jobID) throws IOException{
+		return getJobDetails(cluster, jobID, cluster.getClusterName() + File.separator);
+	}
+
 
 	/**
 	 * Gets the job details.
@@ -126,184 +147,289 @@ public class HadoopLogParser {
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws ClassNotFoundException 
 	 */
-	public JobOutput getJobDetails(Config config, String jobID)
-			throws IOException {
-		JobConfig jobConfig = (JobConfig) config;
-		String hadoopDistribution = FileUtil
-				.getClusterInfoDetail(Constants.HADOOP_DISTRIBUTION);
-		String hadoopType = FileUtil
-				.getClusterInfoDetail(Constants.HADOOP_TYPE);
+	public JobOutput getJobDetails(Cluster cluster, String jobID, String jumbuneJobName) throws IOException{
 
-		if (hadoopType.equalsIgnoreCase(Constants.NON_YARN)) {
-			// check if the hadoop distribution is non-yarn and MapR as well.
-			if (hadoopDistribution.equalsIgnoreCase(Constants.MAPR)) {
-				return getJobDetailsFromNonYarnMapRSetup(jobConfig, jobID, hadoopDistribution, hadoopType);
-			} else {
-				return getJobDetailsFromNonYarnOthersSetup(jobConfig, jobID, hadoopDistribution, hadoopType);
+		String appHome = JobConfig.getJumbuneHome() + File.separator;
+		String agentHome = RemotingUtil.getAgentHome(cluster);
+		Remoter remoter = RemotingUtil.getRemoter(cluster, appHome);
+		String logsHistory = null;
+		String hadoopDistribution = FileUtil.getClusterInfoDetail(Constants.HADOOP_DISTRIBUTION);
+		String hadoopType = FileUtil.getClusterInfoDetail(Constants.HADOOP_TYPE);
+		logsHistory = changeLogHistoryPathAccToHadoopVersion(HADOOP_HOME,
+				hadoopDistribution,hadoopType);
+
+		CommandWritableBuilder builder = new CommandWritableBuilder(cluster);
+
+		String logfilePath = null ;
+		String relLocalPath = null;
+		if(hadoopType.equalsIgnoreCase(Constants.NON_YARN)){
+
+			//check if the hadoop distribution is non-yarn and MapR as well.
+			if(hadoopDistribution.equalsIgnoreCase(Constants.MAPR))
+			{  
+				relLocalPath  = Constants.JOB_JARS_LOC + jumbuneJobName;
+				String fileName=null;
+				//getting history file name corresponding to jobID 
+				fileName=getHistoryFileNameForMapR(cluster, remoter, logsHistory, jobID);
+
+				//fetching job configuration xml file. 
+				StringBuffer jobIdDir = new StringBuffer(agentHome).append(Constants.JOB_JARS_LOC).append(jumbuneJobName).append(jobID);				
+				getJobFilesForMapR(cluster, remoter, jobIdDir.toString(), logsHistory, jobID);
+
+				StringBuffer relativeJobIdDir = new StringBuffer(Constants.JOB_JARS_LOC).append(jumbuneJobName).append(jobID);
+				remoter.receiveLogFiles(relLocalPath, relativeJobIdDir.toString());
+
+				//Now starting rumen processing
+				Properties props = loadHadoopJarConfigurationProperties();
+				String rumenDirPath = agentHome+Constants.JOB_JARS_LOC + jumbuneJobName + RUMEN;				
+
+				// make rumen related directory and files
+				final String rumenTempDirOnMapRFS = "/jumbune/rumen-tmp/";
+				final String jsonFilePath = rumenTempDirOnMapRFS + JSON_FILE;
+				final String topologyFilePath = rumenTempDirOnMapRFS + TOPOLOGY_FILE;				
+
+				//removing any previous rumen Directory and its contents
+				builder.addCommand(RM_CMD+ rumenDirPath, false, null, CommandType.FS);
+				remoter.fireAndForgetCommand(builder.getCommandWritable());			
+				builder.clear();
+				RemotingUtil.mkDir(builder,remoter, rumenDirPath);
+				String historyFilePathOnMapRFS = logsHistory + File.separator
+						+ fileName;
+
+				//prepare rumen processing command and start processing
+				StringBuilder sb = prepareRumenProcessingCommand(props,
+						appHome, agentHome, jsonFilePath, topologyFilePath,
+						historyFilePathOnMapRFS);
+
+				startRumenProcessing(cluster, remoter, relLocalPath, rumenDirPath, sb);
+				getAndRemoveRumenTempDir(remoter, cluster,
+						rumenTempDirOnMapRFS, rumenDirPath);
+				String relativeRemotePath = Constants.JOB_JARS_LOC
+						+ jumbuneJobName + RUMEN;
+
+				//receiving job-trace.json and topology files
+				remoter.receiveLogFiles(relLocalPath, relativeRemotePath);
+				LOGGER.info("Received log files from:" + relativeRemotePath);
+
+				Gson gson = new Gson();
+				JobDetails jobDetails = extractJobDetails(appHome,
+						relLocalPath, gson);
+				return convertToFinalOutput(jobDetails);			
+
+			}else{
+
+
+				logfilePath = getLogFilePath(jobID, remoter, logsHistory,
+						builder);
+				
+			relLocalPath  = Constants.JOB_JARS_LOC + jumbuneJobName;
+			String relRemotePath = relLocalPath + RUMEN;
+			StringBuilder stringAppender = new StringBuilder(agentHome);
+			stringAppender.append(File.separator).append(relRemotePath).append(File.separator);
+			// make rumen related directory and files
+			String pathToRumenDir = stringAppender.toString();
+			String jsonFilepath = pathToRumenDir + JSON_FILE;
+			String topologyFilePath = pathToRumenDir + TOPOLOGY_FILE;
+			
+			builder.clear();
+			RemotingUtil.mkDir(builder,remoter, pathToRumenDir);
+			// preparing command for rumen processing
+			
+			String remoteHadoopLib = HADOOP_HOME + LIB;
+			Properties props = loadHadoopJarConfigurationProperties();
+			
+			String coreJar;
+			if(hadoopDistribution.equalsIgnoreCase(Constants.APACHE)) {
+				coreJar = HADOOP_HOME + props.getProperty("CORE_JAR");	
+			}else {
+				coreJar = HADOOP_HOME + WILDCARD;
 			}
-		} else {
-			return getJobDetailsFromYarnSetup(jobConfig, jobID, hadoopDistribution, hadoopType);
+			
+			String commonsLoggingJar = agentHome + LIB + props.getProperty("COMMONS_LOGGING_JAR");
+			String commonsCliJar = remoteHadoopLib + props.getProperty("COMMONS_CLI_JAR");
+			String commonsConfigurationJar = agentHome + LIB + props.getProperty("COMMONS_CONFIGURATION_JAR");
+			String commonsLangJar = agentHome + LIB + props.getProperty("COMMONS_LANG_JAR");
+			String jacksonMapperAslJar = agentHome + LIB + props.getProperty("JACKSON_MAPPER_ASL_JAR");
+			String jacksonMapperCoreJar = agentHome + LIB + props.getProperty("JACKSON_MAPPER_CORE_JAR");
+			String rumenJar = agentHome + LIB + props.getProperty("RUMEN_JAR")+"-"+Versioning.ENTERPRISE_BUILD_VERSION+Versioning.ENTERPRISE_DISTRIBUTION_NAME+".jar";
+			
+			StringBuilder sb = new StringBuilder(JAVA_CP_CMD);
+			
+			checkHadoopVersionsForRumen(logfilePath, jsonFilepath,
+					topologyFilePath, coreJar, commonsLoggingJar,
+					commonsCliJar, commonsConfigurationJar, commonsLangJar,
+					jacksonMapperAslJar, jacksonMapperCoreJar, rumenJar, sb);
+			LOGGER.debug("Rumen processing command [" + sb.toString()+"]");
+			startRumenProcessing(cluster, remoter, relLocalPath, relRemotePath, sb);
+			remoter = RemotingUtil.getRemoter(cluster, appHome);
+			remoter.receiveLogFiles(relLocalPath, relRemotePath);
+			LOGGER.debug("Received log files from:"+ relRemotePath);
+			// process json
+			Gson gson = new Gson();
+			JobDetails jobDetails = extractJobDetails(appHome, relLocalPath, gson);
+			return convertToFinalOutput(jobDetails);
+	
+				
+			}
+
+		}else{
+			if(hadoopDistribution.equalsIgnoreCase(Constants.MAPR) || hadoopDistribution.equalsIgnoreCase(Constants.EMRMAPR))
+			{  
+				relLocalPath  = Constants.JOB_JARS_LOC + jumbuneJobName;
+				String fileName=null;
+				//getting history file name corresponding to jobID 
+				fileName=getHistoryFileNameForMapR(cluster, remoter, logsHistory, jobID);
+
+				//fetching job configuration xml file. 
+				StringBuffer jobIdDir = new StringBuffer(agentHome).append(Constants.JOB_JARS_LOC).append(jumbuneJobName).append(jobID);				
+				getJobFilesForMapR(cluster, remoter, jobIdDir.toString(), logsHistory, jobID);
+
+				StringBuffer relativeJobIdDir = new StringBuffer(Constants.JOB_JARS_LOC).append(jumbuneJobName).append(jobID);
+				remoter.receiveLogFiles(relLocalPath, relativeJobIdDir.toString());
+
+				File dir = new  File(appHome + File.separator + relativeJobIdDir);
+				File histFile = null;
+				for(File f : dir.listFiles() ) {
+					if(f.getAbsolutePath().endsWith(JHIST)) {
+						histFile = f;
+					}
+				}
+				localPath=histFile.getAbsolutePath();
+				UserGroupInformation realUser = UserGroupInformation.createRemoteUser("mapr");
+				UserGroupInformation.setLoginUser(realUser);
+				preProcessHistFile(localPath);
+
+			}else{
+
+				String relativeRemotePath = Constants.JOB_JARS_LOC + jumbuneJobName + File.separator + jobID;
+				String tmpPath = File.separator+"tmp"+File.separator+relativeRemotePath+File.separator;
+				RemotingUtil.mkDir(builder,remoter,tmpPath);
+
+				String remotePath = agentHome + relativeRemotePath;
+				RemotingUtil.mkDir(builder,remoter,remotePath);
+
+				checkAndgetCurrentLogFilePathForYarn(remoter,tmpPath, jobID, cluster);
+				CommandWritableBuilder fsGetBuilder;
+				//Added copy from tmp to agent home
+				fsGetBuilder = new CommandWritableBuilder(cluster, null);
+				StringBuffer copyFromTmpToAgent = new StringBuffer().append("cp -r").append(Constants.SPACE).append(tmpPath).append("*").append(Constants.SPACE).append(remotePath);
+				fsGetBuilder.addCommand(copyFromTmpToAgent.toString(),false, null, CommandType.FS);
+				remoter.fireAndForgetCommand(fsGetBuilder.getCommandWritable());
+
+				relLocalPath  = Constants.JOB_JARS_LOC + jumbuneJobName;
+				remoter.receiveLogFiles(relLocalPath, relativeRemotePath);
+				String absolutePath = appHome + relLocalPath + jobID + File.separator;
+				String fileName = checkAndGetHistFile(absolutePath);
+				localPath = absolutePath + fileName;
+
+				if(hadoopDistribution.trim().equalsIgnoreCase(Constants.HORTONWORKS)) {  
+					LOGGER.debug("preprocessing history file on path[for HDP] - " + localPath);
+					preProcessHistFile(localPath);
+				}
+
+				
+			}
+			java.lang.reflect.Method method = null;
+			Class<?> yarnJobStatsUtility = null;
+			try {
+				yarnJobStatsUtility = Class.forName(YARN_JOB_STATS_UTILITY_CLASS);
+				method = yarnJobStatsUtility.getDeclaredMethod(YARN_JOB_STATS_UTILITY_CLASS_PARSE_METHOD, String.class);
+				return 	(JobOutput) method.invoke(yarnJobStatsUtility.newInstance(), localPath);
+			} catch (Exception e) {
+				LOGGER.error(JumbuneRuntimeException.throwException(e.getStackTrace()));
+			}
 		}
+		return null;
 	}
 
-	
-	private JobOutput getJobDetailsFromNonYarnMapRSetup(JobConfig jobConfig, String jobID,String hadoopDistribution,String hadoopType) 
-			throws IOException{
-		
-		String appHome = JobConfig.getJumbuneHome() + File.separator;
-		String agentHome = RemotingUtil.getAgentHome(jobConfig);
-		Remoter remoter = RemotingUtil.getRemoter(jobConfig, appHome);
-		String logsHistory = changeLogHistoryPathAccToHadoopVersion(HADOOP_HOME,
-				hadoopDistribution,hadoopType);
-		
-		CommandWritableBuilder builder = new CommandWritableBuilder();
-		
-		String relLocalPath = Constants.JOB_JARS_LOC + jobConfig.getFormattedJumbuneJobName();
-		
-		//getting history file name corresponding to jobID 
-		String fileName = getHistoryFileNameForMapR(remoter, logsHistory, jobID);
-		
-		//Now starting rumen processing
-		Properties props = loadHadoopJarConfigurationProperties();
-		String rumenDirPath = agentHome+Constants.JOB_JARS_LOC + jobConfig.getFormattedJumbuneJobName()+ RUMEN;				
-	
-		// make rumen related directory and files
-		final String rumenTempDirOnMapRFS = "/jumbune/rumen-tmp/";
-		final String jsonFilePath = rumenTempDirOnMapRFS + JSON_FILE;
-		final String topologyFilePath = rumenTempDirOnMapRFS + TOPOLOGY_FILE;				
-		
-		//removing any previous rumen Directory and its contents
-		builder.addCommand(RM_CMD+ rumenDirPath, false, null, CommandType.FS);
-		remoter.fireAndForgetCommand(builder.getCommandWritable());			
-		builder.getCommandBatch().clear();
-        mkDir(builder, remoter, rumenDirPath); 
-		
-		String historyFilePathOnMapRFS = logsHistory + File.separator
-				+ fileName;
 
-		//prepare rumen processing command and start processing
-		StringBuilder sb = prepareRumenProcessingCommand(props,appHome, agentHome, jsonFilePath, topologyFilePath,
-				historyFilePathOnMapRFS);
+	/**
+	 * This method pre processes jhist file to replace the extra container identification to normal container nomenclature.
+	 *
+	 * @param localPath denotes the path of the jhist file on jumbune system.
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	private void preProcessHistFile(String localPath) throws IOException {
 
-		startRumenProcessing(remoter, relLocalPath, rumenDirPath, sb);
-		getAndRemoveRumenTempDir(remoter, jobConfig,
-				rumenTempDirOnMapRFS, rumenDirPath);
-			String relativeRemotePath = Constants.JOB_JARS_LOC
-				+ jobConfig.getFormattedJumbuneJobName()
-				+ RUMEN;
-
-	    //receiving job-trace.json and topology files
-		remoter.receiveLogFiles(relLocalPath, relativeRemotePath);
-		LOGGER.debug("Received log files from:" + relativeRemotePath);
-
-		Gson gson = new Gson();
-		JobDetails jobDetails = extractJobDetails(appHome,relLocalPath, gson);
-		return convertToFinalOutput(jobDetails);			
-		
-	}
-	
-
-	private JobOutput getJobDetailsFromNonYarnOthersSetup(JobConfig jobConfig, String jobID,String hadoopDistribution,String hadoopType)
-			throws IOException {
-		
-		String appHome = JobConfig.getJumbuneHome() + File.separator;
-		String agentHome = RemotingUtil.getAgentHome(jobConfig);
-		Remoter remoter = RemotingUtil.getRemoter(jobConfig, appHome);
-		String logsHistory = changeLogHistoryPathAccToHadoopVersion(HADOOP_HOME,
-				hadoopDistribution, hadoopType);
-		CommandWritableBuilder builder = new CommandWritableBuilder();
-		String logfilePath  = getLogFilePath(jobID, remoter, logsHistory, builder);
-		String relLocalPath  = Constants.JOB_JARS_LOC
-				+ jobConfig.getFormattedJumbuneJobName();
-		String relRemotePath = relLocalPath + RUMEN;
-		StringBuilder stringAppender = new StringBuilder(agentHome);
-		stringAppender.append(File.separator).append(relRemotePath)
-		.append(File.separator);
-		
-		// make rumen related directory and files
-		String pathToRumenDir = stringAppender.toString();
-		String jsonFilepath = pathToRumenDir + JSON_FILE;
-		String topologyFilePath = pathToRumenDir + TOPOLOGY_FILE;
-		builder.getCommandBatch().clear();
-		mkDir(builder, remoter, pathToRumenDir);
-		
-		// preparing command for rumen processing
-		String remoteHadoopLib = HADOOP_HOME + LIB;
-		Properties props = loadHadoopJarConfigurationProperties();
-		
-		String coreJar;
-		if (hadoopDistribution.equalsIgnoreCase(Constants.APACHE)) {
-			coreJar = HADOOP_HOME + props.getProperty("CORE_JAR");
-		} else {
-			coreJar = HADOOP_HOME + WILDCARD;
+		File file = new File(localPath);
+		String name = file.getName();
+		String parentDir = file.getParent();
+		String newJhist = parentDir + File.separator + "new.jhist";
+		File dest = null;
+		if (file.exists()) {
+			dest = new File(newJhist);
 		}
-
-		String commonsLoggingJar = agentHome + LIB
-				+ props.getProperty("COMMONS_LOGGING_JAR");
-		String commonsCliJar = remoteHadoopLib
-				+ props.getProperty("COMMONS_CLI_JAR");
-		String commonsConfigurationJar = agentHome + LIB
-				+ props.getProperty("COMMONS_CONFIGURATION_JAR");
-		String commonsLangJar = agentHome + LIB
-				+ props.getProperty("COMMONS_LANG_JAR");
-		String jacksonMapperAslJar = agentHome + LIB
-				+ props.getProperty("JACKSON_MAPPER_ASL_JAR");
-		String jacksonMapperCoreJar = agentHome + LIB
-				+ props.getProperty("JACKSON_MAPPER_CORE_JAR");
-		String rumenJar = agentHome + LIB + props.getProperty("RUMEN_JAR")
-				+ "-" + Versioning.BUILD_VERSION + Versioning.DISTRIBUTION_NAME
-				+ ".jar";
-
-		StringBuilder sb = new StringBuilder(JAVA_CP_CMD);
-		checkHadoopVersionsForRumen(logfilePath, jsonFilepath,
-				topologyFilePath, coreJar, commonsLoggingJar, commonsCliJar,
-				commonsConfigurationJar, commonsLangJar, jacksonMapperAslJar,
-				jacksonMapperCoreJar, rumenJar, sb);
-		LOGGER.debug("Rumen processing command [" + sb.toString() + "]");
-		startRumenProcessing(remoter, relLocalPath, relRemotePath, sb);
-		remoter = RemotingUtil.getRemoter(jobConfig, appHome);
-		remoter.receiveLogFiles(relLocalPath, relRemotePath);
-		LOGGER.debug("Received log files from:" + relRemotePath);
-		// process json
-		Gson gson = new Gson();
-		JobDetails jobDetails = extractJobDetails(appHome, relLocalPath, gson);
-		
-		return convertToFinalOutput(jobDetails);
-	}
-	
-	private JobOutput getJobDetailsFromYarnSetup(JobConfig jobConfig, String jobID,String hadoopDistribution,String hadoopType){
-		
-		String appHome = JobConfig.getJumbuneHome() + File.separator;
-		String agentHome = RemotingUtil.getAgentHome(jobConfig);
-		Remoter remoter = RemotingUtil.getRemoter(jobConfig, appHome);
-		String logsHistory = changeLogHistoryPathAccToHadoopVersion(HADOOP_HOME,
-				hadoopDistribution,hadoopType);
-		
-		CommandWritableBuilder builder = new CommandWritableBuilder();
-		
-		String relativeRemotePath = Constants.JOB_JARS_LOC + jobConfig.getJumbuneJobName() + File.separator + jobID;
-		String remotePath = agentHome + relativeRemotePath;
-		mkDir(builder, remoter, remotePath);
-		checkAndgetCurrentLogFilePathForYarn(remoter,logsHistory,remotePath,jobID,jobConfig);
-		String relLocalPath  = Constants.JOB_JARS_LOC + jobConfig.getFormattedJumbuneJobName();
-		remoter.receiveLogFiles(relLocalPath, relativeRemotePath);
-		String absolutePath = appHome + relLocalPath + jobID + File.separator;
-		String fileName = checkAndGetHistFile(absolutePath);
-		String localPath = absolutePath + fileName;
-		java.lang.reflect.Method method = null;
-		JobOutput jobOutput = null;
-		
+		BufferedWriter bufferedWriter = null ;
 		try {
-			Class<?> yarnJobStatsUtility  = Class.forName(YARN_JOB_STATS_UTILITY_CLASS);
-			method = yarnJobStatsUtility.getDeclaredMethod(YARN_JOB_STATS_UTILITY_CLASS_PARSE_METHOD, String.class);
-			jobOutput = (JobOutput) method.invoke(yarnJobStatsUtility.newInstance(), localPath);
-		} catch (Exception e) {
-			LOGGER.error("Error while instanting class", e);
+			bufferedWriter = Files.newBufferedWriter(Paths.get(dest.getAbsolutePath()), StandardCharsets.UTF_8,
+					StandardOpenOption.CREATE);
+			List<String> lines = Files.readAllLines(Paths.get(localPath), StandardCharsets.UTF_8);
+			Matcher m = null;
+			StringBuilder builder = null;
+			for (String line : lines) {
+				m = LINE_PATTERN.matcher(line);
+				if (m.matches()) {
+					builder = new StringBuilder();
+					builder.append(m.group(1)).append(getProcessedContainerId(m.group(2))).append(m.group(3));
+				} else {
+					builder = new StringBuilder(line);
+				}
+				bufferedWriter.write(builder.toString());
+				bufferedWriter.newLine();
+				bufferedWriter.flush();
+			}
+		} finally{
+			if(bufferedWriter != null){
+				bufferedWriter.close();
+			}
 		}
-		return jobOutput;
+
+		String newHistoryFile = parentDir + File.separator + name;
+		file.delete();
+		Files.copy(Paths.get(newJhist), Paths.get(newHistoryFile), StandardCopyOption.REPLACE_EXISTING);
+		dest.delete();
+
 	}
-	
-	
+
+
+	/**
+	 * Gets the processed container id.
+	 *
+	 * @param id the id
+	 * @return the processed container id
+	 */
+	private String getProcessedContainerId(String id) {
+		StringBuilder builder = new StringBuilder("container");
+		Matcher m = CONTAINER_ID_EPOCH_PATTERN.matcher(id);
+		if (m.matches()) {
+			for (int i = 1; i <= m.groupCount(); i++) {
+				builder.append(Constants.UNDERSCORE + m.group(i));
+			}
+		}
+		return builder.toString();
+
+	}
+
+
+	private void getJobFilesForMapR(Cluster cluster, Remoter remoter, String jobIdDir,
+			String logsHistory, String jobID) {
+
+		StringBuilder getCommand = new StringBuilder()
+				.append(Constants.HADOOP_HOME).append(HDFS_FILE_GET_COMMAND)
+				.append(Constants.SPACE).append(logsHistory).append("*")
+				.append(jobID).append("*")
+				.append(Constants.SPACE).append(jobIdDir);
+
+		CommandWritableBuilder builder = new CommandWritableBuilder(cluster);
+		RemotingUtil.mkDir(builder,remoter, jobIdDir);		
+		builder.clear();
+		builder.addCommand(getCommand.toString(), false, null, CommandType.HADOOP_FS);
+		remoter.fireAndForgetCommand(builder.getCommandWritable());
+
+	}
+
+
+
 	/**
 	 * This method gets the Job History file name corresponding to 
 	 * provided jobID. It assumes the presence of history file on MapRFS.
@@ -313,13 +439,12 @@ public class HadoopLogParser {
 	 * @param jobID
 	 * @return
 	 */
-	private String getHistoryFileNameForMapR(Remoter remoter,
-			String logsHistory, String jobID) {
-		
+	private String getHistoryFileNameForMapR(Cluster cluster, Remoter remoter, String logsHistory, String jobID) {
+
 		StringBuilder lsCommand = new StringBuilder().append(Constants.HADOOP_HOME).append(HDFS_LS_COMMAND).append(Constants.SPACE).append(logsHistory)
 		.append("*").append(jobID).append("*").append("[!'.xml']");
 		LOGGER.debug("History FileName Fetch Command: "+lsCommand.toString());
-		CommandWritableBuilder lsBuilder = new CommandWritableBuilder();
+		CommandWritableBuilder lsBuilder = new CommandWritableBuilder(cluster);
 		lsBuilder.addCommand(lsCommand.toString(), false, null, CommandType.HADOOP_FS);
 		String response = (String) remoter.fireCommandAndGetObjectResponse(lsBuilder.getCommandWritable());
 		BufferedReader reader = new BufferedReader(new StringReader(response));
@@ -327,49 +452,38 @@ public class HadoopLogParser {
 		String[] splits = null;
 		String filePath =null;
 		try{
-		while ((line = reader.readLine()) != null) {    			
-              if (line.contains(jobID)) {
-				splits = line.split("\\s+");
+			while ((line = reader.readLine()) != null) {    			
+				if (line.contains(jobID)) {
+					splits = line.split("\\s+");
+				}
 			}
-		}
 		}catch(IOException exception)
 		{
-			LOGGER.error(exception);
+			LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(exception.getStackTrace()));
 		}
 		finally{
 			if(reader!=null)
 			{ 
 				try {
-				reader.close();
+					reader.close();
 				}catch(IOException ioException)
 				{
-					LOGGER.error("Error while closing the reader: "+ioException);
+					LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(ioException.getStackTrace()));
+				}
+				finally{
 				}
 			}
+			try {
+				filePath=splits[7];		
+			}catch(ArrayIndexOutOfBoundsException boundsException){
+				LOGGER.error("Error reading the file name from command response: "+boundsException);
+			}
+			return filePath.substring(filePath.lastIndexOf("/")+1);
 		}
-		try {
-		filePath=splits[7];		
-		}catch(ArrayIndexOutOfBoundsException boundsException){
-			LOGGER.error("Error reading the file name from command response: "+boundsException);
-		}
-		return filePath.substring(filePath.lastIndexOf(File.separator) + 1);
 	}
 
-	/**
-	 * This method creates a directory at agent side and gives the writing permission(chmod o+w) to others. 
-	 * 
-	 * @param builder
-	 * @param remoter
-	 * @param dirPath
-	 */
-	private void mkDir(CommandWritableBuilder builder, Remoter remoter,
-			String dirPath) {
-		builder.addCommand(MKDIR_CMD + dirPath, false, null, CommandType.FS);
-		builder.addCommand(CHMOD_CMD + dirPath, false, null, CommandType.FS);
-		remoter.fireAndForgetCommand(builder.getCommandWritable());
 
-	}
-	
+
 	/**
 	 * This method prepares command necessary for rumen processing of
 	 * job history file. Being specific to MapR distribution, this method 
@@ -382,18 +496,19 @@ public class HadoopLogParser {
 	 * @param historyFilePathOnMapRFS
 	 * @return
 	 */
-	private StringBuilder prepareRumenProcessingCommand(Properties props, String jumbuneHome, String agentHome, String jsonFilepath, String topologyFilePath, String historyFilePathOnMapRFS)
+	private StringBuilder prepareRumenProcessingCommand(Properties props, String jumbuneHome, 
+			String agentHome, String jsonFilepath, String topologyFilePath, String historyFilePathOnMapRFS) 
 	{  
 		props.clear();
 		final String propertyFilePath=jumbuneHome+"resources"+File.separator+HADOOP_JAR_CONFIF_FILE;
 		FileReader propertyFileReader=null;
 		try{
-		   propertyFileReader=new FileReader(propertyFilePath);	
-		props.load(propertyFileReader);
+			propertyFileReader=new FileReader(propertyFilePath);	
+			props.load(propertyFileReader);
 		}catch(IOException exception){
 			LOGGER.error("Cannot load property file from "+propertyFilePath+", "+exception.getMessage());
 		}
-		
+
 		String[] requiredJars={
 				HADOOP_HOME+LIB+props.getProperty("CORE_MAPR_JAR").trim(),
 				HADOOP_HOME+LIB+props.getProperty("LOG4J_JAR").trim(),
@@ -406,25 +521,25 @@ public class HadoopLogParser {
 				HADOOP_HOME+LIB+props.getProperty("ZOOKEEPER_JAR").trim(),
 				HADOOP_HOME+LIB+props.getProperty("COMMONS_EL_JAR").trim()
 
-			};
-	LOGGER.info("Rumen Processing Command: "+Arrays.asList(requiredJars));
-		
-		String rumenJar = agentHome + LIB + props.getProperty("RUMEN_JAR")+"-"+Versioning.BUILD_VERSION+Versioning.DISTRIBUTION_NAME+".jar";				
+		};
+		LOGGER.debug("Rumen Processing Command: "+Arrays.asList(requiredJars));
+
+		String rumenJar = agentHome + LIB + props.getProperty("RUMEN_JAR")+"-"+Versioning.ENTERPRISE_BUILD_VERSION+Versioning.ENTERPRISE_DISTRIBUTION_NAME+".jar";				
 		StringBuilder sb = new StringBuilder(JAVA_CP_CMD);
-        
+
 		//adding jars to classpath   
 		for(String jar:requiredJars)
 		{
 			sb.append(jar).append(COLON);
 		}
-	
+
 		sb.append(rumenJar);
-        sb.append(SPACE).append(RUMEN_MAIN_CLASS_OLD).append(SPACE).append(jsonFilepath)
+		sb.append(SPACE).append(RUMEN_MAIN_CLASS_OLD).append(SPACE).append(jsonFilepath)
 		.append(SPACE).append(topologyFilePath).append(SPACE).append(historyFilePathOnMapRFS);
 		return sb;
 	}
-	
-	
+
+
 	/**
 	 * This method gets the contents (job-trace.json and topology file) of temporary directory generated 
 	 * on MapRFS during the rumen processing and eventually removes the temporary directory.
@@ -434,36 +549,55 @@ public class HadoopLogParser {
 	 * @param rumenTempDirOnMapRFS
 	 * @param rumenDirPath
 	 */
-	private void getAndRemoveRumenTempDir(Remoter remoter, JobConfig jobConfig, String rumenTempDirOnMapRFS, String rumenDirPath)
-	{		
-	StringBuilder commandToExecute = new StringBuilder().append(Constants.HADOOP_HOME).append(HDFS_FILE_GET_COMMAND)
-	.append(Constants.SPACE).append(rumenTempDirOnMapRFS).append("*").append(SPACE).append(rumenDirPath);
-	LOGGER.info("File get Command" + commandToExecute.toString());
+	private void getAndRemoveRumenTempDir(
+			Remoter remoter, Cluster cluster, String rumenTempDirOnMapRFS, String rumenDirPath){		
 
-	CommandWritableBuilder fsGetBuilder = new CommandWritableBuilder();
-	fsGetBuilder.addCommand(commandToExecute.toString(),false, null, CommandType.MAPRED).populate(jobConfig, null);
-    StringBuilder rmCommand=new StringBuilder().append(Constants.HADOOP_HOME).append(HDFS_RM_COMMAND).append(SPACE).append("/jumbune");
-	fsGetBuilder.addCommand(rmCommand.toString(), false, null, CommandType.HADOOP_FS);
+		StringBuilder commandToExecute = new StringBuilder().append(Constants.HADOOP_HOME).append(HDFS_FILE_GET_COMMAND)
+				.append(Constants.SPACE).append(rumenTempDirOnMapRFS).append("*").append(SPACE).append(rumenDirPath);
+		LOGGER.info("File get Command" + commandToExecute.toString());
 
-	remoter.fireAndForgetCommand(fsGetBuilder.getCommandWritable());
-		
+		CommandWritableBuilder fsGetBuilder = new CommandWritableBuilder(cluster, null);
+		fsGetBuilder.addCommand(commandToExecute.toString(),false, null, CommandType.MAPRED);
+		StringBuilder rmCommand=new StringBuilder().append(Constants.HADOOP_HOME).append(HDFS_RM_COMMAND).append(SPACE).append("/jumbune");
+		fsGetBuilder.addCommand(rmCommand.toString(), false, null, CommandType.HADOOP_FS);
+
+		remoter.fireAndForgetCommand(fsGetBuilder.getCommandWritable());
+
 	}
-	
+
 	private String checkAndGetHistFile(String remotePath) {
 		String fileName = null;
-			
-			File jobFilePath = new File(remotePath);
 
-			if (jobFilePath.exists() && jobFilePath.isDirectory()) {
-				File[] getJobFiles = jobFilePath.listFiles();
-				for (File file : getJobFiles) {
-					if (file.getName().endsWith(".jhist")) {
-						fileName = file.getName();
-					}
+		File jobFilePath = new File(remotePath);
+		if (jobFilePath.exists() && jobFilePath.isDirectory()) {
+			File[] getJobFiles = jobFilePath.listFiles();
+			for (File file : getJobFiles) {
+				if (file.getName().endsWith(".jhist")) {
+					fileName = file.getName();
 				}
 			}
+		}
 		return fileName;
 	}
+
+
+	/**
+	 * This method fetches the intermediate and final .jhist file locations.
+	 *
+	 * @param remoter the remoter
+	 * @param relRemotePath the rel remote path
+	 * @param jobID the job id
+	 * @param cluster the cluster
+	 */
+	private void checkAndgetCurrentLogFilePathForYarn( Remoter remoter,String relRemotePath, String jobID, Cluster cluster){
+		String historyIntLocation = RemotingUtil.getHistoryIntermediateLocation(cluster);
+		String historyDoneLocation = RemotingUtil.getHistoryDoneLocation(cluster);
+		checkAndgetCurrentLogFilePathForYarn(cluster, remoter, historyIntLocation, historyDoneLocation ,relRemotePath, jobID);
+	}
+
+
+
+
 	/**
 	 * 	This api is used to fetch the .hist files containing the job details.
 	 * We first try in the intermediate folder and then fall back to done folder on HDFS.
@@ -471,7 +605,8 @@ public class HadoopLogParser {
 	 *
 	 * @param jobID the job id is the jobname that ran on hadoop
 	 * @param remoter the remoter
-	 * @param logsHistory the logs history is the location of the .hist files on hdfs
+	 * @param historyInterLocation the intermediate location of .jhist files on hdfs
+	 * @param historyDoneLocation  the final location of .jhist files on hdfs
 	 * @param builder the builder
 	 * @param JobConfig the job config
 	 * @param agentHome the agent home
@@ -479,28 +614,30 @@ public class HadoopLogParser {
 	 * @return the log file path for yarn
 	 * @throws FileNotFoundException 
 	 */
-	private void checkAndgetCurrentLogFilePathForYarn(Remoter remoter,
-			String logsHistory,String relRemotePath,String jobID,Config config){
-			JobConfig jobConfig = (JobConfig)config ;
-			String historyLocation = RemotingUtil.getHadoopConfigurationValue(config,"mapred-site.xml","yarn.app.mapreduce.am.staging-dir");
-			if(historyLocation!=null && !historyLocation.isEmpty()){
-				LOGGER.debug("Log history location" + historyLocation);
-				logsHistory = historyLocation + USER_INT_HISTORY_DIR_SUFFIX ; 
-				HISTORY_DIR_SUFFIX_YARN = historyLocation + USER_HISTORY_DIR_SUFFIX ;
-			}
-			
-			CommandWritableBuilder fsGetBuilder = new CommandWritableBuilder();
-			StringBuffer commandToExecute = new StringBuffer().append(Constants.HADOOP_HOME).append(HDFS_FILE_GET_COMMAND).append(Constants.SPACE).append(logsHistory)
-			.append(jobID).append("*").append(Constants.SPACE).append(relRemotePath);
-			LOGGER.debug("File get Command" + commandToExecute.toString());
-			fsGetBuilder.addCommand(commandToExecute.toString(),false, null, CommandType.MAPRED).populate(jobConfig, null);
-			remoter = RemotingUtil.getRemoter(jobConfig, "");
-			
-			commandToExecute = new StringBuffer().append(Constants.HADOOP_HOME).append(HDFS_FILE_GET_COMMAND).append(Constants.SPACE).append(HISTORY_DIR_SUFFIX_YARN)
-			.append(jobID).append("*").append(Constants.SPACE).append(relRemotePath);
-			LOGGER.debug("File get Command" + commandToExecute.toString());
-			fsGetBuilder.addCommand(commandToExecute.toString(),false, null, CommandType.MAPRED).populate(jobConfig, null);
+	private void checkAndgetCurrentLogFilePathForYarn(Cluster cluster, Remoter remoter, String historyInterLocation,String historyDoneLocation,
+			String relRemotePath, String jobID){
+		CommandWritableBuilder fsGetBuilder;
+		StringBuffer doneCommandToExecute = new StringBuffer().append(Constants.HADOOP_HOME).append(HDFS_FILE_GET_COMMAND).append(Constants.SPACE).append(historyDoneLocation)
+				.append(jobID).append("*").append(Constants.SPACE).append(relRemotePath);
+
+		StringBuffer intermediateCommandToExecute = new StringBuffer().append(Constants.HADOOP_HOME).append(HDFS_FILE_GET_COMMAND).append(Constants.SPACE).append(historyInterLocation)
+				.append(jobID).append("*").append(Constants.SPACE).append(relRemotePath);
+		fsGetBuilder = new CommandWritableBuilder(cluster, null);
+		if(!cluster.getHadoopUsers().isHasSingleUser()){
+			fsGetBuilder.addCommand(intermediateCommandToExecute.toString(),false, null, CommandType.MAPRED).setMethodToBeInvoked(RemotingMethodConstants.EXECUTE_REMOTE_COMMAND_AS_SUDO);
 			remoter.fireAndForgetCommand(fsGetBuilder.getCommandWritable());
+
+			fsGetBuilder = new CommandWritableBuilder(cluster, null);
+			fsGetBuilder.addCommand(doneCommandToExecute.toString(),false, null, CommandType.MAPRED).setMethodToBeInvoked(RemotingMethodConstants.EXECUTE_REMOTE_COMMAND_AS_SUDO);
+			remoter.fireAndForgetCommand(fsGetBuilder.getCommandWritable());
+		}else{
+			fsGetBuilder.addCommand(intermediateCommandToExecute.toString(),false, null, CommandType.MAPRED);
+			remoter.fireAndForgetCommand(fsGetBuilder.getCommandWritable());
+
+			fsGetBuilder = new CommandWritableBuilder(cluster, null);
+			fsGetBuilder.addCommand(doneCommandToExecute.toString(),false, null, CommandType.MAPRED).populate(cluster, null);
+			remoter.fireAndForgetCommand(fsGetBuilder.getCommandWritable());
+		}
 	}
 
 	private String getLogFilePath(String jobID, Remoter remoter,
@@ -508,7 +645,6 @@ public class HadoopLogParser {
 		String command = jobID + RemotingConstants.SINGLE_SPACE + logsHistory;
 		builder.addCommand(command, false, null, CommandType.FS).setMethodToBeInvoked(RemotingMethodConstants.GET_JOB_HISTORY_FILE_FROM_JOB_ID);
 		return (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
-		
 	}
 
 	/**
@@ -519,13 +655,13 @@ public class HadoopLogParser {
 	 * @param relRemotePath the rel remote path
 	 * @param sb the sb
 	 */
-	private void startRumenProcessing(Remoter remoter, String relLocalPath,
+	private void startRumenProcessing(Cluster cluster, Remoter remoter, String relLocalPath,
 			String relRemotePath, StringBuilder sb) {
 		// Starting rumen processing on master
-		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(sb.toString(), false, null, CommandType.HADOOP_JOB);
+		CommandWritableBuilder builder = new CommandWritableBuilder(cluster);
+		builder.addCommand(sb.toString(), false, null, CommandType.FS);
 		remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
-		LOGGER.info("Completed Rumen processing");
+		LOGGER.debug("Completed Rumen processing");
 	}
 
 	/**
@@ -567,14 +703,12 @@ public class HadoopLogParser {
 	 * @param user TODO
 	 * @return the string
 	 */
-	private String changeLogHistoryPathAccToHadoopVersion(String remoteHadoop,
+	public String changeLogHistoryPathAccToHadoopVersion(String remoteHadoop,
 			String hadoopDistribution, String hadoopType) {
 		String logsHistory = null;
 		if(hadoopType.equalsIgnoreCase(Constants.NON_YARN) && hadoopDistribution.equalsIgnoreCase(Constants.APACHE)) {
 			logsHistory = remoteHadoop + LOGS + HISTORY_DIR_SUFFIX;
-		}else if(hadoopType.equalsIgnoreCase(Constants.YARN)){
-			logsHistory = HISTORY_INT_DIR_SUFFIX_YARN;
-		}else if(hadoopDistribution.equalsIgnoreCase(Constants.MAPR)) {
+		}else if(hadoopDistribution.equalsIgnoreCase(Constants.MAPR) || (hadoopDistribution.equalsIgnoreCase(Constants.EMRMAPR))) {
 			logsHistory =HISTORY_DIR_SUFFIX_MAPR_NY;
 		}		
 		return logsHistory;
@@ -604,10 +738,10 @@ public class HadoopLogParser {
 			String jacksonMapperAslJar, String jacksonMapperCoreJar,
 			String rumenJar, StringBuilder sb) {
 		// fallback for default hadoop version
-			 sb.append(coreJar).append(COLON).append(rumenJar).append(COLON).append(commonsLoggingJar).append(COLON).append(commonsCliJar).append(COLON)
-				.append(commonsConfigurationJar).append(COLON).append(commonsLangJar).append(COLON).append(jacksonMapperAslJar).append(COLON)
-				.append(jacksonMapperCoreJar).append(SPACE).append(RUMEN_MAIN_CLASS_OLD).append(SPACE).append(FILE_PREFIX).append(jsonFilepath)
-				.append(SPACE).append(FILE_PREFIX).append(topologyFilePath).append(SPACE).append(FILE_PREFIX).append(logfilePath);
+		sb.append(coreJar).append(COLON).append(rumenJar).append(COLON).append(commonsLoggingJar).append(COLON).append(commonsCliJar).append(COLON)
+		.append(commonsConfigurationJar).append(COLON).append(commonsLangJar).append(COLON).append(jacksonMapperAslJar).append(COLON)
+		.append(jacksonMapperCoreJar).append(SPACE).append(RUMEN_MAIN_CLASS_OLD).append(SPACE).append(FILE_PREFIX).append(jsonFilepath)
+		.append(SPACE).append(FILE_PREFIX).append(topologyFilePath).append(SPACE).append(FILE_PREFIX).append(logfilePath);
 	}
 
 	/**
@@ -622,6 +756,8 @@ public class HadoopLogParser {
 		jobOutput.setJobName(jobDetails.getJobName());
 		jobOutput.setUser(jobDetails.getUser());
 		jobOutput.setOutcome(jobDetails.getOutcome());
+		jobOutput.setLaunchTime(jobDetails.getLaunchTime());
+		jobOutput.setSubmitTime(jobDetails.getSubmitTime());
 		long startTime = jobDetails.getSubmitTime();
 		long finishTime = jobDetails.getFinishTime();
 		long timeInMilliSec = (finishTime - startTime);
@@ -681,6 +817,7 @@ public class HadoopLogParser {
 			tod.setTaskStatus(td.getTaskStatus());
 			tod.setTaskType(td.getTaskType());
 			tod.setTaskID(td.getTaskID());
+			tod.setPreferredLocations(td.getPreferredLocations());
 			long startPoint = (td.getStartTime() - startTime) / CONVERSION_FACTOR_BYTES_TO_KB;
 			tod.setStartPoint(startPoint);
 			long endPoint = (td.getFinishTime() - startTime) / CONVERSION_FACTOR_BYTES_TO_KB;
@@ -741,7 +878,7 @@ public class HadoopLogParser {
 		}
 		long size=taskOutputDetails.size();
 		return (totalDataFlow / (size==0?1:size)) / CONVERSION_FACTOR_BYTES_TO_KB;
-		
+
 	}
 
 }

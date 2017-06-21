@@ -6,6 +6,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.WritableComparable;
+import org.jumbune.datavalidation.ArrayListWritable;
 
 
 /**
@@ -13,29 +14,26 @@ import org.apache.hadoop.io.WritableComparable;
  * 
  * 
  */
-public class DataViolationWritable implements WritableComparable<DataViolationWritableBean> {
+public class DataViolationWritable implements WritableComparable<DataViolationWB> {
 
 	/** total number of violations for a particular type of check. */
-	private int totalViolations;
+	private long totalViolations;
 	
 	/** infected tuple for a perticular type of violation */
-	private int dirtyTuple;
-	
-	/** tuple which has no violation */
-	private int cleanTuple;
+	private long dirtyTuple;
 	
 	/** Map containing number of violations corresponding each field for a particular data validation check. */
 	private MapWritable fieldMap;
 
 	/** Writable class for array of DataViolationWritableBean. */
-	private DataViolationArrayWritable dataViolationArrayWritable;
+	private ArrayListWritable<FileViolationsWritable> fileViolationsWritables;
 
 	/**
 	 * Instantiates a new data violation writable.
 	 */
 	public DataViolationWritable() {
 		fieldMap = new MapWritable();
-		dataViolationArrayWritable = new DataViolationArrayWritable();
+		fileViolationsWritables = new ArrayListWritable<FileViolationsWritable>();
 	}
 
 	/**
@@ -43,7 +41,7 @@ public class DataViolationWritable implements WritableComparable<DataViolationWr
 	 *
 	 * @return the totalViolations
 	 */
-	public int getTotalViolations() {
+	public long getTotalViolations() {
 		return totalViolations;
 	}
 
@@ -52,7 +50,7 @@ public class DataViolationWritable implements WritableComparable<DataViolationWr
 	 *
 	 * @param totalViolations the totalViolations to set
 	 */
-	public void setTotalViolations(int totalViolations) {
+	public void setTotalViolations(long totalViolations) {
 		this.totalViolations = totalViolations;
 	}
 
@@ -74,33 +72,16 @@ public class DataViolationWritable implements WritableComparable<DataViolationWr
 		this.fieldMap = fieldMap;
 	}
 
-	/**
-	 * Gets the data violation array writable.
-	 *
-	 * @return the dataViolationArrayWritable
-	 */
-	public DataViolationArrayWritable getDataViolationArrayWritable() {
-		return dataViolationArrayWritable;
-	}
-
-	/**
-	 * Sets the data violation array writable.
-	 *
-	 * @param dataViolationArrayWritable the dataViolationArrayWritable to set
-	 */
-	public void setDataViolationArrayWritable(DataViolationArrayWritable dataViolationArrayWritable) {
-		this.dataViolationArrayWritable = dataViolationArrayWritable;
-	}
+	
 
 	/**
 	 * writes data violations to output stream
 	 */
 	public void write(DataOutput out) throws IOException {
-		out.writeInt(totalViolations);
-		out.writeInt(dirtyTuple);
-		out.writeInt(cleanTuple);
+		out.writeLong(totalViolations);
+		out.writeLong(dirtyTuple);
 		fieldMap.write(out);
-		dataViolationArrayWritable.write(out);
+		fileViolationsWritables.write(out);
 	}
 
 	/**
@@ -108,18 +89,17 @@ public class DataViolationWritable implements WritableComparable<DataViolationWr
 	 * 
 	 */
 	public void readFields(DataInput in) throws IOException {
-		totalViolations = in.readInt();
-		dirtyTuple = in.readInt();
-		cleanTuple = in.readInt();
+		totalViolations = in.readLong();
+		dirtyTuple = in.readLong();
 		fieldMap.readFields(in);
-		dataViolationArrayWritable.readFields(in);
+		fileViolationsWritables.readFields(in);
 	}
 
 	/* (non-Javadoc)
 	 * @see java.lang.Comparable#compareTo(java.lang.Object)
 	 */
 	@Override
-	public int compareTo(DataViolationWritableBean arg0) {
+	public int compareTo(DataViolationWB arg0) {
 		// TODO Auto-generated method stub
 		return 0;
 	}
@@ -127,29 +107,34 @@ public class DataViolationWritable implements WritableComparable<DataViolationWr
 	/**
 	 * @return the infectedTuple
 	 */
-	public int getDirtyTuple() {
+	public long getDirtyTuple() {
 		return dirtyTuple;
 	}
 
 	/**
 	 * @param dirtyTuple the infectedTuple to set
 	 */
-	public void setDirtyTuple(int dirtyTuple) {
+	public void setDirtyTuple(long dirtyTuple) {
 		this.dirtyTuple = dirtyTuple;
 	}
 
-	/**
-	 * @return the pureTuple
-	 */
-	public int getCleanTuple() {
-		return cleanTuple;
+	
+	public ArrayListWritable<FileViolationsWritable> getFileViolationsWritables() {
+		return fileViolationsWritables;
 	}
 
-	/**
-	 * @param cleanTuple the pureTuple to set
-	 */
-	public void setCleanTuple(int cleanTuple) {
-		this.cleanTuple = cleanTuple;
+	public void setFileViolationsWritables(ArrayListWritable<FileViolationsWritable> fileViolationsWritables) {
+		this.fileViolationsWritables = fileViolationsWritables;
 	}
 
+	@Override
+	public String toString() {
+		return "DataViolationWritable [totalViolations=" + totalViolations + ", dirtyTuple=" + dirtyTuple
+				+ ", fieldMap=" + fieldMap + ", fileViolationsWritables=" + fileViolationsWritables + "]";
+	}
+
+	
+	
+	
+	
 }

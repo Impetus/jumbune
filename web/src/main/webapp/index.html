@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" data-ng-app="jumbune">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv='cache-control' content='no-cache'>
+    <meta http-equiv='expires' content='0'>
+    <meta http-equiv='pragma' content='no-cache'>
+    <title>JUMBUNE </title>
+    <link rel="shortcut icon" href="assets/images/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="assets/images/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" type="text/css" href="assets/css/bootstrap.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="assets/css/styles.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="assets/css/font-awesome.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="assets/css/tabs.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="assets/css/styles.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="assets/css/notify.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="assets/css/jquery-clockpicker.min.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="assets/css/jquery.datetimepicker.css" media="screen">
+    
+
+    <!--Used for job completion graph <link rel="stylesheet" type="text/css" href="assests/css/jquery.circliful.css" media="screen"> -->
+    <link rel="stylesheet" href="vendor/bower_components/jqplot/jquery.jqplot.css" />
+    <link rel="stylesheet" href="vendor/bower_components/bistel-chart/bistel.jqplot.css" />
+    <link rel="stylesheet" href="vendor/bower_components/jquery-ui/themes/smoothness/jquery-ui.css" />
+    <link rel="stylesheet" href="vendor/uigrid/ui-grid.min.css" type="text/css">
+	<link rel="stylesheet" type="text/css" href="assets/css/donut.css" media="screen">
+
+    <link rel="stylesheet" type="text/css" href="assets/css/styleD3.css" media="screen">
+    
+    <script type="text/javascript" src="vendor/jquery/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript" src="vendor/angular/angular.min-v1.2.25.js"></script>
+    <script type="text/javascript" src="vendor/angular/angular-route.min.js"></script>
+    <script type="text/javascript" src="vendor/angular/angular-resource.js"></script>
+    <script type="text/javascript" src="vendor/angular/angular-sanitize.js"></script>
+    <script type="text/javascript" src="vendor/angular/angular-animate.min.js"></script>
+    <script type="text/javascript" src="vendor/angular/angular.easypiechart.js"></script>
+    
+    <script type="text/javascript" src="vendor/counter/countUp.min.js"></script>
+    <script type="text/javascript" src="vendor/counter/angular-countUp.js"></script>
+
+
+    <script src="vendor/uigrid/ui-grid.min.js"></script>
+    <script type="text/javascript" src="vendor/localize/localize.js"></script>
+    <script type="text/javascript" src="vendor/bootstrap/bootstrap.min.js"></script>
+     <script type="text/javascript" src="vendor/datetimepicker/jquery-clockpicker.min.js"></script>
+    <script type="text/javascript" src="vendor/datetimepicker/jquery.datetimepicker.js"></script>
+
+    <script type="text/javascript" src="vendor/common/map.js"></script>
+    <script type="text/javascript" src="vendor/common/notify.js"></script>
+    <script type="text/javascript" src="vendor/other/d3.v3.min.js"></script>
+    <script type="text/javascript" src="vendor/other/d3.legend.js"></script>
+
+
+     <script type="text/javascript" src="vendor/nvd3/nv.d3.js"></script>
+    <link href="vendor/nvd3/nv.d3.css" rel="stylesheet" type="text/css">
+    <link href="vendor/nvd3/additional.css" rel="stylesheet" type="text/css">
+
+    
+    <script src="vendor/other/stopExecutionOnTimeout-f961f59a28ef4fd551736b43f94620b5.js"></script>
+
+
+    <script src="vendor/bower_components/jquery-ui/jquery-ui.js"></script>
+    <script src="vendor/bower_components/underscore/underscore.js"></script>
+    <script type="text/javascript" src="vendor/jquery/jquery.circliful.min.js"></script>
+
+
+    <script src="vendor/bower_components/underscore.string/dist/underscore.string.min.js"></script>
+    <script src="vendor/bower_components/jqplot/jquery.jqplot.js"></script>
+
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.barRenderer.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.BezierCurveRenderer.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.blockRenderer.min.js"></script>
+    <!-- Used to create bubble chart <script type="text/javascript" src="bower_components/jqplot/plugins/jqplot.bubbleRenderer.min.js"></script> -->
+
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.canvasAxisLabelRenderer.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.canvasAxisTickRenderer.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.canvasTextRenderer.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.categoryAxisRenderer.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.ciParser.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.dateAxisRenderer.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.donutRenderer.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.dragable.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.enhancedLegendRenderer.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.funnelRenderer.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.logAxisRenderer.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.mekkoAxisRenderer.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.mekkoRenderer.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.meterGaugeRenderer.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.ohlcRenderer.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.pieRenderer.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.pyramidAxisRenderer.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.pyramidGridRenderer.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.pyramidRenderer.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.pointLabels.min.js"></script>
+    <script type="text/javascript" src="vendor/bower_components/jqplot/plugins/jqplot.trendline.js"></script>
+
+        
+    <!-- jqGrid script and css -->
+    <script type="text/javascript" src="skins/js/plugins/jquery-jqgrid/js/jqgrid.js"></script>
+    <script src="vendor/other/jquery-migrate-1.2.1.js"></script>
+    <script src="skins/js/plugins/jquery/jquery.jstree.js"></script>
+    <link rel="stylesheet" href="skins/css/jstree.css" type="text/css">
+    <!-- <link rel="stylesheet" href="skins/css/template.css" type="text/css"> -->
+    <!-- <link rel="stylesheet" href="skins/css/core.css" type="text/css"> -->
+    <link rel="stylesheet" href="skins/js/plugins/jquery-jqgrid/css/ui.jqgrid.css" type="text/css">
+    <!-- End : jqGrid script and css -->
+    
+    
+
+    <script src="vendor/bower_components/bistel-chart/bistel.jqplot.js"></script>
+    <script src="vendor/bower_components/bistel-chart/bistel.chart.js"></script>
+    <script src="vendor/angular-ui-bootstrap/0.12.1/ui-bootstrap-tpls.min.js"></script>
+
+    <script type="text/javascript" src="app/app.js"></script>
+    <script type="text/javascript" src="vendor/common/lodash.min.js"></script>
+    <script type="text/javascript" src="vendor/common/d3.tip.js"></script>
+
+    <script type="text/javascript" src="app/factories/common.factory.js"></script>
+    <script type="text/javascript" src="app/factories/profiler-graph.factory.js"></script>
+    <script type="text/javascript" src="app/directives/common.directive.js"></script>
+    <script type="text/javascript" src="app/directives/formActionButton.js"></script>
+    <script type="text/javascript" src="app/directives/dropdown-multiselect.js"></script>
+    <script type="text/javascript" src="app/directives/catetory-linechart.js"></script>
+    <script type="text/javascript" src="app/header/jumbune-header.directive.js"></script>
+    <script type="text/javascript" src="app/footer/jumbune-footer.directive.js"></script>
+    <script type="text/javascript" src="app/form-buttons/jumbune-form-buttons.directive.js"></script>
+    <script type="text/javascript" src="app/dashboard/DashboardController.js"></script>
+    <script type="text/javascript" src="app/clusters-config/ClusterController.js"></script>
+    <script type="text/javascript" src="app/analyzeData/wizard/profiling/ProfileController.js"></script>
+    <script type="text/javascript" src="app/analyzeData/wizard/quality/QualityController.js"></script>
+    <script type="text/javascript" src="app/cluster/AddClusterController.js"></script>
+    <script type="text/javascript" src="app/newjobconfig/NewJobConfigController.js"></script>
+    <script type="text/javascript" src="app/cluster/ConfigurationController.js"></script>
+    <script type="text/javascript" src="app/newjobconfig/DataConfigController.js"></script>
+    <script type="text/javascript" src="app/newjobconfig/JobConfigController.js"></script>
+    <script type="text/javascript" src="app/newjobconfig/DataJobController.js"></script>
+    <script type="text/javascript" src="app/analyzeJob/wizard/DefineJobInfoController.js"></script>
+    <script type="text/javascript" src="app/newjobconfig/JobPreviewController.js"></script>
+    <script type="text/javascript" src="app/analyzeJob/wizard/JobWidgetController.js"></script>
+    <script type="text/javascript" src="app/optimizeJob/wizard/tuning.controller.js"></script>
+    <script type="text/javascript" src="app/analyzeJob/wizard/debugger.controller.js"></script>
+    <script type="text/javascript" src="app/newjobconfig/whatIf.controller.js"></script>
+    <script type="text/javascript" src="app/newjobconfig/jobProfiling.controller.js"></script>
+    <script type="text/javascript" src="app/analyzeData/wizard/dataValidation/DataValidationController.js"></script>
+    <script type="text/javascript" src="app/analyzeData/wizard/dataValidationJSON/DataValidationControllerJSON.js"></script>
+    <script type="text/javascript" src="app/analyzeData/wizard/dataValidationXML/DataValidationControllerXML.js"></script>
+    <script type="text/javascript" src="app/analyzeData/wizard/dataComparison/DataValidationControllerComp.js"></script>
+    <script type="text/javascript" src="app/optimizeJob/result/optimizegraphCtrl.js"></script>
+    <script type="text/javascript" src="app/clusters-config/DPDQPreviewController.js"></script>
+    <script type="text/javascript" src="app/clusters-config/DPDQChartController.js"></script>
+    <script type="text/javascript" src="app/newjobconfig/DataAnalysisPreviewController.js"></script>
+    <script type="text/javascript" src="app/newjobconfig/DAChartController.js"></script>
+    <script type="text/javascript" src="app/newjobconfig/JobChartController.js"></script>
+    <script type="text/javascript" src="app/analyzeCluster/result/analyzeClusterController.js"></script>
+    <script type="text/javascript" src="app/analyzeCluster/result/directives/queueHorizontalBarGraph.directive.js"></script>
+    <script type="text/javascript" src="app/analyzeCluster/result/directives/ngDataCenterConfig.directive.js"></script>
+    <script type="text/javascript" src="app/analyzeData/result/quality/analyzeDataController.js"></script>
+    <script type="text/javascript" src="app/analyzeJob/result/analyzeJobController.js"></script>
+    <script type="text/javascript" src="app/analyzeData/result/dataValidationXML/analyzeDataXmlCtrl.js"></script>
+    <script type="text/javascript" src="app/analyzeData/result/dataValidationJSON/analyzeDataJsonController.js"></script>
+    <script type="text/javascript" src="app/analyzeData/result/dataComparison/dataComparisonCtrl.js"></script>
+    <script type="text/javascript" src="app/analyzeData/result/dataCleansing/dataCleansingCtrl.js"></script>    
+    <script type="text/javascript" src="app/analyzeData/wizard/dataCleansing/dataCleansingController.js"></script>
+    <script type="text/javascript" src="app/analyzeData/result/dataValidation/analyzeDataTextController.js"></script>
+    <script type="text/javascript" src="app/analyzeData/result/profiling/analyzeDataProfilingController.js"></script>
+    <script type="text/javascript" src="app/service.js"></script>
+
+</head>
+
+<body>
+<section data-ng-view></section>
+<!--<div jumbune-footer=""></div>-->
+</body>
+</html>
+</div>
+
+
+
+

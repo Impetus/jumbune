@@ -1,0 +1,13 @@
+<h1 class="pull-left" style="margin-left:10px;font-size:30px;font-weight:bold;">{{tab.content}}</h1>
+<div class="categoriesFilter">
+
+    <span><i class="fa fa-filter"></i> <span ng-dropdown-multiselect="" opened-data="openedStatData" custom-functions="hmss" dom-id="category_for_single_node" listype="categories" events="callBackEventForCategorySelection" extra-settings="dropdownExtraSettings" translation-texts ="textForFilterButton" read-write-service-data="readWriteServiceData" node-service-data="readWriteNodeServiceData" options="allCategories" selected-model="selectedCategoryForSingleNode[tab.content]" checkboxes="true" class="filter-categories-span" tab-node-id={{tab.content}} valtype="node" ></span></span>
+</div>
+<div class="clearfix chartWrapper">
+    <div class="col-md-12 chartContainer clearfix">
+        <!-- Chart section -->
+        <div class="col-md-6" ng-repeat="categoryChart in selectedCategoryForSingleNode[tab.content]" ng-category-line-chart option-data="chartData" category="categoryChart" node-service-values="getNodeSpecificValue" selected-nodes="selectedNodesForIndividualTabs[tab.content]"  tab-node-id={{tab.content}}>
+        </div>
+
+    </div>
+</div>

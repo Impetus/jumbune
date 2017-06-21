@@ -22,53 +22,34 @@
 			<dependencies>
 			<dependency>
 			<groupId>org.jumbune</groupId>
-				<artifactId>examples-usregionportouts</artifactId>
+				<artifactId>examples-regexprofiling</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 			<groupId>org.jumbune</groupId>
-				<artifactId>examples-wordcount</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-			<groupId>org.jumbune</groupId>
-				<artifactId>examples-movierating</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-			<groupId>org.jumbune</groupId>
-				<artifactId>examples-bankdefaulters</artifactId>
+				<artifactId>examples-defaulterdebugging</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			</dependencies>
-
 		</dependencyManagement>
-			<dependencies>
-			<dependency>
-			<groupId>org.jumbune</groupId>
-				<artifactId>examples-usregionportouts</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-			<groupId>org.jumbune</groupId>
-				<artifactId>examples-wordcount</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-			<groupId>org.jumbune</groupId>
-				<artifactId>examples-movierating</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-			<groupId>org.jumbune</groupId>
-				<artifactId>examples-bankdefaulters</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			</dependencies>
-		
+
+	<profiles>
+		<profile>
+			<id>default</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
 		<modules>
-		<module>debugger</module>
-		<module>wordcount</module>
-		<module>profiling</module>
+		<module>regexprofiling</module>
+		<module>defaulterdebugging</module>
 		</modules>
+		</profile>
+		<profile>
+			<id>yarn</id>
+		<modules>
+		<module>regexprofiling</module>
+		<module>defaulterdebugging</module>
+		</modules>
+		</profile>
+	</profiles>
 </project>

@@ -1,0 +1,122 @@
+<!-- header -->
+<div jumbune-header=""></div>
+<style type="text/css">
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+
+.x.axis path {
+    display: none;
+}
+
+.line {
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 1.5px;
+}
+
+.legend rect {
+    fill: white;
+    opacity: 0.8;
+}
+</style>
+<div class="resultWrapper" id="dataValidationWrap">
+    <div class="widgetRow" ng-init="init()">
+        <div class="widgetWrapper" id="dataValidationWidget">
+            <h2><span class="tracking"><i class="fa fa-home" style="font-size:30px;cursor:pointer;" ng-click="clickedHomeIcon()"></i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Job&nbsp;&nbsp;-&nbsp;&nbsp;{{showJobName}}(Data Validation Job)</span><span class="tracking1" style="float:right;"></span>
+            <span style="float:right;margin-top:5px;padding-right:15px;"><i class="fa fa-key rotateClass tip" data-toggle="tooltip" ng-show="licenseExpireTrue" title="License will expire soon." data-placement="right" style="color:#F44336"></i>
+            <i ng-show="licenseExpireDays" class="fa fa-key rotateClass tip" data-toggle="tooltip" title="License will expire in {{daysDiffShow}} day." data-placement="right" style="color:#F44336"></i> </span></h2>
+            <div class="ring-loader" alt="alternate text" style="margin-top:145px;margin-bottom:145px"></div>
+            <div ng-show="counterValidationFlag" class="col-lg-12">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Summary</h3> </div>
+                    <div class="panel-body">
+                        <ul class="chartContainer countersList" style="margin: 0px; padding: 0px;">
+                            <li>
+                                <h1>
+                                    <span style="color:#1b82bb" id="totalRowAffectedId">0</span>
+                                 </h1>Total Row Affected
+                            </li>
+                            <li>
+                                <h1>
+                                    <span style="color:#FFCA28;cursor:pointer" id="numberOfFieldViolationsId">0</span>
+                                </h1>Number of fields Violations
+                            </li>
+                            <li>
+                                <h1>
+                                    <span style="color:#FFA726;cursor:pointer" id="totalTransformationViolations">0</span>
+                                </h1>Total no. of transformation Violations
+                            </li>
+                            <li>
+                                <h1>
+                                    <span style="color:#BDBDBD;cursor:pointer" id="rowAffectedTransformationViolationsId" ng-click="generateTableForViolations('JsonSchemaKey')">0</span>
+                                </h1>Rows affected due to transformation Violations
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="row clearfix dataValidationChartWrapper" id="resultWidgetContainer">
+                <div class="col-lg-5 col-md-12">
+                    <!-- <h3>Data Violations</h3> -->
+                    <div style="width: 500px;margin:0 auto;width:100%;margin-left: 20px;margin-top: 76px;" align="center" id="dataComparisonGraphViolations"></div>
+                </div>
+                
+                    <div class="col-lg-7 col-md-12" class="widget-containerDV" ng-if="tableCompHideFlag" >
+                    <div style="border:1px solid #ccc !important;padding-left:0px;height: 331px;margin-right: 20px;margin-top:30px;">
+                         <div class="widget-headerDV">
+                            <span style="margin-left:24px;">Data Violations Table</span>(
+                            <span id="voilationHeader">{{violationJSONTable.label}}</span>)
+                            <span id="voilationHeader1" style="float:right">File Name&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;{{showFileName}}</span>
+                        </div>
+                        <div class="widget-body">
+                            <table class="table-striped dtl-tbl dvdatabox" style="width: 30%; float: left;margin-left:24px;">
+                                <thead>
+                                    <tr>
+                                        <th>File Name</th>
+                                        <th>Violations</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-click="showDataCompFileViolaions(key)" ng-repeat="(key, value) in tableData">
+                                        <td>
+                                            <ul>
+                                                <li style="cursor: pointer;border-left: 1px solid #eee; border-bottom: 1px solid #eee;border-right: 1px solid #eee;font-size: 12px;padding: 5px;" ng-click="getDataCompGrid(key)">
+                                                    {{key}}
+                                                </li>
+                                            </ul>
+                                        </td>
+                                        <td>
+                                            <ul>
+                                                <li style="border-bottom: 1px solid #eee;border-right: 1px solid #eee;font-size: 12px;padding: 5px;">
+                                                    {{value}}
+                                                </li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div ui-grid="gridOptionsDataComp" ng-if="DataFlag" ui-grid-pagination class="grid" style="width: 450px;  height: 300px; border-left: 1px solid #ccc;float: right;width: 60%;"></div>
+                    </div>
+                       
+                    </div>
+                
+            </div>
+        </div>
+        <p id="errorMessage" style="text-align: center;
+            color: rgb(169, 68, 66);
+            width: 600px;
+            padding: 20px;
+            border-radius: 5px;
+            background: rgb(235, 204, 209);
+            margin: 0 auto;
+            position: relative;
+            top: 150px;
+            display: none"></p>
+    </div>
+</div>

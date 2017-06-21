@@ -1,16 +1,19 @@
 package org.jumbune.common.utils;
 
+import org.jumbune.utils.Versioning;
 
+import com.google.gson.Gson;
 
 /**
  * The Interface Constants.
  */
 public interface Constants {
 
+	String JOB_RESULT_LOC = "/results/";
 	/** The data validation. */
 	String DATA_VALIDATION = "DATA_VALIDATION";
 	
-	/** Data Quality Timeline module **/
+	/**  Data Quality Timeline module *. */
 	String DATA_QUALITY_TIMELINE = "DATA_QUALITY_TIMELINE";
 
 	/** The h command. */
@@ -85,6 +88,13 @@ public interface Constants {
 	/** The LO g4 j2_ cor e_ jar. */
 	String LOG4J2_CORE_JAR = "/lib/log4j-core-2.1.jar";
 	
+	/**  The apache xbean jar. */
+	String XBEAN__JAR = "/lib/xbean-2.2.0.jar";
+	
+	String XSOM__JAR = "/lib/xsom-20140925.jar";
+	
+	String RELAXNG__JAR = "/lib/relaxngDatatype-1.0.jar";
+	
 	/** The echo agent home. */
 	String ECHO_AGENT_HOME = "echo $AGENT_HOME \n \n";
 	
@@ -119,10 +129,19 @@ public interface Constants {
 	String LOG_LEVEL_INFO = "INFO";
 
 	/** The dv jar path. */
-	String DV_JAR_PATH = "lib/jumbune-datavalidation-"+Versioning.BUILD_VERSION+Versioning.DISTRIBUTION_NAME + JAR;
+	String DV_JAR_PATH = "lib/jumbune-datavalidation-"+Versioning.ENTERPRISE_BUILD_VERSION+Versioning.ENTERPRISE_DISTRIBUTION_NAME + JAR;
 	
 	/** The dv main class. */
 	String DV_MAIN_CLASS = "org.jumbune.datavalidation.DataValidationJobExecutor";
+	
+	/** The dc main class. */
+	String DC_MAIN_CLASS = "org.jumbune.datavalidation.DataCleansingJobExecutor";
+	
+	/** The dv main class. */
+	String XML_DV_MAIN_CLASS = "org.jumbune.datavalidation.xml.XmlDataValidationJobExecutor";
+	
+	/** The json dv main class. */
+	String JSON_DV_MAIN_CLASS = "org.jumbune.datavalidation.json.JsonDataValidationExecutor";
 	
 	/** The lib jars. */
 	String LIB_JARS = "-libjars";
@@ -131,10 +150,10 @@ public interface Constants {
 	String GSON_JAR = "lib/gson-2.2.4"+ JAR;
 	
 	/** The common jar. */
-	String COMMON_JAR = "lib/jumbune-common-"+Versioning.BUILD_VERSION+Versioning.DISTRIBUTION_NAME + JAR;
+	String COMMON_JAR = "lib/jumbune-common-"+Versioning.ENTERPRISE_BUILD_VERSION+Versioning.ENTERPRISE_DISTRIBUTION_NAME + JAR;
 	
 	/** The utilities jar. */
-	String UTILITIES_JAR = "lib/jumbune-utils-"+Versioning.BUILD_VERSION+Versioning.DISTRIBUTION_NAME + JAR;
+	String UTILITIES_JAR = "lib/jumbune-utils-"+Versioning.ENTERPRISE_BUILD_VERSION+Versioning.ENTERPRISE_DISTRIBUTION_NAME + JAR;
 	
 	/** The exception. */
 	String EXCEPTION = "Exception";
@@ -143,7 +162,7 @@ public interface Constants {
 	String ERROR = "Error";
 	
 	/** The log processor error. */
-	String LOG_PROCESSOR_ERROR = "{\"ErrorAndException\": {\"Debug Analysis\" : \" Error occured during Debug Analysis \"}}";
+	String LOG_PROCESSOR_ERROR = "{\"ErrorAndException\": {\"Error occured during Debug Analysis\" : \" Error occured during Debug Analysis \"}}";
 
 	/** The pipe separator. */
 	String PIPE_SEPARATOR = "|";
@@ -156,6 +175,18 @@ public interface Constants {
 	
 	/** The slave dv loc. */
 	String SLAVE_DV_LOC = "dv/*";
+	
+	/** The consolidated json dv loc. */
+	String CONSOLIDATED_JSON_DV_LOC ="jdv/";
+	
+	/** The consolidated dv loc. */
+	String CONSOLIDATED_XML_DV_LOC = "xdv/";
+	
+	/** The slave dv loc. */
+	String SLAVE_XML_DV_LOC = "xdv/*";
+	
+	/** The slave json dv loc. */
+	String SLAVE_JSON_DV_LOC ="jdv/*";
 
 	/** The null check. */
 	String NULL_CHECK = "Null_Check";
@@ -269,18 +300,6 @@ public interface Constants {
 	/** The hdfs is not up msg. */
 	String HDFS_IS_NOT_UP_MSG = "Haddop is not up";
 	
-	/** The property file. */
-	String PROPERTY_FILE = "emailNotifyProperties.properties";
-	
-	/** The from. */
-	String FROM = "prachi.gupta@impetus.co.in";
-	
-	/** The to. */
-	String TO = "prachi.gupta@impetus.co.in";
-	
-	/** The subject. */
-	String SUBJECT = "Jumbune Support";
-	
 	/** The name. */
 	String NAME = "name";
 	
@@ -295,6 +314,12 @@ public interface Constants {
 	
 	/** The mapred file name. */
 	String MAPRED_FILE_NAME = "mapred-site.xml";
+	
+	/** The core site xml. */
+	String CORE_SITE_XML = "core-site.xml";
+	
+	/** The hdfs site xml. */
+	String HDFS_SITE_XML = "hdfs-site.xml";
 	
 	/** The space. */
 	String SPACE = " ";
@@ -318,7 +343,7 @@ public interface Constants {
 	String DIR_SEPARATOR = "/";
 	
 	/** The jumbune relative dv jar path. */
-	String JUMBUNE_RELATIVE_DV_JAR_PATH = "modules/jumbune-datavalidation-"+Versioning.BUILD_VERSION+Versioning.DISTRIBUTION_NAME+".jar";
+	String JUMBUNE_RELATIVE_DV_JAR_PATH = "modules/jumbune-datavalidation-"+Versioning.ENTERPRISE_BUILD_VERSION+Versioning.ENTERPRISE_DISTRIBUTION_NAME+".jar";
 	
 	/** The hash. */
 	String HASH = "#";
@@ -387,26 +412,55 @@ public interface Constants {
 	String MKDIR_P_CMD = "mkdir -p ";
 
 	/** The Constant CHMOD_CMD. */
-	String CHMOD_CMD = "chmod -R o+w ";
+	String CHMOD_CMD = "chmod -R a+w ";
 	
+	/** The configuration. */
 	String CONFIGURATION = "conf";
 	
+	/** The cluster info. */
 	String CLUSTER_INFO ="clusterInfo.properties";
 	
+	/** The hadoop type. */
 	String HADOOP_TYPE = "HadoopType";
 	
+	/** The non yarn. */
 	String NON_YARN= "Non-Yarn";
 	
+	/** The yarn. */
 	String YARN ="Yarn";
 	
+	/** The hadoop distribution. */
 	String HADOOP_DISTRIBUTION = "HadoopDistribution";
 	
+	/** The apache. */
 	String APACHE = "a";
 	
+	/** The mapr. */
 	String MAPR = "m";
 	
+	/** The cloudera. */
 	String CLOUDERA = "c";
-
+	
+	/**  The hortonworks. */
+	String HORTONWORKS = "h";
+	
+	/** The emrapache. */
+	String EMRAPACHE = "ea";
+	
+	/** The emrmapr. */
+	String EMRMAPR = "em" ;
+ 	
+	/** The profiling property file. */
+	String PROFILING_PROPERTY_FILE="jumbune-profiling.properties";
+	
+	/** The database properties file. */
+	String DATABASE_PROPERTIES_FILE = "/conf/influxdb.properties";
+	
+	/** The database properties file. */
+	String ANALYSE_CLUSTER_PROPERTIES_FILE = "/resources/analyseClusterStats.properties";
+	
+	/** The profiling system json. */
+	String PROFILING_SYSTEM_JSON="system.stats.json";
 	
 	/*
 	 * Following are Number literals used in different classes, to avoid usage of magic numbers
@@ -466,6 +520,107 @@ public interface Constants {
 	/** The one three three. */
 	int ONE_THREE_THREE = 133;	
 	
+	/** The new line. */
 	String NEW_LINE = "\n" ;
+	
+	/** The scheduled jobs. */
+	String SCHEDULED_JOBS = "/scheduledJobs/userScheduled/";
+	
+	/** The job input errors. */
+	String JOB_INPUT_ERRORS = "jobInputErrors";
+
+	/** The cluster errors. */
+	String CLUSTER_ERRORS = "clusterErrors";
+	
+	/** The status. */
+	String STATUS = "STATUS";
+	
+	/** The success. */
+	String SUCCESS = "SUCCESS";
+	
+	/** The error. */
+	String ERROR_ = "ERROR";
+	
+	/** The os identifier. */
+	String OS_IDENTIFIER = " OS" ;
+	
+	/** The covert to gb. */
+	Integer COVERT_TO_GB = 1073741824 ;
+	
+	String BIN_HDFS = "/bin/hdfs";
+	
+	String DFS_LSR = " dfs -ls -R ";
+	
+	String SPACE_REGEX = "\\s+";
+	
+	/** The num of fields check. */
+	String NUM_OF_FIELDS_CHECK = "Number\\ of\\ Fields";
+	
+	/** User defined null check */
+	String USER_DEFINED_NULL_CHECK = "Null\\ Check";
+	
+	/** User defined Data type check */
+	String USER_DEFINED_DATA_TYPE = "Data\\ Type";
+	
+	/** User defined regular expression check */
+	String USER_DEFINED_REGEX_CHECK = "Regex";
+	
+	String UNIT = "unit";
+	
+	String DATA_CLEANSING = "DATA_CLEANSING";
+
+	String IPC_CLIENT_FALLBACK = "ipc.client.fallback-to-simple-auth-allowed";
+	
+	String HIVE_ACCESS_SUBJECT_NAME = "hive.access.subject.name" ;
+	String NAME_NODE_INFO_LIVE_NODES = "NameNodeInfo.LiveNodes";
+	String NAME_NODE_INFO_DEAD_NODES = "NameNodeInfo.DeadNodes";
+	
+	String USED_SPACE = "usedSpace";
+	
+	String XFERADDR = "xferaddr";
+	
+	String SPARK = "SPARK";
+	
+	String APPLICATION = "application";
+	
+	String JOB = "job";
+	
+	String TB = "TB";
+	
+	String GB = "GB";
+	
+	String KB = "KB";
+	
+	String EB = "EB";
+	
+	String PB = "PB";
+	
+	String MB = "MB";
+	
+	String MAP = "MAP";
+	
+	String AESTRIC = "*";
+	
+	String HOME = "/home/" ;
+	
+	String DOTJUMBUNE = "/.jumbune/";
+
+	String TMP = "/tmp/";
+	
+	String CAPACITY_SCHEDULER_LEAF_QUEUE_INFO = "capacitySchedulerLeafQueueInfo";
+	
+	String FAIR_SCHEDULER = "fairScheduler";
+	
+	String DRF = "DRF";
+	
+	/** The analyse data. */
+	String ANALYZE_DATA = "analyzeData";
+	
+	/** The analyze job. */
+	String ANALYZE_JOB = "analyzeJob";
+		
+	String JOB_STATUS = "JOB_STATUS";
+	
+	Gson gson = new Gson();
 	
 }

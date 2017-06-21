@@ -276,4 +276,3 @@ public class TraceBuilder extends Configured implements Tool {
   }
 }
 
-

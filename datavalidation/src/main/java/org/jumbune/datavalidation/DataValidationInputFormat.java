@@ -18,7 +18,7 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.CombineFileInputFormat;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -34,7 +34,7 @@ import org.apache.logging.log4j.Logger;
  * 
  */
 public class DataValidationInputFormat extends
-		FileInputFormat<LongWritable, Text> {
+		CombineFileInputFormat<LongWritable, Text> {
 
 	/** The Constant SPLIT_SLOP. */
 	private static final double SPLIT_SLOP = 1.1;
@@ -94,7 +94,7 @@ public class DataValidationInputFormat extends
 	public void setData(JobContext job, long minSize, long maxSize,
 			List<InputSplit> splits, List<FileStatus> fileStatusList) throws IOException {
 		for(FileStatus file:fileStatusList) {
-			if (file.isDir()) {
+			if (file.isDirectory()) {
 				Path dirPath = file.getPath();
 				FileStatus [] fileArray = dirPath.getFileSystem(job.getConfiguration()).listStatus(dirPath);
 				setData(job, minSize, maxSize, splits, Arrays.asList(fileArray));
@@ -109,7 +109,7 @@ public class DataValidationInputFormat extends
 		    }
 		}
 	}
-
+	
 	/**
 	 * Generate splits.
 	 *
@@ -129,11 +129,12 @@ public class DataValidationInputFormat extends
 		long length = file.getLen();
 		BlockLocation[] blkLocations = fs.getFileBlockLocations(file, 0,
 				length);
+		FSDataInputStream fsin = null ;
 		if ((length != 0) && isSplitable(job, path)) {
 			long blockSize = file.getBlockSize();
 			long splitSize = computeSplitSize(blockSize, minSize, maxSize);
 			long bytesRemaining = length;
-
+			
 			// checking the occurrences of the record separator in current
 			// split
 			recordSeparator = job.getConfiguration()
@@ -144,7 +145,8 @@ public class DataValidationInputFormat extends
 						- bytesRemaining);
 				long start = length - bytesRemaining;
 				long end = start + splitSize;
-				FSDataInputStream fsin = fs.open(path);
+				try{
+				fsin = fs.open(path);
 				fsin.seek(start);
 				long pos = start;
 				int b = 0;
@@ -166,9 +168,12 @@ public class DataValidationInputFormat extends
 					} else {
 						// reset the value of buffer position to zero
 						bufferPos = 0;
-
 					}
 
+				}}finally{
+					if(fsin != null){
+						fsin.close();
+					}
 				}
 
 				splits.add(new DataValidationFileSplit(path, start,

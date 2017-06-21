@@ -1,0 +1,1036 @@
+<div class="container" ng-init="ConfigurationController.init()">
+	<div jumbune-header=""></div>
+	<div class="inner-container debugger-tab custom-tab">
+		<!-- <div class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock">{{blockMessage}}</div>
+		<div class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div> -->
+		<h2>Administrative Configuration for Cluster - <span style="color: #23b4c0;">{{clusterName}}</span></h2>
+		<ul class="nav nav-tabs">
+			<li style="border-left: 0px solid #E2E2E9;border-radius: 3px;" class="nav" ng-class="{'active': selectedTab=='emailTab'}"><a style="cursor:pointer" ng-click="selectedTab='emailTab'">SMTP</a></li>
+			<li clas="nav" ng-class="{'active': selectedTab=='haTab'}"><a style="cursor:pointer" ng-click="selectedTab='haTab'">Agent High Availability</a></li>
+			<li style="border-left: 0px solid #E2E2E9;border-radius: 3px;" class="nav" ng-class="{'active': selectedTab=='influxdbTab'}"><a style="cursor:pointer" ng-click="selectedTab='influxdbTab'">InfluxDB</a></li>
+			<li clas="nav" ng-class="{'active': selectedTab=='alertTab'}"><a style="cursor:pointer" ng-click="selectedTab='alertTab'">Alert</a></li>
+			<li clas="nav" ng-class="{'active': selectedTab=='alertActionTab'}"><a style="cursor:pointer" ng-click="selectedTab='alertActionTab'">Escalation Module</a></li>
+			<li clas="nav" ng-class="{'active': selectedTab=='ticketTab'}"><a style="cursor:pointer" ng-click="selectedTab='ticketTab'">Ticket</a></li>
+			<li clas="nav" ng-class="{'active': selectedTab=='KDCTab'}"><a style="cursor:pointer" ng-click="selectedTab='KDCTab'">KDC</a></li>
+			<li clas="nav" ng-class="{'active': selectedTab=='SLATab'}"><a style="cursor:pointer" ng-click="selectedTab='SLATab'">Application SLA</a></li>
+			<li clas="nav" ng-class="{'active': selectedTab=='acTab'}"><a style="cursor:pointer" ng-click="selectedTab='acTab'">Resource Utilization Metering</a></li>
+			<li clas="nav" ng-class="{'active': selectedTab=='dataTab'}"><a style="cursor:pointer" ng-click="selectedTab='dataTab'">Data</a></li>
+			<li clas="nav" ng-class="{'active': selectedTab=='backgroundProcess'}"><a style="cursor:pointer" ng-click="selectedTab='backgroundProcess'">Background Processes</a></li>
+		</ul>
+		<div ng-if="selectedTab=='emailTab'" ng-class="{'active': selectedTab=='emailTab'}" class="col-md-12 tab-container main-container">
+			<p><strong>Note:</strong>Provide SMTP configurations to receive alert emails.</p>
+			<div class="tab-content">
+				<div class="form-group row my-tool-tip">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Sender Name</label>
+					<div>
+						<input type="text" ng-model="emailConfiguration.senderName">
+						<!-- <i data-toggle="tooltip" title="Sender's Name " class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i> -->
+					</div>
+				</div>
+				<div class="form-group row my-tool-tip">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Sender Email</label>
+					<div>
+						<input type="text" ng-model="emailConfiguration.senderEmailID">
+						<!-- <i data-toggle="tooltip" title="Sender's Email ID" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i> -->
+					</div>
+				</div>
+				<div class="form-group row my-tool-tip">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Sender Password</label>
+					<div>
+						<input type="password" ng-model="emailConfiguration.senderPassword">
+						<!-- <i data-toggle="tooltip" title="Password of the given Email ID" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i> -->
+					</div>
+				</div>
+				<div class="form-group row my-tool-tip">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">SMTP Host</label>
+					<div>
+						<input type="text" ng-model="emailConfiguration.hostName">
+						<i data-toggle="tooltip" title="Mail Server Hostname" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i>
+					</div>
+				</div>
+				<div class="form-group row my-tool-tip">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">SMTP Port</label>
+					<div>
+						<input type="text" jumbune-only-digits ng-model="emailConfiguration.portNumber">
+						<i data-toggle="tooltip" title="Port Number for the Mail Server" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i>
+					</div>
+				</div>
+				<div class="form-group row my-tool-tip">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Authentication</label>
+					<!-- <div class="col-md-4"> -->
+					<div>
+						<select ng-model="emailConfiguration.authentication" style="width:250px">
+							<option value disabled selected>Select Authentication</option>
+							<option>true</option>
+							<option>false</option>
+						</select>
+						<i data-toggle="tooltip" title="Mail Server Authentication" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i>
+					</div>
+				</div>
+				<div style="position:relative;top:30px;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock">{{blockMessage}}</div>
+				<div style="position:relative;top:30px;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
+			</div>
+			<div class="textCenter">
+				<button type="button" class="btn btn-default" ng-click="backConfigData()">Cancel</button>&nbsp;&nbsp;
+				<button type="button" class="btn btn-primary" ng-click="saveConfigData()">Save</button>
+			</div>
+		</div>
+		<div ng-if="selectedTab=='haTab'" ng-class="{'active': selectedTab=='haTab'}" class="table-responsive ddv-table col-md-12 tab-container main-container">
+			<p><strong>Note:</strong>Provide Configurations for Influx DB to enable persistence of Cluster Analysis Stats.</p>
+			<div class="tab-content">
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Heartbeat Interval</label>
+					<div class="col-md-4">
+						<input type="text" ng-model="haConfiguration.heartBeatMillis" jumbune-only-digits placeholder="in milliseconds"><i data-toggle="tooltip" title="Heartbeat time interval" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i>
+					</div>
+				</div>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Max Missed Heartbeats</label>
+					<div class="col-md-4">
+						<input type="text" ng-model="haConfiguration.thresholdBeatsToMiss" required jumbune-only-digits><i data-toggle="tooltip" title="Maximum number of missed heartbeats after which declare jumbune-agent dead" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i>
+					</div>
+				</div>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Max Agent Retries</label>
+					<div class="col-md-4">
+						<input type="text" class="validate" ng-model="haConfiguration.numRetriesAgentConn" required jumbune-only-digits/><i data-toggle="tooltip" title="Maximum number of attempts to zookeeper for picking active agent" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i>
+					</div>
+				</div>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Agent Polling Interval</label>
+					<div class="col-md-4">
+						<input type="text" class="validate" ng-model="haConfiguration.agentConnMillis" required jumbune-only-digits placeholder="in milliseconds" /><i data-toggle="tooltip" title="Polling interval in milliseconds to verify a live agent connection" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i>
+					</div>
+				</div>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Max Jumbune Client Retries</label>
+					<div class="col-md-4">
+						<input type="text" class="validate" ng-model="haConfiguration.numRetriesRemoterApis" required jumbune-only-digits/><i data-toggle="tooltip" title="Number of client retries to Jumbunr agent." class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i>
+					</div>
+				</div>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Command Logging Directory</label>
+					<div class="col-md-4">
+						<input type="text" class="validate" ng-model="haConfiguration.commandLogDir" required/><i data-toggle="tooltip" title="Logging directory for output and error" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i>
+					</div>
+				</div>
+				<div style="position:relative;top:33px;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock">{{blockMessage}}</div>
+				<div style="position:relative;top:33px;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
+			</div>
+			<div class="textCenter">
+				<button type="button" class="btn btn-default" ng-click="backConfigData()">Cancel</button>&nbsp;&nbsp;
+				<button type="button" class="btn btn-primary" ng-click="resetHASettings()">Reset</button>
+				<button type="button" class="btn btn-primary" ng-click="saveConfigData()">Save</button>
+			</div>
+		</div>
+		<div ng-if="selectedTab=='influxdbTab'" ng-class="{'active': selectedTab=='influxdbTab'}" class="table-responsive ddv-table col-md-12 tab-container main-container">
+			<p><strong>Note:</strong>Provide Configurations for Influx DB to enable persistence of Cluster Analysis Stats.</p>
+			<div class="tab-content">
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Host</label>
+					<div class="col-md-4">
+						<input type="text" ng-model="influxDBConfiguration.host">
+					</div>
+				</div>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Port</label>
+					<div class="col-md-4">
+						<input type="text" ng-model="influxDBConfiguration.port" jumbune-only-digits>
+					</div>
+				</div>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">User</label>
+					<div class="col-md-4">
+						<input type="text" ng-model="influxDBConfiguration.username" />
+					</div>
+				</div>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Password</label>
+					<div class="col-md-4">
+						<input type="password" ng-model="influxDBConfiguration.password" required/>
+					</div>
+				</div>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Database</label>
+					<div class="col-md-4">
+						<input type="text" ng-model="influxDBConfiguration.database" required/>
+					</div>
+				</div>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Purge Monitoring Data after </label>
+					<div class="col-md-4">
+						<input type="text" ng-model="influxDBConfiguration.retentionPeriod" jumbune-only-digits placeholder="in days">
+						<i data-toggle="tooltip" title="in days. If 0 then collected monitoring data will never be deleted." class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i>
+					</div>
+				</div>
+				<div style="position:relative;top:33px;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock">{{blockMessage}}</div>
+				<div style="position:relative;top:33px;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
+			</div>
+			<div class="textCenter">
+				<!-- <div class="textCenter fixed-btn"> -->
+				<button type="button" class="btn btn-default" ng-click="backConfigData()">Cancel</button>&nbsp;&nbsp;
+				<button type="button" class="btn btn-primary" ng-click="resetInfluxDBSettings()">Reset</button>
+				<button type="button" ng-disabled="disableNextAnalyzeData()" class="btn btn-primary" ng-click="saveConfigData()">Save</button>
+			</div>
+		</div>
+		<div ng-show="selectedTab=='alertTab'" ng-class="{'active': selectedTab=='alertTab'}" class="table-responsive ddv-table col-md-12 tab-container main-container">
+			<p><strong>Note:</strong>Turn On/Off or Configure various alerts here.</p>
+			<h3 style="color: #23b4c0;font-size:20px;">Alerts update interval</h3>
+			<div class="form-group row" style="margin-top: 30px">
+				<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Alert delay interval in seconds</label>
+				<div class="col-md-4">
+					<input style="max-width:220px;" ng-model="alertConfiguration.updateInterval" type="text" class="validate" />
+				</div>
+			</div>
+			<div class='my-tool-tip'>
+				<h3 style="color: #23b4c0;font-size:20px;">Diskspace Utilization<i data-toggle="tooltip" title="This property covers Disk space utilization of every node" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i></h3>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Warning Level</label>
+					<div class="col-md-4" style="width:250px;">
+						<input type="range" ng-model="alertConfiguration.configurableAlerts.DISK_SPACE_UTILIZATION.warningLevel" ng-change="dISK_SPACE_UTILIZATIONError()" min="0" max="100">
+					</div>
+					<label class="col-md-4" style="color:#747474;font-weight:300">{{alertConfiguration.configurableAlerts.DISK_SPACE_UTILIZATION.warningLevel}}</label>
+				</div>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Critical Level</label>
+					<div class="col-md-4" style="width:250px;">
+						<input type="range" ng-model="alertConfiguration.configurableAlerts.DISK_SPACE_UTILIZATION.criticalLevel" ng-change="dISK_SPACE_UTILIZATIONError()" min="0" max="100">
+					</div>
+					<label class="col-md-4" style="color:#747474;font-weight:300">{{alertConfiguration.configurableAlerts.DISK_SPACE_UTILIZATION.criticalLevel}}</label>
+				</div>
+				<div class="form-group row error">
+					<div class="col-md-5"></div>
+					<label ng-show="dISK_SPACE_UTILIZATIONFalse" class="col-md-5 error" style="font-weight:300">Critical level can't be less than warning level</label>
+				</div>
+			</div>
+			<div class='my-tool-tip'>
+				<h3 style="color: #23b4c0;font-size:20px;">Under Replicated Block<i data-toggle="tooltip" title="This property covers under replicated block across cluster" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i></h3>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Warning Level</label>
+					<div class="col-md-4" style="width:250px;">
+						<input type="range" ng-model="alertConfiguration.configurableAlerts.UNDER_REPLICATED_BLOCKS.warningLevel" ng-change="uNDER_REPLICATED_BLOCKSError()" min="0" max="100">
+					</div>
+					<label class="col-md-4" style="color:#747474;font-weight:300">{{alertConfiguration.configurableAlerts.UNDER_REPLICATED_BLOCKS.warningLevel}}</label>
+				</div>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Critical Level</label>
+					<div class="col-md-4" style="width:250px;">
+						<input type="range" ng-model="alertConfiguration.configurableAlerts.UNDER_REPLICATED_BLOCKS.criticalLevel" ng-change="uNDER_REPLICATED_BLOCKSError()" min="0" max="100">
+					</div>
+					<label class="col-md-4" style="color:#747474;font-weight:300">{{alertConfiguration.configurableAlerts.UNDER_REPLICATED_BLOCKS.criticalLevel}}</label>
+					<div class="form-group row error">
+						<div class="col-md-5"></div>
+						<label ng-show="uNDER_REPLICATED_BLOCKSFalse" class="col-md-5 error" style="font-weight:300">Critical level can't be less than warning level</label>
+					</div>
+				</div>
+			</div>
+			<div class='my-tool-tip'>
+				<h3 style="color: #23b4c0;font-size:20px;">HDFS Utilization<i data-toggle="tooltip" title="This property covers HDFS space utilization across cluster" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i></h3>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Warning Level</label>
+					<div class="col-md-4" style="width:250px;">
+						<input type="range" ng-model="alertConfiguration.configurableAlerts.HDFS_UTILIZATION.warningLevel" ng-change="hDFS_UTILIZATIONError()" min="0" max="100">
+					</div>
+					<label class="col-md-4" style="color:#747474;font-weight:300">{{alertConfiguration.configurableAlerts.HDFS_UTILIZATION.warningLevel}}</label>
+				</div>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Critical Level</label>
+					<div class="col-md-4" style="width:250px;">
+						<input type="range" ng-model="alertConfiguration.configurableAlerts.HDFS_UTILIZATION.criticalLevel" ng-change="hDFS_UTILIZATIONError()" min="0" max="100">
+					</div>
+					<label class="col-md-4" style="color:#747474;font-weight:300">{{alertConfiguration.configurableAlerts.HDFS_UTILIZATION.criticalLevel}}</label>
+					<div class="form-group row error">
+						<div class="col-md-5"></div>
+						<label ng-show="hDFS_UTILIZATIONFalse" class="col-md-5 error" style="font-weight:300">Critical level can't be less than warning level</label>
+					</div>
+				</div>
+			</div>
+			<div class='my-tool-tip'>
+				<h3 style="color: #23b4c0;font-size:20px;">Queue Utilization<i data-toggle="tooltip" title="This property covers Queue Utilization" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i></h3>
+				<div class="form-group row" >
+				<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300"></label>
+					<div class="col-md-4" style="width:250px;">
+						<button type="button" class="btn btn-primary" ng-click="addQueue()"><i title="Add Queue Alert" class="fa fa-plus circle-icon green-icon" style="color:white;border-color:white;position:relative;right:10px;"></i>Individual Queue Alert</button>
+					</div>
+
+				</div>
+				<!-- <div class="form-group row" >
+				<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300"></label>
+					<div class="col-md-4" style="width:250px;">
+						<button type="button" class="btn btn-primary" ng-click="addQueue()" style="color:#23b4c0;background-color:white;border:1px solid #23b4c0;"><i title="Add Queue Alert" class="fa fa-plus circle-icon green-icon" style="color:#23b4c0;border-color:#23b4c0;position:relative;right:10px;"></i>Add Queue Alert</button>
+					</div>
+
+				</div> -->
+				<div class="row">
+					<div class="col-lg-4"></div>
+					<div class="col-lg-5 form-group row" ng-class="{showBorder: showQueue}">
+							<div class="form-group row" ng-show="showQueue">
+								<label class="col-md-4" style="text-align:right;color:#747474;font-weight:300">Select Queue</label>
+								<div class="col-md-4" >
+									<select ng-model="ObjectQueue.selectedQueueName" style="width: 100%;">
+				                        <option value="" disabled selected>Please Select</option>
+										<option ng-repeat="queueName in clusterQueuesList | filter:queueFilter">{{queueName}}</option>
+
+									</select>
+								</div>
+							</div>
+							<div class="form-group row" ng-show="showQueue">
+								<label class="col-md-4" style="text-align:right;color:#747474;font-weight:300">Warning Level</label>
+								<div class="col-md-4" style="width:250px;">
+									<input type="range" ng-change="showWarningCriticalError()" ng-model="ObjectQueue.warningLevel" min="0" max="100">
+								</div>
+								<label class="col-md-4" style="color:#747474;font-weight:300">{{ObjectQueue.warningLevel}}</label>
+							</div>
+							<div class="form-group row" ng-show="showQueue">
+								<label class="col-md-4" style="text-align:right;color:#747474;font-weight:300">Critical Level</label>
+								<div class="col-md-4" style="width:250px;">
+									<input type="range" ng-change="showWarningCriticalError()" ng-model="ObjectQueue.criticalLevel" min="0" max="100">
+								</div>
+								<label class="col-md-4" style="color:#747474;font-weight:300">{{ObjectQueue.criticalLevel}}</label>
+								<div class="form-group row error">
+									<div class="col-md-5"></div>
+									<label ng-show="showWarningCriticalErrorMessage" class="col-md-5 error" style="font-weight:300">Critical level can't be less than warning level</label>
+								</div>
+							</div>
+							<div class="textCenter form-group row" ng-if="showQueue" style="margin-left:60px;">
+								<button type="button" class="btn btn-primary" ng-show="!toEditQueueUtilizationData" ng-click="addQueueUtilization()">Add</button>
+								<!-- <button type="button" class="btn btn-primary" ng-show="toEditQueueUtilizationData" ng-click="updateQueueUtilizationData()">Update</button>  -->
+								<button type="button" class="btn btn-default" ng-click="CancelQueue()">Cancel</button>
+							</div>
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="col-lg-4"></div>
+					<div class="col-lg-5 form-group row" ng-class="{showBorder: toEditQueueUtilizationData}">
+							<div class="form-group row" ng-show="toEditQueueUtilizationData">
+						<label class="col-md-4" style="text-align:right;color:#747474;font-weight:300">Queue Name</label>
+						<div class="col-md-4" style="width:250px;">
+							<!-- <select name="queueListName" id="queueListName">
+		                        <option value="ObjectQueue.selectedQueueName" disabled selected>{{ObjectQueue.selectedQueueName}}</option>
+							</select> -->
+							<label ng-show="!toEditGenericQueueUtilizationData">{{ObjectQueue.selectedQueueName}}</label>
+							<label ng-show="toEditGenericQueueUtilizationData">Generic Queue Configuration</label>
+						</div>
+					</div>
+					<div class="form-group row" ng-show="toEditQueueUtilizationData">
+						<label class="col-md-4" style="text-align:right;color:#747474;font-weight:300">Warning Level</label>
+						<div class="col-md-4" style="width:250px;">
+							<input type="range" ng-change="showWarningCriticalError()" ng-model="ObjectQueue.warningLevel" min="0" max="100">
+						</div>
+						<label class="col-md-4" style="color:#747474;font-weight:300">{{ObjectQueue.warningLevel}}</label>
+					</div>
+					<div class="form-group row" ng-show="toEditQueueUtilizationData">
+						<label class="col-md-4" style="text-align:right;color:#747474;font-weight:300">Critical Level</label>
+						<div class="col-md-4" style="width:250px;">
+							<input type="range" ng-change="showWarningCriticalError()" ng-model="ObjectQueue.criticalLevel" min="0" max="100">
+						</div>
+						<label class="col-md-4" style="color:#747474;font-weight:300">{{ObjectQueue.criticalLevel}}</label>
+						<div class="form-group row error">
+							<div class="col-md-5"></div>
+							<label ng-show="showWarningCriticalErrorMessage" class="col-md-5 error" style="font-weight:300">Critical level can't be less than warning level</label>
+						</div>
+					</div>
+					<div class="textCenter form-group row" ng-show="!showQueue" style="margin-left:60px;">
+						<button type="button" class="btn btn-primary" ng-show="toEditQueueUtilizationData" ng-click="updateQueueUtilizationData()">Update</button>
+						<button type="button" class="btn btn-default" ng-click="CancelQueue()" ng-show="toEditQueueUtilizationData">Cancel</button>
+					</div>
+					</div>
+				</div>
+
+				<div class="form-group row">
+					<ul class="list" style="border:1px solid #E2E2E9;width:400px;position:relative;left:400px;min-height:0px;float:left">
+						<li class="use-regex-rows" id="{{$index}}">
+							<span style="font-size:12px;" class="label label-default">Generic Queue Configuration</span>
+							<span style="font-size:12px;" class="label label-warning" ng-model="alertConfiguration.configurableAlerts.QUEUE_UTILIZATION.warningLevel">Warning:{{alertConfiguration.configurableAlerts.QUEUE_UTILIZATION.warningLevel}}</span>
+							<span style="font-size:12px;" class="label label-danger" ng-model="alertConfiguration.configurableAlerts.QUEUE_UTILIZATION.criticalLevel">Critical:{{alertConfiguration.configurableAlerts.QUEUE_UTILIZATION.criticalLevel}}</span>
+							<div style="float:right;">
+								<a href="javascript:void(0)" ng-click="editGenericQueueUtilizationData('QUEUE_UTILIZATION'); $event.stopPropagation()">
+									<i title="Edit Queue Action" class="fa fa-pencil circle-icon yel-icon"></i>
+								</a>
+							</div>
+						</li>
+					</ul>
+					<i data-toggle="tooltip" title="This setting will apply for all the queues. You can override this setting by adding individual queue alert" class='fa fa-info-circle' style="font-size: 26px;color: #23b4c0;left: 410px;position: relative;top: 5px;"></i>
+				</div>
+
+				<div class="form-group row" ng-hide="isNullOrEmpty(alertConfiguration.individualQueueAlerts)">
+					<ul class="list" style="border:1px solid #E2E2E9;width:400px;position:relative;left:400px;min-height:0px;">
+						<li class="use-regex-rows" id="{{$index}}" ng-repeat="(key, value) in alertConfiguration.individualQueueAlerts">
+							<span style="font-size:12px;" class="label label-default">{{key}}</span>
+							<span style="font-size:12px;" class="label label-warning">Warning:{{value.warningLevel}}</span>
+							<span style="font-size:12px;" class="label label-danger">Critical:{{value.criticalLevel}}</span>
+							<div style="float:right;">
+								<a href="javascript:void(0)" ng-click="editQueueUtilizationData(key); $event.stopPropagation()">
+									<i title="Edit Queue Action" class="fa fa-pencil circle-icon yel-icon"></i>
+								</a>
+								<a href="javascript:void(0)" ng-click="deleteQueueUtilizationData(key)">
+									<i title="Delete Queue Action" class="fa fa-minus circle-icon red-icon"></i>
+								</a>
+							</div>
+						</li>
+					</ul>
+				</div>
+			</div>
+			<div class="form-group row">
+				<label class="col-md-5" style="color:#23b4c0;font-weight:500;font-size:20px">Excessive Resource Allocation</label>
+				<div class="col-md-4 switch" style="width:250px;">
+					<input id="cmn-toggle-1" class="cmn-toggle cmn-toggle-round" type="checkbox" ng-model="alertConfiguration.nonConfigurableAlerts.EXCESSIVE_RESOURCE_ALLOCATION">
+					<label style="position:relative;top:3px;right:115px;" for="cmn-toggle-1"></label><span></span>
+				</div>
+				<label class="col-md-4" style="color:#747474;font-weight:300">{{(alertConfiguration.nonConfigurableAlerts.EXCESSIVE_RESOURCE_ALLOCATION ? 'Enabled' : 'Disabled')}}</label>
+			</div>
+			<div class="form-group row">
+				<label class="col-md-5" style="color:#23b4c0;font-weight:500;font-size:20px">Container Pool Utilization</label>
+				<div class="col-md-4 switch" style="width:250px;">
+					<input id="cmn-toggle-2" class="cmn-toggle cmn-toggle-round" type="checkbox" ng-model="alertConfiguration.nonConfigurableAlerts.CONTAINER_POOL_UTILIZATION">
+					<label style="position:relative;top:3px;right:115px;" for="cmn-toggle-2"></label><span></span>
+				</div>
+				<label class="col-md-4" style="color:#747474;font-weight:300">{{(alertConfiguration.nonConfigurableAlerts.CONTAINER_POOL_UTILIZATION ? 'Enabled' : 'Disabled')}}</label>
+			</div>
+			<div class="form-group row">
+				<label class="col-md-5" style="color:#23b4c0;font-weight:500;font-size:20px">Map-Reduce Application Failure</label>
+				<div class="col-md-4 switch" style="width:250px;">
+					<input id="cmn-toggle-3" class="cmn-toggle cmn-toggle-round" type="checkbox" ng-model="alertConfiguration.nonConfigurableAlerts.MAP_REDUCE_APP_FAILURE">
+					<label style="position:relative;top:3px;right:115px;" for="cmn-toggle-3"></label><span></span>
+				</div>
+				<label class="col-md-4" style="color:#747474;font-weight:300">{{(alertConfiguration.nonConfigurableAlerts.MAP_REDUCE_APP_FAILURE ? 'Enabled' : 'Disabled')}}</label>
+			</div>
+			<div class="form-group row">
+				<label class="col-md-5" style="color:#23b4c0;font-weight:500;font-size:20px">Cluster -Time Synchronized</label>
+				<div class="col-md-4 switch" style="width:250px;">
+					<input id="cmn-toggle-4" class="cmn-toggle cmn-toggle-round" type="checkbox" ng-model="alertConfiguration.nonConfigurableAlerts.CLUSTER_TIME_DESYNC">
+					<label style="position:relative;top:3px;right:115px;" for="cmn-toggle-4"></label><span></span>
+				</div>
+				<label class="col-md-4" style="color:#747474;font-weight:300">{{(alertConfiguration.nonConfigurableAlerts.CLUSTER_TIME_DESYNC ? 'Enabled' : 'Disabled')}}</label>
+			</div>
+			<div class="form-group row">
+				<label class="col-md-5" style="color:#23b4c0;font-weight:500;font-size:20px">Queue Child Capacity</label>
+				<div class="col-md-4 switch" style="width:250px;">
+					<input id="cmn-toggle-5" class="cmn-toggle cmn-toggle-round" type="checkbox" ng-model="alertConfiguration.nonConfigurableAlerts.QUEUE_CHILD_CAPACITY_OVERFLOW">
+					<label style="position:relative;top:3px;right:115px;" for="cmn-toggle-5"></label><span></span>
+				</div>
+				<label class="col-md-4" style="color:#747474;font-weight:300">{{(alertConfiguration.nonConfigurableAlerts.QUEUE_CHILD_CAPACITY_OVERFLOW ? 'Enabled' : 'Disabled')}}</label>
+			</div>
+			<div class="form-group row">
+				<label class="col-md-5" style="color:#23b4c0;font-weight:500;font-size:20px">Node Unhealthy</label>
+				<div class="col-md-4 switch" style="width:250px;">
+					<input id="cmn-toggle-6" class="cmn-toggle cmn-toggle-round" type="checkbox" ng-model="alertConfiguration.nonConfigurableAlerts.NODE_UNHEALTHY">
+					<label style="position:relative;top:3px;right:115px;" for="cmn-toggle-6"></label><span></span>
+				</div>
+				<label class="col-md-4" style="color:#747474;font-weight:300">{{(alertConfiguration.nonConfigurableAlerts.NODE_UNHEALTHY ? 'Enabled' : 'Disabled')}}</label>
+			</div>
+			<div class="form-group row">
+				<label class="col-md-5" style="color:#23b4c0;font-weight:500;font-size:20px">Hadoop Daemon Down</label>
+				<div class="col-md-4 switch" style="width:250px;">
+					<input id="cmn-toggle-7" class="cmn-toggle cmn-toggle-round" type="checkbox" ng-model="alertConfiguration.nonConfigurableAlerts.HADOOP_DAEMON_DOWN">
+					<label style="position:relative;top:3px;right:115px;" for="cmn-toggle-7"></label><span></span>
+				</div>
+				<label class="col-md-4" style="color:#747474;font-weight:300">{{(alertConfiguration.nonConfigurableAlerts.HADOOP_DAEMON_DOWN ? 'Enabled' : 'Disabled')}}</label>
+			</div>
+			<div class="form-group row">
+				<label class="col-md-5" style="color:#23b4c0;font-weight:500;font-size:20px">Check Yarn Property</label>
+				<div class="col-md-4 switch" style="width:250px;">
+					<input id="cmn-toggle-8" class="cmn-toggle cmn-toggle-round" type="checkbox" ng-model="alertConfiguration.nonConfigurableAlerts.YARN_PROPERTY_CHECK">
+					<label style="position:relative;top:3px;right:115px;" for="cmn-toggle-8"></label><span></span>
+				</div>
+				<label class="col-md-4" style="color:#747474;font-weight:300">{{(alertConfiguration.nonConfigurableAlerts.YARN_PROPERTY_CHECK ? 'Enabled' : 'Disabled')}}</label>
+			</div>
+			<div class="form-group row">
+				<label class="col-md-5" style="color:#23b4c0;font-weight:500;font-size:20px">Check Resource Utilization</label>
+				<div class="col-md-4 switch" style="width:250px;">
+					<input id="cmn-toggle-9" class="cmn-toggle cmn-toggle-round" type="checkbox" ng-model="alertConfiguration.nonConfigurableAlerts.RESOURCE_UTILIZATION_CHECK">
+					<label style="position:relative;top:3px;right:115px;" for="cmn-toggle-9"></label><span></span>
+				</div>
+				<label class="col-md-4" style="color:#747474;font-weight:300">{{(alertConfiguration.nonConfigurableAlerts.RESOURCE_UTILIZATION_CHECK ? 'Enabled' : 'Disabled')}}</label>
+			</div>
+			<div class="form-group row">
+				<label class="col-md-5" style="color:#23b4c0;font-weight:500;font-size:20px">Check DataNode Volume Failure</label>
+				<div class="col-md-4 switch" style="width:250px;">
+					<input id="cmn-toggle-10" class="cmn-toggle cmn-toggle-round" type="checkbox" ng-model="alertConfiguration.nonConfigurableAlerts.DN_VOLUME_FAILURE_CHECK">
+					<label style="position:relative;top:3px;right:115px;" for="cmn-toggle-10"></label><span></span>
+				</div>
+				<label class="col-md-4" style="color:#747474;font-weight:300">{{(alertConfiguration.nonConfigurableAlerts.DN_VOLUME_FAILURE_CHECK ? 'Enabled' : 'Disabled')}}</label>
+			</div>
+			<!-- <h3 style="color: #23b4c0;font-size:20px;"> </h3>
+					<div class="switch">
+						<input id="cmn-toggle-1" class="cmn-toggle cmn-toggle-round" type="checkbox">
+						<label for="cmn-toggle-1"></label>
+					</div> -->
+			<!-- <h3 style="color: #23b4c0;font-size:20px;">Container Pool Utilization</h3>
+				<div class="switch">
+						  <input id="cmn-toggle-2" class="cmn-toggle cmn-toggle-round" type="checkbox">
+						  <label for="cmn-toggle-2"></label>
+						</div>
+
+				<h3 style="color: #23b4c0;font-size:20px;">Map-Reduce Application Failure</h3>
+				<div class="switch">
+						  <input id="cmn-toggle-3" class="cmn-toggle cmn-toggle-round" type="checkbox">
+						  <label for="cmn-toggle-3"></label>
+						</div>
+
+				<h3 style="color: #23b4c0;font-size:20px;">Cluster -Time Synchronized</h3>
+				<div class="switch">
+						  <input id="cmn-toggle-4" class="cmn-toggle cmn-toggle-round" type="checkbox">
+						  <label for="cmn-toggle-4"></label>
+						</div>
+
+				<h3 style="color: #23b4c0;font-size:20px;">Queue Child Capacity</h3>
+				<div class="switch">
+						  <input id="cmn-toggle-5" class="cmn-toggle cmn-toggle-round" type="checkbox">
+						  <label for="cmn-toggle-5"></label>
+						</div>
+
+				<h3 style="color: #23b4c0;font-size:20px;">Node Down</h3>
+				<div class="switch">
+						  <input id="cmn-toggle-6" class="cmn-toggle cmn-toggle-round" type="checkbox">
+						  <label for="cmn-toggle-6"></label>
+						</div>
+
+				<h3 style="color: #23b4c0;font-size:20px;">Hadoop Daemon Down</h3>
+				<div class="switch">
+						  <input id="cmn-toggle-7" class="cmn-toggle cmn-toggle-round" type="checkbox">
+						  <label for="cmn-toggle-7"></label>
+						</div>
+
+				<h3 style="color: #23b4c0;font-size:20px;">Check Yarn Property</h3>
+				<div class="switch">
+						  <input id="cmn-toggle-8" class="cmn-toggle cmn-toggle-round" type="checkbox">
+						  <label for="cmn-toggle-8"></label>
+						</div>
+
+				<h3 style="color: #23b4c0;font-size:20px;">Check Resource Utilization</h3>
+				<div class="switch">
+						  <input id="cmn-toggle-9" class="cmn-toggle cmn-toggle-round" type="checkbox">
+						  <label for="cmn-toggle-9"></label>
+						</div>
+
+				<h3 style="color: #23b4c0;font-size:20px;">Check DataNode Volume Failure</h3>
+				<div class="switch">
+						  <input id="cmn-toggle-10" class="cmn-toggle cmn-toggle-round" type="checkbox">
+						  <label for="cmn-toggle-10"></label>
+						</div> -->
+			<div style="top:15px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock">{{blockMessage}}</div>
+			<div style="top:15px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
+			<!--<div style="min-height: 111px;"></div>-->
+
+			<div class="textCenter">
+				<button type="button" class="btn btn-default" ng-click="backConfigData()">Cancel</button>&nbsp;&nbsp;
+				<button type="button" class="btn btn-primary" ng-click="resetAlertSettings()">Reset</button>
+				<button type="button" class="btn btn-primary" ng-click="saveConfigData()">Save</button>
+			</div>
+		</div>
+		<div ng-if="selectedTab=='alertActionTab'" ng-class="{'active': selectedTab=='alertActionTab'}" class="table-responsive ddv-table col-md-12 tab-container main-container">
+			<p><strong>Note:</strong>Configure actions to be taken by Jumbune when an alert occurs in cluster.</p>
+			<div class="tab-content">
+				<div class="tab-pane" style="display: inherit;">
+					<div style="border:1px solid #ddd">
+						<!-- Alert Actions List-->
+						<div class="col-md-6 col-layout config-list">
+							<div class="row">
+								<div class="hdr txt-rgt">
+									<a href="javascript:void(0)" ng-click="showAddAlertActionForm()"><i title="Add Alert Action" class="fa fa-plus circle-icon green-icon"></i></a>
+								</div>
+								<div class="main-body" style="max-height: 500px;overflow: auto;min-height: 420px;">
+									<ul class="list">
+										<li class="use-regex-rows" id="{{$index}}" ng-repeat="row in alertActionConfiguration.alertActions ">
+											<span style="font-size:12px;" class="label label-warning" ng-show="row.alertLevel=='Warning'">{{row.alertLevel}}</span>
+											<span style="font-size:12px;" class="label label-danger" ng-show="row.alertLevel=='Critical'">{{row.alertLevel}} &nbsp;Level</span>
+											<span style="font-size:12px;" class="label label-default">Occuring Since : {{row.occuringSinceHours}} Hours</span>
+											<div style="float:right;">
+												<a href="javascript:void(0)" ng-click="showAlertActionData($index); $event.stopPropagation()">
+													<i title="Edit Alert Action" class="fa fa-pencil circle-icon yel-icon"></i>
+												</a>
+												<a href="javascript:void(0)" ng-click="deleteAlertAction($index)">
+													<i title="Delete Alert Action" class="fa fa-minus circle-icon red-icon"></i>
+												</a>
+											</div>
+										</li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<!--END Alert Actions List -->
+						<div class="col-md-6 col-layout">
+							<div class="row" ng-show="toAddAlertActionData || toEditAlertActionData">
+								<div class="hdr"></div>
+								<div class="main-body">
+									<div class="content-wpr">
+										<div class="form-group row my-tool-tip">
+											<label class="col-md-3" style="padding-right:5px">Alert Level</label>
+											<div style="padding-left:5px">
+												<select ng-model="alertAction.alertLevel">
+													<option value disabled>Please Select</option>
+													<option>Warning</option>
+													<option>Critical</option>
+												</select>
+												<!-- <i data-toggle="tooltip" title="Alert level" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i> -->
+											</div>
+										</div>
+										<div class="form-group row my-tool-tip" style="margin-bottom: 5px;">
+											<label class="col-md-3" style="padding-right:5px;">Occurring Since</label>
+											<div style="padding-left:5px">
+												<input type="text" jumbune-only-digits placeholder="in hour" ng-model="alertAction.occuringSinceHours" />
+												<i data-toggle="tooltip" title="Alert occurring since hours,zero will raise immediate alert" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i>
+											</div>
+										</div>
+										<div style="color: #23b4c0;font-size: 18px;margin-bottom: 5px;">Actions</div>
+										<div class="form-group row my-tool-tip" style="margin-bottom: 5px;">
+											<label class="col-md-3" style="padding-right:5px">Email To</label>
+											<div style="padding-left:5px">
+												<input type="text" ng-model="alertAction.emailTo">
+												<i data-toggle="tooltip" title="Comma seperated receiver's email-ids" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i>
+											</div>
+										</div>
+										<div style="color: #23b4c0;font-size: 16px;margin-bottom: 5px;">SNMP Traps</div>
+										<div class="form-group row my-tool-tip">
+											<label class="col-md-3" style="padding-right:5px">Trap OID</label>
+											<div style="padding-left:5px">
+												<input type="text" ng-model="alertAction.snmpTraps.trapOID">
+												<i data-toggle="tooltip" title="SNMP OID trap" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i>
+											</div>
+										</div>
+										<div class="form-group row my-tool-tip">
+											<label class="col-md-3" style="padding-right:5px">SNMP Host</label>
+											<div style="padding-left:5px">
+												<input type="text" ng-model="alertAction.snmpTraps.ipAddress">
+												<i data-toggle="tooltip" title="SNMP host address" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i>
+											</div>
+										</div>
+										<div class="form-group row my-tool-tip" style="margin-bottom: 5px;">
+											<label class="col-md-3" style="padding-right:5px">SNMP Port</label>
+											<div style="padding-left:5px">
+												<input type="text" jumbune-only-digits ng-model="alertAction.snmpTraps.port">
+												<i data-toggle="tooltip" title="SNMP port number" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i>
+											</div>
+											<span class="col-md-3"></span>
+											<p class="col-md-9" ng-show="displaySnmpErrorMessage" style="color:red;padding-top:5px;">SNMP Traps can't be filled partially</p>
+										</div>
+										<div style="color: #23b4c0;font-size:16px;margin-bottom: 5px;">Ticket</div>
+										<div class="form-group row my-tool-tip" style="margin-bottom: 5px;">
+											<label class="col-md-3" style="padding-right:5px;">Ticket</label>
+											<div style="padding-left:5px">
+												<input type="checkbox" ng-model="alertAction.enableTicket">
+												<!-- <i data-toggle="tooltip" title="Comma seperated receiver's email-ids" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i> -->
+												<label style="color:#747474;font-weight:300">Ticket Configuration is necessary to avail this option</label>
+											</div>											
+										</div>
+										<div class="pull-right">
+											<button type="button" ng-show="toAddAlertActionData" class="btn btn-primary" ng-disabled="isDisabled()" ng-click="addAlertAction()">Add</button>
+											<button type="button" ng-show="toEditAlertActionData" class="btn btn-primary" ng-click="updateAlertAction()">Update</button>
+											<button type="button" class="btn btn-default" ng-click="cancelAlertAction()">Cancel</button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="clear"></div>
+					</div>
+				</div>
+				<div style="top: 15px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock">{{blockMessage}}</div>
+				<div style="top: 15px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
+			</div>
+			<div class="textCenter">
+				<button type="button" class="btn btn-default" ng-click="backConfigData()">Cancel</button>&nbsp;&nbsp;
+				<button type="button" class="btn btn-primary" ng-click="saveConfigData()">Save</button>
+			</div>
+		</div>
+		<div ng-if="selectedTab=='ticketTab'" ng-class="{'active': selectedTab=='ticketTab'}" class="table-responsive ddv-table col-md-12 tab-container main-container">
+			<p><strong>Note:</strong>Provide Ticketing tool configurations.</p>
+			<div class="tab-content">
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Host</label>
+					<div class="col-md-4">
+						<input type="text" ng-model="ticketConfiguration.host">
+					</div>
+				</div>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Port</label>
+					<div class="col-md-4">
+						<input type="text" ng-model="ticketConfiguration.port" jumbune-only-digits>
+					</div>
+				</div>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">User</label>
+					<div class="col-md-4">
+						<input type="text" ng-model="ticketConfiguration.username" />
+					</div>
+				</div>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Password</label>
+					<div class="col-md-4">
+						<input type="password" ng-model="ticketConfiguration.password" required/>
+					</div>
+				</div>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Form Name</label>
+					<div class="col-md-4">
+						<input type="text" ng-model="ticketConfiguration.formName" required/>
+					</div>
+				</div>
+				<div style="top:75px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock">{{blockMessage}}</div>
+				<div style="top:75px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
+			</div>
+			<div class="textCenter">
+				<!-- <div class="textCenter fixed-btn"> -->
+				<button type="button" class="btn btn-default" ng-click="backConfigData()">Cancel</button>&nbsp;&nbsp;
+				<button type="button" ng-disabled="disableNextAnalyzeData()" class="btn btn-primary" ng-click="saveConfigData()">Save</button>
+			</div>
+		</div>
+		<div ng-if="selectedTab=='KDCTab'" ng-class="{'active': selectedTab=='KDCTab'}" class="table-responsive ddv-table col-md-12 tab-container main-container">
+			<p><strong>Note:</strong>Provide kerberos specific options corresponding to cluster.</p>
+			<div class="tab-content">
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">KDC Type</label>
+					<div class="col-md-4">
+						<label class="deactiveLabel">
+							<input type="radio" data-ng-model="MITKDC" ng-value="false"><span>MIT KDC</span></label>
+						<label class="deactiveLabel leftMargin25">
+							<input type="radio" data-ng-model="MITKDC" ng-value="true" /><span>Active Directory</span></label>
+					</div>
+				</div>
+				<div ng-show="MITKDC===false">
+					<div class="form-group row">
+						<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">KDC Server Host</label>
+						<div class="col-md-4">
+							<input type="text" ng-model="kdcConfiguration.serverHost">
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Kerberos Security Realm</label>
+						<div class="col-md-4">
+							<input type="text" ng-model="kdcConfiguration.securityRealm" required/>
+						</div>
+					</div>
+					<div class="form-group row" ng-repeat="(key, value) in workerNodeHostArrCount  track by $index">
+						<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Kerberos Encryption Types</label>
+						<div class="col-md-4">
+							<input type="text" ng-model="kdcConfiguration.encryptionTypes[key]" required/>
+							<a href="javascript:void(0)"><i ng-click="addWorkerNodeHost()" ng-show="(!$index)" title="Add Alert Action" class="fa fa-plus circle-icon green-icon"></i>
+							<i class="fa fa-minus circle-icon red-icon" ng-click="removeWorkerNodeHost($index)" ng-show="$index"></i></a>
+						</div>
+					</div>
+				</div>
+				<div ng-show="MITKDC===true">
+					<div class="form-group row">
+						<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Active Directory Suffix</label>
+						<div class="col-md-4">
+							<input type="text" ng-model="kdcConfiguration.dirSuffix">
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">KDC Server Host</label>
+						<div class="col-md-4">
+							<input type="text" ng-model="kdcConfiguration.serverHost">
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Active Directory LDAPS Port</label>
+						<div class="col-md-4">
+							<input type="text" ng-model="kdcConfiguration.lPort" jumbune-only-digits/>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Kerberos Security Realm</label>
+						<div class="col-md-4">
+							<input type="text" ng-model="kdcConfiguration.securityRealm" required/>
+						</div>
+					</div>
+					<div class="form-group row">
+						<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Active Directory Account Prefix</label>
+						<div class="col-md-4">
+							<input type="text" ng-model="kdcConfiguration.accountPrefix" required/>
+						</div>
+					</div>
+				</div>
+				<div style="top:120px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock">{{blockMessage}}</div>
+				<div style="top:120px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
+			</div>
+			<div class="textCenter">
+				<!-- <div class="textCenter fixed-btn"> -->
+				<button type="button" class="btn btn-default" ng-click="backConfigData()">Cancel</button>&nbsp;&nbsp;
+				<button type="button" ng-disabled="disableNextAnalyzeData()" class="btn btn-primary" ng-click="saveConfigData()">Save</button>
+			</div>
+		</div>
+		<div ng-if="selectedTab=='SLATab'" ng-class="{'active': selectedTab=='SLATab'}" class="table-responsive ddv-table col-md-12 tab-container main-container">
+			<p><strong>Note:</strong>Provide configuration to track the application exceeding the threshold limit.</p>
+			<div class="tab-content">
+				<div class="tab-pane" style="display: inherit;">
+					<div style="border:1px solid #ddd">
+						<div class="col-md-6 col-layout config-list">
+							<div class="row">
+								<div class="hdr txt-rgt">
+									<a href="javascript:void(0)" ng-click="showAddSLAActionForm()"><i title="Add SLA Action" class="fa fa-plus circle-icon green-icon"></i></a>
+								</div>
+								<div class="main-body" style="max-height: 320px;overflow: auto;">
+									<ul class="list">
+										<li class="use-regex-rows" id="{{$index}}" ng-repeat="row in slaConfigurations.slaConfList ">
+											<span style="font-size:12px;" class="label label-warning" ng-show="row.slaAlertLevel=='Warning'">{{row.slaAlertLevel}}</span>
+											<span style="font-size:12px;" class="label label-danger" ng-show="row.slaAlertLevel=='Critical'">{{row.slaAlertLevel}}</span>
+											<span style="font-size:12px;" class="label label-info" ng-show="row.slaAlertLevel=='Info'">{{row.slaAlertLevel}}</span>
+											<span style="font-size:12px;" class="label label-default">User :&nbsp;&nbsp;{{row.user}}&nbsp;&nbsp;</span>
+											<span style="font-size:12px;" class="label label-default">Threshold (in mins) :&nbsp;&nbsp;{{row.maximumDuration}}&nbsp;&nbsp;</span>
+											<div style="float:right;">
+												<a href="javascript:void(0)" ng-click="showSLAActionData($index); $event.stopPropagation()">
+													<i title="Edit SLA Action" class="fa fa-pencil circle-icon yel-icon"></i>
+												</a>
+												<a href="javascript:void(0)" ng-click="deleteSLAAction($index)">
+													<i title="Delete SLA Action" class="fa fa-minus circle-icon red-icon"></i>
+												</a>
+											</div>
+										</li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6 col-layout">
+							<div class="row" ng-show="toAddSLAActionData || toEditSLAActionData">
+								<div class="hdr"></div>
+								<div class="main-body">
+									<div class="content-wpr">
+										<!-- <div class="form-group row my-tool-tip">
+											<label class="col-md-3" style="padding-right:5px">SLA Alert Level</label>
+											<div style="padding-left:5px">
+												<select ng-model="slaAction.slaAlertLevel">
+													<option value disabled>Please Select</option>
+													<option>Warning</option>
+													<option>Critical</option>
+													<option>Info</option>
+												</select>
+											</div>
+										</div> -->
+										<div class="form-group row my-tool-tip">
+											<label class="col-md-3" style="padding-right:5px">User</label>
+											<div style="padding-left:5px">
+												<input type="text"  ng-model="slaAction.user" />
+											</div>
+										</div>
+										<div class="form-group row my-tool-tip">
+											<label class="col-md-3" style="padding-right:5px">Threshold</label>
+											<div style="padding-left:5px">
+												<input type="text" jumbune-only-digits placeholder="in minutes" ng-model="slaAction.maximumDuration"/>
+											</div>
+										</div>
+										<div class="pull-right">
+											<button type="button" ng-show="toAddSLAActionData" class="btn btn-primary" ng-disabled="isDisabledSLA()" ng-click="addSLAAction()">Add</button>
+											<button type="button" ng-show="toEditSLAActionData" class="btn btn-primary" ng-click="updateSLAAction()">Update</button>
+											<button type="button" class="btn btn-default" ng-click="cancelSLAAction()">Cancel</button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="clear"></div>
+					</div>
+				</div>
+				<div style="top: 15px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock"><span class="textCenter">{{blockMessage}}</span></div>
+				<div style="top: 15px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
+			</div>
+			<!--<div style="min-height: 111px;"></div>-->
+			<div class="textCenter">
+				<button type="button" class="btn btn-default" ng-click="backConfigData()">Cancel</button>&nbsp;&nbsp;
+				<button type="button" class="btn btn-primary" ng-click="saveConfigData()">Save</button>
+			</div>
+		</div>
+
+		<!-- <div ng-if="selectedTab=='acTab'" ng-class="{'active': selectedTab=='acTab'}" class="table-responsive ddv-table col-md-12 tab-container main-container">
+			<p><strong>Note:</strong>Provide data default configurations.</p>
+			<div class="tab-content">
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Queue Name</label>
+					<div class="col-md-4">
+						<input type="text" ng-model="dlcConfiguration.defaultDlcRoot">
+					</div>
+				</div>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">V Core</label>
+					<div class="col-md-4">
+						<input placeholder="in dollars per hour" type="text" ng-model="dlcConfiguration.defaultDlcRoot">
+					</div>
+				</div>
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Memory</label>
+					<div class="col-md-4">
+						<input placeholder="in dollars per hour in gb" type="text" ng-model="dlcConfiguration.defaultDlcRoot">
+					</div>
+				</div>
+				<div style="top: 205px;position:relative;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock">{{blockMessage}}</div>
+				<div style="top: 205px; class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
+			</div>
+			<div class="textCenter fixed-btn">
+				<button type="button" class="btn btn-default" ng-click="backConfigData()">Cancel</button>&nbsp;&nbsp;
+				<button type="button" class="btn btn-primary" ng-click="resetDLCSettings()">Reset</button>
+				<button type="button" ng-disabled="disableNextAnalyzeData()" class="btn btn-primary" ng-click="saveConfigData()">Save</button>
+			</div>
+		</div>	 -->
+		<div ng-if="selectedTab=='acTab'" ng-class="{'active': selectedTab=='acTab'}" class="table-responsive ddv-table col-md-12 tab-container main-container">
+			<p><strong>Note:</strong>Provide configuration to calculate the cost of using vCores and Memory for a particular Queue.</p>
+			<div class="tab-content">
+				<div class="tab-pane" style="display: inherit;">
+					<div style="border:1px solid #ddd">
+						<div class="col-lg-7 col-layout config-list">
+							 <div class="row">
+								<div class="hdr txt-rgt">
+									<a href="javascript:void(0)" ng-click="showAddQueueForm()"><i title="Configure Resource Cost" class="fa fa-plus circle-icon green-icon"></i></a>
+								</div>
+								<div class="main-body" style="max-height: 320px;overflow: auto;">
+									<ul class="list">
+										<li class="use-regex-rows" id="{{$index}}" ng-repeat="row in chargeBackConfigurations.chargeBackConfList">
+											<!-- <span style="font-size:12px;" class="label label-warning" ng-show="row.slaAlertLevel=='Warning'">{{row.slaAlertLevel}}</span>
+											<span style="font-size:12px;" class="label label-danger" ng-show="row.slaAlertLevel=='Critical'">{{row.slaAlertLevel}}</span>
+											<span style="font-size:12px;" class="label label-info" ng-show="row.slaAlertLevel=='Info'">{{row.slaAlertLevel}}</span> -->
+											<span style="font-size:12px;" class="label label-default">QueueName :&nbsp;&nbsp;{{row.queueName}}&nbsp;&nbsp;</span>
+											<span style="font-size:12px;" class="label label-default">ExecutionEngine :&nbsp;&nbsp;{{row.executionEngine}}&nbsp;&nbsp;</span>
+											<!--<span style="font-size:12px;" class="label label-default">Memory:&nbsp;&nbsp;{{row.memory}}&nbsp;&nbsp;</span>
+											<span style="font-size:12px;" class="label label-default">VCore:&nbsp;&nbsp;{{row.vCore}}&nbsp;&nbsp;</span>-->
+											<div style="float:right;">
+												<a href="javascript:void(0)" ng-click="showQueueActionData($index); $event.stopPropagation()">
+													<i title="Edit Resource Cost" class="fa fa-pencil circle-icon yel-icon"></i>
+												</a>
+												<a href="javascript:void(0)" ng-click="deleteQueueAction($index)">
+													<i title="Delete Resource Cost" class="fa fa-minus circle-icon red-icon"></i>
+												</a>
+											</div>
+										</li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="col-lg-5 col-layout">
+							<div class="row" ng-show="toAddQueueConfData || toEditQueueConfData">
+								<div class="hdr txt-rgt"></div>
+								<div class="main-body">
+									<div class="content-wpr">
+										<div class="form-group row" ng-show="!toEditQueueConfData">
+											<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Select Queue<s>*</s></label>
+											<div class="col-md-4" >
+												<select id="list" ng-model="RUMQueue.queueName" style="width: 100%;">
+							                        <option value="" disabled selected>Please Select</option>
+													<option ng-repeat="queueName in RUMQueuesList | filter:queueRUMFilter">{{queueName}}</option>
+												</select>
+											</div>
+										</div>
+										<div class="form-group row" ng-show="!toEditQueueConfData">
+											<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Execution Engine<s>*</s></label>
+											<div class="col-md-4" >
+												<select id="list" ng-model="RUMQueue.executionEngine" style="width: 100%;" ng-options="queueVal.value as queueVal.label for queueVal in queueTypeList | filter:queueExeEngineFilter">
+							                        <option value="" disabled selected>Please Select</option>
+												</select>
+											</div>
+										</div>
+										<div class="form-group row" ng-show="toEditQueueConfData">
+											<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Queue Name</label>
+											<div class="col-md-4" >
+												<label>{{RUMQueue.queueName}}</label>
+											</div>
+										</div>
+										<div class="form-group row" ng-show="toEditQueueConfData">
+											<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Execution Engine</label>
+											<div class="col-md-4" >
+												<label>{{RUMQueue.executionEngine}}</label>
+											</div>
+										</div>
+										<div class="form-group row">
+											<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">V Core</label>
+											<div class="col-md-4">
+												<input placeholder="dollars per hour" valid-number type="text" ng-model="RUMQueue.vCore" style="width: 160px;">
+											</div>
+										</div>
+										<div class="form-group row">
+											<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Memory</label>
+											<div class="col-md-4">
+												<input placeholder="dollars per hour in gb" valid-number type="text" ng-model="RUMQueue.memory" style="width: 160px;">
+											</div>
+										</div>
+										<div class="pull-right">
+											<button type="button" ng-show="toAddQueueConfData" class="btn btn-primary" ng-disabled="isDisabledQueue()" ng-click="addQueueAction()">Add</button>
+											<button type="button" ng-show="toEditQueueConfData" class="btn btn-primary" ng-click="updateQueueAction()">Update</button>
+											<button type="button" class="btn btn-default" ng-click="cancelRumAction()">Cancel</button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="clear"></div>
+					</div>
+				</div>
+				<div style="top:15px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock"><span class="textCenter">{{blockMessage}}</span></div>
+				<div style="top:15px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
+			</div>
+			<!--<div style="min-height: 111px;"></div>-->
+			<div class="textCenter">
+				<button type="button" class="btn btn-default" ng-click="backConfigData()">Cancel</button>&nbsp;&nbsp;
+				<button type="button" class="btn btn-primary" ng-click="saveConfigData()">Save</button>
+			</div>
+		</div>
+		<div ng-if="selectedTab=='dataTab'" ng-class="{'active': selectedTab=='dataTab'}" class="table-responsive ddv-table col-md-12 tab-container main-container">
+			<p><strong>Note:</strong>Provide data default configurations.</p>
+			<div class="tab-content">
+				<div class="form-group row">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">DEFAULT DLC ROOT</label>
+					<div class="col-md-4">
+						<input type="text" ng-model="dlcConfiguration.defaultDlcRoot">
+					</div>
+				</div>
+				<div style="top:240px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock">{{blockMessage}}</div>
+				<div style="top:240px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
+			</div>
+			<div class="textCenter">
+				<button type="button" class="btn btn-default" ng-click="backConfigData()">Cancel</button>&nbsp;&nbsp;
+				<button type="button" class="btn btn-primary" ng-click="resetDLCSettings()">Reset</button>
+				<button type="button" ng-disabled="disableNextAnalyzeData()" class="btn btn-primary" ng-click="saveConfigData()">Save</button>
+			</div>
+		</div>
+		<div ng-if="selectedTab=='backgroundProcess'" ng-class="{'active': selectedTab=='backgroundProcess'}" class="table-responsive ddv-table col-md-12 tab-container main-container">
+			<p><strong>Note:</strong>Backround processes are those processes which runs at regular interval even when you have not opened Analyze Cluster Dashboard.</p>
+			<div class="tab-content">
+			<div class="form-group row">
+				<label class="col-md-5" style="color:#23b4c0;font-weight:500;font-size:18px">System Metrics<i data-toggle="tooltip" title="eg. cpu usage, jvm heap usage, namenode rpc, gc count. This option is for the widget 'Hadoop Metrics and System stats' in Analyze Cluster Dashboard'. If enabled then Jumbune will keep the record of tabs and stats (Hadoop Metrics and System stats) that are opened in the browser and will open those tabs and stats again if user reopen the analyze cluster dashboard in browser. Jumbune will continue to fetch and persist those stats values in the database in background even after cloing Analyze Cluster so that we don't have to keep open the Analyze Cluster dashboard all the time." class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i></label>
+				<div class="col-md-4 switch" style="width:250px;">
+					<input id="cmn-toggle-SYSTEM_METRICS" class="cmn-toggle cmn-toggle-round" type="checkbox" ng-model="backgroundProcessConfiguration.processMap.SYSTEM_METRICS">
+					<label style="position:relative;top:3px;right:115px;" for="cmn-toggle-SYSTEM_METRICS"></label><span></span>
+				</div>
+				<label class="col-md-4" style="color:#747474;font-weight:300">{{(backgroundProcessConfiguration.processMap.SYSTEM_METRICS ? 'Enabled' : 'Disabled')}}</label>
+			</div>
+			<div class="form-group row">
+				<label class="col-md-5" style="color:#23b4c0;font-weight:500;font-size:18px">Queue Utilization<i data-toggle="tooltip" title="Fetch and persist queue utilization information into database at regular interval which will be display when Analyze Cluster Dashboard opened." class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i></label>
+				<div class="col-md-4 switch" style="width:250px;">
+					<input id="cmn-toggle-QUEUE_UTILIZATION" class="cmn-toggle cmn-toggle-round" type="checkbox" ng-model="backgroundProcessConfiguration.processMap.QUEUE_UTILIZATION">
+					<label style="position:relative;top:3px;right:115px;" for="cmn-toggle-QUEUE_UTILIZATION"></label><span></span>
+				</div>
+				<label class="col-md-4" style="color:#747474;font-weight:300">{{(backgroundProcessConfiguration.processMap.QUEUE_UTILIZATION ? 'Enabled' : 'Disabled')}}</label>
+			</div>
+			<div class="form-group row">
+				<label class="col-md-5" style="color:#23b4c0;font-weight:500;font-size:18px">Worker Nodes Updater<i data-toggle="tooltip" title="Updates live worker nodes list in Jumbune cluster after every 30 mintues. Useful in scenarios where Spot Instances are used as workers." class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i></label>
+				<div class="col-md-4 switch" style="width:250px;">
+					<input id="cmn-toggle-WORKER_NODES_UPDATER" class="cmn-toggle cmn-toggle-round" type="checkbox" ng-model="backgroundProcessConfiguration.processMap.WORKER_NODES_UPDATER">
+					<label style="position:relative;top:3px;right:115px;" for="cmn-toggle-WORKER_NODES_UPDATER"></label><span></span>
+				</div>
+				<label class="col-md-4" style="color:#747474;font-weight:300">{{(backgroundProcessConfiguration.processMap.WORKER_NODES_UPDATER ? 'Enabled' : 'Disabled')}}</label>
+			</div>
+			<div style="top:190px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock">{{blockMessage}}</div>
+			<div style="top:190px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
+			</div>
+
+			<div class="textCenter">
+				<button type="button" class="btn btn-default" ng-click="backConfigData()">Cancel</button>&nbsp;&nbsp;
+				<button type="button" class="btn btn-primary" ng-click="resetBackgroundProcessSettings()">Reset</button>
+				<button type="button" class="btn btn-primary" ng-click="saveConfigData()">Save</button>
+			</div>
+		</div>
+		<div class="clear"></div>
+	</div>
+	<!-- info-holder -->
+</div>
+
+<style>
+.main-container {
+	margin-top: 12px;
+	box-shadow: 1px 1px 9px -1px #ccc;
+}
+.nav-tabs > li > a, .nav-tabs > li > a:hover, .nav-tabs > li > a:focus {
+	box-shadow: 0px 1px #ccc;
+	border-radius: 8px;
+	border-left: none;
+}
+</style>

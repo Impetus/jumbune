@@ -74,7 +74,7 @@ public class InstrumentFinalizer extends BaseAdapter {
 		if (((access & Opcodes.ACC_INTERFACE) != 0)
 				|| CollectionUtil.arrayContains(interfaces,
 						CLASSNAME_CLASS_HAS_BEEN_INSTRUMENTED)) {
-			LOGGER.info(MessageFormat.format(InstrumentationMessageLoader
+			LOGGER.debug(MessageFormat.format(InstrumentationMessageLoader
 					.getMessage(MessageConstants.NOT_MARKED_AS_INSTRUMENTED),
 					getClassName()));
 

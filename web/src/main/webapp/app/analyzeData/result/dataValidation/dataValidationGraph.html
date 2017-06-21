@@ -1,0 +1,182 @@
+<!-- header -->
+<div jumbune-header=""></div>
+<style type="text/css">
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.x.axis path {
+  display: none;
+}
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+.legend rect {
+  fill:white;
+  opacity:0.8;}
+</style>
+
+
+
+<div class="resultWrapper" id="dataValidationWrap">
+    <div class="widgetRow" ng-init="init()">
+        <div class="widgetWrapper" id="dataValidationWidget">
+           <!--  <h2>Data Validation</h2> -->
+            <!-- <h2><span class="tracking">Data Validation</span><span class="tracking1" style="float:right;">Jumbune Job&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;{{showJobName}}</span></h2> -->
+            <h2><span class="tracking"><i class="fa fa-home" style="font-size:30px;cursor:pointer;" ng-click="clickedHomeIcon()"></i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Job&nbsp;&nbsp;-&nbsp;&nbsp;{{showJobName}}(Data Validation Job)</span><span class="tracking1" style="float:right;"><!-- Jumbune Job Name&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;{{showJobName}} --></span>
+            <span style="float:right;margin-top:5px;"><i class="fa fa-key rotateClass tip" data-toggle="tooltip" ng-show="licenseExpireTrue" title="License will expire soon." data-placement="right" style="color:#F44336"></i>
+            <i ng-show="licenseExpireDays" class="fa fa-key rotateClass tip" data-toggle="tooltip" title="License will expire in {{daysDiffShow}} day." data-placement="right" style="color:#F44336"></i> </span></h2>
+            
+           
+            <!-- <div align="center" id="chart1" style="padding:15px 0;display:inline-block;"></div> -->
+            <div ng-show="counterValidationFlag" class="col-lg-12">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Summary</h3> </div>
+                    <div class="panel-body">
+                        <ul class="chartContainer countersList" style="margin: 0px; padding: 0px;">
+                            <li>
+                                <h1>
+                                        <span style="color:#FFCA28;cursor:pointer" id="nullViolationsId" ng-click="generateTableForViolations('Null Check')"></span>
+                                        </h1> Null Check Violations
+                            </li>
+                            <li>
+                                <h1>
+                                    <span style="color:#FF7043;cursor:pointer" id="regexViolationsId" ng-click="generateTableForViolations('Regex')"></span>
+                                </h1>Regex Violations
+                            </li>
+                            <li>
+                                <h1>
+                                    <span style="color:#FFA726;cursor:pointer" id="dataTypeViolationsId" ng-click="generateTableForViolations('Data Type')"></span>
+                                </h1>Data type Violations
+                            </li>
+                            <li>
+                                <h1>
+                                    <span style="color:#8D6E63;cursor:pointer" id="numberOfFieldsViolationsId" ng-click="generateTableForViolations('Number of Fields')"></span>
+                                </h1>Number of Fields Violations
+                            </li>
+                            <li>
+                                <h1>
+                                    <span style="color:#66BB6A" id="cleanTupleId"></span>
+                                </h1>Clean Tuple
+                            </li>
+                            <li>
+                                <h1>
+                                    <span style="color:#eF5350" id="dirtyTupleId"></span>
+                                </h1>Dirty Tuple
+                            </li>
+                            <li ng-show="!hideTopFieldCounter">
+                                <h1>
+                                    <span style="color:#1b82bb" id="topFieldViolation"></span>
+                                </h1>is Most polluted Field No.
+                            </li>
+                            <li ng-show="!hideTopTypeViolationMessage">
+                                <h1>
+                                    <span style="color:#1b82bb" id="topTypeViolation"></span>
+                                </h1><p id="topTypeViolationMessage">Max. violations are of this type</p>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+          <!--   <div class="clearfix dataValidationChartWrapper" id="resultWidgetContainer"> 
+              
+            </div> -->
+        <div class="clearfix dataValidationChartWrapper" id="resultWidgetContainer">
+            <div class="col-lg-2" ng-hide="noDataViolatnTable">
+            </div>
+            <div class="col-md-4" id="noViolationHideTable" ng-show="noDataViolatnTable">
+                <div class="col-lg-12" style="top:78px;">
+                    <div class="panel panel-primary" style="padding-bottom: 0px; text-align: left;";border:none;>
+                        <div class="panel-heading" style="">
+                            <h3 class="panel-title">Top files contributing to violations</h3></div>
+                        <div class="panel-body">
+                            <table class="table table-striped table-bordered table-hover table-responsive" style="margin-bottom: 0px">
+                                <thead>
+                                    <tr>
+                                        <th>File</th>
+                                        <th>Violations</th>
+                                    </tr>
+                                </thead>
+                                <tbody style="word-break: break-all;">
+                                    <tr ng-repeat="file in fileViolationsListNumber track by $index">
+                                        <td>{{file.key}}</td>
+                                        <td>{{file.value}}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+              <div class="col-md-4">
+                    <h3>Clean vs Violated Data</h3>
+                    <div class="ring-loader" alt="alternate text" style="margin-top:145px;margin-bottom:145px"></div>
+                    <!-- <div align="center" id="cleanViolatedData"></div> -->
+                    <div align="center" id="tuplesGraph" style="height: 350px;"></div>
+                </div>
+                <div class="col-md-4">
+                    <h3>Data Violations</h3>
+                    <div ng-show="noDataViolatnFlag" class="yellow" style="position:relative;top:90px;text-align:center;font-weight:bold;font-size:21px;">No Data Violations Found</div>
+                    <div class="ring-loader" style="margin-top:145px;margin-bottom:145px"></div>
+                   <!--  <div align="center" id="dataViolationGraphId" ng-click="sampledetails(finalTableData)"></div> -->
+                    <div ng-show="!noDataViolatnFlag" align="center" id="dataValidationGraph" ng-click="sampledetails(finalTableData)" style="height: 350px;"></div><!-- 
+                    <div align="center" id="dataViolationGraphId" ng-click="sampledetails(finalTableData)"></div> -->
+                </div>
+        </div>
+
+            <div class="widget-containerDV" ng-if="tableHideFlag">
+                <div class="widget-headerDV">Data Violations Table(<span id="voilationHeader">{{violationTable.label}}</span>)<span id="voilationHeader1" style="float:right" ng-if="dataFlag">File Name&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;{{showFileName}}</span></div>
+                <div class="widget-body" ng-repeat="(key, value) in jsonData" ng-show="key === violationTable.label"> 
+                    <table class="table-striped dtl-tbl dvdatabox" style="width: 30%; float: left;margin-left:30px;">
+                        <thead>
+                            <tr>
+                                <th>File Name</th>
+                                <th>Violations</th>
+                            </tr>
+                        </thead>
+                        <tbody ng-click="sampledetails(finalTableData)">
+                                <tr ng-repeat="option in value['violationList']">
+                                    <td>
+                                        <ul>
+                                            <li style="cursor: pointer; border-bottom: 1px solid #ccc;border-right: 1px solid #ccc;font-size: 12px;padding: 5px;" ng-click="getCall(option.fileName)">
+                                                {{option.fileName}}
+                                            </li>
+                                         </ul>
+                                    </td>
+                                    <td>
+                                        <ul>
+                                            <li style="border-bottom: 1px solid #ccc;border-right: 1px solid #ccc;font-size: 12px;padding: 5px;">
+                                            {{option.numOfViolations}}
+                                            </li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div ui-grid="gridOptionsTest" ng-if="dataFlag" ui-grid-pagination class="grid" style="width: 450px;  height: 300px; border-left: 1px solid #ccc;float: right;width: 60%;"></div>
+               
+            </div>
+        </div> 
+ <p id="errorMessage"
+   style="text-align: center;
+            color: rgb(169, 68, 66);
+            width: 600px;
+            padding: 20px;
+            border-radius: 5px;
+            background: rgb(235, 204, 209);
+            margin: 0 auto;
+            position: relative;
+            top: 150px;
+            display: none"
+    ></p>
+    </div>
+</div>

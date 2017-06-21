@@ -11,7 +11,7 @@ import org.jumbune.common.job.JobConfig;
 import org.jumbune.debugger.instrumentation.utils.ContextWriteParams;
 import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
 import org.jumbune.debugger.instrumentation.utils.MethodByteCodeUtil;
-import org.jumbune.common.beans.InstructionsBean;
+import org.jumbune.debugger.log.processing.InstructionsBean;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -54,7 +54,7 @@ public class PartitionerAdapter extends BaseAdapter {
 	@Override
 	public void visitEnd() {
 		if (isMapperClass()) {
-			LOG.info("Instrumenting jar for debugging partitioner !!");
+			LOG.debug("Instrumenting jar for debugging partitioner !!");
 			for (int i = 0; i < methods.size(); i++) {
 				MethodNode mn = (MethodNode) methods.get(i);
 				final int variableIndex = mn.maxLocals;
@@ -69,7 +69,7 @@ public class PartitionerAdapter extends BaseAdapter {
 					int valueVariableIndex = ContextWriteParams.getInstance()
 							.getTempValueVariableIndex();
 
-					LOG.info("Index set in ContextWriteParams  "
+					LOG.debug("Index set in ContextWriteParams  "
 							+ keyVariableIndex + " Index of Value  "
 							+ valueVariableIndex + " for class "
 							+ getClassName());
@@ -85,7 +85,7 @@ public class PartitionerAdapter extends BaseAdapter {
 								// variables
 								if (keyVariableIndex == 0
 										&& valueVariableIndex == 0) {
-									LOG.info("Since params are not copied to temporary variables do it now !!!!! "
+									LOG.debug("Since params are not copied to temporary variables do it now !!!!! "
 											+ " \n previous to context.write  "
 											+ min.getPrevious()
 											+ " variableIndex "
@@ -96,7 +96,7 @@ public class PartitionerAdapter extends BaseAdapter {
 													min.getPrevious(),
 													variableIndex, insnList,
 													mn.localVariables);
-									LOG.info("After the instructions were added size of insnList :: "
+									LOG.debug("After the instructions were added size of insnList :: "
 											+ insnList.size());
 									// Add the instance of temporary key/value
 									// index to ContextWriteParams
@@ -164,7 +164,7 @@ public class PartitionerAdapter extends BaseAdapter {
 		il.add(new FieldInsnNode(Opcodes.GETFIELD, ConfigurationUtil
 				.convertQualifiedClassNameToInternalName(getClassName()),
 				MAP_REDUCE_COUNTER, Type.INT_TYPE.getDescriptor()));
-
+	//	YamlLoader yamlLoader = (YamlLoader)getLoader();
 		JobConfig jobConfig = (JobConfig)getConfig();
 		il.add(new IntInsnNode(Opcodes.BIPUSH, jobConfig
 				.getPartitionerSampleInterval()));

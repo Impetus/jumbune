@@ -33,7 +33,7 @@ public class DataProfNoCriteriaMapper extends Mapper<Object, Text, Text, IntWrit
 		
 		String dpBeanString = context.getConfiguration().get(DataProfilingConstants.DATA_PROFILING_BEAN);
 		
-		LOGGER.info("Inside Mapper set up,data profiling bean received: "+ dpBeanString);
+		LOGGER.debug("Inside Mapper set up,data profiling bean received: "+ dpBeanString);
 		Gson gson = new Gson();
 		Type type = new TypeToken<DataProfilingBean>() {
 		}.getType();

@@ -66,7 +66,7 @@ public class ContextWriteLogAdapter extends BaseAdapter {
 						// write method
 						if (InstrumentUtil.isOutputMethod(min)) {
 							writeCount++;
-							LOGGER.info(MessageFormat.format(
+							LOGGER.debug(MessageFormat.format(
 									InstrumentationMessageLoader
 											.getMessage(MessageConstants.LOG_MAPREDUCE_CTXWRITE_CALL),
 									getClassName() + "##" + mn.name, writeCount));

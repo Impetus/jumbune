@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<artifactId>jumbune</artifactId>
+		<groupId>org.jumbune</groupId>
+		<version>1.5.2-SNAPSHOT</version>
+	</parent>
+	<groupId>org.jumbune</groupId>
+	<artifactId>jumbune-cluster-profiling</artifactId>
+	<version>${project.parent.version}</version>
+	<name>cluster-profiling</name>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<build.number>1.5.2-SNAPSHOT</build.number>
+	</properties>
+	<dependencies>
+
+		<dependency>
+			<groupId>org.jumbune</groupId>
+			<artifactId>jumbune-common</artifactId>
+			<version>${build.number}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jumbune</groupId>
+			<artifactId>jumbune-profiling</artifactId>
+			<version>${build.number}</version>
+		</dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-mapreduce-client-core</artifactId>
+				<version>2.4.1</version>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-mapreduce-client-common</artifactId>
+				<version>2.4.1</version>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-common</artifactId>
+				<version>2.4.1</version>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-yarn-api</artifactId>
+				<version>2.4.1</version>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-yarn-common</artifactId>
+				<version>2.4.1</version>
+				<scope>provided</scope>
+			</dependency>
+		<!-- gson dependencies -->
+			<dependency>
+				<groupId>com.google.code.gson</groupId>
+				<artifactId>gson</artifactId>
+				<version>2.2.4</version>
+				<scope>compile</scope>
+			</dependency>
+	</dependencies>
+	
+	<profiles>
+		<profile>
+			<id>default</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-compiler-plugin</artifactId>
+						<configuration>
+							<excludes>
+								<exclude>org/jumbune/clusterprofiling/yarn/**</exclude>
+							</excludes>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		<profile>
+			<id>yarn</id>
+		</profile>
+	</profiles>
+	
+	
+</project>

@@ -1,3 +1,6 @@
 <div id="footerBox">
-		<span><a target="_blank" href="http://jumbune.org/terms.html">Terms of Use</a></span>
+	<div class="copyrightBox">
+		<span><a target="_blank" href="/jsp/terms.jsp">Terms of Use</a></span>
+		<span>All rights reserved by Impetus.</span>
+	</div>
 <div>

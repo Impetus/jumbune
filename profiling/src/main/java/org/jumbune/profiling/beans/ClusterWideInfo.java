@@ -1,5 +1,6 @@
 package org.jumbune.profiling.beans;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -44,6 +45,12 @@ public class ClusterWideInfo {
 	public void setNameNode(List<String> nameNode) {
 		this.nameNode = nameNode;
 	}
-
+	
+	public void addNameNodeStat(String nameNodeStat) {
+		if (this.nameNode == null) {
+			this.nameNode = new ArrayList<String>(2);
+		}
+		this.nameNode.add(nameNodeStat);
+	}
 
 }

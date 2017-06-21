@@ -2,7 +2,6 @@ package org.jumbune.common.yarn.utils;
 
 
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,15 +23,15 @@ import org.apache.hadoop.mapreduce.jobhistory.JobHistoryParser.JobInfo;
 import org.apache.hadoop.mapreduce.jobhistory.JobHistoryParser.TaskAttemptInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.beans.JobOutput;
-import org.jumbune.common.beans.PhaseDetails;
-import org.jumbune.common.beans.PhaseOutput;
 import org.jumbune.common.beans.ResourceUsageMetrics;
-import org.jumbune.common.beans.TaskOutputDetails;
+import org.jumbune.common.beans.profiling.JobOutput;
+import org.jumbune.common.beans.profiling.PhaseDetails;
+import org.jumbune.common.beans.profiling.PhaseOutput;
+import org.jumbune.common.beans.profiling.TaskOutputDetails;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.yarn.utils.DecoratedJobHistoryParser.AdditionalJobInfo;
 import org.jumbune.common.yarn.utils.DecoratedJobHistoryParser.AdditionalTaskInfo;
-
+import org.jumbune.utils.exception.JumbuneRuntimeException;
 
 /**
  * The Class YarnJobStatsUtility is responsible for parsing the .hist file and populating the details of the job into JobOutput.
@@ -43,6 +42,20 @@ public class YarnJobStatsUtility {
 	private static final Logger LOGGER = LogManager.getLogger(YarnJobStatsUtility.class); 
 	
 	private static final int CONVERSION_FACTOR_MILLISECS_TO_SECS = 1000;
+	
+	
+	/** The Constant DELAY_INTERVAL. */
+	private static final int DELAY_INTERVAL = 2;
+		
+	/** The Constant NUM_OF_INTERVALS. */
+	private static final int NUM_OF_INTERVALS = 20;
+	
+	private static final int DEFAULT_INTERVAL = 1;
+
+	private static final String SUCCEEDED = "SUCCEEDED";
+		
+	/** The interval period. */
+	private long intervalPeriod = Constants.FOUR;	
 	
 	/**
 	 * This method parses the .hist files and returns the job stats..
@@ -60,11 +73,13 @@ public class YarnJobStatsUtility {
 		JobOutput jobOutput = null;
 		try {
 			JobInfo jobInfo = decoratedJobHistoryParser.parse();
-			jobOutput = getJobOutput(jobInfo);
+			AdditionalJobInfo additionalJobInfo = decoratedJobHistoryParser.getAdditionalJobInfo();
+			jobOutput = getJobOutput(jobInfo,additionalJobInfo);
+		
 			
 							
 	} catch (IOException e) {
-	LOGGER.error("Error occured while I/O",e.getMessage());
+		LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));
 	
 	}
 	return jobOutput;
@@ -78,7 +93,7 @@ public class YarnJobStatsUtility {
 	 * @return the job output containing the details of each phase.
 	 */
 	@SuppressWarnings("deprecation")
-	private JobOutput getJobOutput(JobInfo jobInfo) {
+	private JobOutput getJobOutput(JobInfo jobInfo , AdditionalJobInfo additionalJobInfo) {
 		JobOutput jobOutput = new JobOutput();
 		jobOutput.setJobID(jobInfo.getJobId().toString());
 		jobOutput.setJobName(jobInfo.getJobname());
@@ -90,6 +105,8 @@ public class YarnJobStatsUtility {
 		long timeInMilliSec = (finishTime - startTime);
 		long totalTimeInSecs = timeInMilliSec / CONVERSION_FACTOR_MILLISECS_TO_SECS;
 		jobOutput.setTotalTime(totalTimeInSecs);
+		intervalPeriod = totalTimeInSecs < NUM_OF_INTERVALS ? DEFAULT_INTERVAL :totalTimeInSecs / NUM_OF_INTERVALS ;
+		LOGGER.debug("Job total time" + jobOutput.getTotalTime());
 		jobOutput.setTotalTimeInMilliSec(timeInMilliSec);
 		PhaseOutput phaseOutput = new PhaseOutput();
 		PhaseDetails mapPhaseDetails = new PhaseDetails();
@@ -102,8 +119,15 @@ public class YarnJobStatsUtility {
 		TaskOutputDetails reduceTaskDetails = null;
 		for (Map.Entry<TaskAttemptID, TaskAttemptInfo> task : tasks
 				.entrySet()) {
+	
+			LOGGER.debug("task [" + task.getKey() + "] status - " + task.getValue().getTaskStatus());
+			if (!SUCCEEDED.equalsIgnoreCase(task.getValue().getTaskStatus())) {
+				LOGGER.debug("skipping task [" + task.getKey() + "] due to failure in attempt");
+				continue;
+			}
+		
 			if(TaskType.MAP.equals(task.getKey().getTaskType())){
-				 mapTaskDetails = addMapPhaseDetails(task,referencedZeroTime);
+				mapTaskDetails = addMapPhaseDetails(task,referencedZeroTime);
 				mapTaskOutputDetails.add(mapTaskDetails);
 				}else if(TaskType.REDUCE.equals(task.getKey().getTaskType())){
 				 reduceTaskDetails = addReducePhaseDetails(task, referencedZeroTime);
@@ -127,12 +151,166 @@ public class YarnJobStatsUtility {
 		PhaseDetails cleanupDetails = prepareCleanupDetails(jobInfo,tasks);
 		phaseOutput.setCleanupDetails(cleanupDetails);
 
-		jobOutput.setPhaseOutput(phaseOutput);
+		Map<TaskAttemptID, AdditionalTaskInfo> additionalJobInfoMap = additionalJobInfo.getAdditionalTasksMap();
+		AdditionalTaskInfo atInfo;
+		
+		float[] totalMapCpuUsage = null;
+		float[] totalReduceCpuUsage = null;
+		int averagingNumberForMap = 0;
+		int averagingNumberForReduce = 0;
+		for(Map.Entry<TaskAttemptID, AdditionalTaskInfo> additionalJobInfoMapEntry: additionalJobInfoMap.entrySet()){
+			atInfo = (AdditionalTaskInfo)additionalJobInfoMapEntry.getValue();
+				if(atInfo.getTaskType().equals(TaskType.MAP)){
+					totalMapCpuUsage = CpuArrays.addAll(totalMapCpuUsage, atInfo.getCpuUages(), 10);
+					averagingNumberForMap++;
+					}else if(atInfo.getTaskType().equals(TaskType.REDUCE)){
+					totalReduceCpuUsage = CpuArrays.addAll(totalReduceCpuUsage, atInfo.getCpuUages(), 10);
+					averagingNumberForReduce++;
+				}
+			}
+		
+		float[] averagedMapCpuUsage;
+		float[] averagedReduceCpuUsage;
+		averagedMapCpuUsage = CpuArrays.averageOut(totalMapCpuUsage, averagingNumberForMap);
+		averagedReduceCpuUsage = CpuArrays.averageOut(totalReduceCpuUsage, averagingNumberForReduce);
+			
+		LOGGER.debug("AvgMapCPUArray:"+Arrays.toString(averagedMapCpuUsage));
+		LOGGER.debug("AvgReduceCPUArray:"+Arrays.toString(averagedReduceCpuUsage));
+		
+		Map<String, Float> mapTaskPhysicalMemoryMap = new HashMap<String, Float>();
+				for (TaskOutputDetails mapTaskOutputDetail: mapTaskOutputDetails) {
+					LOGGER.debug("mapTaskPhysicalMemoryMap:"+(mapTaskOutputDetail.getTaskID()+" has physical memory(B):"+mapTaskOutputDetail.getResourceUsageMetrics().getPhysicalMemoryUsage()));
+					mapTaskPhysicalMemoryMap.put(mapTaskOutputDetail.getTaskID(), mapTaskOutputDetail.getResourceUsageMetrics().getPhysicalMemoryUsage());
+				}
+			
+				Map<String, Float> reduceTaskPhysicalMemoryMap = new HashMap<String, Float>();
+				for (TaskOutputDetails reduceTaskOutputDetail: reduceTaskOutputDetails) {
+					LOGGER.debug("reduceTaskPhysicalMemoryMap123:"+(reduceTaskOutputDetail.getTaskID()+" has physical memory(B):"+reduceTaskOutputDetail.getResourceUsageMetrics().getPhysicalMemoryUsage()));
+					reduceTaskPhysicalMemoryMap.put(reduceTaskOutputDetail.getTaskID(), reduceTaskOutputDetail.getResourceUsageMetrics().getPhysicalMemoryUsage());
+				}
+		
+			float[] totalMapMemoryUsage = null;
+			float [] totalReduceMemoryUsage = null;
+			String atTaskId;
+				for(Map.Entry<TaskAttemptID, AdditionalTaskInfo> additionalJobInfoMapEntry: additionalJobInfoMap.entrySet()){
+					atTaskId = additionalJobInfoMapEntry.getKey().getTaskID().toString();		
+					atInfo = (AdditionalTaskInfo)additionalJobInfoMapEntry.getValue();
+					if(atInfo.getTaskType().equals(TaskType.MAP)){				
+						totalMapMemoryUsage = MemArrays.addAll(totalMapMemoryUsage, atInfo.getPhysicalMemInKBs(), mapTaskPhysicalMemoryMap.get(atTaskId));
+					}else if(atInfo.getTaskType().equals(TaskType.REDUCE)){
+						totalReduceMemoryUsage = MemArrays.addAll(totalReduceMemoryUsage, atInfo.getPhysicalMemInKBs(), reduceTaskPhysicalMemoryMap.get(atTaskId));
+					}
+				}
+				
+				float[] averagedMapMemoryUsage;
+				float[] averagedReduceMemoryUsage;		
+				averagedMapMemoryUsage = MemArrays.averageOut(totalMapMemoryUsage, averagingNumberForMap);
+				averagedReduceMemoryUsage = MemArrays.averageOut(totalReduceMemoryUsage, averagingNumberForReduce);
+				
+				LOGGER.debug("AvgMapMemoryArray:"+Arrays.toString(averagedMapMemoryUsage));
+				LOGGER.debug("AvgReduceMemoryArray:"+Arrays.toString(averagedReduceMemoryUsage));
+				
+				
+				long[] minimumAndMaximumMapPoints = getMinimumAndMaximum(mapPhaseDetails);
+				long[] minimumAndMaximumReducePoints = getMinimumAndMaximumForReduce(reducePhaseDetails);
+				
+				int differenceInMapPoints = (int) (minimumAndMaximumMapPoints[1]-minimumAndMaximumMapPoints[0]);
+				int differenceInReducePoints = (int) (minimumAndMaximumReducePoints[1]-minimumAndMaximumReducePoints[0]);
+				
+				float mapInterval;
+				if (averagedMapCpuUsage.length == 0) {
+					mapInterval = 0;
+				} else {
+					mapInterval = (float) differenceInMapPoints / averagedMapCpuUsage.length;
+				}
+				
+				float reduceInterval = (float)differenceInReducePoints/averagedReduceCpuUsage.length;
+		
+				Map<Long, Float> avgCpuUsage = new LinkedHashMap<Long, Float>();
+				Map<Long, Float> avgMemUsage = new LinkedHashMap<Long, Float>();
+		
+		long point = 0;
+			for(int i=0;i<averagedMapCpuUsage.length;i++) {
+				if(i==0){
+						point = minimumAndMaximumMapPoints[0];
+					}else{
+						point = (long) (minimumAndMaximumMapPoints[0] + (mapInterval*i));
+					}
+					avgCpuUsage.put(point,averagedMapCpuUsage[i]);	 			
+				}
+				
+			
+				for(int i=0;i<averagedMapMemoryUsage.length;i++){
+					if(i==0){
+						point = minimumAndMaximumMapPoints[0];
+					}else{
+						point = (long) (minimumAndMaximumMapPoints[0] + (mapInterval*i));
+					}
+					avgMemUsage.put(point,averagedMapMemoryUsage[i]);	 			
+				}
+		
+				for(int i=0;i<averagedReduceCpuUsage.length;i++){
+					if(i==0){
+						point = minimumAndMaximumReducePoints[0];
+					}else{
+						point = (long) (minimumAndMaximumReducePoints[0] + (reduceInterval*i));
+					}
+					avgCpuUsage.put(point,averagedReduceCpuUsage[i]);	 			
+				}
+
+				for (int i=0; i<averagedReduceMemoryUsage.length;i++) {
+					if (i == 0) {
+						point = minimumAndMaximumReducePoints[0];
+					} else {
+						point = (long) (minimumAndMaximumReducePoints[0] + (reduceInterval*i));
+					}
+					avgMemUsage.put(point,averagedReduceMemoryUsage[i]);	 			
+				}
+				
+				jobOutput.setCpuUsage(avgCpuUsage);
+				jobOutput.setMemUsage(avgMemUsage);
+		
+				jobOutput.setPhaseOutput(phaseOutput);
 		
 		return jobOutput;
 	}
 
+	private long[] getMinimumAndMaximum(PhaseDetails phaseDetails){
+		long[] minimumAndMaximum = new long[2];
+		long minimumStartPoint = 0;
+		long maximumEndPoint = 0;
+		for(TaskOutputDetails taskOutputDetails: phaseDetails.getTaskOutputDetails()){
+			if(minimumStartPoint == 0){
+				minimumStartPoint = taskOutputDetails.getStartPoint();
+			}
+			minimumStartPoint = minimumStartPoint < taskOutputDetails.getStartPoint()? minimumStartPoint:taskOutputDetails.getStartPoint();
+			maximumEndPoint = maximumEndPoint > taskOutputDetails.getEndPoint()? maximumEndPoint:taskOutputDetails.getEndPoint();
+		}
+		minimumAndMaximum[0] = minimumStartPoint;
+		minimumAndMaximum[1] = maximumEndPoint;
+		LOGGER.debug("Map task Start and End Point Array: "+Arrays.toString(minimumAndMaximum));
+		return minimumAndMaximum;
+	}
 	
+	
+	private long[] getMinimumAndMaximumForReduce(PhaseDetails phaseDetails){
+			long[] minimumAndMaximum = new long[2];
+			long minimumStartPoint = 0;
+			long maximumEndPoint = 0;
+			for(TaskOutputDetails taskOutputDetails: phaseDetails.getTaskOutputDetails()){
+					if(minimumStartPoint == 0){
+						minimumStartPoint = taskOutputDetails.getShuffleStart();
+					}
+					minimumStartPoint = minimumStartPoint < taskOutputDetails.getShuffleStart()? minimumStartPoint:taskOutputDetails.getShuffleStart();
+					maximumEndPoint = maximumEndPoint > taskOutputDetails.getReduceEnd()? maximumEndPoint:taskOutputDetails.getReduceEnd();
+				}
+			minimumAndMaximum[0] = minimumStartPoint;
+			minimumAndMaximum[1] = maximumEndPoint;
+			LOGGER.debug("Reduce task Start and End Point Array: "+Arrays.toString(minimumAndMaximum));
+			return minimumAndMaximum;
+		}
+	
+
 	
 	/**
 	 * This method is responsible for populating the reduce phase details.
@@ -144,6 +322,7 @@ public class YarnJobStatsUtility {
 		
 		TaskAttemptInfo taskAttemptInfo = (TaskAttemptInfo) (task.getValue());
 		TaskOutputDetails taskOutputDetails = new TaskOutputDetails();
+		if(taskAttemptInfo.getTaskStatus().equalsIgnoreCase("SUCCEEDED")){
 		taskOutputDetails.setTaskStatus(taskAttemptInfo.getTaskStatus());
 		taskOutputDetails.setTaskType(taskAttemptInfo.getTaskType().toString());
 		taskOutputDetails.setTaskID(taskAttemptInfo.getAttemptId().getTaskID().toString());
@@ -157,21 +336,27 @@ public class YarnJobStatsUtility {
 		long shuffleStartTime = (taskAttemptInfo.getStartTime()- referencedZeroTime)/CONVERSION_FACTOR_MILLISECS_TO_SECS;
 		taskOutputDetails.setStartPoint(shuffleStartTime);
 		taskOutputDetails.setShuffleStart(shuffleStartTime);
+		LOGGER.debug("shuffle start time" + taskOutputDetails.getShuffleStart());
 		long shuffleEnd = ((taskAttemptInfo.getShuffleFinishTime()-referencedZeroTime)/CONVERSION_FACTOR_MILLISECS_TO_SECS);
 		taskOutputDetails.setShuffleEnd(shuffleEnd);
+		LOGGER.debug("shuffle end time" + taskOutputDetails.getShuffleEnd());
 		taskOutputDetails.setSortStart(shuffleEnd);
 		long sortEnd = (taskAttemptInfo.getSortFinishTime()-referencedZeroTime)/CONVERSION_FACTOR_MILLISECS_TO_SECS;
 		taskOutputDetails.setSortEnd(sortEnd);
+		
+		LOGGER.debug("sort end time" + taskOutputDetails.getSortEnd());
 		taskOutputDetails.setReduceStart(sortEnd);
 		taskOutputDetails.setReduceEnd((taskAttemptInfo.getFinishTime()-referencedZeroTime)/CONVERSION_FACTOR_MILLISECS_TO_SECS);
 		taskOutputDetails.setEndPoint(taskOutputDetails.getReduceEnd());
+		LOGGER.debug("Reduce end time" + taskOutputDetails.getReduceEnd());
 		long dataFlowRate = reduceOutputBytes.getValue() / (taskOutputDetails.getReduceEnd()-shuffleStartTime);
-		taskOutputDetails.setDataFlowRate(dataFlowRate);		
+		taskOutputDetails.setDataFlowRate(dataFlowRate);
+		
 		Counter physicalMemoryBytes = mapReduceTaskCounters.findCounter("PHYSICAL_MEMORY_BYTES");		
 		ResourceUsageMetrics rum = new ResourceUsageMetrics();
 		rum.setPhysicalMemoryUsage(physicalMemoryBytes.getValue());
 		taskOutputDetails.setResourceUsageMetrics(rum);
-
+		}
 		return taskOutputDetails;
 		
 
@@ -220,8 +405,10 @@ public class YarnJobStatsUtility {
 		}
 		long startPoint = getMaxReduceTime(tasks,jobInfo.getSubmitTime());
 		taskOutputDetails.setStartPoint(startPoint);
+		LOGGER.debug("Clean up start time" + taskOutputDetails.getStartPoint());
 		long endPoint = (jobInfo.getFinishTime() - jobInfo.getSubmitTime())/CONVERSION_FACTOR_MILLISECS_TO_SECS;
 		taskOutputDetails.setEndPoint(endPoint);
+		LOGGER.debug("Clean up end time" + taskOutputDetails.getEndPoint());
 		taskOutputDetails.setDataFlowRate(0);
 		cleanupTaskOuptputDetails.add(taskOutputDetails);
 		phaseDetails.setTaskOutputDetails(cleanupTaskOuptputDetails);
@@ -253,19 +440,19 @@ public class YarnJobStatsUtility {
 	 * @param task2 the tasks
 	 * @param referencedZeroTime 
 	 * @param referencedZeroTime the start time
-	 * @param additionalJobInfo 
 	 * @return the phase details
 	 */
 	private TaskOutputDetails addMapPhaseDetails(Entry<TaskAttemptID, TaskAttemptInfo> task, long referencedZeroTime) {
 					
 			TaskAttemptInfo taskAttemptInfo = (TaskAttemptInfo) (task.getValue());
 			TaskOutputDetails taskOutputDetails = new TaskOutputDetails();
+			if(taskAttemptInfo.getTaskStatus().equalsIgnoreCase("SUCCEEDED")){
 			taskOutputDetails.setTaskStatus(taskAttemptInfo.getTaskStatus());
 			taskOutputDetails.setTaskType(taskAttemptInfo.getTaskType().toString());
 			taskOutputDetails.setTaskID(taskAttemptInfo.getAttemptId().getTaskID().toString());
 			long startPoint = (taskAttemptInfo.getStartTime() - referencedZeroTime) / CONVERSION_FACTOR_MILLISECS_TO_SECS;
 			taskOutputDetails.setStartPoint(startPoint);
-			long endPoint = (taskAttemptInfo.getMapFinishTime() - referencedZeroTime) / CONVERSION_FACTOR_MILLISECS_TO_SECS;
+			long endPoint = (taskAttemptInfo.getFinishTime() - referencedZeroTime) / CONVERSION_FACTOR_MILLISECS_TO_SECS;
 			taskOutputDetails.setEndPoint(endPoint);
 			taskOutputDetails.setTimeTaken(endPoint - startPoint);
 			taskOutputDetails.setLocation(taskAttemptInfo.getHostname());
@@ -282,7 +469,7 @@ public class YarnJobStatsUtility {
 			taskOutputDetails.setResourceUsageMetrics(rum);
 			taskOutputDetails.setOutputRecords(mapOutputRecords.getValue());
 			Counter mapOutputBytes = mapReduceTaskCounters.findCounter("MAP_OUTPUT_BYTES");
-			taskOutputDetails.setOutputBytes(mapOutputBytes.getValue());
+			taskOutputDetails.setOutputBytes(mapOutputBytes.getValue());}
 	 		return taskOutputDetails;
 	}
 
@@ -301,6 +488,64 @@ public class YarnJobStatsUtility {
 		}
 		LOGGER.warn("Task output details list has no elements in it. Setting average data flow to [0]");
 		return 0;
+	}
+	
+
+
+	private static class CpuArrays{
+	
+		public static float[] addAll(float[] primaryArray, int[] arrayToAdd, int millisToPercentage){
+			int arrayToAddLength = arrayToAdd.length;
+			if(primaryArray==null || primaryArray.length==0){
+			primaryArray = new float[arrayToAdd.length];
+				Arrays.fill(primaryArray, 0);
+			}
+		for(int i=0;i<arrayToAddLength;i++){
+				primaryArray[i]+=arrayToAdd[i]/millisToPercentage;
+			}
+			return primaryArray;
+		}
+		
+		public static float[] averageOut(float[] array, int averagingNumber){
+			if (array == null) {
+				return new float[0];
+			}
+			float[] floatArray = new float[array.length];
+			int primaryArrayLength = array.length;
+			for(int i=0;i<primaryArrayLength;i++){
+				floatArray[i] = array[i]/averagingNumber;
+			}
+			return floatArray;			
+		}
+	
+		
+	}
+	
+	private static class MemArrays{
+		
+		public static float[] addAll(float[] primaryArray, int[] arrayToAdd, float physicalMemInBytes){
+			int arrayToAddLength = arrayToAdd.length;
+			if(primaryArray==null || primaryArray.length==0){
+				primaryArray = new float[arrayToAdd.length];
+				Arrays.fill(primaryArray, 0);
+			}
+			for(int i=0;i<arrayToAddLength;i++){
+				primaryArray[i]+=((arrayToAdd[i]/(physicalMemInBytes/1024))*100);
+			}
+			return primaryArray;
+		}	
+		
+		public static float[] averageOut(float[] array, int averagingNumber) {
+			if (array == null) {
+				return new float[0];
+			}
+			float[] floatArray = new float[array.length];
+			int primaryArrayLength = array.length;
+			for(int i=0;i<primaryArrayLength;i++){
+				floatArray[i] = array[i]/averagingNumber;
+			}
+			return floatArray;			
+		}
 	}
 
 }

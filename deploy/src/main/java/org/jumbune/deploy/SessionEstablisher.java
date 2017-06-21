@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.Constants;
 
+import org.jumbune.common.utils.ExtendedConstants;
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.ChannelShell;
@@ -32,12 +32,12 @@ public final class SessionEstablisher {
 
 	static final String ECHO_HADOOP_HOME = "echo $HADOOP_HOME \n \n";
 	private static final String SCP_COMMAND = "scp -f ";
-	private static final Logger LOGGER = LogManager.getLogger("EventLogger");
-	public static final Logger CONSOLE_LOGGER = LogManager.getLogger("EventLogger");
+	private static final Logger CONSOLE_LOGGER = LogManager.getLogger("EventLogger");
 	public static final String WHERE_IS_HADOOP = "whereis hadoop";
 	private static byte[] bufs;
 	public static final String LS_PREFIX_PART = "ls ";
-	public static final String LS_POSTFIX_PART = " -Rl | grep :";
+	public static final String LS_POSTFIX_PART = " -Rl | grep ->";
+	public static final String LS_POSTFIX_COLON_PART = " -Rl | grep :";
 	private static final String HADOOP_VERSION_YARN_COMMAND = "bin/yarn version";
 	private static final String HADOOP_VERSION_NON_YARN_COMMAND = "bin/hadoop version";
 	public static final String LL_COMMAND = "ll /usr/bin/hadoop \n";
@@ -67,32 +67,33 @@ public final class SessionEstablisher {
 		JSch jsch = new JSch();
 		Session session = null;
 		try {
+
 			session = jsch.getSession(username, namenodeIP, Constants.TWENTY_TWO);
-		} catch (JSchException e) {			
-			LOGGER.error(e);
+		} catch (JSchException e) {
+			CONSOLE_LOGGER.error(e);
 		}
 		if(nnpwd!=null){
 			session.setPassword(nnpwd);
-		}else {
+		} else {
 			try {
 				jsch.addIdentity(privateKeyPath);
-			} catch (JSchException e) {				
-				LOGGER.error(e);
+			} catch (JSchException e) {
+				CONSOLE_LOGGER.error(e);
 			}
 		}
 		UserInfo info = new JumbuneUserInfo();
+		
 		session.setUserInfo(info);
 		java.util.Properties config = new java.util.Properties();
 		config.put("StrictHostKeyChecking", "no");
 		if(nnpwd!=null){
 			config.put("PreferredAuthentications", "password");
-			LOGGER.info("PRE AUTH");
 		}
 		session.setConfig(config);
 		try {
 			session.connect();
-		} catch (JSchException e) {			
-			CONSOLE_LOGGER.info("Failed to authenticate, check username and password");
+		} catch (JSchException e) {
+			CONSOLE_LOGGER.error("Failed to authenticate, check username and password");
 		}
 		return session;
 	}
@@ -114,9 +115,9 @@ public final class SessionEstablisher {
 		Deployer deployer = DeployerFactory.getDeployer(distributionType,hadoopDistributionType);
 		String versionCommand = null ;
 		String versionNumber = null ;
-		if(!hadoopDistributionType.equalsIgnoreCase("m")){
-		if (hadoopDistributionType.equalsIgnoreCase("c")
-				|| hadoopDistributionType.equalsIgnoreCase("h")) {
+		if(!hadoopDistributionType.equalsIgnoreCase(ExtendedConstants.MAPR) || !hadoopDistributionType.equalsIgnoreCase(ExtendedConstants.EMRMAPR)){
+		if (hadoopDistributionType.equalsIgnoreCase(ExtendedConstants.CLOUDERA)
+				|| hadoopDistributionType.equalsIgnoreCase(ExtendedConstants.HORTONWORKS) || hadoopDistributionType.equalsIgnoreCase(ExtendedConstants.EMRAPACHE)) {
 			versionCommand = File.separator + "usr" + File.separator + HADOOP_VERSION_YARN_COMMAND;
 		}else if(distributionType.equalsIgnoreCase("Non-Yarn")){
 			versionCommand = hadoopHome + File.separator + HADOOP_VERSION_NON_YARN_COMMAND;
@@ -124,16 +125,20 @@ public final class SessionEstablisher {
 			versionCommand = hadoopHome + File.separator
 					+ HADOOP_VERSION_YARN_COMMAND;
 		}
-		String versionResponse = executeCommand(session, versionCommand);
-		 versionNumber = getVersionNumber(versionResponse);
+		//begin mapr code changes
+		} else{
+			versionCommand = hadoopHome + File.separator + HADOOP_VERSION_YARN_COMMAND;
 		}
+		
+		String versionResponse = executeCommand(session, versionCommand);
+		versionNumber = getVersionNumber(versionResponse);
+		//end mapr code changes
 		String[] listOfFiles = deployer.getRelativePaths(versionNumber);
-		LOGGER.info("Syncing Jars from Hadoop to Jumbune...");
 		for (String fileName : listOfFiles) {
 			String command = SCP_COMMAND + hadoopHome + fileName;
 			copyRemoteFile(session, command, destinationAbsolutePath);
 		}
-		LOGGER.info("Done.");		
+		CONSOLE_LOGGER.info("Syncing Jars from Hadoop to Jumbune.......[SUCCESS]");
 	}
 
 	/**
@@ -266,10 +271,10 @@ public final class SessionEstablisher {
 				sb.append((char) c);
 			} while (c != '\n');
 			if (b == 1) { 
-				LOGGER.error(sb.toString());
+				CONSOLE_LOGGER.error(sb.toString());
 			}
 			if (b == 2) { 
-				LOGGER.error(sb.toString());
+				CONSOLE_LOGGER.error(sb.toString());
 			}
 		}
 		return b;
@@ -300,7 +305,7 @@ public final class SessionEstablisher {
 			channel.connect();
 			msg = validateCommandExecution(channel, in);
 		} catch (InterruptedException e) {
-			LOGGER.error(e);
+			CONSOLE_LOGGER.error(e);
 		} finally {
 			if (in != null) {
 				in.close();
@@ -385,38 +390,37 @@ public final class SessionEstablisher {
 		public void showMessage(String message) {
 		}
 	}
-
-	public static String getHadoopHome(Session session, String simpleCommand, String lineBreaker)
-			throws JSchException, IOException {
+	
+	public static String executeCommandUsingShell(Session session, String simpleCommand,String lineBreaker) throws JSchException, IOException {
 		String response = null;
 		ChannelShell channelShell = null;
 		BufferedReader brIn = null;
 		DataOutputStream dataOut = null;
-       
+
 		try {
 			channelShell = (ChannelShell) session.openChannel("shell");
 			InputStream is = channelShell.getInputStream();
 			brIn = new BufferedReader(new InputStreamReader(is));
 			dataOut = new DataOutputStream(channelShell.getOutputStream());
 			channelShell.setPty(true);
+			//Adding dumb to skip special characters like 00^m, [01;32m in the output
+			channelShell.setPtyType("dumb");
 			channelShell.connect();
 			dataOut.writeBytes(simpleCommand);
 			dataOut.flush();
 			String line = null;
 			StringBuilder stringBuilder = null;
 			while ((line = brIn.readLine()) != null) {
-				if (line.contains(lineBreaker)) {
-					if (lineBreaker.contains("echo $HADOOP_HOME") && line.contains(session.getUserName())) {
-						stringBuilder = new StringBuilder(brIn.readLine());
-						break;
-					}
-				}
-				if ((line.contains(session.getUserName()))
-						&& (line.trim().endsWith("$") || line.trim().endsWith("#"))) {
+				if (line.contains(lineBreaker) && !line.contains("mnt/var/log") && !line.contains("@")) {
+					stringBuilder = new StringBuilder();
+					stringBuilder.append(line);
+					response = stringBuilder.toString();
 					break;
 				}
+				if((line.contains(session.getUserName())) && (line.trim().endsWith("$") || line.trim().endsWith("#"))){
+					break;
 			}
-			response = stringBuilder.toString();
+			}
 		} finally {
 			if (brIn != null) {
 				brIn.close();
@@ -430,5 +434,5 @@ public final class SessionEstablisher {
 		}
 		return response;
 	}
-	
+
 }

@@ -11,7 +11,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -22,20 +21,22 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.IntervalStats;
-import org.jumbune.common.beans.JobOutput;
 import org.jumbune.common.beans.NodeSystemStats;
-import org.jumbune.common.beans.PhaseDetails;
-import org.jumbune.common.beans.PhaseOutput;
-import org.jumbune.common.beans.PhaseType;
-import org.jumbune.common.beans.Slave;
-import org.jumbune.common.beans.SupportedHadoopDistributions;
-import org.jumbune.common.beans.TaskOutputDetails;
-import org.jumbune.common.job.Config;
+import org.jumbune.common.beans.cluster.Agent;
+import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.beans.profiling.JobOutput;
+import org.jumbune.common.beans.profiling.PhaseDetails;
+import org.jumbune.common.beans.profiling.PhaseOutput;
+import org.jumbune.common.beans.profiling.PhaseType;
+import org.jumbune.common.beans.profiling.TaskOutputDetails;
 import org.jumbune.common.job.JobConfig;
+import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.remoting.client.Remoter;
+import org.jumbune.remoting.client.RemoterFactory;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.remoting.common.RemotingMethodConstants;
@@ -60,28 +61,31 @@ public class ResourceUsageCollector {
 	/** The Constant TOP_DUMP_FILE. */
 	private static final String TOP_DUMP_FILE = "top.txt";
 
-	/** The Constant PID_FILE. */
-	private static final String PID_FILE = "pid.txt";
+	/** The Constant TOP_ID. */
+	private static final String TOP_ID = "JUMBUNE_TOP";
 
-	/** The Constant TOP_CMD. */
-	private static final String TOP_CMD = "top -b -d "
-			+ DELAY_INTERVAL
-			+ " | egrep 'Cpu|Mem:'|awk '{print $1\" \"$2\" \"$3\" \"$4\" \"$5}'";
 
+	/**
+	 * The Constant TOP_CMD.
+     */ 
+	private static final String TOP_CMD  = "bash -c \"exec -a "+ "JUMBUNE_TOP  top -b -d 2"
+			+ " | stdbuf -oL awk '/Cpu|Mem:/{print \\$1\\\" \\\"\\$2\\\" \\\"\\$3\\\" \\\"\\$4\\\" \\\"\\$5}'\"";
+	
+	/** The Constant KILL_TOP. */
+	private static final String KILL_TOP = "pkill -f ";
+		
 	/** The Constant CAT_CMD. */
 	private static final String CAT_CMD = "cat";
 
 	/** The Constant GREP_CPU_CMD. */
-	private static final String GREP_CPU_CMD = "|grep Cpu|awk '{print$2}'";
+	private static final String GREP_CPU_CMD = "|awk '/Cpu/{print$2}'";
 
 	/** The Constant GREP_MEM_CMD. */
-	private static final String GREP_MEM_CMD = " |grep Mem|awk '{print $2\" \"$3\" \"$4\" \"$5}'";
+	private static final String GREP_MEM_CMD = " |awk '/Mem/{print $2\" \"$3\" \"$4\" \"$5}'";
 
 	/** The Constant REDIRECT_SYMBOL. */
 	private static final String REDIRECT_SYMBOL = ">";
 
-	/** The Constant MEM_SUFFIX. */
-	private static final String MEM_SUFFIX = "\\s+";
 
 	/** The Constant SYSTEM_STATS_DIR. */
 	private static final String SYSTEM_STATS_DIR = "SystemStats";
@@ -92,17 +96,15 @@ public class ResourceUsageCollector {
 	/** The interval period. */
 	private long intervalPeriod = Constants.FOUR;
 
-	/** The config. */
-	private Config config;
+    private static final String PATTERN_FOR_NON_DIGITS = "[^\\d]+";
+	
+	private JumbuneRequest jumbuneRequest;
 
 	/** The Constant LOGS **/
 	private static final String LOGS = "/logs/";
 
 	/** The Constant HISTORY_DIR_SUFFIX. */
 	private static final String HISTORY_DIR_SUFFIX = "/history/done/version-1";
-
-	/** The Constant HISTORY_DIR_SUFFIX_OLD. */
-	private static final String HISTORY_DIR_SUFFIX_OLD = "/history/";
 
 	private static final String LOCAL_HOST = "localhost";
 
@@ -112,8 +114,8 @@ public class ResourceUsageCollector {
 	 * @param loader
 	 *            the loader
 	 */
-	public ResourceUsageCollector(Config config) {
-		this.config = config;
+	public ResourceUsageCollector(JumbuneRequest jumbuneRequest) {
+		this.jumbuneRequest = jumbuneRequest;
 	}
 
 	/**
@@ -122,24 +124,24 @@ public class ResourceUsageCollector {
 	 * @param receiveDirectory
 	 *            the receive directory
 	 */
-	public void fireTopCmdOnSlaves(String receiveDirectory) {
-		CommandWritableBuilder builder = new CommandWritableBuilder();
-		JobConfig jobConfig = (JobConfig) config;
-		String slaveTmpDir = jobConfig.getSlaveWorkingDirectory();
+	public void fireTopCmdOnSlaves(String receiveDirectory) { 
+		Cluster cluster = jumbuneRequest.getCluster();
+		String slaveTmpDir = cluster.getWorkers().getWorkDirectory();
 		List<String> params = new ArrayList<String>();
 		params.add(slaveTmpDir);
 
 		StringBuilder command = new StringBuilder();
 		command.append(TOP_CMD).append(REDIRECT_SYMBOL).append(slaveTmpDir)
 				.append(File.separator).append(TOP_DUMP_FILE).append(" &");
-		Remoter remoter = RemotingUtil.getRemoter(config, receiveDirectory);
-		for (Slave slave : jobConfig.getSlaves()) {
-			for (String host : slave.getHosts()) {
-				builder.addCommand(command.toString(), true, params,
-						CommandType.FS).populate(jobConfig, host);
-				remoter.fireAndForgetCommand(builder.getCommandWritable());
-				builder.getCommandBatch().clear();
-			}
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
+		CommandWritableBuilder builder;
+		for (String workerHost: cluster.getWorkers().getHosts()) {
+			builder = new CommandWritableBuilder(cluster, workerHost);
+			builder.addCommand(command.toString(), true, params,
+						CommandType.FS);
+			remoter.fireAndForgetCommand(builder.getCommandWritable());
+			builder.clear();
+			LOGGER.info("SUCCESSFULLY fired top on: "+workerHost);	
 		}
 		remoter.close();
 		LOGGER.debug("Executed command [Top] on worker nodes ["
@@ -156,12 +158,11 @@ public class ResourceUsageCollector {
 	 *            the hosts
 	 */
 	public void processTopDumpFile(String receiveDirectory, List<String> hosts) {
-		JobConfig jobConfig = (JobConfig) config;
-		String slaveTmpDir = jobConfig.getSlaveWorkingDirectory();
+		Cluster cluster = jumbuneRequest.getCluster();
+		String slaveTmpDir = cluster.getWorkers().getWorkDirectory();
 		String topDumpFile = slaveTmpDir + File.separator + TOP_DUMP_FILE;
 		String cpuDumpFile = slaveTmpDir + File.separator + CPU_DUMP_FILE;
 		String memDumpFile = slaveTmpDir + File.separator + MEM_DUMP_FILE;
-		CommandWritableBuilder builder = new CommandWritableBuilder();
 		List<String> params = new ArrayList<String>();
 		params.add(slaveTmpDir);
 
@@ -175,16 +176,21 @@ public class ResourceUsageCollector {
 				.append(GREP_MEM_CMD).append(REDIRECT_SYMBOL)
 				.append(memDumpFile);
 
-		Remoter remoter = RemotingUtil.getRemoter(config, receiveDirectory);
-		for (Slave slave : jobConfig.getSlaves()) {
-			for (String host : slave.getHosts()) {
-				builder.addCommand(cpuCommand.toString(), true, params,
-						CommandType.FS)
-						.addCommand(memCommand.toString(), true, params,
-								CommandType.FS).populate(jobConfig, host);
-				remoter.fireAndForgetCommand(builder.getCommandWritable());
-				builder.getCommandBatch().clear();
-			}
+		StringBuilder finalCpuCommand = null;
+		StringBuilder finalMemCommand = null;
+		
+		Remoter remoter = RemotingUtil.getRemoter(cluster, receiveDirectory);
+		CommandWritableBuilder builder;
+		for (String workerHost: cluster.getWorkers().getHosts()) {
+			builder = new CommandWritableBuilder(cluster, workerHost);
+			finalCpuCommand = new StringBuilder(cpuCommand.toString()).append(UNDERSCORE).append(workerHost);
+			finalMemCommand = new StringBuilder(memCommand.toString()).append(UNDERSCORE).append(workerHost);
+			builder.addCommand(finalCpuCommand.toString(), true, params,
+					CommandType.FS)
+					.addCommand(finalMemCommand.toString(), true, params,
+							CommandType.FS);
+			remoter.fireAndForgetCommand(builder.getCommandWritable());
+			builder.clear();
 		}
 		remoter.close();
 		LOGGER.debug("Command (analyzing top dumps) [" + cpuCommand.toString()
@@ -198,23 +204,17 @@ public class ResourceUsageCollector {
 	 *            the receive directory
 	 */
 	public void shutTopCmdOnSlaves(String receiveDirectory) {
-		JobConfig jobConfig = (JobConfig) config;
-		String slaveTmpDir = jobConfig.getSlaveWorkingDirectory();
+		Cluster cluster = jumbuneRequest.getCluster();
 		StringBuilder command = new StringBuilder();
-		command.append(CAT_CMD).append(SPACE).append(slaveTmpDir)
-				.append(File.separator).append(PID_FILE);
-
-		CommandWritableBuilder builder = new CommandWritableBuilder();
-		List<String> params = new ArrayList<String>();
-		Remoter remoter = RemotingUtil.getRemoter(config, receiveDirectory);
-		params.add(slaveTmpDir);
-		for (Slave slave : jobConfig.getSlaves()) {
-			for (String host : slave.getHosts()) {
-				builder.addCommand(command.toString(), true, params,
-						CommandType.FS).populate(jobConfig, host);
-				remoter.fireAndForgetCommand(builder.getCommandWritable());
-				builder.getCommandBatch().clear();
-			}
+		command.append(KILL_TOP).append(TOP_ID);
+		Remoter remoter = RemotingUtil.getRemoter(cluster, receiveDirectory);
+		CommandWritableBuilder builder;
+		for (String workerHost: cluster.getWorkers().getHosts()) {
+			builder = new CommandWritableBuilder(cluster, workerHost);
+			builder.addCommand(command.toString(), false, null,
+					CommandType.FS);
+			remoter.fireAndForgetCommand(builder.getCommandWritable());
+			builder.clear();
 		}
 		LOGGER.debug("Executed command [ShutTop] on worker nodes ["
 				+ command.toString() + "]");
@@ -229,7 +229,7 @@ public class ResourceUsageCollector {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public void addPhaseResourceUsage(JobOutput jobOutput, JobConfig jobConfig)
+	public void addPhaseResourceUsage(JobOutput jobOutput)
 			throws IOException {
 		long totalTime = jobOutput.getTotalTime();
 		intervalPeriod = totalTime < NUM_OF_INTERVALS ? DEFAULT_INTERVAL
@@ -240,22 +240,22 @@ public class ResourceUsageCollector {
 
 		// resource usage for setup phase
 		PhaseDetails setupDetails = po.getSetupDetails();
-		setPhaseResourceUsage(setupDetails.getTaskOutputDetails(), jobConfig,
+		setPhaseResourceUsage(setupDetails.getTaskOutputDetails(),
 				statsMap, nodeStats, PhaseType.SETUP);
 
 		// resource usage for map phase
 		PhaseDetails mapDetails = po.getMapDetails();
-		setPhaseResourceUsage(mapDetails.getTaskOutputDetails(), jobConfig,
+		setPhaseResourceUsage(mapDetails.getTaskOutputDetails(),
 				statsMap, nodeStats, PhaseType.MAP);
 
 		// resource usage for reduce phase
 		PhaseDetails reduceDetails = po.getReduceDetails();
-		setPhaseResourceUsage(reduceDetails.getTaskOutputDetails(), jobConfig,
+		setPhaseResourceUsage(reduceDetails.getTaskOutputDetails(),
 				statsMap, nodeStats, PhaseType.REDUCE);
 
 		// resource usage for cleanup phase
 		PhaseDetails cleanupDetails = po.getCleanupDetails();
-		setPhaseResourceUsage(cleanupDetails.getTaskOutputDetails(), jobConfig,
+		setPhaseResourceUsage(cleanupDetails.getTaskOutputDetails(),
 				statsMap, nodeStats, PhaseType.CLEANUP);
 		jobOutput.setNodeStats(nodeStats);
 		statsMap = new TreeMap<Long, IntervalStats>(statsMap);
@@ -273,7 +273,6 @@ public class ResourceUsageCollector {
 
 	public void addPhaseResourceUsageForHistoricalJob(JobOutput jobOutput,
 			String jobID) throws IOException {
-		long totalTime = jobOutput.getTotalTime();
 		PhaseOutput po = jobOutput.getPhaseOutput();
 		Map<Long, IntervalStats> statsMap = new HashMap<Long, IntervalStats>();
 		Map<Long, Float> avgMemUsage = new LinkedHashMap<Long, Float>();
@@ -302,6 +301,7 @@ public class ResourceUsageCollector {
 		IntervalStats is;
 		for (Map.Entry<Long, IntervalStats> stats : statsMap.entrySet()) {
 			is = stats.getValue();
+			avgCpuUsage.put(stats.getKey(), getAvgValue(is.getCpuStats()));
 			avgMemUsage.put(stats.getKey(), getAvgValue(is.getMemStats()));
 		}
 		jobOutput.setMemUsage(avgMemUsage);
@@ -398,6 +398,9 @@ public class ResourceUsageCollector {
 
 		String[] fileNameArr;
 		for (File file : files) {
+			if (file.isDirectory()) {
+				continue;
+			}
 			fileName = file.getName();
 			fileNameArr = fileName.split(UNDERSCORE);
 			fileType = fileNameArr[0];
@@ -437,10 +440,17 @@ public class ResourceUsageCollector {
 			long interval = 0;
 			while ((line = br.readLine()) != null) {
 				line = line.trim();
-				line = line.endsWith("%us,") ? line.substring(0,
-						line.indexOf("%")) : line;
+				if(line.contains("%us")) {
+					line = line.substring(0,line.indexOf("%"));
+				} else if (line.contains("%sy") || ! NumberUtils.isNumber(line)) {
+					continue;
+				}
 				interval += DELAY_INTERVAL;
-				cpuUsage.put(interval, Float.parseFloat(line));
+				try {
+					cpuUsage.put(interval, Float.parseFloat(line));
+				} catch (NumberFormatException e) {
+					LOGGER.error("Error parsing a record of CPU dump file", e);
+				}
 			}
 			nodeStats.setCpuUsage(cpuUsage);
 			nodeStats.setAvgCpu(getAvgValue(cpuUsage.values()));
@@ -453,25 +463,29 @@ public class ResourceUsageCollector {
 			while ((line = br.readLine()) != null) {
 				interval += DELAY_INTERVAL;
 				line = line.trim();
+				try {
 				String memCpuClubbedStat = line.startsWith("Mem") ? line
-						.split("Mem:")[1] : line;
-				String[] memCpuClubbedArray = memCpuClubbedStat.split("total,");
-				totalMem = extractMemUsage("k", memCpuClubbedArray[0].trim());
-				usedMem = extractMemUsage("used,", memCpuClubbedArray[1].trim());
-				memPer = Float.parseFloat(usedMem) / Float.parseFloat(totalMem)
-						* Constants.HUNDRED;
-				memUsage.put(interval, memPer);
+						.split("Mem:")[1].trim() : line;
+									   					
+				String[] memCpuClubbedArray = memCpuClubbedStat.split(PATTERN_FOR_NON_DIGITS);				
+				totalMem =  memCpuClubbedArray[0].trim();
+				usedMem =  memCpuClubbedArray[1].trim();			
+
+					memPer = Float.parseFloat(usedMem)
+							/ Float.parseFloat(totalMem) * Constants.HUNDRED;
+					memUsage.put(interval, memPer);
+				} catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+					LOGGER.error("Error parsing a record of MEMORY dump file", e);
+				}
 			}
+           if(!memUsage.isEmpty()){ 
 			nodeStats.setMemUsage(memUsage);
 			nodeStats.setMaxMem(Collections.max(memUsage.values()));
+           }
 		}
 	}
 
-	private String extractMemUsage(String truncateToken, String string) {
-		return string.endsWith(truncateToken) ? string.substring(0,
-				string.indexOf('k')) : string;
-	}
-
+	@SuppressWarnings("deprecation")
 	private void setMemPhaseResourceUsage(List<TaskOutputDetails> taskDetails,
 			Map<Long, IntervalStats> statsMap, JobOutput jobOutput,
 			String jobID, PhaseType phase) throws UnknownHostException {
@@ -479,14 +493,14 @@ public class ResourceUsageCollector {
 		List<Float> cpuPer;
 		List<Float> memPer;
 		float maxPhaseMem = 0;
-		float totalPhaseCpu = 0;
 		int interval = 0;
-		Map<NodeSystemStats, Float> memStatsMap = new HashMap<NodeSystemStats, Float>();
 		int minStartPoint = -1, maxEndPoint = 0;
-		JobConfig jobConfig = (JobConfig) config;
-		Remoter remoter = RemotingUtil.getRemoter(jobConfig, null);
-		CommandWritableBuilder builder = new CommandWritableBuilder();
-		String remoteHadoop = RemotingUtil.getHadoopHome(remoter, jobConfig)
+		
+		Cluster cluster = jumbuneRequest.getCluster();
+		
+		Remoter remoter = RemotingUtil.getRemoter(cluster, null);
+		CommandWritableBuilder builder = new CommandWritableBuilder(cluster);
+		String remoteHadoop = RemotingUtil.getHadoopHome(remoter, cluster)
 				+ File.separator;
 		String logsHistory = remoteHadoop + LOGS + HISTORY_DIR_SUFFIX;
 		String command = jobID + RemotingConstants.SINGLE_SPACE + logsHistory;
@@ -501,16 +515,14 @@ public class ResourceUsageCollector {
 		configFilePath = configFilePath.substring(0,
 				configFilePath.lastIndexOf(File.separator) + 1);
 		String configurationFilePath = RemotingUtil
-				.copyAndGetConfigurationFilePath(config, configFilePath,
+				.copyAndGetConfigurationFilePath(jumbuneRequest, configFilePath,
 						fileName)
 				+ File.separator + fileName;
 		for (TaskOutputDetails tod : taskDetails) {
-			String location = convertHostNameToIP(tod.getLocation());
 			float mem = tod.getResourceUsageMetrics().getPhysicalMemoryUsage();
 			minStartPoint = setMinStartPoint(minStartPoint, tod.getStartPoint());
 			long start = minStartPoint;
 			maxEndPoint = setMaxEndPoint(maxEndPoint, tod.getEndPoint());
-			long end = maxEndPoint;
 			long startPt = Math.max(start, DELAY_INTERVAL);
 			float memoryStats = 0.0f;
 
@@ -585,9 +597,8 @@ public class ResourceUsageCollector {
 	 *             the unknown host exception
 	 */
 	private void setPhaseResourceUsage(List<TaskOutputDetails> taskDetails,
-			JobConfig jobConfig, Map<Long, IntervalStats> statsMap,
-			Map<String, NodeSystemStats> nodeStats, PhaseType phase)
-			throws UnknownHostException {
+			Map<Long, IntervalStats> statsMap, Map<String, NodeSystemStats> nodeStats,
+			PhaseType phase) throws UnknownHostException {
 		float cpu = 0.0f;
 		float mem = 0.0f;
 		IntervalStats intervalStats;
@@ -596,11 +607,8 @@ public class ResourceUsageCollector {
 		float maxPhaseMem = 0;
 		float totalPhaseCpu = 0;
 		int totalPhaseIntervals = 0;
-		List<String> allHosts = new ArrayList<String>();
-
-		for (Slave slave : jobConfig.getSlaves()) {
-			allHosts.addAll(Arrays.asList(slave.getHosts()));
-		}
+		List<String> allHosts = jumbuneRequest.getCluster().getWorkers().getHosts();
+		
 		for (TaskOutputDetails tod : taskDetails) {
 			String todLocation = tod.getLocation();
 			if (todLocation != null) {
@@ -610,6 +618,9 @@ public class ResourceUsageCollector {
 					location = convertHostNameToIP(LOCAL_HOST);
 				}
 				NodeSystemStats nss = nodeStats.get(location);
+				if(nss==null){
+					nss = nodeStats.get(todLocation);
+				}
 				if (PhaseType.MAP == phase) {
 					maxPhaseMem = nss.getMapPhaseMaxMem();
 					totalPhaseCpu = nss.getTotalMapPhaseCpu();
@@ -768,9 +779,8 @@ public class ResourceUsageCollector {
 	private String convertHostNameToIP(final String hostName)
 			throws UnknownHostException {
 		String hostNameTemp = hostName;
-		LOGGER.info("hostname in convertHostNameToIP:" + hostName);
 		hostNameTemp = hostNameTemp.replace(DEFAULT_RACK_SUFFIX, "");
-		return RemotingUtil.getIPfromHostName(config, hostNameTemp);
+		return RemotingUtil.getIPfromHostName(jumbuneRequest.getCluster(), hostNameTemp);
 	}
 
 	/**

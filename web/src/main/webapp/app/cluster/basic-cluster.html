@@ -1,0 +1,334 @@
+<div class="container" ng-init="init()">
+    <div jumbune-header=""></div>
+    <div class="inner-container">       
+        <h2>Define Cluster Configuration {{formSubmit}}</h2>
+        <div data-equal-height=".eq-height">
+            <div class="col-md-12 tab-container main-container">
+                <div class="tab-content">
+                    <p><strong>Note:</strong>This page helps Jumbune to learn about your exisiting Hadoop Cluster.It collects the core configuration related to cluster and Jumbune Agent Deployment. Once saved successfully with Jumbune, the cluster can be quickly refered by the property 'Cluster Name' defined on this page.</p>
+                    <p><strong>Note:</strong> All fields are mandatory.</p>
+                    <form autocomplete="off" ng-submit="save()" name="clusterForm" novalidate>
+                        <table class="frm-tbl">
+                            <tbody>
+                                <tr>
+                                    <td>Cluster Name</td>
+                                    <td>
+                                        <input ng-disabled="disableClusterName" name="clusterName" type="text" data-ng-model="clusterName" required ng-pattern='/^[a-zA-Z0-9_]*$/' ng-class="{'has-error':(clusterForm.clusterName.$invalid && !clusterForm.clusterName.$dirty && clusterForm.clusterName.blur) || (clusterForm.clusterName.$invalid && submitForm)}">
+                                        <div class="error" ng-show="clusterForm.clusterName.$dirty && clusterForm.clusterName.$invalid">
+                                            <span class="error">Please enter valid cluster name.</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="my-tool-tip">
+                                        <h5 style="color: #23b4c0;">Hadoop Service User Accounts <i data-toggle="tooltip" title="Services like HDFS, MapReduce, etc. may either have specific Service User accounts like hdfs for HDFS service components, mapred for MapReduce service components or running with a common shared User account." class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i></h5>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <input type="radio" name="optionsRadios" ng-value="true" data-ng-model="setProfilingObj.enableHadoopUser" />
+                                        <span>Single User</span>
+                                        <input type="radio" ng-value="false" name="optionsRadios" data-ng-model="setProfilingObj.enableHadoopUser" />
+                                        <span>Multiple User</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        <h5 ng-show="!isMapr" style="color: #23b4c0;">NameNode Information</h5>
+                                        <h5 ng-show="isMapr" style="color: #23b4c0;">CLDB Information</h5>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>HA
+                                        <input name="showHA" type="checkbox" ng-model="setProfilingObj.enableHA" />
+                                    </td>
+                                    <tr ng-show="setProfilingObj.enableHA" ng-repeat="(key, value) in zkHostPortArr">
+                                        <td>Zookeeper Host</td>
+                                        <td>
+                                            <ng-form name="zookeeperHostForm">
+                                                <input type="text" name="hostZKHost" data-ng-model="value.host" required ng-pattern='/^[a-zA-Z0-9_.-]*$/'>
+                                                <div class="error" ng-show="zookeeperHostForm.hostZKHost.$dirty && zookeeperHostForm.hostZKHost.$invalid">
+                                                    <span class="error">Please enter valid Zookeeper Host.</span>
+                                                </div>
+                                            </ng-form>
+                                        </td>
+                                        <td>Zookeeper Port
+                                            <ng-form name="zookeeperPortForm">
+                                                <input style="width: 75px" type="text" name="hostZKHostPort" data-ng-model="value.port" required jumbune-only-digits jumbune-num-range-validate="{min:1, max:65535}" class="num-input">
+                                                <i style="cursor: pointer" ng-click="addZkHostPort();" class="fa fa-plus circle-icon green-icon" ng-show="(!$index)"></i>
+                                                <i style="cursor: pointer" class="fa fa-minus circle-icon red-icon" ng-click="removeZkHostPort($index)" ng-show="($index)"></i>
+                                                <div class="error" ng-show="zookeeperPortForm.hostZKHostPort.$dirty && zookeeperPortForm.hostZKHostPort.$invalid">
+                                                    <span class="error">Please enter valid Zookeeper Port (1-65535).</span>
+                                                </div>
+                                            </ng-form>
+                                        </td>
+                                    </tr>
+                                    <tr ng-show="setProfilingObj.enableHA">
+                                        <td>Host</td>
+                                        <td>
+                                            <div class="random-fields" ng-repeat="(key, value) in nameNodeHostArrCount  track by $index">
+                                                <ng-form name="nameNodeHostForm">
+                                                    <input type="text" name="enableHA" data-ng-model="setProfilingObj.hostMNArr[key]" ng-pattern='/^[a-zA-Z0-9_.-]*$/' required>
+                                                    <i ng-click="addNameNodeHost();" class="fa fa-plus circle-icon green-icon" ng-show="(!$index)"></i>
+                                                    <i class="fa fa-minus circle-icon red-icon" ng-click="removeNameNodeHost($index)" ng-show="$index"></i>
+                                                    <div class="error" ng-show="nameNodeHostForm.enableHA.$dirty && nameNodeHostForm.enableHA.$invalid">
+                                                        <span class="error">Please enter valid NameNode Host.</span>
+                                                    </div>
+                                                </ng-form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tr>
+                                <tr ng-show="!setProfilingObj.enableHA">
+                                    <td ng-if="!isMapr">NameNode Host</td>
+                                    <td ng-if="isMapr">CLDB Host</td>
+                                    <td>
+                                        <input type="text" name="hostName" data-ng-model="setProfilingObj.hostMNArr[0]" required ng-pattern='/^[a-zA-Z0-9_.-]*$/' ng-class="{'has-error':(clusterForm.hostName.$invalid && !clusterForm.hostName.$pristine && clusterForm.hostName.blur) || (clusterForm.hostName.$invalid && submitForm)}">
+                                        <div class="error" ng-show="clusterForm.hostName.$dirty && clusterForm.hostName.$invalid">
+                                            <!-- <span class="error" ng-show="clusterForm.hostName.$error.required">Please enter host name.</span> -->
+                                            <span class="error">Please enter valid Host.</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        <h5 style="color: #23b4c0;">Task Manager(Resource Manager / Job Tracker)</h5>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Host</td>
+                                    <td>
+                                        <input type="text" name="taskHostName" data-ng-model="setProfilingObj.taskHostArr[0]" required ng-pattern='/^[a-zA-Z0-9_.-]*$/' ng-class="{'has-error':(clusterForm.taskHostName.$invalid && !clusterForm.taskHostName.$pristine && clusterForm.taskHostName.blur) || (clusterForm.taskHostName.$invalid && submitForm)}">
+                                        <div class="error" ng-show="clusterForm.taskHostName.$dirty && clusterForm.taskHostName.$invalid">
+                                            <span class="error">Please enter valid Host.</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        <h5 style="color: #23b4c0;">Worker Node Information</h5>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="my-tool-tip">Work Directory on DataNodes <i data-toggle="tooltip" title="Temporary Directory used on slaves for logs or job artifacts intermediate location" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i></td>
+                                    <td>
+                                        <input type="text" name="workDirectory" ng-model="selClusterObj.workDirectoryDN" required ng-pattern='/^[a-zA-Z0-9_.-/]*$/' ng-class="{'has-error':(clusterForm.workDirectory.$invalid && !clusterForm.workDirectory.$pristine && clusterForm.workDirectory.blur) || (clusterForm.workDirectory.$invalid && submitForm)}">
+                                        <div class="error" ng-show="clusterForm.workDirectory.$dirty && clusterForm.workDirectory.$invalid">
+                                            <span class="error">Please enter valid work directory on dataNodes details.</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr ng-show="isEmr">
+                                    <td class="my-tool-tip">Has Spot Instances</td>
+                                    <td>
+                                        <input id="cmn-toggle-emr" class="cmn-toggle cmn-toggle-round ng-pristine ng-valid" type="checkbox" ng-model="spotInstances">
+                                        <label for="cmn-toggle-emr"></label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>User</td>
+                                    <td>
+                                        <input type="text" name="userDN" ng-model="selClusterObj.userWN" required ng-pattern='/^[a-zA-Z0-9_.-]*$/' ng-trim ng-class="{'has-error':(clusterForm.userDN.$invalid && !clusterForm.userDN.$pristine && clusterForm.userDN.blur) || (clusterForm.userDN.$invalid && submitForm)}">
+                                        <div class="error" ng-show="clusterForm.userDN.$dirty && clusterForm.userDN.$invalid">
+                                            <span class="error">Please enter valid user name.</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <tr>
+                                        <td valign="top">Hosts</td>
+                                        <td>
+                                            <div class="random-fields" ng-repeat="(key, value) in workerNodeHostArrCount  track by $index">
+                                                <ng-form name="workerNodeHostForm">
+                                                    <input type="text" name="hostWN" data-ng-model="workerHostArr[key]" ng-pattern='/^[a-zA-Z0-9_.-]*$/' required>
+                                                    <i ng-click="addWorkerNodeHost();" class="fa fa-plus circle-icon green-icon" ng-show="(!$index)"></i>
+                                                    <i class="fa fa-minus circle-icon red-icon" ng-click="removeWorkerNodeHost($index)" ng-show="$index"></i>
+                                                    <div class="error" ng-show="workerNodeHostForm.hostWN.$dirty && workerNodeHostForm.hostWN.$invalid">
+                                                        <span class="error">Please enter valid Host.</span>
+                                                    </div>
+                                                   
+                                                </ng-form>
+                                            </div>
+                                             <div class="error" ng-show="totalNodeFlag">
+                                                        <span class="error">Reached the node limit supported by License.</span>
+                                                    </div>
+                                                     <div class="error" ng-show="IPDuplicateFlag">
+                                                        <span class="error">Please remove duplicate Host.</span>
+                                                    </div>
+                                        </td>
+
+                                    </tr>
+                                </tr>
+                                <!-- Randomly generated nodes -->
+                                <!-- <tbody ng-repeat="(key, value) in selClusterObj.nodeArr track by $index"> -->
+                                <tbody>
+                                    <tr>
+                                        <td></td>
+                                        <td>
+                                            <label class="option-label">
+                                                <input type="checkbox" ng-true-value="TRUE" ng-false-value="FALSE" ng-model="selectedDN">
+                                                <span>Specify Range</span>
+                                            </label>
+                                        </td>
+                                    </tr>
+                                    <tr ng-show="selectedDN == 'TRUE'">
+                                        <td>
+                                            <span>From</span>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="hostRangeFrom" ng-model="hostRangeFrom" ng-required="selectedDN" required '/^[0-9.]*$/'>
+                                            <div class="error" ng-show="clusterForm.hostRangeFrom.$dirty && clusterForm.hostRangeFrom.$invalid">
+                                                <span class="error">Please enter valid Range.</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span style="padding-right: 8px;">To</span>
+                                            <input type="text" name="hostRangeTo" ng-model="hostRangeTo" ng-required="selectedDN">
+                                            <div class="error" ng-show="clusterForm.hostRangeTo.$dirty && clusterForm.hostRangeTo.$invalid">
+                                                <span class="error">Please enter valid Range.</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="color: #23b4c0;horizontal-align">JMX Configuration For Hadoop Daemons</td>
+                                        <td>
+                                            <label class="option-label">
+                                                <input type="radio" name="optionsAutoConfigure" ng-value="true" data-ng-model="setProfilingObj.jmxPluginEnabled" />
+                                                <span>Not explicity</span>
+                                                <br>
+                                            </label>
+                                            <label class="option-label">
+                                                <input type="radio" ng-value="false" name="optionsAutoConfigure" data-ng-model="setProfilingObj.jmxPluginEnabled" />
+                                                <span>Defined in daemon start script</span>
+                                                <tr ng-show="setProfilingObj.jmxPluginEnabled===false">
+                                                    <td ng-if="!isMapr">Jmx Port on NameNode</td>
+                                                    <td ng-if="isMapr">Jmx Port on CLDB</td>
+                                                    <td>
+                                                        <input style="width: 75px" type="text" name="jmxPort" ng-model="selClusterObj.jmxPortMN" required jumbune-only-digits jumbune-num-range-validate="{min:1, max:65535}" class="num-input" ng-class="{'has-error':(clusterForm.jmxPort.$invalid && !clusterForm.jmxPort.$pristine && clusterForm.jmxPort.blur) || (clusterForm.jmxPort.$invalid && submitForm)}">
+                                                        <div class="error" ng-show="clusterForm.jmxPort.$dirty && clusterForm.jmxPort.$invalid">
+                                                            <span class="error">Please enter numeric jmx port (1-65535).</span>
+                                                    </td>
+                                                </tr>
+                                                <tr ng-show="setProfilingObj.jmxPluginEnabled===false">
+                                                    <td>Jmx Port on ResourceManager</td>
+                                                    <td>
+                                                        <input style="width: 75px" type="text" name="jmxPortTaskMngr" ng-model="selClusterObj.jmxPortTaskMngr" required jumbune-only-digits jumbune-num-range-validate="{min:1, max:65535}" class="num-input" ng-class="{'has-error':(clusterForm.jmxPortTaskMngr.$invalid && !clusterForm.jmxPortTaskMngr.$pristine && clusterForm.jmxPortTaskMngr.blur) || (clusterForm.jmxPortTaskMngr.$invalid && submitForm)}">
+                                                        <div class="error" ng-show="clusterForm.jmxPortTaskMngr.$dirty && clusterForm.jmxPortTaskMngr.$invalid">
+                                                            <span class="error">Please enter numeric jmx port (1-65535).</span>
+                                                    </td>
+                                                </tr>
+                                                <tr ng-show="setProfilingObj.jmxPluginEnabled===false && !isMapr">
+                                                    <td>Jmx Port on DataNode</td>
+                                                    <td>
+                                                        <input style="width: 75px" type="text" name="jmxPortDN" ng-model="selClusterObj.jmxPortDN" required jumbune-only-digits jumbune-num-range-validate="{min:1, max:65535}" class="num-input" ng-class="{'has-error':(clusterForm.jmxPortDN.$invalid && !clusterForm.jmxPortDN.$pristine && clusterForm.jmxPortDN.blur) || (clusterForm.jmxPortDN.$invalid && submitForm)}">
+                                                        <div class="error" ng-show="clusterForm.jmxPortDN.$dirty && clusterForm.jmxPortDN.$invalid">
+                                                            <!-- <span class="error" ng-show="clusterForm.jmxPortDN.$error.required">Please enter numeric jmx port on dataNodes details.</span> -->
+                                                            <span class="error">Please enter numeric jmx port (1-65535) on dataNodes details.</span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr ng-show="setProfilingObj.jmxPluginEnabled===false">
+                                                    <td>Jmx Port on Node Manager</td>
+                                                    <td>
+                                                        <input style="width: 75px" type="text" name="jmxPortTT" ng-model="selClusterObj.jmxPortTT_DN" required jumbune-only-digits jumbune-num-range-validate="{min:1, max:65535}" class="num-input" ng-class="{'has-error':(clusterForm.jmxPortTT.$invalid && !clusterForm.jmxPortTT.$pristine && clusterForm.jmxPortTT.blur) || (clusterForm.jmxPortTT.$invalid && submitForm)}">
+                                                        <div class="error" ng-show="clusterForm.jmxPortTT.$dirty && clusterForm.jmxPortTT.$invalid">
+                                                            <!-- <span class="error" ng-show="clusterForm.jmxPortTT.$error.required">Please enter numeric jmx port(1-65535) on task tracker.</span> -->
+                                                            <span class="error">Please enter numeric jmx port(1-65535) on task tracker.</span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </label>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="2">
+                                            <h5 style="color: #23b4c0;">Jumbune Agent Information</h5>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>HA
+                                            <input name="showHA" type="checkbox" ng-model="setProfilingObj.enableAgentHA" />
+                                        </td>
+                                        <tr ng-repeat="(key, value) in agentHostPortCount track by $index">
+                                            <td>Host</td>
+                                            <td>
+                                                <ng-form name="agentHostForm">
+                                                    <input ng-disabled="key < nameNodeHostArr.length" type="text" name="agentHostName" data-ng-model="nodeHostArrCopy[key]" required ng-pattern='/^[a-zA-Z0-9_.-]*$/'>
+                                                    <div class="error" ng-show="agentHostForm.agentHostName.$dirty && agentHostForm.agentHostName.$invalid">
+                                                        <span class="error">Please enter valid Host.</span>
+                                                    </div>
+                                                </ng-form>
+                                            </td>
+                                            <td>
+                                                Port
+                                                <ng-form name="agentPortForm">
+                                                    <input name="agentPortName" style="width: 75px" type="text" data-ng-model="agentPortArr[key]" required jumbune-only-digits jumbune-num-range-validate="{min:1, max:65535}" class="num-input">
+                                                    <i ng-disabled="!setProfilingObj.enableAgentHA" ng-click="addAgentHostPort();" class="fa fa-plus circle-icon green-icon" ng-show="(!$index)"></i>
+                                                    <i class="fa fa-minus circle-icon red-icon" ng-click="removeAgentHostPort($index)" ng-show="($index)"></i>
+                                                    <div class="error" ng-show="agentPortForm.agentPortName.$dirty && agentPortForm.agentPortName.$invalid">
+                                                        <span class="error">Please enter valid port(1-65535)</span>
+                                                    </div>
+                                                </ng-form>
+                                            </td>
+                                        </tr>
+                                    </tr>
+                                    <tr>
+                                        <td>User</td>
+                                        <td>
+                                            <input type="text" name="agentUserName" data-ng-model="setProfilingObj.agentUserMN" required ng-pattern='/^[a-zA-Z0-9_.-]*$/' ng-class="{'has-error':(clusterForm.agentUserName.$invalid && !clusterForm.agentUserName.$pristine && clusterForm.agentUserName.blur) || (clusterForm.agentUserName.$invalid && submitForm)}">
+                                            <div class="error" ng-show="clusterForm.agentUserName.$dirty && clusterForm.agentUserName.$invalid">
+                                                <span class="error">Please enter valid user name.</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="horizontal-align">Authentication Mode</td>
+                                        <td>
+                                            <label class="option-label">
+                                                <input type="radio" name="optionsRadiosAgent" ng-value="true" data-ng-model="setProfilingObj.agentInfoPaswd" />
+                                                <span>RSA/DSA file</span>
+                                                <br>
+                                            </label>
+                                            <label class="option-label">
+                                                <input type="radio" ng-value="false" name="optionsRadiosAgent" data-ng-model="setProfilingObj.agentInfoPaswd" />
+                                                <span>Password</span>
+                                                <tr ng-show="setProfilingObj.agentInfoPaswd===true">
+                                                    <td>RSA/DSA file</td>
+                                                    <td>
+                                                        <input type="text" name="fileAgentTypeMN" ng-model="selClusterObj.fileAgentTypeMN" required>
+                                                        <div class="error" ng-show="clusterForm.fileAgentTypeMN.$dirty && clusterForm.fileAgentTypeMN.$invalid">
+                                                            <span class="error">Please enter valid RSA/DSA file.</span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr ng-show="setProfilingObj.agentInfoPaswd===false">
+                                                    <td>Password</td>
+                                                    <td>
+                                                        <input type="password" name="agentInfoPaswd" ng-model="selClusterObj.agentPassword" required/>
+                                                        <div class="error" ng-show="clusterForm.agentInfoPaswd.$dirty && clusterForm.agentInfoPaswd.$invalid">
+                                                            <span class="error">Please enter valid Password.</span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </label>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <!-- END : Randomly generated nodes -->
+                            </tbody>
+                        </table>
+                        <div class="alert" style="position:relative;top:10px;width:350px;text-align:center; margin:0 auto;padding:5px;" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
+                        <div class="alert" style="position:relative;top:10px;width:350px;text-align:center; margin:0 auto;padding:5px;" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock">{{blockMessage}}</div>
+                        <div class="textCenter">
+                            <button type="button" class="btn btn-default" ng-click="cancel()">Cancel</button>
+                            <button type="submit" ng-click="submitForm = true" class="btn btn-primary">Save</button>
+                            <button type="button" ng-click="saveClusConf()" class="btn btn-primary">Save & Go Cluster Configuration</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="clear"></div>         
+    </div>
+     <!-- info-holder -->
+</div>

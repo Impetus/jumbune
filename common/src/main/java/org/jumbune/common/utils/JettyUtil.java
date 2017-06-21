@@ -1,26 +1,13 @@
 package org.jumbune.common.utils;
 
-import static org.jumbune.common.utils.Constants.SPACE;
-
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
 
-import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.client.SingleNIOEventGroup;
-import org.jumbune.remoting.common.BasicJobConfig;
-import org.jumbune.remoting.common.CommandType;
-import org.jumbune.remoting.writable.CommandWritable;
-import org.jumbune.remoting.writable.CommandWritable.Command;
 
 
 
@@ -53,12 +40,13 @@ public final class JettyUtil {
 	public static void main(String[] args) {
 
 		BufferedWriter bufferedWriter = null;
-	
+		Socket socket = null;
 		try {
 
 			String command = null;
 			int stopPort = 0;
 			String stopKey = "";
+		
 
 			for (int i = 0; i < args.length; i++) {
 
@@ -71,13 +59,12 @@ public final class JettyUtil {
 			}
 
 			if (command != null && "stop".equalsIgnoreCase(command)) {
-				performTopCommandCleanUp();
 				specifyStopKey(stopPort, stopKey);
 				shutDownNettyEventLoopGroup();
 				InetAddress host = InetAddress.getByName("127.0.0.1");
-				Socket socket = new Socket(host.getHostName(), stopPort);
-				bufferedWriter= new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-				bufferedWriter.write(stopKey + "\nstop");	
+				socket = new Socket(host.getHostName(), stopPort);
+				bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+				bufferedWriter.write(stopKey + "\nstop");
 				ConsoleLogUtil.CONSOLELOGGER.info(command + " Jumbune has been shutdown successfully.");
 
 			} else {
@@ -88,9 +75,14 @@ public final class JettyUtil {
 			ConsoleLogUtil.CONSOLELOGGER.error(e);
 		} catch (IOException e) {
 			ConsoleLogUtil.CONSOLELOGGER.error(e);
-		}catch (ClassNotFoundException e) {
-			ConsoleLogUtil.CONSOLELOGGER.error(e);
 		}finally{
+			try {
+				if (socket != null) {
+					socket.close();
+				}
+			} catch (IOException e) {
+				ConsoleLogUtil.CONSOLELOGGER.error("Unable to close socket", e);		
+			}
 			try {
 				if(bufferedWriter!=null){
 					bufferedWriter.close();
@@ -102,25 +94,6 @@ public final class JettyUtil {
 	}
 
 
-	private static void performTopCommandCleanUp()
-			throws IOException, ClassNotFoundException {
-		String jumbuneHome = System.getenv("JUMBUNE_HOME");
-		ObjectInputStream objectinputstream = null;
-		InputStream streamIn = null;
-		 try {
-			 	File file = new File(jumbuneHome+JSON_FILE);
-			 	if(file.exists()){
-				 	streamIn = new FileInputStream(jumbuneHome+JSON_FILE);
-			        objectinputstream= new ObjectInputStream(streamIn);
-			        BasicJobConfig basicJobConfig = (BasicJobConfig) objectinputstream.readObject();
-			        shutTopCmdOnSlaves(basicJobConfig);
-			 	}
-		    }finally {
-		        if(objectinputstream != null){
-		            objectinputstream .close();
-		         }
-		 }
-	}
 
 
 	/**
@@ -157,44 +130,7 @@ public final class JettyUtil {
 		ConsoleLogUtil.CONSOLELOGGER.error(" --stop-key n                       - security string for stop command (required if --stop-port is present)");
 		System.exit(1);
 	}
-	
-	/**
-	 * Kills the proces on each node which dumps top result to a file.
-	 *
-	 */
-	private static void shutTopCmdOnSlaves(BasicJobConfig config) {
-		String slaveTmpDir = config.getTmpDir();
-		StringBuilder command = new StringBuilder();
-		command.append(CAT_CMD).append(SPACE).append(slaveTmpDir).append(File.separator).append(PID_FILE);
-		Remoter remoter = new Remoter(config.getHost(), Integer.parseInt(config.getPort()));
-		List<String> params = new ArrayList<String>();
-		params.add(slaveTmpDir);
-		
-		for (String host : config.getSlaves()) {
-			CommandWritable commandWritable = new CommandWritable();	
-			CommandWritable.Command cmd = new CommandWritable.Command();
-			List<Command> commands= new ArrayList<Command>();
-			
-			cmd.setCommandString(command.toString());
-			cmd.setHasParams(true);
-			cmd.setParams(params);
-			commands.add(cmd);
 
-			commandWritable.setBatchedCommands(commands);
-			commandWritable.setAuthenticationRequired(true);
-			commandWritable.setCommandForMaster(false);
-			commandWritable.setDsaFilePath(config.getDsaFile());
-			commandWritable.setUsername(config.getUser());
-			commandWritable.setRsaFilePath(config.getRsaFile());
-			commandWritable.setSlaveHost(host);
-			commandWritable.setCommandType(CommandType.FS);
-			remoter.fireAndForgetCommand(commandWritable);
-			remoter.close();
-		}
-		ConsoleLogUtil.CONSOLELOGGER.info("Executed command [ShutTop] on worker nodes..");
-
-	}
-	
 	private static void shutDownNettyEventLoopGroup() {
 		SingleNIOEventGroup.eventLoopGroup().shutdownGracefully();
 	}	

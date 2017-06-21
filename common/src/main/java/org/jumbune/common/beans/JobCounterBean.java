@@ -74,5 +74,5 @@ public class JobCounterBean {
 		this.jobStatsMap = jobStatsMap;
 	}
 	
-	
+
 }

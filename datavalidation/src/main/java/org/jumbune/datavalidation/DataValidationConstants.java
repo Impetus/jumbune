@@ -20,6 +20,9 @@ public interface DataValidationConstants {
 	/** The tokens for dv report. */
 	int TOKENS_FOR_DV_REPORT = 4;
 	
+	/** The tokens for dv report. */
+	int TOKENS_FOR_DC_REPORT = 3;
+	
 	/** The null check. */
 	String NULL_CHECK = "nullCheck";
 	
@@ -47,6 +50,10 @@ public interface DataValidationConstants {
 	/** User defined regular expression check */
 	String USER_DEFINED_REGEX_CHECK = "Regex";
 	
+	String CONFIGURE_RR_FOR_PARTITION_NO = "partitionNo";
+	
+	String CONFIGURE_RR_FOR_REDUCERS = "reducers";
+	
 	/** The skip check. */
 	String SKIP_CHECK = " ";
 	
@@ -66,7 +73,11 @@ public interface DataValidationConstants {
 	String HADOOP_SUCCESS_FILES = "_SUCCESS";
 	
 	/** The job name. */
-	String JOB_NAME = "data validation";
+	String JOB_NAME = "Data Validation";
+	
+	/** The job name for data cleansing. */
+	String JOB_NAME_DC = "Data Cleansing";
+	
 	
 	/** The data validation bean string. */
 	String DATA_VALIDATION_BEAN_STRING = "dvBeanString";
@@ -89,6 +100,11 @@ public interface DataValidationConstants {
 	/** The dv report. */
 	String DV_REPORT = "dvr:";
 	
+	/** The dv report. */
+	String DC_REPORT = "dc:";
+	
+	String DC_DIR_SEPARATOR = "DCDS";
+	
 	/** The slave file loc. */
 	String SLAVE_FILE_LOC = "slaveFileLoc";
 
@@ -99,12 +115,12 @@ public interface DataValidationConstants {
 		
 		/** The int_type. */
 		int_type, 
- /** The long_type. */
- long_type, 
- /** The float_type. */
- float_type, 
- /** The double_type. */
- double_type
+		 /** The long_type. */
+		 long_type, 
+		 /** The float_type. */
+		 float_type, 
+		 /** The double_type. */
+		 double_type
 	}
 
 	/** VALIDATION_CHECK_MAP - the map containing various checks to be applied. */
@@ -118,7 +134,6 @@ public interface DataValidationConstants {
 
 		}
 	};
-
 	
 	/** The user name property. */
 	String USER_NAME_PROPERTY = "user.name";
@@ -190,6 +205,8 @@ public interface DataValidationConstants {
 	/** The target dir attribute. */
 	String TARGET_DIR_ATTRIBUTE = " --target-dir ";
 	
+	String DV_NUM_REPORT_VIOLATION = "dv.num.report.violation";
+	
 	int ZERO_CROSS_FF = 0xFF;
  	
 	int EIGHT = 8 ;
@@ -208,4 +225,31 @@ public interface DataValidationConstants {
 
 	int TEN = 10;
 	
+	String VALIDATE_MATRIX = "validateMatrix";
+	
+	int NULL_MATRIX = 0 ;
+	
+	int DATA_TYPE_MATRIX = 1 ;
+	
+	int REGEX_MATRIX = 2 ;
+
+	int MAX_VIOLATIONS = 1000;
+	
+	String DLC_ROOT_LOC = "dlclocations";
+	
+	String CLEAN_ROOT_LOC = "cleanlocations";
+	
+	String CLEAN = "clean";
+	
+	String DIRTY = "dirty";
+	
+	String TMPCLEAN = "tmpclean";
+	
+	String TMPDIRTY = "tmpdirty";
+	
+	String TMPMERGE = "tmpmerge";
+	
+	String DLC_LOCATION = "dirtyrecordlocation";
+	
+	String CLEAN_LOCATION = "cleanrecordlocation";	
 }

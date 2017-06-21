@@ -104,20 +104,20 @@ public class InstrumentValidator extends BaseAdapter {
 		// instrumented
 
 		if (isExcludeClassFromInstrumentation(name)) {
-			LOGGER.info("Excluding this class: " + name);
+			LOGGER.debug("Excluding this class: " + name);
 			return;
 		}
 
 		// Do not attempt to instrument interfaces or classes that have already
 		// been instrumented
 		if ((access & Opcodes.ACC_INTERFACE) != 0) {
-			LOGGER.info(MessageFormat.format(InstrumentationMessageLoader
+			LOGGER.debug(MessageFormat.format(InstrumentationMessageLoader
 					.getMessage(MessageConstants.INTERFACE_NOT_INSTRUMENT),
 					getClassName()));
 			this.isInterface = true;
 		} else if (CollectionUtil.arrayContains(interfaces,
 				CLASSNAME_CLASS_HAS_BEEN_INSTRUMENTED)) {
-			LOGGER.info(MessageFormat.format(InstrumentationMessageLoader
+			LOGGER.debug(MessageFormat.format(InstrumentationMessageLoader
 					.getMessage(MessageConstants.CLASS_ALREADY_INSTRUMENTED),
 					getClassName()));
 			this.isAlreadyInstrumented = true;
