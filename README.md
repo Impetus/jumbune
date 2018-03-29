@@ -1,4 +1,4 @@
-jumbune [![Build Status](https://travis-ci.org/impetus/jumbune.svg?branch=master)](https://travis-ci.org/impetus/jumbune)
+jumbune [![Build Status](https://travis-ci.org/Impetus/jumbune.svg?branch=master)](https://travis-ci.org/Impetus/jumbune)
 =======
 
 ## Synopsis
