@@ -44,7 +44,8 @@ import org.jumbune.common.alerts.AlertConstants;
 import org.jumbune.common.alerts.YarnAlert;
 import org.jumbune.common.beans.Alert;
 import org.jumbune.common.beans.EffCapUtilizationStats;
-import org.jumbune.common.job.EnterpriseJobConfig;
+import org.jumbune.common.beans.JumbuneInfo;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.ExtendedConstants;
 
 /**
@@ -97,7 +98,7 @@ public class QueueAlert implements YarnAlert {
 
 	public List <Alert> getClusterTimeDesyncAlert(String clusterName) { 
 		List<Alert> queueAlert = new ArrayList<Alert>();
-		StringBuffer queueJsonFile = new StringBuffer().append(EnterpriseJobConfig.getJumbuneHome()).append(File.separator).append(ExtendedConstants.JOB_JARS_LOC)
+		StringBuffer queueJsonFile = new StringBuffer().append(JumbuneInfo.getHome()).append(File.separator).append(ExtendedConstants.JOB_JARS_LOC)
 				.append(clusterName).append(File.separator).append(clusterName).append(ExtendedConstants.QUEUE).append(JSON);
 		File queueDataFile = new File(queueJsonFile.toString());
 
@@ -337,9 +338,9 @@ public class QueueAlert implements YarnAlert {
 			return effectiveUtilisationAlert;
 		}
 		for(String jobId:jobIdList){
-			StringBuffer capUtilJsonFileName = new StringBuffer().append(EnterpriseJobConfig.getJumbuneHome()).append(File.separator).append(ExtendedConstants.JOB_JARS_LOC)
+			StringBuffer capUtilJsonFileName = new StringBuffer().append(JumbuneInfo.getHome()).append(File.separator).append(ExtendedConstants.JOB_JARS_LOC)
 					.append(clusterName).append(CLUSTER_PROFILING).append(jobId).append(UTILIZATION_STATS).append(jobId).append(EFFECTIVE_MAX_UTILISATION).append(JSON);
-			StringBuffer capUtilAlertJsonFileName = new StringBuffer().append(EnterpriseJobConfig.getJumbuneHome()).append(File.separator).append(ExtendedConstants.JOB_JARS_LOC)
+			StringBuffer capUtilAlertJsonFileName = new StringBuffer().append(JumbuneInfo.getHome()).append(File.separator).append(ExtendedConstants.JOB_JARS_LOC)
 					.append(clusterName).append(CLUSTER_PROFILING).append(jobId).append(UTILIZATION_STATS).append(jobId).append(EFFECTIVE_MAX_UTILISATION).append(ExtendedConstants.WARNING_LEVEL).append(JSON);
 
 			File capUtilJsonFile = new File(capUtilJsonFileName.toString());
@@ -449,13 +450,12 @@ public class QueueAlert implements YarnAlert {
 			LOGGER.debug("Going to check for ResourceUtilizationAlert");
 			try {
 				nodeManagerOSStats = jmxDump.getOSJMXStats(JMXDeamons.NODE_MANAGER, worker, cluster.getWorkers().getTaskExecutorJmxPort(), cluster.isJmxPluginEnabled());
-				response =jmxDump.getFreeMemoryResponse(cluster, worker);
-				String [] spill = response.split(System.lineSeparator());
-				String [] total = spill[0].split("\\s+");
-				String [] free = spill[1].split("\\s+");
+				response = jmxDump.getFreeMemoryResponse(cluster, worker).trim();
+				String[] memory = response.split("\\s+");
+				Double totalPhysicalMemorySize = Double.parseDouble(memory[1]);
+				Double freePhysicalMemorySize = Double.parseDouble(memory[3]);
 				Double cpuLoad = Double.parseDouble(nodeManagerOSStats.get("SystemCpuLoad").toString());
-				Double totalPhysicalMemorySize = Double.parseDouble(total[1].toString());
-				Double freePhysicalMemorySize = Double.parseDouble(free[3].toString());
+				
 				Double freeMemory = ((totalPhysicalMemorySize-freePhysicalMemorySize)/totalPhysicalMemorySize);		
 				if(cpuLoad > 0.8){
 					Alert alert = new Alert (ExtendedConstants.WARNING_LEVEL,worker,"CPU utilization exhausted threshold of 80%", getDate());
@@ -593,7 +593,7 @@ public class QueueAlert implements YarnAlert {
 	 *  
 	 */
 	private String[] getJobList(String clusterName) {
-        StringBuffer jobIdsPath = new StringBuffer().append(JobConfig.getJumbuneHome()).append(File.separator).append(Constants.JOB_JARS_LOC)
+        StringBuffer jobIdsPath = new StringBuffer().append(JumbuneInfo.getHome()).append(File.separator).append(Constants.JOB_JARS_LOC)
                         .append(clusterName).append(CLUSTER_PROFILING);
         File f = new File(jobIdsPath.toString());
         String[] jobIds = f.list();

@@ -1,7 +1,6 @@
 package org.jumbune.execution.service;
 
 import java.io.File;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,26 +20,24 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Classpath;
 import org.jumbune.common.beans.ClasspathElement;
 import org.jumbune.common.beans.Enable;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.ReportsBean;
 import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.beans.cluster.ClusterDefinition;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.ConsoleLogUtil;
+import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.FileUtil;
 import org.jumbune.common.utils.JobConfigUtil;
 import org.jumbune.common.utils.RemoteFileUtil;
 import org.jumbune.common.utils.RemotingUtil;
-import org.jumbune.utils.exception.JumbuneException;
-import org.jumbune.utils.exception.JumbuneRuntimeException;
-
-import com.google.gson.Gson;
-import org.jumbune.common.beans.cluster.EnterpriseClusterDefinition;
-import org.jumbune.common.job.EnterpriseJobConfig;
 import org.jumbune.execution.beans.Parameters;
 import org.jumbune.execution.processor.Processor;
-import com.jcraft.jsch.JSchException;
+import org.jumbune.utils.exception.JumbuneException;
+import org.jumbune.utils.exception.JumbuneRuntimeException;
 
 public class DataQualityTimelineService extends CoreExecutorService {
 	private static final String TEMP = "tmp";
@@ -54,24 +51,19 @@ public class DataQualityTimelineService extends CoreExecutorService {
 	private static final String CHECKSUM_FILE = ".checksum";
 
 	private static String checksumFilePath = null;
-	
-	public DataQualityTimelineService() throws JumbuneException {
-	}
-
-	
 
 	public static void main(String[] args) throws JumbuneException,
 			InterruptedException {
 		DataQualityTimelineService service = new DataQualityTimelineService();
+		JumbuneRequest jumbuneRequest = null;
 		try {
 			ReportsBean reports = new ReportsBean();
 			String jumbunehome = args[1];
-			JumbuneRequest jumbuneRequest = null;
 			
 			String scheduledJobDirectoryPath = args[0];
 
 			System.setProperty("JUMBUNE_HOME", jumbunehome);
-			JobConfig.setJumbuneHome(args[1]);
+			JumbuneInfo.setHome(args[1]);
 			scheduledJobDirectoryPath = scheduledJobDirectoryPath.substring(0,
 					scheduledJobDirectoryPath.lastIndexOf(File.separator));
 
@@ -121,7 +113,7 @@ public class DataQualityTimelineService extends CoreExecutorService {
 		} catch (Exception e) {
 			LOGGER.error(e);
 			System.exit(1);
-		} 
+		}
 	}
 	
 	/**
@@ -145,14 +137,12 @@ public class DataQualityTimelineService extends CoreExecutorService {
 	}
 
 	private JumbuneRequest run(JumbuneRequest jumbuneRequest, ReportsBean reports, String jumbuneHome)
-			throws JumbuneException, IOException, JSchException,
-			InterruptedException {
+			throws Exception {
 		
 		try{
 		Config config = jumbuneRequest.getConfig();
 		loadInitialSetup(jumbuneRequest);
 		disableModules(config);
-		JobConfigUtil.createJumbuneDirectories(jumbuneRequest);
 		createJobJarFolderOnAgent(jumbuneRequest);
 		startExecution(reports, jumbuneRequest);
 		}finally{
@@ -176,25 +166,22 @@ public class DataQualityTimelineService extends CoreExecutorService {
 	 *
 	 * @param filePath the file path
 	 * @return the object
-	 * @throws IOException 
+	 * @throws Exception 
 	 */
-	private static JumbuneRequest loadJob(String configfilePath, String jumbuneHome) throws IOException {
-		Gson gson = new Gson();
-		EnterpriseJobConfig config = gson.fromJson(
-				FileUtil.readFileIntoString(configfilePath), EnterpriseJobConfig.class);
+	private static JumbuneRequest loadJob(String configfilePath, String jumbuneHome) throws Exception {
+		JobConfig config = Constants.gson.fromJson(
+				FileUtil.readFileIntoString(configfilePath), JobConfig.class);
 		String clusterJsonFilePath = jumbuneHome + "/clusters/" + config.getOperatingCluster() + ".json";
-		EnterpriseClusterDefinition enterpriseClusterDefinition = gson.fromJson(
-				FileUtil.readFileIntoString(clusterJsonFilePath), EnterpriseClusterDefinition.class);
+		ClusterDefinition cluster = Constants.gson.fromJson(
+				FileUtil.readFileIntoString(clusterJsonFilePath), ClusterDefinition.class);
 		JumbuneRequest jumbuneRequest = new JumbuneRequest();
-		jumbuneRequest.setCluster(enterpriseClusterDefinition);
+		jumbuneRequest.setCluster(cluster);
 		jumbuneRequest.setConfig(config);
 		return jumbuneRequest;
 	}
 
 	protected void deleteTokenFile(String jobName) {
-		String jumbunehome = JobConfig.getJumbuneHome();
-		File file = new File(new StringBuilder().append(jumbunehome)
-				.append(File.separator).append(TEMP).append(File.separator)
+		File file = new File(new StringBuilder().append(JumbuneInfo.getHome()).append(TEMP).append(File.separator)
 				.append("DQScheduler").append(jobName).append(".token").toString());
 		LOGGER.debug("token file has been deleted status [" + file.delete()
 				+ "]");
@@ -202,7 +189,7 @@ public class DataQualityTimelineService extends CoreExecutorService {
 	}
 
 	private void startExecution(ReportsBean reports, JumbuneRequest jumbuneRequest)
-			throws IOException, JumbuneException {
+			throws Exception {
 		JobConfig jobConfig = jumbuneRequest.getJobConfig();
 		List<Processor> processors = getProcessorChain(
 				jobConfig, true);

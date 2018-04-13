@@ -15,6 +15,7 @@ import java.util.zip.ZipOutputStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.Validation;
 import org.jumbune.common.utils.ClasspathUtil;
 import org.jumbune.common.utils.ConfigurationUtil;
@@ -349,7 +350,7 @@ public class JarInstrumenter extends Instrumenter {
 		// adding util classes to the jar file
 		ZipEntry xmlFileEntry = new ZipEntry(LOG4J_CONF_FILE);
 		zos.putNextEntry(xmlFileEntry);
-		String filePath = JobConfig.getJumbuneHome() + LOG4J_FILE_PATH;
+		String filePath = JumbuneInfo.getHome() + LOG4J_FILE_PATH;
 		byte[] buffer = new byte[InstrumentConstants.FOUR_ZERO_NINE_SIX];
 		InputStream is = new FileInputStream(filePath);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();

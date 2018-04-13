@@ -1,11 +1,10 @@
-/* NewJobConfig controller */
+/* Configuration controller */
 'use strict';
 angular.module('configuration.ctrl', [])
 
-.controller('ConfigurationController', ['$scope', 'common', '$timeout', '$location', 'clusterConfigurationFactory', 
+.controller('ConfigurationController', ['$scope', 'common', '$timeout', '$location', 'clusterConfigurationFactory',
 	function($scope, common, $timeout, $location, clusterConfigurationFactory) {
 		var clusterName;
-		
 		var globalSettings;
 		$scope.alertAction = {};
 		$scope.slaAction = {};
@@ -18,7 +17,7 @@ angular.module('configuration.ctrl', [])
 		$scope.toEditSLAActionData = false;
 		$scope.toEditQueueConfData = false;
 		$scope.isExecutionEngineAll = false;
-		$scope.MITKDC = false;
+		$scope.hideManageClusterButtons = common.getHideManageClusterButtons();
 		$scope.toAddAlertActionData = true;
 		$scope.toAddSLAActionData = true;
 		$scope.toAddQueueConfData = true;
@@ -152,14 +151,6 @@ angular.module('configuration.ctrl', [])
 			$scope.ObjectQueue ={"selectedQueueName":"","warningLevel":60,"criticalLevel":80};
 		}
 
-		$scope.addQueueAction = function() {			
-			var value = {"queueName":$scope.RUMQueue.queueName,"executionEngine":$scope.RUMQueue.executionEngine,"vCore" :$scope.RUMQueue.vCore , "memory" :$scope.RUMQueue.memory };
-			$scope.chargeBackConfigurations.chargeBackConfList.push(value);
-			$scope.toAddQueueConfData = false;		
-			/*if ( ($scope.chargeBackConfigurations.chargeBackConfList.length ) == ($scope.RUMQueuesList.length) ) {
-				$scope.showForm = false;
-			}*/
-		}
 		$scope.CancelQueue = function () {
 			$scope.QueueUtilizationIndex = '';
 			$scope.showQueue = false;
@@ -179,7 +170,11 @@ angular.module('configuration.ctrl', [])
 					return true;
 				}
 			}
-			if (!($scope.alertAction.snmpTraps.trapOID || $scope.alertAction.snmpTraps.ipAddress || $scope.alertAction.snmpTraps.port || $scope.alertAction.emailTo)) {
+			if (!( $scope.alertAction.emailTo ||
+					($scope.alertAction.snmpTraps
+							&& $scope.alertAction.snmpTraps.trapOID
+							&& $scope.alertAction.snmpTraps.ipAddress
+							&& $scope.alertAction.snmpTraps.port) )) {
 				return true;
 			}
 			return false;
@@ -251,7 +246,7 @@ angular.module('configuration.ctrl', [])
 				$scope.toEditAlertActionData = false;
 				$scope.toAddAlertActionData = false;
 			}
-		}					
+		}
 		/** Add new SLA action in*/
 		$scope.addSLAAction = function() {
 			$scope.slaConfigurations.slaConfList.push($scope.slaAction);
@@ -270,17 +265,14 @@ angular.module('configuration.ctrl', [])
 			$scope.slaConfigurations.slaConfList[$scope.slaActionIndex] = angular.copy(checkSNMP($scope.slaAction));
 			$scope.toEditSLAActionData = false;
 		}
-		$scope.updateQueueAction = function() {
-			$scope.chargeBackConfigurations.chargeBackConfList[$scope.queueActionIndex] = angular.copy(checkSNMP($scope.RUMQueue));
-			$scope.toEditQueueConfData = false;
-		}
+
 		/** Display SLA action form */
 		$scope.showAddSLAActionForm = function() {
 			$scope.slaAction = {};
 			$scope.toAddSLAActionData = true;
 			$scope.toEditSLAActionData = false;
 		}
-		$scope.showAddQueueForm = function() {			
+		$scope.showAddQueueForm = function() {
 			$scope.toAddQueueConfData = true;
 			$scope.toEditQueueConfData = false;
 			$scope.RUMQueue.selectedQueueName = '';
@@ -293,13 +285,6 @@ angular.module('configuration.ctrl', [])
 			$scope.toAddSLAActionData = false;
 			$scope.toEditSLAActionData = true;
 		}
-		$scope.showQueueActionData = function(index) {
-			$scope.queueActionIndex = index;
-			$scope.RUMQueue = angular.copy($scope.chargeBackConfigurations.chargeBackConfList[index]);
-			//$scope.RUMQueue.queueName = angular.copy($scope.chargeBackConfigurations.chargeBackConfList[index].queueName)
-			$scope.toAddQueueConfData = false;
-			$scope.toEditQueueConfData = true;
-		}
 
 		/** delete sla action configuration */
 		$scope.deleteSLAAction = function(index) {
@@ -309,13 +294,7 @@ angular.module('configuration.ctrl', [])
 				$scope.toAddSLAActionData = false;
 			}
 		}
-		$scope.deleteQueueAction = function(index) {
-			$scope.chargeBackConfigurations.chargeBackConfList.splice(index, 1);
-			if ($scope.queueActionIndex == index) {
-				$scope.toEditQueueConfData = false;
-				$scope.toAddQueueConfData = false;
-			}
-		}
+
 		$scope.toEditQueueUtilizationData = false;
 		$scope.QueueUtilization = true;
 		$scope.queueFilter = function(queueName) {
@@ -333,7 +312,7 @@ angular.module('configuration.ctrl', [])
 			}
 			return queueName;
 
-		}		
+		}
 		$scope.addQueueUtilization = function() {
 			if ($scope.alertConfiguration.individualQueueAlerts == null || $scope.alertConfiguration.individualQueueAlerts == undefined) {
 				$scope.alertConfiguration.individualQueueAlerts = {};
@@ -345,11 +324,6 @@ angular.module('configuration.ctrl', [])
 			} else {
 				$scope.showWarningCriticalErrorMessage = false;
 			}
-
-			/*else if ($scope.ObjectQueue.warningLevel > $scope.ObjectQueue.criticalLevel) {
-				$scope.showWarningCriticalErrorMessage = true;
-				return;
-			}*/
 			var value = {"queueName":$scope.ObjectQueue.selectedQueueName,"warningLevel" :$scope.ObjectQueue.warningLevel , "criticalLevel" :$scope.ObjectQueue.criticalLevel }
 			$scope.alertConfiguration.individualQueueAlerts[value.queueName] = {"warningLevel" :$scope.ObjectQueue.warningLevel , "criticalLevel" :$scope.ObjectQueue.criticalLevel};
 			$scope.toEditQueueUtilizationData = false;
@@ -361,52 +335,9 @@ angular.module('configuration.ctrl', [])
 		$scope.queueTypeList = [
 		{label:'All', value:'ALL'},
 		{label:'MapReduce', value:'MAPREDUCE'},
-		{label:'Spark', value:'SPARK'}];
-		$scope.queueRUMFilter = function(queueName) {
-			if ($scope.chargeBackConfigurations == null || $scope.chargeBackConfigurations == undefined) {
-				$scope.chargeBackConfigurations = { "chargeBackConfList": [] };
-			}	
-			var mapReduce = false, spark = false;		
-			for ( var i =0; i< $scope.chargeBackConfigurations.chargeBackConfList.length; i++ ) {
-					if (( queueName == $scope.chargeBackConfigurations.chargeBackConfList[i].queueName) && ($scope.chargeBackConfigurations.chargeBackConfList[i].executionEngine == "ALL")) {
-						return;
-					} else if (( queueName == $scope.chargeBackConfigurations.chargeBackConfList[i].queueName) && ($scope.chargeBackConfigurations.chargeBackConfList[i].executionEngine == "MAPREDUCE")) {
-						mapReduce = true;
-					} else if (( queueName == $scope.chargeBackConfigurations.chargeBackConfList[i].queueName) && ($scope.chargeBackConfigurations.chargeBackConfList[i].executionEngine == "SPARK")) {
-						spark = true;
-					} else {
+		{label:'Spark', value:'SPARK'},
+		{label:'Tez', value:'TEZ'}];
 
-					}
-			}
-			if ( mapReduce && spark ) {
-				return;
-			}
-			return queueName;
-
-		}
-		$scope.queueExeEngineFilter = function(executionEngine) {
-			var mapReduce = false, spark = false;
-			if ($scope.chargeBackConfigurations == null || $scope.chargeBackConfigurations == undefined) {
-				$scope.chargeBackConfigurations = { "chargeBackConfList": [] };
-			}		
-			for ( var i =0; i< $scope.chargeBackConfigurations.chargeBackConfList.length; i++ ) {
-					if ( executionEngine.value == "ALL") {
-						if (( $scope.RUMQueue.queueName == $scope.chargeBackConfigurations.chargeBackConfList[i].queueName) && ($scope.chargeBackConfigurations.chargeBackConfList[i].executionEngine == "MAPREDUCE")) {
-						mapReduce = true;
-						} else if (( $scope.RUMQueue.queueName == $scope.chargeBackConfigurations.chargeBackConfList[i].queueName) && ($scope.chargeBackConfigurations.chargeBackConfList[i].executionEngine == "SPARK")) {
-							spark = true;
-						} 
-						if ( mapReduce || spark ) {
-							return;
-						}
-					} else {
-						if (( $scope.RUMQueue.queueName == $scope.chargeBackConfigurations.chargeBackConfList[i].queueName) && ($scope.chargeBackConfigurations.chargeBackConfList[i].executionEngine == executionEngine.value) ) {						
-							return;
-						} 
-					}					
-			}			
-			return executionEngine.value;
-		}
 		$scope.showWarningCriticalError = function () {
 			if (Number($scope.ObjectQueue.warningLevel) >= Number($scope.ObjectQueue.criticalLevel)) {
 				$scope.showWarningCriticalErrorMessage = true;
@@ -453,8 +384,6 @@ angular.module('configuration.ctrl', [])
 		$scope.editGenericQueueUtilizationData = function(key) {
 			$scope.GenericQueueUtilizationIndex = key;
 			$scope.ObjectQueue.selectedQueueName = key;
-			/*$scope.alertConfiguration.configurableAlerts.QUEUE_UTILIZATION.warningLevel = $scope.alertConfiguration.configurableAlerts["QUEUE_UTILIZATION"].warningLevel;
-			$scope.alertConfiguration.configurableAlerts.QUEUE_UTILIZATION.criticalLevel = $scope.alertConfiguration.configurableAlerts["QUEUE_UTILIZATION"].criticalLevel;*/
 			$scope.ObjectQueue.warningLevel = $scope.alertConfiguration.configurableAlerts["QUEUE_UTILIZATION"].warningLevel;
 			$scope.ObjectQueue.criticalLevel = $scope.alertConfiguration.configurableAlerts["QUEUE_UTILIZATION"].criticalLevel;
 			$scope.toEditQueueUtilizationData = true;
@@ -464,12 +393,6 @@ angular.module('configuration.ctrl', [])
 			$scope.showQueue = false;
 			$scope.showWarningCriticalErrorMessage = false;
 		}
-		/*$scope.updateQueueUtilizationData = function() {
-			$scope.alertConfiguration.individualQueueAlerts[$scope.QueueUtilizationIndex].warningLevel =$scope.ObjectQueue.warningLevel;
-			$scope.alertConfiguration.individualQueueAlerts[$scope.QueueUtilizationIndex].criticalLevel = $scope.ObjectQueue.criticalLevel;
-			$scope.toEditQueueUtilizationData = false;
-			$scope.showQueue = false;
-		}*/
 		$scope.deleteQueueUtilizationData = function(key) {
 			delete $scope.alertConfiguration.individualQueueAlerts[key];
 			$scope.showQueue = false;
@@ -482,19 +405,8 @@ angular.module('configuration.ctrl', [])
 				return false;
 			}
 		};
-
-
-		/*$scope.updateGenericQueueUtilizationData = function() {
-			$scope.alertConfiguration.individualQueueAlerts[$scope.QueueUtilizationIndex].warningLevel =$scope.ObjectQueue.warningLevel;
-			$scope.alertConfiguration.individualQueueAlerts[$scope.QueueUtilizationIndex].criticalLevel = $scope.ObjectQueue.criticalLevel;
-			$scope.toEditQueueUtilizationData = false;
-			$scope.showQueue = false;
-		}*/
 		$scope.updateQueueUtilizationData = function() {
-			/*if ($scope.ObjectQueue.warningLevel > $scope.ObjectQueue.criticalLevel) {
-				$scope.showWarningCriticalErrorMessage = true;
-				return;
-			} else */
+
 			if (Number($scope.ObjectQueue.warningLevel) >= Number($scope.ObjectQueue.criticalLevel)) {
 				$scope.showWarningCriticalErrorMessage = true;
 				return;
@@ -512,8 +424,6 @@ angular.module('configuration.ctrl', [])
 			$scope.showQueue = false;
 			$scope.toEditGenericQueueUtilizationData = false;
 			$scope.QueueUtilization = false;
-			/*$scope.alertConfiguration.individualQueueAlerts[$scope.QueueUtilizationIndex].warningLevel =$scope.ObjectQueue.warningLevel;
-			$scope.alertConfiguration.individualQueueAlerts[$scope.QueueUtilizationIndex].criticalLevel = $scope.ObjectQueue.criticalLevel;*/
 
 		}
 		/** Start : HA,Influx,alert reset settings */
@@ -524,9 +434,7 @@ angular.module('configuration.ctrl', [])
 		$scope.resetInfluxDBSettings = function() {
 			$scope.influxDBConfiguration = globalSettings.influxDBConfiguration;
 		}
-		$scope.resetDLCSettings = function() {
-			$scope.dlcConfiguration = globalSettings.dlcConfiguration;
-		}
+
 		$scope.resetAlertSettings = function() {
 			$scope.alertConfiguration = globalSettings.alertConfiguration;
 		}
@@ -564,45 +472,27 @@ angular.module('configuration.ctrl', [])
 					$scope.influxDBConfiguration = "";
 				}
 			}
-			$scope.dlcConfiguration = data.dlcConfiguration;
-			if (data.dlcConfiguration == null) {
-				if (globalSettings.dlcConfiguration != null) {
-					$scope.dlcConfiguration = globalSettings.dlcConfiguration;
-				} else {
-					$scope.dlcConfiguration = "";
-				}
-			}
 
 			$scope.alertConfiguration = data.alertConfiguration;
 			if (data.alertConfiguration == null) {
 				if (globalSettings.alertConfiguration != null) {
 					$scope.alertConfiguration = globalSettings.alertConfiguration;
 				} else {
-					$location.path("/");
+					$location.path("/dashboard");
 				}
 			}
 			if ($scope.alertConfiguration['individualQueueAlerts'] == null || $scope.alertConfiguration['individualQueueAlerts'] == undefined) {
 				$scope.alertConfiguration['individualQueueAlerts'] = {};
 			}
-
+			if ($scope.alertConfiguration['hdfsDirPaths'] == null || $scope.alertConfiguration['hdfsDirPaths'] == undefined) {
+			 	$scope.alertConfiguration['hdfsDirPaths'] = [];
+			}
 			$scope.ticketConfiguration = data.ticketConfiguration;
 			if (data.ticketConfiguration == null) {
 				$scope.ticketConfiguration = {};
 			}
 
-			$scope.kdcConfiguration = data.kdcConfiguration;
-			if (data.kdcConfiguration == null) {
-				$scope.kdcConfiguration = {};
-				$scope.kdcConfiguration.encryptionTypes = [];
-			}
-
 			$scope.workerNodeHostArrCount = [1];
-			if ($scope.kdcConfiguration.encryptionTypes == null || $scope.kdcConfiguration.encryptionTypes == undefined) {
-				$scope.kdcConfiguration.encryptionTypes = [];
-			}
-			for (var i = 0; i < $scope.kdcConfiguration.encryptionTypes.length - 1; i++) {
-				$scope.workerNodeHostArrCount.push(1);
-			}
 
 			$scope.alertActionConfiguration = data.alertActionConfiguration;
 			if ($scope.alertActionConfiguration == null) {
@@ -612,10 +502,7 @@ angular.module('configuration.ctrl', [])
 			if ($scope.slaConfigurations == null) {
 				$scope.slaConfigurations = { "slaConfList": [] };
 			}
-			$scope.chargeBackConfigurations = data.chargeBackConfigurations;
-			if ($scope.chargeBackConfigurations == null || $scope.chargeBackConfigurations == undefined) {
-				$scope.chargeBackConfigurations = { "chargeBackConfList": [] };
-			}
+
 			$scope.backgroundProcessConfiguration = data.backgroundProcessConfiguration;
 			if (data.backgroundProcessConfiguration == null) {
 				$scope.backgroundProcessConfiguration = {
@@ -628,18 +515,6 @@ angular.module('configuration.ctrl', [])
 			}
 
 		}
-
-		/*function temp() {
-			if (alertAction.alertLevel
-				&& alertAction.occuringSinceHours
-				&& (
-					(alertAction.snmpTraps.trapOID && alertAction.snmpTraps.ipAddress && alertAction.snmpTraps.port) || alertAction.emailTo
-					|| (alertAction.enableTicket == true && ticketConfiguration.host && ticketConfiguration.port && ticketConfiguration.username && ticketConfiguration.password && ticketConfiguration.formName)) ) {
-
-			}
-		}
-		 || (alertAction.enableTicket == true && ticketConfiguration.host && ticketConfiguration.port && ticketConfiguration.username && ticketConfiguration.password && ticketConfiguration.formName)*/
-
 		/** Goes to index page */
 		$scope.backConfigData = function() {
 			if ( common.getAcTabDetail() == true ) {
@@ -687,7 +562,6 @@ angular.module('configuration.ctrl', [])
 				$scope.hDFS_UTILIZATIONFalse = true;
 				return;
 			}
-			// adminConfiguration['ticketConfiguration'] = { 'enable' : false }
 			if ( Number($scope.alertConfiguration.configurableAlerts.DISK_SPACE_UTILIZATION.warningLevel) >= Number($scope.alertConfiguration.configurableAlerts.DISK_SPACE_UTILIZATION.criticalLevel) ) {
 				$scope.displayMsgBox('Failure', "Please check Cluster Configurations!");
 				$scope.selectedTab = 'alertTab';
@@ -712,9 +586,6 @@ angular.module('configuration.ctrl', [])
 			adminConfiguration['emailConfiguration'] = $scope.emailConfiguration;
 			adminConfiguration['haConfiguration'] = $scope.haConfiguration;
 			adminConfiguration['influxDBConfiguration'] = $scope.influxDBConfiguration;
-			//$scope.kdcConfiguration.encryptionTypes = $scope.encryptionTypes;
-			adminConfiguration['kdcConfiguration'] = $scope.kdcConfiguration;
-			adminConfiguration['dlcConfiguration'] = $scope.dlcConfiguration;
 
 			if (isStringNullOrEmpty($scope.ticketConfiguration.host) || isStringNullOrEmpty($scope.ticketConfiguration.port) || isStringNullOrEmpty($scope.ticketConfiguration.username) || isStringNullOrEmpty($scope.ticketConfiguration.password) || isStringNullOrEmpty($scope.ticketConfiguration.formName)) {
 				adminConfiguration['ticketConfiguration'] = { 'enable': false }
@@ -722,17 +593,21 @@ angular.module('configuration.ctrl', [])
 				adminConfiguration['ticketConfiguration'] = $scope.ticketConfiguration;
 				adminConfiguration['ticketConfiguration'].enable = true;
 			}
-			/*if ($scope.alertConfiguration.configurableAlerts.QUEUE_UTILIZATION.warningLevel > $scope.alertConfiguration.configurableAlerts.QUEUE_UTILIZATION.criticalLevel) {
-				$scope.displayMsgBox('Failure', "Please check Cluster Configurations!");
-				$scope.selectedTab = 'alertTab';
-				$scope.qUEUE_UTILIZATIONFalse = true;
-				return;
-			}*/
+			var str = $scope.alertConfiguration['hdfsDirPaths'];
+			if($.isArray(str)) {
+				$scope.alertConfiguration['hdfsDirPaths'] = str;
+			} else {
+				if ( str != undefined ) {
+					var res = str.split(",");
+					$scope.alertConfiguration['hdfsDirPaths'] = res;
+				} else {
+					$scope.alertConfiguration['hdfsDirPaths'] = [];
+				}
+			}
 
 			adminConfiguration['alertConfiguration'] = $scope.alertConfiguration;
 			adminConfiguration['alertActionConfiguration'] = $scope.alertActionConfiguration;
 			adminConfiguration['slaConfigurations'] = $scope.slaConfigurations;
-			adminConfiguration['chargeBackConfigurations'] = $scope.chargeBackConfigurations;
 			adminConfiguration['backgroundProcessConfiguration'] = $scope.backgroundProcessConfiguration;
 
 			clusterConfigurationFactory.saveData.post({}, adminConfiguration,
@@ -740,22 +615,11 @@ angular.module('configuration.ctrl', [])
 					displaySaveMsgBox('Success', "Cluster Configurations saved successfully!!!");
 				},
 				function(e) {
+					$scope.displayMsgBox('Failure', e);
 					console.log(e);
 				});
 
 		};
-		/** Start : Function add and remove Kerberos Encryption Types field in KDC configuration */
-		$scope.workerNodeHostArrCount = [1]
-		$scope.addWorkerNodeHost = function() {
-			$scope.workerNodeHostArrCount.push($scope.workerNodeHostArrCount.length + 1);
-		};
-
-		$scope.removeWorkerNodeHost = function(index) {
-			$scope.workerNodeHostArrCount.splice(index, 1);
-			if ($scope.kdcConfiguration.encryptionTypes[index])
-				$scope.kdcConfiguration.encryptionTypes.splice(index, 1);
-		};
-		/** End : Function add and remove Kerberos Encryption Types field in KDC configuration */
 
 		/** Start : Function to display message for cluster configuration */
 		$scope.saveSuccess = false;
@@ -766,7 +630,7 @@ angular.module('configuration.ctrl', [])
 				$scope.saveSuccess = true;
 			}
 			$scope.displayBlock = true;
-			$scope.blockMessage = messageString;
+			$scope.blockMessage = "Problem while saving the configurations.";
 			$timeout(function() {
 				$scope.displayBlock = false;
 				$scope.blockMessage = "";
@@ -788,7 +652,7 @@ angular.module('configuration.ctrl', [])
 				} else {
 					$location.path('/index');
 				}
-				
+
 			}, 3000);
 		}
 		/** End : Function to display message for cluster configuration */

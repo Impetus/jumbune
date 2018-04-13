@@ -2,7 +2,7 @@ package org.jumbune.common.beans;
 
 public enum JobStatus {
 	
-	SCHEDULED("SCHEDULED"), IN_PROGRESS("IN_PROGRESS"), COMPLETED("COMPLETED");
+	INITIALIZED("INITIALIZED"), SCHEDULED("SCHEDULED"), IN_PROGRESS("IN_PROGRESS"), COMPLETED("COMPLETED");
 	
 	private String status;
 	

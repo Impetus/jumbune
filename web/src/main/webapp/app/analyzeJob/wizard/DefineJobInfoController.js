@@ -33,11 +33,7 @@ angular.module('defineJobInfo.ctrl', [])
 								this.errorFile = true;
 								containErrors = true;
 							}
-						}
-						/*if ( this.systemType == 'local' && !document.getElementById("filePathLocal").value ){
-							this.errorFile = true;
-							containErrors = true;
-						}*/ else {
+						} else {
 							this.errorFile = false;
 						}
 						if (containErrors) {
@@ -46,7 +42,6 @@ angular.module('defineJobInfo.ctrl', [])
 						var getJob = common.getJobDetails();
 		var defineJobInfoData = {
 	            systemType : self.systemType,
-	            //filePathServer : self.filePathServer,
 	            inputFile: filePathValue,
 	            addJar: self.addJar,
 	            noOfJobs: self.noOfJobs,
@@ -60,7 +55,6 @@ angular.module('defineJobInfo.ctrl', [])
 				 	var filenameis = $scope.filePath;
 					var jsonDataIs = JSON.stringify(defineJobInfoData);
 				 	$scope.content = new FormData();
-		            //$scope.content.append("inputFile", filePathValue); 
 		            $scope.content.append("jsonData", jsonDataIs);
 		             
 		            if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest') {
@@ -98,40 +92,6 @@ angular.module('defineJobInfo.ctrl', [])
                         }, function(error){
                             console.log("in error",error)
                         });
-		//common.setBackVal('datajob');
-		/*if(common.getDDV() || common.findSelectedTabs()){
-			$location.path('/job-widget');	
-		}else{
-			$location.path('/job-preview');
-		}*/
-/*
-		self.submitJobInfo = true;
-		self.fullFilePathLocal = angular.element('#filePathLocal').val();
-		var msg = $rootScope.root.failMessageGeneric;
-		if(self.jobInfoForm.$invalid){
-			common.showMessage('failure', msg);
-			return false;
-		}
-		if(self.systemType === 'local' && (angular.isUndefined(self.fullFilePathLocal) ||self.fullFilePathLocal == "")){
-			self.showError = true;
-			return false;		
-		}
-		var jobAnalysis = common.getJobAnalysis();
-		var dataAnalysis = common.getDataAnalysis();
-		self.addJar =  common.getAddJarVal();
-		var defineJobInfoData = {
-	            systemType : self.systemType,
-	            filePathServer : self.filePathServer,
-	            filePathLocal: self.fullFilePathLocal,
-	            addJar: self.addJar,
-	            noOfJobs: self.noOfJobs,
-	            allJobInfo: self.allJobInfo,
-		    isJarManifest: self.jarManifest
-		};
-		console.log('Final',defineJobInfoData);
-		common.saveDefineJobInfo(defineJobInfoData);
-		$location.path('/data-job-configuration');*/
-
 	};
 	
 	this.classDisable = false;
@@ -165,7 +125,6 @@ angular.module('defineJobInfo.ctrl', [])
 			if(defineJobInfo !== null){
 				if(Object.getOwnPropertyNames(defineJobInfo).length > 0) {
 					self.systemType  = defineJobInfo.systemType;
-					//self.filePathServer = defineJobInfo.filePathServer;
 					self.filePathLocal= defineJobInfo.filePathLocal;
 					if(self.systemType === 'local') {
 						$("#filePathLocal").val(self.filePathLocal);
@@ -180,12 +139,6 @@ angular.module('defineJobInfo.ctrl', [])
             var searchModule = $location.search().module;
 
            if(searchModule) { 
-                /*$scope.DefineJobInfoController.systemType = null;
-                $scope.DefineJobInfoController.filePathServer = null;
-                $scope.DefineJobInfoController.jarManifest = null;
-                $scope.DefineJobInfoController.jobName = null;
-                $scope.DefineJobInfoController.allJobInfo = null;*/
-                
             } else {
                  $scope.autoFillJob = { analyzeJob: self.jobAutoFill()} 
             }
@@ -196,29 +149,12 @@ angular.module('defineJobInfo.ctrl', [])
 
 				if ($scope.recentJobResponse.includeClassJar == 'TRUE') {
                     $scope.DefineJobInfoController.jarManifest = true;
-                    //$scope.DefineJobInfoController.jarManifest = false;
                 } else {
                 	//nothing
-                	//$scope.tuningTab.quickRecommendationsRadio = "TRUE"
                 }
-
-                /*if ($scope.recentJobResponse.isLocalSystemJar == 'TRUE') {
-                    $scope.DefineJobInfoController.systemType = "TRUE";
-                    //$scope.tuningTab.manualRadio = $scope.recentJobResponse.clusterTuning.capabilityPerNode
-                    
-                } else if ($scope.recentJobResponse.isLocalSystemJar == 'FALSE') {
-                    $scope.DefineJobInfoController.systemType = "FALSE";
-                    //$scope.tuningTab.manualRadio = $scope.recentJobResponse.clusterTuning.capabilityPerNode
-                   
-                } else {
-
-                }*/
-                //$scope.DefineJobInfoController.systemType = $scope.recentJobResponse.runJobFromJumbune;
                 $scope.DefineJobInfoController.filePathServer = $scope.recentJobResponse.inputFile;
-                //$scope.DefineJobInfoController.jarManifest = $scope.recentJobResponse.includeClassJar;
                 $scope.DefineJobInfoController.jobName = $scope.recentJobResponse.operatingUser;
                 $scope.DefineJobInfoController.allJobInfo = $scope.recentJobResponse.jobs;
-                //$scope.DefineJobInfoController.allJobInfo = $scope.recentJobResponse.jobs;
 
     }
 	this.removeJobNode = function(jobIndex) {

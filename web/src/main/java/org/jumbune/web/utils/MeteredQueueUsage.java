@@ -15,6 +15,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.clusterprofiling.beans.QueueStats;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.Constants;
 
@@ -35,7 +36,7 @@ public class MeteredQueueUsage {
 	private static final Gson gson = new Gson();
 
 	static {
-		METERED_QUEUE_DIR = JobConfig.getJumbuneHome() + File.separator + Constants.SYSTEM_STATS_DIR + File.separator
+		METERED_QUEUE_DIR = JumbuneInfo.getHome() + Constants.SYSTEM_STATS_DIR + File.separator
 				+ "metredQueueUsage/";
 		File file = new File(METERED_QUEUE_DIR);
 		if (!file.exists()) {

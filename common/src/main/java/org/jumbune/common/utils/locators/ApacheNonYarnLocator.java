@@ -3,7 +3,6 @@ package org.jumbune.common.utils.locators;
 import java.io.File;
 
 import org.jumbune.common.beans.cluster.Cluster;
-import org.jumbune.common.beans.cluster.TaskManagers;
 
 public class ApacheNonYarnLocator extends AbstractDistributionLocator {
 

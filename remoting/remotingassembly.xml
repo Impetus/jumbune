@@ -25,9 +25,9 @@
 			<outputDirectory>/</outputDirectory>
 			<unpack>true</unpack>
 			<useTransitiveDependencies>false</useTransitiveDependencies>
-			<includes>				
-			   <include>org.jumbune:remoting-jsch:jar:1.1.0</include>
-			   <include>org.jumbune:remoting-common:jar:1.1.0</include>
+			<includes>
+			   <include>org.jumbune:remoting-jsch:jar:2.0</include>
+			   <include>org.jumbune:remoting-common:jar:2.0</include>
 				<include>org.apache.logging.log4j:log4j-api:jar:2.1</include>
 				<include>org.apache.logging.log4j:log4j-core:jar:2.1</include>
 				<include>io.netty:netty-handler:jar:4.0.32.Final</include>
@@ -58,7 +58,7 @@
 				<includes>
 					<include>org/jumbune/remoting/writable**/*</include>
 					<!-- <include>org/jumbune/remoting/server**/*</include>-->
-					<include>org/jumbune/remoting/server**/**</include> 
+					<include>org/jumbune/remoting/server**/**</include>
 					<include>org/jumbune/remoting/jmx**/**</include>
 					<include>log4j2.xml</include>
 					<include>distribution.properties</include>

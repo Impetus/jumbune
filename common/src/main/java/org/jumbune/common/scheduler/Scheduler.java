@@ -1,13 +1,20 @@
 package org.jumbune.common.scheduler;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.job.Config;
-import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
@@ -25,12 +32,6 @@ public abstract class Scheduler {
 	private static final String NEW_LINE = "\n";
 	private static final Logger LOGGER = LogManager.getLogger(Scheduler.class);
 	private static final File CURRENT_DIR = new File(".");
-	private static final String JUMBUNE_HOME;
-
-	static {
-		JUMBUNE_HOME = (new StringBuilder()).append(JobConfig.getJumbuneHome())
-				.append(File.separator).toString();
-	}
 
 	protected Scheduler() {
 	}
@@ -177,7 +178,7 @@ public abstract class Scheduler {
 	 */
 	protected void writeLatestCronTabToFile(String cronInfo) {
 		File jumbuneCronFile = new File((new StringBuilder())
-				.append(JUMBUNE_HOME).append("JumbuneModifiedCron").toString());
+				.append(JumbuneInfo.getHome()).append("JumbuneModifiedCron").toString());
 		BufferedWriter outobj = null;
 		try {
 			FileWriter fstream = new FileWriter(jumbuneCronFile);
@@ -204,7 +205,7 @@ public abstract class Scheduler {
 	protected void addUpdatedFileToCron() {
 		List<String> commandList = new ArrayList<String>();
 		commandList.add(CRONTAB_COMMAND);
-		commandList.add((new StringBuilder()).append(JUMBUNE_HOME)
+		commandList.add((new StringBuilder()).append(JumbuneInfo.getHome())
 				.append("JumbuneModifiedCron").toString());
 
 		ProcessBuilder launch = new ProcessBuilder();
@@ -305,7 +306,7 @@ public abstract class Scheduler {
 			}
 		}
 		String scriptWord = schedulerScripBuilder.toString().replaceAll(
-				"<JUMBUNE.HOME>", JobConfig.getJumbuneHome());
+				"<JUMBUNE.HOME>", JumbuneInfo.getHome());
 		String javaHome = System.getenv("JAVA_HOME");
 		scriptWord = scriptWord.replaceAll("<JAVA.HOME>", javaHome);
 

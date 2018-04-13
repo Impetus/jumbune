@@ -26,6 +26,7 @@ import javax.ws.rs.core.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.HttpReportsBean;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.common.utils.CommandWritableBuilder;
@@ -38,7 +39,7 @@ import org.jumbune.remoting.common.CommandType;
 import org.jumbune.utils.exception.JumbuneException;
 
 import com.google.gson.Gson;
-import org.jumbune.common.job.EnterpriseJobConfig;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.ExtendedConfigurationUtil;
 import org.jumbune.common.utils.ExtendedConstants;
 import org.jumbune.execution.service.HttpExecutorService;
@@ -148,10 +149,10 @@ public class ResultService {
 						File file = new File(sb.toString());
 						jumbuneRequest = (JumbuneRequest) session.getAttribute("jumbuneRequest");
 						Remoter remoter = RemotingUtil.getRemoter(jumbuneRequest.getCluster(), "");
-						EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) jumbuneRequest.getConfig();
-						String relativePath =  File.separator+Constants.JOB_JARS_LOC +enterpriseJobConfig.getJumbuneJobName();
+						JobConfig jobConfig = (JobConfig) jumbuneRequest.getConfig();
+						String relativePath =  File.separator+Constants.JOB_JARS_LOC +jobConfig.getJumbuneJobName();
 						remoter.receiveLogFiles(relativePath, relativePath+File.separator+EXECUTED_HADOOP_JOB_INFO);
-						File hadoopJobStateFile=new File(EnterpriseJobConfig.getJumbuneHome()+File.separator+relativePath+File.separator+EXECUTED_HADOOP_JOB_INFO);
+						File hadoopJobStateFile=new File(JumbuneInfo.getHome()+relativePath+File.separator+EXECUTED_HADOOP_JOB_INFO);
 						if(hadoopJobStateFile.exists()){
 							readHadoopJobIDAndKillJob(jumbuneRequest.getCluster(), hadoopJobStateFile);
 						}

@@ -18,6 +18,7 @@ import javax.ws.rs.core.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.ClasspathElement;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
@@ -25,7 +26,7 @@ import org.jumbune.utils.exception.JumbuneException;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import org.jumbune.common.job.EnterpriseJobConfig;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.web.utils.WebConstants;
 import org.jumbune.web.utils.WebUtil;
 
@@ -91,18 +92,18 @@ public class UploadService {
 
 			response.setContentType("text/html");
 
-			String filePath = EnterpriseJobConfig.getJumbuneHome() + Constants.USER_YAML_LOC;
+			String filePath = JumbuneInfo.getHome() + Constants.USER_YAML_LOC;
 
 			LOG.debug("File path for uploding json file :: " + filePath);
 			WebUtil util = new WebUtil();
 			List<File> uploadedFiles = util.uploadFiles(request, filePath);
 			// Only one yaml file could be uploaded at a time
 			Config config = util.getJobConfFromFile(uploadedFiles.get(0));
-			EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig)config;
-			ClasspathElement classpathElement = enterpriseJobConfig.getClasspath()
+			JobConfig jobConfig = (JobConfig)config;
+			ClasspathElement classpathElement = jobConfig.getClasspath()
 					.getUserSupplied();
 			Gson gson = new Gson();
-			JsonObject jsonObject = gson.toJsonTree(enterpriseJobConfig).getAsJsonObject();
+			JsonObject jsonObject = gson.toJsonTree(jobConfig).getAsJsonObject();
 			String jsonString = gson.toJson(jsonObject);
 
 			out.println(jsonString);

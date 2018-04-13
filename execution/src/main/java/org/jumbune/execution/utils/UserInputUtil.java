@@ -24,7 +24,7 @@ import org.jumbune.common.utils.MessageLoader;
 import org.jumbune.utils.beans.LogLevel;
 import org.jumbune.utils.exception.JumbuneException;
 
-import org.jumbune.common.job.EnterpriseJobConfig;
+import org.jumbune.common.job.JobConfig;
 
 /**
  * This class shows various options to user to change the properties mentioned
@@ -84,8 +84,8 @@ public class UserInputUtil {
 					break;
 				}
 			}
-			EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig)config;
-			enterpriseJobConfig.setJobs(jobDefList);
+			JobConfig jobConfig = (JobConfig)config;
+			jobConfig.setJobs(jobDefList);
 		}
 
 		String askForLoggingEnabled = MessageFormat.format(
@@ -95,8 +95,8 @@ public class UserInputUtil {
 		// Changing instrumentation enabling information
 		if (ExecutionUtil.askYesNoInfo(scanner, validInput,
 				askForLoggingEnabled)) {
-			EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig)config;
-			DebuggerConf instruDef = enterpriseJobConfig.getDebuggerConf();
+			JobConfig jobConfig = (JobConfig)config;
+			DebuggerConf instruDef = jobConfig.getDebuggerConf();
 
 			Map<String, LogLevel> logLevelMap = instruDef.getLogLevel();
 

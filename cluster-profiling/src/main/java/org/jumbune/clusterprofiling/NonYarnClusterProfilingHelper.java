@@ -15,21 +15,20 @@ import org.jumbune.clusterprofiling.beans.LiveCapacityStats;
 import org.jumbune.clusterprofiling.beans.NonYarnQueueStats;
 import org.jumbune.clusterprofiling.beans.QueueStats;
 import org.jumbune.clusterprofiling.beans.RackAwareStats;
+import org.jumbune.common.beans.EffCapUtilizationStats;
+import org.jumbune.common.beans.JumbuneInfo;
+import org.jumbune.common.beans.MRTaskType;
 import org.jumbune.common.beans.ResourceUsageMetrics;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.beans.cluster.Location;
 import org.jumbune.common.beans.profiling.JobOutput;
 import org.jumbune.common.beans.profiling.TaskOutputDetails;
-import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.HadoopLogParser;
 import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.utils.beans.NativeJobId;
 import org.jumbune.utils.beans.NonYarnJobId;
-
-import org.jumbune.common.beans.EffCapUtilizationStats;
-import org.jumbune.common.beans.MRTaskType;
 
 /**
  * The Class ClusterProfilingHelper contains all the helper methods required for non-yarn cluster profiling.
@@ -160,7 +159,7 @@ public class NonYarnClusterProfilingHelper {
 		List<EffCapUtilizationStats> effCapUtilizationStatsList = new ArrayList<EffCapUtilizationStats>();
 		String userName = cluster.getHadoopUsers().getFsUser();
 		String mapChildJavaOpts = RemotingUtil.getHadoopConfigurationValue(cluster,"mapred-site.xml","mapred.map.child.java.opts");
-		String destinationRelativePathOnLocal = JobConfig.getJumbuneHome() + Constants.JOB_JARS_LOC  + cluster.getClusterName();
+		String destinationRelativePathOnLocal = JumbuneInfo.getHome() + Constants.JOB_JARS_LOC  + cluster.getClusterName();
 		String reduceChildJavaOpts = RemotingUtil.parseConfiguration(destinationRelativePathOnLocal,"mapred.reduce.child.java.opts");
 		long mapChildJavaOptsinMB = ConfigurationUtil.getJavaOptsinMB(mapChildJavaOpts);
 		long reduceChildJavaOptsinMB = ConfigurationUtil.getJavaOptsinMB(reduceChildJavaOpts);
@@ -269,7 +268,7 @@ public class NonYarnClusterProfilingHelper {
 	/**
 	 * Gets the rack stats.
 	 *
-	 * @param jumbuneRequest the enterprise job config
+	 * @param jumbuneRequest the job config
 	 * @param jobClient the client
 	 * @return the rack stats
 	 * @throws IOException the IO exception
@@ -379,7 +378,7 @@ public class NonYarnClusterProfilingHelper {
 		String mapChildJavaOpts = RemotingUtil.getHadoopConfigurationValue(cluster,"mapred-site.xml","mapred.map.child.java.opts");
 		long mapChildJavaOptsinMB = ConfigurationUtil.getJavaOptsinMB(mapChildJavaOpts);
 		if(mapChildJavaOptsinMB == 0){
-			String destinationRelativePathOnLocal = JobConfig.getJumbuneHome() + Constants.JOB_JARS_LOC  + cluster.getClusterName();
+			String destinationRelativePathOnLocal = JumbuneInfo.getHome() + Constants.JOB_JARS_LOC  + cluster.getClusterName();
 			String childJavaOpts = RemotingUtil.parseConfiguration(destinationRelativePathOnLocal,"mapred.child.java.opts");
 			mapChildJavaOptsinMB = ConfigurationUtil.getJavaOptsinMB(childJavaOpts);
 		}
@@ -392,7 +391,7 @@ public class NonYarnClusterProfilingHelper {
 	 * @return
 	 */
 	private long reduceChildJavaOpts(Cluster cluster) {
-		String destinationRelativePathOnLocal = JobConfig.getJumbuneHome() + Constants.JOB_JARS_LOC  + cluster.getClusterName();
+		String destinationRelativePathOnLocal = JumbuneInfo.getHome() + Constants.JOB_JARS_LOC  + cluster.getClusterName();
 		String reduceChildJavaOpts = RemotingUtil.parseConfiguration(destinationRelativePathOnLocal,"mapred.reduce.child.java.opts");
 		long reduceChildJavaOptsinMB = ConfigurationUtil.getJavaOptsinMB(reduceChildJavaOpts);
 		if(reduceChildJavaOptsinMB == 0){

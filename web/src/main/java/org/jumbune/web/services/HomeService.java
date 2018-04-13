@@ -5,13 +5,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
-import java.security.SignatureException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,7 +22,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -41,22 +38,22 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Feature;
 import org.jumbune.common.beans.JobStatus;
-import org.jumbune.utils.conf.AdminConfigurationUtil;
-import org.jumbune.common.job.JobConfig;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.scheduler.DataQualityTaskScheduler;
 import org.jumbune.common.utils.Constants;
+import org.jumbune.common.utils.ExtendedConfigurationUtil;
 import org.jumbune.common.utils.FileUtil;
+import org.jumbune.common.utils.JenkinsBuildDetails;
+import org.jumbune.common.utils.JobRequestUtil;
 import org.jumbune.profiling.utils.JMXConnectorCache;
 import org.jumbune.remoting.client.SingleNIOEventGroup;
 import org.jumbune.remoting.common.BasicJobConfig;
+import org.jumbune.utils.conf.AdminConfigurationUtil;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
+import org.jumbune.web.utils.WebConstants;
 
 import com.google.gson.Gson;
-import org.jumbune.common.utils.ExtendedConfigurationUtil;
-import org.jumbune.common.utils.JenkinsBuildDetails;
-import org.jumbune.common.utils.JobRequestUtil;
-import org.jumbune.web.utils.WebConstants;
 
 import io.netty.channel.EventLoopGroup;
 
@@ -74,15 +71,7 @@ public class HomeService {
 
 	private static final String CLUSTER_ANALYSIS = "ClusterAnalysis";
 
-	private static final String OPTIMIZE_JOB2 = "OptimizeJob";
-
-	private static final String NODE_S = " Node(s)";
-
-	private static final String CLUSTER_SIZE = "Cluster Size";
-
 	private static final String SUCCESS = "success";
-
-	private static final String CLUSTER_INFO_CONFIGURATION = "clusterInfoConfiguration";
 
 	private static final String CLUSTER_NAME = "clusterName";
 
@@ -110,9 +99,6 @@ public class HomeService {
 
 	/** The Constant JSON_FILE. */
 	private static final String JSON_FILE = "/jsonInfo.ser";
-
-	/** The Constant JSON_FILE_LOCATION. */
-	private final String JSON_FILE_LOCATION = "jsonrepo/";
 
 	/** The Constant EXAMPLE_FILE_LOCATION. */
 	private final String EXAMPLE_FILE_LOCATION = "examples/resources/samplejson/";
@@ -214,7 +200,7 @@ public class HomeService {
 	public Response getRecentJobsFromJsonRepo() throws IOException {
 		try {
 			// String[] jobTypes = {WebConstants.ANALYZE_DATA,
-			// WebConstants.ANALYZE_JOB, WebConstants.OPTIMIZE_JOB};
+			// WebConstants.ANALYZE_JOB};
 			Map<String, String> jobTypes = new HashMap<String, String>(3);
 			jobTypes.put(WebConstants.ANALYZE_DATA, ANALYZE_DATA);
 			jobTypes.put(WebConstants.ANALYZE_JOB, ANALYZE_JOB);
@@ -385,10 +371,6 @@ public class HomeService {
 				allJobs.put(Feature.ANALYZE_JOB.getEnumValue(),
 						getExampleList(jsonRepoDir.toString()));
 			}
-
-			jsonRepoDir = new StringBuilder(exampleFileLocation).append(WebConstants.OPTIMIZE_JOB)
-					.append(File.separator);
-			fileCheck = new File(jsonRepoDir.toString());
 
 			return Response.ok(new Gson().toJson(allJobs)).build();
 		} catch (Exception e) {
@@ -624,8 +606,7 @@ public class HomeService {
 	}
 	
 	private void deleteJob1(String jobName) throws Exception {
-		String jumbuneHome = JobConfig.getJumbuneHome();
-		String jobJarPath = jumbuneHome + File.separator + Constants.JOB_JARS_LOC + jobName;
+		String jobJarPath = JumbuneInfo.getHome() + Constants.JOB_JARS_LOC + jobName;
 		File jobJarDirectory = new File(jobJarPath);
 
 		if (jobJarDirectory.exists()) {
@@ -653,12 +634,12 @@ public class HomeService {
 			break;
 
 		}
-		dir = new File(jumbuneHome + TUNING_SCHEDULED_DIR + jobName);
+		dir = new File(JumbuneInfo.getHome() + TUNING_SCHEDULED_DIR + jobName);
 		if (dir.exists()) {
 			FileUtils.forceDelete(dir);
 		}
 
-		dir = new File(jumbuneHome + DQ_JOBS_DIR + jobName);
+		dir = new File(JumbuneInfo.getHome() + DQ_JOBS_DIR + jobName);
 		if (dir.exists()) {
 			FileUtils.forceDelete(dir);
 			removeDQTJob(jobName);
@@ -670,7 +651,7 @@ public class HomeService {
 	private boolean removeDQTJob(String jobName) throws JumbuneException {
 		DataQualityTaskScheduler dqts = new DataQualityTaskScheduler();
 		StringBuilder sb = new StringBuilder();
-		String directoryPath = sb.append(JobConfig.getJumbuneHome()).append(File.separator)
+		String directoryPath = sb.append(JumbuneInfo.getHome())
 				.append("ScheduledJobs").append(File.separator).append("IncrementalDQJobs")
 				.append(File.separator).append(jobName).append(File.separator).toString();
 		dqts.deleteCurrentJobEntryFromCron(jobName);

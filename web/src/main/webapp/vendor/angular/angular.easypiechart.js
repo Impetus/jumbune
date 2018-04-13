@@ -2,7 +2,7 @@
  * easy-pie-chart
  * Lightweight plugin to render simple, animated and retina optimized pie charts
  *
- * @license 
+ * @license
  * @author Robert Fleischmann <rendro87@gmail.com> (http://robert-fleischmann.de)
  * @version 2.1.7
  **/
@@ -46,7 +46,15 @@
 					 * @type {Object}
 					 */
 					var options = {
-						barColor: '#ef1e25',
+						barColor: function(percent) {
+							if ( percent > 99) {
+								return '#e53935';
+							} else if ( percent > 80) {
+								return '#ffb300';
+							} else {
+								return '#43a047';
+							}
+						},
 						trackColor: '#f9f9f9',
 						scaleColor: '#dfe0e0',
 						scaleLength: 0,
@@ -60,7 +68,6 @@
 						}
 					};
 					scope.options = angular.extend(options, scope.options);
-
 					var pieChart = new EasyPieChart(element[0], options);
 
 					scope.$watch('percent', function(newVal, oldVal) {
@@ -265,7 +272,7 @@ var CanvasRenderer = function(el, options) {
 
 var EasyPieChart = function(el, opts) {
 	var defaultOptions = {
-		barColor: '#ef1e25',
+		barColor: '#4CAF50',
 		trackColor: '#f9f9f9',
 		scaleColor: '#dfe0e0',
 		scaleLength: 5,

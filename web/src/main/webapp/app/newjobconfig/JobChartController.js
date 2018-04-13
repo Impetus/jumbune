@@ -14,7 +14,6 @@ angular.module('jobchart.ctrl', [])
         self.dataValidationJson = common.getDataValidationJsonData();
         self.debuggerJson = common.getDebuggerJsonData();
         self.jobProfilingJson = common.getJobProfilingJsonData();
-        self.tuningJson = common.getTuningJsonData();
         //End of Report Json Read
 
         self.user = null;
@@ -57,9 +56,6 @@ angular.module('jobchart.ctrl', [])
                 self.widgetsDtl.jobProfilingDtl.enableprofilingCheck && (self.displayJSON.enableprofilingCheck =  'Job Profiling');
                 self.widgetsDtl.jobProfilingDtl.runFromJumbune && (self.displayJSON.runFromJumbune =  'Run From Jumbune');
             }
-            if(self.widgetsDtl.tuningDtl !== undefined){
-                self.widgetsDtl.tuningDtl.enableTuningChk && (self.displayJSON.enableTuning =  'Tuning');
-            }
             if(self.widgetsDtl.dataValidation !== undefined){
                 self.widgetsDtl.dataValidation.enableDataValidation && (self.displayJSON.enableDataValidation =  'Data Validation');
             }
@@ -71,77 +67,6 @@ angular.module('jobchart.ctrl', [])
             console.log('Final JSON of Enable Fields',self.displayJSON);
 
             for (var key in self.displayJSON) {
-                if (self.displayJSON[key] === "Tuning") {
-                    /**
-                    * Tuning - plot chart
-                    * @type {*[]}
-                    */
-
-                    /////////////////
-                    var tuningData = [];
-                    for(var i=0; i< self.tuningJson.length; i++){
-                        tuningData.push(self.tuningJson[i].executionTimeInMsecs/1000);   //Converted miliseconds to seconds
-                    };
-
-                    self.chartModel = {
-                        chartTitle: 'Tuning',
-                        chartData : [tuningData],
-                        chartOptions : {
-                            seriesColors:["#41BECC"],
-                            legend:{show:true},
-                            axesDefaults: {
-                                labelRenderer: $.jqplot.CanvasAxisLabelRenderer
-                            },
-                            seriesDefaults: {
-                                rendererOptions: {
-                                    smooth: true
-                                }
-                            },
-                            axes: {
-                                xaxis: {
-                                    label: "Iteration",
-                                    pad: 0
-                                },
-                                yaxis: {
-                                    label: "Execution Time(sec)"
-                                }
-                            }
-                        }
-                    };
-                    /////////////////
-
-                    /*var tuningData = [];
-                    for(var i=0; i< self.tuningJson.length; i++){
-                        tuningData.push(self.tuningJson[i].executionTimeInMsecs/1000);   //Converted miliseconds to seconds
-                    };
-
-                    self.chartModel = {
-                        chartData : [tuningData],
-                        chartOptions : {
-                            title: "Tuning",
-                            axesDefaults: {
-                                labelRenderer: $.jqplot.CanvasAxisLabelRenderer
-                            },
-                            seriesDefaults: {
-                                rendererOptions: {
-                                    smooth: true
-                                }
-                            },
-                            axes: {
-                                xaxis: {
-                                    label: "Iteration",
-                                    pad: 0
-                                },
-                                yaxis: {
-                                    label: "Execution Time(sec)"
-                                }
-                            }
-                        }
-                    };*/
-
-                    self.chartArr.push(self.chartModel);
-                }
-
                 if (self.displayJSON[key] === "Job Profiling") {
                     /**
                     * Job Profiling
@@ -168,12 +93,6 @@ angular.module('jobchart.ctrl', [])
                             cpuUsageArray.push(cpuUsage);
                         }
                     };
-
-                    /*var lineChartData1 = [[1, 6.29], [2, 8.21], [3, 8.92], [4, 7.33], [5, 7.91], [6, 3.6], [7, 6.88],
-                        [8, 1.5], [9, 0.08], [10, 6.36], [11, 0.5]];
-                    var lineChartData2 = [[5, 6.29], [6, 8.21], [7, 8.92], [8, 7.33], [9, 7.91], [10, 3.6], [11, 6.88],
-                        [18, 1.5], [19, 0.08], [20, 6.36], [21, 0.5]];*/
-
                     var scatterChartData = [[10, 1], [11, 2], [12, 3], [13, 4], [14, 5], [15, 6], [16, 7],
                         [17, 8], [18, 9]];
                     var s1 = [2, 6, 7, 10];
@@ -296,161 +215,14 @@ angular.module('jobchart.ctrl', [])
                             }
                         }
                     };
-                    ////////////////////////////
-                    /*var memUsage = [];
-                    var memUsageArray = [];
-                    var cpuUsage = [];
-                    var cpuUsageArray = [];
-                    for(var i=0; i< self.jobProfilingJson.length; i++){
-                        var memUsageObj = self.jobProfilingJson[i].graphData.memUsage;
-                        for(var key in memUsageObj){
-                            memUsage = [];
-                            memUsage.push(key);
-                            memUsage.push(memUsageObj[key]);
-                            memUsageArray.push(memUsage);
-                        }
-                        var cpuUsageObj = self.jobProfilingJson[i].graphData.cpuUsage;
-                        for(var key in cpuUsageObj){
-                            cpuUsage = [];
-                            cpuUsage.push(key);
-                            cpuUsage.push(cpuUsageObj[key]);
-                            cpuUsageArray.push(cpuUsage);
-                        }
-                    };
-                    console.log('memUsageArray',memUsageArray);
-                    console.log('cpuUsageArray',cpuUsageArray);
-
-                    var scatterChartData = [[10, 1], [11, 2], [12, 3], [13, 4], [14, 5], [15, 6], [16, 7],
-                        [17, 8], [18, 9]];
-                    var s1 = [2, 6, 7, 10];
-                    var s2 = [7, 5, 3, 4];
-                    var s3 = [14, 9, 3, 8];
-                    self.chartModel = {
-                        chartData: [memUsageArray, cpuUsageArray, scatterChartData, s1, s2, s3],
-                        chartOptions: {
-                            stackSeries: true,
-                            multiCanvas: false,
-                            copyData: false,
-                            height: 350,
-                            cursor: {
-                                show: true,
-                                zoom: true
-                            },
-                            legend: {
-                                show: false,
-                                location: 's'
-                            },
-                            series: [
-                                {
-                                    color: 'purple',
-                                    showMarker: true,
-                                    showLine: true,
-                                    //fill: true,
-                                    //fillAndStroke: true,
-                                    markerOptions: {
-                                        style: 'filledCircle',
-                                        size: 5
-                                    },
-                                    rendererOptions: {
-                                        smooth: false
-                                    }
-                                },
-                                {
-                                    color: 'blue',
-                                    showMarker: true,
-                                    showLine: true,
-                                    //fill: true,
-                                    //fillAndStroke: true,
-                                    markerOptions: {
-                                        style: 'filledCircle',
-                                        size: 5
-                                    },
-                                    rendererOptions: {
-                                        smooth: false
-                                    }
-                                },
-                                {
-                                    color: 'red',
-                                    showMarker: true,
-                                    showLine: false,
-                                    markerOptions: {
-                                        style: 'filledCircle',
-                                        size: 12,
-                                        stroke: true,
-                                        shadow: true
-                                    }
-                                }
-                                ,
-                                {
-                                    renderer: $.jqplot.BarRenderer,
-                                    rendererOptions: {
-                                        // Put a 30 pixel margin between bars.
-                                        barMargin: 30,
-                                        // Highlight bars when mouse button pressed.
-                                        // Disables default highlighting on mouse over.
-                                        highlightMouseDown: true
-                                    },
-                                    pointLabels: {show: true}
-                                },
-                                {
-                                    renderer: $.jqplot.BarRenderer,
-                                    rendererOptions: {
-                                        // Put a 30 pixel margin between bars.
-                                        barMargin: 30,
-                                        // Highlight bars when mouse button pressed.
-                                        // Disables default highlighting on mouse over.
-                                        highlightMouseDown: true
-                                    },
-                                    pointLabels: {show: true}
-                                },
-                                {
-                                    renderer: $.jqplot.BarRenderer,
-                                    rendererOptions: {
-                                        // Put a 30 pixel margin between bars.
-                                        barMargin: 30,
-                                        // Highlight bars when mouse button pressed.
-                                        // Disables default highlighting on mouse over.
-                                        highlightMouseDown: true
-                                    },
-                                    pointLabels: {show: true}
-                                }
-                            ],
-                            axes: {
-                                xaxis: {
-                                    label: 'Execution Time',
-                                    autoscale: false,
-                                    rendererOptions: {
-                                        //tickInset: .2
-                                    },
-                                    tickOptions: {
-                                        formatString: '%d'
-
-                                    }
-                                },
-                                yaxis: {
-                                    label: 'Percentage Utilization',
-                                    autoscale: false,
-                                    tickOptions: {
-                                        formatString: '%d'
-
-                                    },
-                                    rendererOptions: {
-                                        tickInset: .2
-                                    }
-                                }
-                            }
-                        }
-                    };*/
 
                     self.chartArr.push(self.chartModel);
                 }
 
                 if (self.displayJSON[key] === "Debugger") {
-                    //self.chartArr.push(self.chartModel);
                 }
 
                 if (self.displayJSON[key] === "What If") {
-                    //self.chartArr.push(self.chartModel);
                 }
 
                 if (self.displayJSON[key] === "Data Validation") {
@@ -606,67 +378,6 @@ angular.module('jobchart.ctrl', [])
                     };
 
                     self.chartArr.push(self.chartModel);
-                    ///////////////////////////
-
-
-
-
-                    /*var cleanTuple = '';
-                    var violatedTuple = '';
-                    for(var i=0; i<self.dataValidationJson.length; i++){
-                        cleanTuple = self.dataValidationJson[i].validation.cleanTuple;
-                        violatedTuple = self.dataValidationJson[i].validation.totalTupleProcessed;
-                    };
-
-                    var data = [['Violated Tuple', violatedTuple],['Clean Tuple', cleanTuple]];
-                    self.chartModel = {
-                        chartData : [data],
-                        chartOptions : {
-                            title: "Data Violations - Clean v/s violated data",
-                            seriesDefaults: {
-                                shadow: false,
-                                renderer: jQuery.jqplot.PieRenderer,
-                                rendererOptions: { sliceMargin: 4, showDataLabels: true }
-                            },
-                            legend: { show:true }
-                        }
-                    };
-                    self.chartArr.push(self.chartModel);
-
-                    var nullCheck = '';
-                    var dataType = '';
-                    var regex = '';
-
-                    for(var i=0; i<self.dataValidationJson.length; i++){
-                        nullCheck = self.dataValidationJson[i].validation.jsonReport.NullCheck.totalViolations;
-                        dataType = self.dataValidationJson[i].validation.jsonReport.DataType.totalViolations;
-                        regex = self.dataValidationJson[i].validation.jsonReport.Regex.totalViolations;
-                    };
-
-                    var s1 = [['Null Check',nullCheck], ['Data Type',dataType], ['Regex',regex]];
-                    var s2 = [['Null Check',nullCheck], ['Data Type',dataType], ['Regex',regex]];
-                    self.chartModel = {
-                        chartData : [s1,s2],
-                        chartOptions : {
-                            title: "Data Violations",
-                            seriesDefaults: {
-                                // make this a donut chart.
-                                renderer:$.jqplot.DonutRenderer,
-                                rendererOptions:{
-                                    // Donut's can be cut into slices like pies.
-                                    sliceMargin: 3,
-                                    // Pies and donuts can start at any arbitrary angle.
-                                    startAngle: -90,
-                                    showDataLabels: true,
-                                    // By default, data labels show the percentage of the donut/pie.
-                                    // You can show the data 'value' or data 'label' instead.
-                                    dataLabels: 'value'
-                                }
-                            }
-                        }
-                    };
-
-                    self.chartArr.push(self.chartModel);*/
                 }
 
                 if (self.displayJSON[key] === "Data Quality") {
@@ -738,7 +449,6 @@ angular.module('jobchart.ctrl', [])
                 }
 
                 if (self.displayJSON[key] === "Cluster Monitoring") {
-                    //self.chartArr.push(self.chartModel);
                 }
             }
             console.log(self.chartArr);

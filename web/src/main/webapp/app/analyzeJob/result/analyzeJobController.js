@@ -27,11 +27,9 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
                     }
                     var totalFilteredOut = counterVal["totalFilteredOut"];
                     var counterDetails = counterVal["counterDetails"];
-
-                    //if(counterDetails != "method") {
+                    
                     var counterJsonObj = { "counterName": counterKey, "totalFilteredIn": totalFilteredIn, "totalContextWrites": totalContextWrites, "totalUnmatchedKeys": totalUnmatchedKeys, "totalUnmatchedValues": totalUnmatchedValues, "totalFilteredOut": totalFilteredOut };
                     taskCounterData.push(counterJsonObj);
-                    //}
                 });
             } else {
                 taskCounterData = [];
@@ -74,7 +72,7 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
         }
 
         $scope.clickedHomeIcon = function() {
-            $location.path("/")
+            $location.path("/dashboard")
         }
 
         $scope.init = function() {
@@ -82,22 +80,6 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
             $scope.hideLoader = false;
             $scope.webSocketErrorFlag = false;
             $scope.showErrorMessage = false;
-            $scope.licenseExpireTrue = false;
-            $scope.licenseExpireDays = false;
-
-
-
-            //start hardcode data
-            //var jsonData = {"debugAnalysis":{"logMap":{"job_1444196705135_0080":{"jobMap":{"com.impetus.portout.mappers.oldapi.PortoutReducer":{"mapReduceMap":{"172.26.49.61":{"nodeMap":{"attempt_1444196705135_0080_r_000000_0":{"numOfSamples":0,"time":0,"instanceMap":{"reduce":{"totalFilteredIn":0,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"method","counterMap":{"IfBlock#1":{"totalFilteredIn":9370,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"39","counterMap":{"If#1":{"totalFilteredIn":1,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"40","counterMap":{"com.impetus.portout.mappers.oldapi.PortoutReducer.addHeader":{"totalFilteredIn":1,"totalFilteredOut":1,"totalExitKeys":0,"counterDetails":"method","counterMap":{"Switch#1":{"totalFilteredIn":1,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"60","counterMap":{"Case#1":{"totalFilteredIn":1,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"63","totalInputKeys":0,"totalContextWrites":1,"totalUnmatchedKeys":1,"totalUnmatchedValues":-1}},"totalInputKeys":0,"totalContextWrites":1,"totalUnmatchedKeys":1,"totalUnmatchedValues":-1}},"totalInputKeys":0,"totalContextWrites":1,"totalUnmatchedKeys":1,"totalUnmatchedValues":-1}},"totalInputKeys":0,"totalContextWrites":1,"totalUnmatchedKeys":1,"totalUnmatchedValues":-1}},"totalInputKeys":0,"totalContextWrites":1,"totalUnmatchedKeys":1,"totalUnmatchedValues":-1},"Loop#1":{"totalFilteredIn":9370,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"46","totalInputKeys":0,"totalContextWrites":9370,"totalUnmatchedKeys":9370,"totalUnmatchedValues":-1}},"totalInputKeys":9370,"totalContextWrites":9371,"totalUnmatchedKeys":9371,"totalUnmatchedValues":-1}},"totalInputKeys":9370,"totalContextWrites":9371,"totalUnmatchedKeys":9371,"totalUnmatchedValues":-1},"attempt_1444196705135_0080_r_000001_0":{"numOfSamples":0,"time":0,"instanceMap":{"reduce":{"totalFilteredIn":0,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"method","counterMap":{"IfBlock#1":{"totalFilteredIn":9232,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"39","counterMap":{"If#1":{"totalFilteredIn":1,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"40","counterMap":{"com.impetus.portout.mappers.oldapi.PortoutReducer.addHeader":{"totalFilteredIn":1,"totalFilteredOut":1,"totalExitKeys":0,"counterDetails":"method","counterMap":{"Switch#1":{"totalFilteredIn":1,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"60","counterMap":{"Case#1":{"totalFilteredIn":1,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"63","totalInputKeys":0,"totalContextWrites":1,"totalUnmatchedKeys":1,"totalUnmatchedValues":-1}},"totalInputKeys":0,"totalContextWrites":1,"totalUnmatchedKeys":1,"totalUnmatchedValues":-1}},"totalInputKeys":0,"totalContextWrites":1,"totalUnmatchedKeys":1,"totalUnmatchedValues":-1}},"totalInputKeys":0,"totalContextWrites":1,"totalUnmatchedKeys":1,"totalUnmatchedValues":-1}},"totalInputKeys":0,"totalContextWrites":1,"totalUnmatchedKeys":1,"totalUnmatchedValues":-1},"Loop#1":{"totalFilteredIn":9232,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"46","totalInputKeys":0,"totalContextWrites":9232,"totalUnmatchedKeys":9232,"totalUnmatchedValues":-1}},"totalInputKeys":9232,"totalContextWrites":9233,"totalUnmatchedKeys":9233,"totalUnmatchedValues":-1}},"totalInputKeys":9232,"totalContextWrites":9233,"totalUnmatchedKeys":9233,"totalUnmatchedValues":-1}},"totalInputKeys":18602,"totalContextWrites":18604,"totalUnmatchedKeys":18604,"totalUnmatchedValues":-1}},"totalInputKeys":18602,"totalContextWrites":18604,"totalUnmatchedKeys":18604,"totalUnmatchedValues":-1},"com.impetus.portout.mappers.oldapi.ServiceProviderMapper":{"mapReduceMap":{"172.26.49.61":{"nodeMap":{"attempt_1444196705135_0080_m_000001_0":{"numOfSamples":0,"time":0,"instanceMap":{"map":{"totalFilteredIn":0,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"method","counterMap":{"IfBlock#1":{"totalFilteredIn":14123,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"27","counterMap":{"If#1":{"totalFilteredIn":9260,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"28","totalInputKeys":0,"totalContextWrites":9260,"totalUnmatchedKeys":1881,"totalUnmatchedValues":-1}},"totalInputKeys":0,"totalContextWrites":9260,"totalUnmatchedKeys":1881,"totalUnmatchedValues":-1}},"totalInputKeys":14123,"totalContextWrites":9260,"totalUnmatchedKeys":1881,"totalUnmatchedValues":-1}},"totalInputKeys":14123,"totalContextWrites":9260,"totalUnmatchedKeys":1881,"totalUnmatchedValues":-1},"attempt_1444196705135_0080_m_000000_0":{"numOfSamples":0,"time":0,"instanceMap":{"map":{"totalFilteredIn":0,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"method","counterMap":{"IfBlock#1":{"totalFilteredIn":14020,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"27","counterMap":{"If#1":{"totalFilteredIn":9342,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"28","totalInputKeys":0,"totalContextWrites":9342,"totalUnmatchedKeys":1845,"totalUnmatchedValues":-1}},"totalInputKeys":0,"totalContextWrites":9342,"totalUnmatchedKeys":1845,"totalUnmatchedValues":-1}},"totalInputKeys":14020,"totalContextWrites":9342,"totalUnmatchedKeys":1845,"totalUnmatchedValues":-1}},"totalInputKeys":14020,"totalContextWrites":9342,"totalUnmatchedKeys":1845,"totalUnmatchedValues":-1}},"totalInputKeys":28143,"totalContextWrites":18602,"totalUnmatchedKeys":3726,"totalUnmatchedValues":-1}},"totalInputKeys":28143,"totalContextWrites":18602,"totalUnmatchedKeys":3726,"totalUnmatchedValues":-1}},"totalInputKeys":50100,"totalContextWrites":18604,"totalUnmatchedKeys":22330,"totalUnmatchedValues":-1}},"mrChain":{"job_1444196705135_0080":{"mapChainList":[{"name":"com.impetus.portout.mappers.oldapi.TupleValidateMapper","inputKeys":0,"contextWrites":0},{"name":"com.impetus.portout.mappers.oldapi.USRegionMapper","inputKeys":0,"contextWrites":0},{"name":"com.impetus.portout.mappers.oldapi.ServiceProviderMapper","inputKeys":28143,"contextWrites":18602}],"reduceChainList":[{"name":"com.impetus.portout.mappers.oldapi.PortoutReducer","inputKeys":18602,"contextWrites":18604},{"name":"com.impetus.portout.mappers.oldapi.PortoutRegionMapper","inputKeys":0,"contextWrites":0}]}},"partitionerMap":{}},"debuggerSummary":{"mapperReducerNames":[{"jobMapReduceName":"job_1444196705135_0080","totalUnmatchedKeys":22330,"totalUnmatchedValues":-1},{"jobMapReduceName":"com.impetus.portout.mappers.oldapi.PortoutReducer","totalUnmatchedKeys":18604,"totalUnmatchedValues":-1},{"jobMapReduceName":"com.impetus.portout.mappers.oldapi.ServiceProviderMapper","totalUnmatchedKeys":3726,"totalUnmatchedValues":-1}],"reducerInfo":[]}};
-            //var localData = JSON.stringify(jsonData);
-
-            //debugAnalysisCall(localData);
-            //.debugAnalysis.logMap
-
-            //return false;
-            //end hardcode data
-
-
             var host = window.location.hostname;
             var port = window.location.port;
             var jobObj = common.getJobDetails();
@@ -105,13 +87,16 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
             $scope.jumbuneJobname = jobName;
             $scope.finalJobName = jobName;
             $('[data-toggle="tooltip"]').tooltip();
-            licenseExpireMessage();
             if ($scope.finalJobName == null || $scope.finalJobName == undefined || $scope.finalJobName == "") {
                 $location.path('/');
             } 
             else {
-                var url = "ws://" + host + ":" + port + "/results/jobanalysis?jobName=" + $scope.finalJobName;
-                //var url = "ws://" + host + ":" + port + "/results/jobanalysis?jobName="+jobName;  
+
+                if (document.location.protocol === 'https:') {
+					var url = "wss://" + host + ":" + port + "/results/jobanalysis?jobName=" + $scope.finalJobName;
+				} else {
+					var url = "ws://" + host + ":" + port + "/results/jobanalysis?jobName=" + $scope.finalJobName;
+				}
                 var webSocket = new WebSocket(url);
 
                 webSocket.onopen = function(event) {
@@ -123,7 +108,6 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
                     $scope.webSocketErrorFlag = true;
                     $('.loaderMessage').remove();
                     $scope.hideLoader = true;
-                    //var mainData = JSON.parse(serverData.DEBUG_ANALYZER);
 
                     var serverData = angular.copy(event.data);
                     var localData = JSON.parse(serverData);
@@ -137,8 +121,6 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
                     $scope.displayErrorMessage("Connection lost to server");
                 };
                 webSocket.onclose = function(event) {
-                    //updateOutput("Connection Closed");
-                    //connectBtn.disabled = false;
                     if ($scope.webSocketErrorFlag == false) {
                         $scope.displayErrorMessage("Connection lost to server");
                     } else {
@@ -151,34 +133,6 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
                 }
             }
 
-        }
-        function licenseExpireMessage ()  { 
-            //licenseValidateFactory.submitLicense({},function(data) {
-                    var data = common.getNodeSize();
-                    var currentDate = data.currentTime;
-                    if (data['Valid Until']) {
-                        var expiryDate = data['Valid Until'];
-                        var temp = new Date(data['Valid From']).toString();
-                        data['Valid From'] = temp.substring(4, 16) + temp.substring(25);
-                        temp = new Date(data['Valid Until']).toString();
-                        data['Valid Until'] = temp.substring(4, 16) + temp.substring(25); 
-                        var milliseconds = (expiryDate - currentDate);
-                        var daysDiff = milliseconds/86400000;
-                        if ( daysDiff <= 3) {
-                            if ( daysDiff >= 1) {
-                                $scope.daysDiffShow = Math.round(daysDiff);
-                                $scope.licenseExpireDays = true;
-                                $scope.licenseExpireTrue = false;
-                            } else {
-                                $scope.licenseExpireTrue = true;
-                                $scope.licenseExpireDays = false;
-                            }
-                        } 
-                    }
-                //},
-            //function(e) {
-                //console.log(e);
-            //}); 
         }
         $scope.containErrors = function(localData) {
             localData = JSON.parse(localData);
@@ -200,7 +154,6 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
                         } else {
                             errorMsgServer += key + ".";
                         }
-                        //errorMsgServer += key + ".";
                     }
                     errorMsgServer += "]</p>";
                 }
@@ -211,56 +164,24 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
             return false;
         }
 
-        $scope.displayErrorMessage = function(errorMessageToDisplay) {
-            /*var errorDiv = document.getElementById('errorMessage');
-                                errorDiv.style.display = '';
-                                errorDiv.innerHTML = '<strong>Error! </strong>' + errorMessageToDisplay;
-                                document.getElementById('resultWidgetContainer').style.display = 'none';
-                                document.querySelector('.widgetWrapper').style.marginBottom = errorDiv.style.marginTop;*/
+        $scope.displayErrorMessage = function(errorMessageToDisplay) {           
             $scope.showErrorMessage = true;
             var errorDiv = document.getElementById('errorMessage');
             errorDiv.style.display = '';
             errorDiv.innerHTML = '<i class="fa fa-exclamation-triangle" style="font-size: 22px; margin:10px;"></i>' + errorMessageToDisplay;
              $('.widgetWrapper').css({'height': 600,'background-color': 'white'});
         }
-
-        /*      $scope.displayErrorMessage = function(errorMessageToDisplay) {
-
-                  var dataValGraph = common.getDataValFlag();
-                  if (dataValGraph) {
-                      $("#resultWidgetContainer").remove();
-                  }
-                  var errorDiv = document.getElementById('errorMessage');
-                  errorDiv.style.display = '';
-                  errorDiv.innerHTML = '<i class="fa fa-exclamation-triangle" style="font-size: 22px; margin:10px;"></i>' + errorMessageToDisplay;
-                  $('body').css('background-color', "white");
-              }*/
-
-
-
         var mapCounterData = new Array();
-
-
 
         function debugAnalysisCall(jsonObj) {
             var jsonData = JSON.parse(jsonObj);
             $scope.hideLoader = true;
 
             $scope.jobData.jobName = Object.keys(jsonData.debugAnalysis.logMap)[0];
-
-
-
-            // return false;
-            //var jsonData = {"debugAnalysis":{"logMap":{"job_1444196705135_0080":{"jobMap":{"com.impetus.portout.mappers.oldapi.PortoutReducer":{"mapReduceMap":{"172.26.49.61":{"nodeMap":{"attempt_1444196705135_0080_r_000000_0":{"numOfSamples":0,"time":0,"instanceMap":{"reduce":{"totalFilteredIn":0,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"method","counterMap":{"IfBlock#1":{"totalFilteredIn":9370,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"39","counterMap":{"If#1":{"totalFilteredIn":1,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"40","counterMap":{"com.impetus.portout.mappers.oldapi.PortoutReducer.addHeader":{"totalFilteredIn":1,"totalFilteredOut":1,"totalExitKeys":0,"counterDetails":"method","counterMap":{"Switch#1":{"totalFilteredIn":1,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"60","counterMap":{"Case#1":{"totalFilteredIn":1,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"63","totalInputKeys":0,"totalContextWrites":1,"totalUnmatchedKeys":1,"totalUnmatchedValues":-1}},"totalInputKeys":0,"totalContextWrites":1,"totalUnmatchedKeys":1,"totalUnmatchedValues":-1}},"totalInputKeys":0,"totalContextWrites":1,"totalUnmatchedKeys":1,"totalUnmatchedValues":-1}},"totalInputKeys":0,"totalContextWrites":1,"totalUnmatchedKeys":1,"totalUnmatchedValues":-1}},"totalInputKeys":0,"totalContextWrites":1,"totalUnmatchedKeys":1,"totalUnmatchedValues":-1},"Loop#1":{"totalFilteredIn":9370,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"46","totalInputKeys":0,"totalContextWrites":9370,"totalUnmatchedKeys":9370,"totalUnmatchedValues":-1}},"totalInputKeys":9370,"totalContextWrites":9371,"totalUnmatchedKeys":9371,"totalUnmatchedValues":-1}},"totalInputKeys":9370,"totalContextWrites":9371,"totalUnmatchedKeys":9371,"totalUnmatchedValues":-1},"attempt_1444196705135_0080_r_000001_0":{"numOfSamples":0,"time":0,"instanceMap":{"reduce":{"totalFilteredIn":0,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"method","counterMap":{"IfBlock#1":{"totalFilteredIn":9232,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"39","counterMap":{"If#1":{"totalFilteredIn":1,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"40","counterMap":{"com.impetus.portout.mappers.oldapi.PortoutReducer.addHeader":{"totalFilteredIn":1,"totalFilteredOut":1,"totalExitKeys":0,"counterDetails":"method","counterMap":{"Switch#1":{"totalFilteredIn":1,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"60","counterMap":{"Case#1":{"totalFilteredIn":1,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"63","totalInputKeys":0,"totalContextWrites":1,"totalUnmatchedKeys":1,"totalUnmatchedValues":-1}},"totalInputKeys":0,"totalContextWrites":1,"totalUnmatchedKeys":1,"totalUnmatchedValues":-1}},"totalInputKeys":0,"totalContextWrites":1,"totalUnmatchedKeys":1,"totalUnmatchedValues":-1}},"totalInputKeys":0,"totalContextWrites":1,"totalUnmatchedKeys":1,"totalUnmatchedValues":-1}},"totalInputKeys":0,"totalContextWrites":1,"totalUnmatchedKeys":1,"totalUnmatchedValues":-1},"Loop#1":{"totalFilteredIn":9232,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"46","totalInputKeys":0,"totalContextWrites":9232,"totalUnmatchedKeys":9232,"totalUnmatchedValues":-1}},"totalInputKeys":9232,"totalContextWrites":9233,"totalUnmatchedKeys":9233,"totalUnmatchedValues":-1}},"totalInputKeys":9232,"totalContextWrites":9233,"totalUnmatchedKeys":9233,"totalUnmatchedValues":-1}},"totalInputKeys":18602,"totalContextWrites":18604,"totalUnmatchedKeys":18604,"totalUnmatchedValues":-1}},"totalInputKeys":18602,"totalContextWrites":18604,"totalUnmatchedKeys":18604,"totalUnmatchedValues":-1},"com.impetus.portout.mappers.oldapi.ServiceProviderMapper":{"mapReduceMap":{"172.26.49.61":{"nodeMap":{"attempt_1444196705135_0080_m_000001_0":{"numOfSamples":0,"time":0,"instanceMap":{"map":{"totalFilteredIn":0,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"method","counterMap":{"IfBlock#1":{"totalFilteredIn":14123,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"27","counterMap":{"If#1":{"totalFilteredIn":9260,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"28","totalInputKeys":0,"totalContextWrites":9260,"totalUnmatchedKeys":1881,"totalUnmatchedValues":-1}},"totalInputKeys":0,"totalContextWrites":9260,"totalUnmatchedKeys":1881,"totalUnmatchedValues":-1}},"totalInputKeys":14123,"totalContextWrites":9260,"totalUnmatchedKeys":1881,"totalUnmatchedValues":-1}},"totalInputKeys":14123,"totalContextWrites":9260,"totalUnmatchedKeys":1881,"totalUnmatchedValues":-1},"attempt_1444196705135_0080_m_000000_0":{"numOfSamples":0,"time":0,"instanceMap":{"map":{"totalFilteredIn":0,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"method","counterMap":{"IfBlock#1":{"totalFilteredIn":14020,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"27","counterMap":{"If#1":{"totalFilteredIn":9342,"totalFilteredOut":0,"totalExitKeys":0,"counterDetails":"28","totalInputKeys":0,"totalContextWrites":9342,"totalUnmatchedKeys":1845,"totalUnmatchedValues":-1}},"totalInputKeys":0,"totalContextWrites":9342,"totalUnmatchedKeys":1845,"totalUnmatchedValues":-1}},"totalInputKeys":14020,"totalContextWrites":9342,"totalUnmatchedKeys":1845,"totalUnmatchedValues":-1}},"totalInputKeys":14020,"totalContextWrites":9342,"totalUnmatchedKeys":1845,"totalUnmatchedValues":-1}},"totalInputKeys":28143,"totalContextWrites":18602,"totalUnmatchedKeys":3726,"totalUnmatchedValues":-1}},"totalInputKeys":28143,"totalContextWrites":18602,"totalUnmatchedKeys":3726,"totalUnmatchedValues":-1}},"totalInputKeys":50100,"totalContextWrites":18604,"totalUnmatchedKeys":22330,"totalUnmatchedValues":-1}},"mrChain":{"job_1444196705135_0080":{"mapChainList":[{"name":"com.impetus.portout.mappers.oldapi.TupleValidateMapper","inputKeys":0,"contextWrites":0},{"name":"com.impetus.portout.mappers.oldapi.USRegionMapper","inputKeys":0,"contextWrites":0},{"name":"com.impetus.portout.mappers.oldapi.ServiceProviderMapper","inputKeys":28143,"contextWrites":18602}],"reduceChainList":[{"name":"com.impetus.portout.mappers.oldapi.PortoutReducer","inputKeys":18602,"contextWrites":18604},{"name":"com.impetus.portout.mappers.oldapi.PortoutRegionMapper","inputKeys":0,"contextWrites":0}]}},"partitionerMap":{}},"debuggerSummary":{"mapperReducerNames":[{"jobMapReduceName":"job_1444196705135_0080","totalUnmatchedKeys":22330,"totalUnmatchedValues":-1},{"jobMapReduceName":"com.impetus.portout.mappers.oldapi.PortoutReducer","totalUnmatchedKeys":18604,"totalUnmatchedValues":-1},{"jobMapReduceName":"com.impetus.portout.mappers.oldapi.ServiceProviderMapper","totalUnmatchedKeys":3726,"totalUnmatchedValues":-1}],"reducerInfo":[]}}
-
             var colorCodes = ["#0000ff", "#8a2be2", "#a52a2a", "#5f9ea0", "#7fff00", "#d2691e", "#ff7f50", "#6495ed", "#00ffff", "#00008b", "#008b8b", "#b8860b", "#006400", "#8b008b", "#556b2f", "#ff8c00", "#9932cc", "#8b0000", "#e9967a", "#8fbc8f", "#483d8b", "#2f4f4f", "#00ced1", "#9400d3", "#00bfff", "#1e90ff", "#228b22", "#ff00ff", "#ffd700", "#daa520", "#008000", "#adff2f", "#ff69b4", "#cd5c5c", "#4b0082", "#7cfc00", "#f08080", "#90ee90", "#ffb6c1", "#ffa07a", "#20b2aa", "#87cefa", "#778899", "#b0c4de", "#00ff00", "#32cd32", "#800000", "#66cdaa", "#0000cd", "#ba55d3", "#9370d8", "#3cb371", "#7b68ee", "#00fa9a", "#48d1cc", "#191970", "#808000", "#6b8e23", "#ffa500", "#da70d6", "#98fb98", "#afeeee", "#d87093", "#cd853f", "#ffc0cb", "#dda0dd", "#b0e0e6", "#800080", "#bc8f8f", "#4169e1", "#8b4513", "#fa8072", "#f4a460", "#2e8b57", "#a0522d", "#87ceeb", "#6a5acd", "#708090", "#00ff7f", "#4682b4", "#d2b48c", "#008080", "#d8bfd8", "#ff6347", "#40e0d0", "#ee82ee", "#ffff00", "#9acd32"];
 
-
-            var logAnalysisJSONStringObj; //SHYAM: This variable is moved on Top
+            var logAnalysisJSONStringObj; 
             enableDebugAnalysis(jsonData)
-
-
-
             var numOfJobs;
             var numOfMapReduce;
             var numOfNodes;
@@ -270,9 +191,7 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
             var instMapColorCode = new Array();
             var mrColorCode = new Array();
 
-
-
-            function enableDebugAnalysis(a) //Shyam: argument name changed
+            function enableDebugAnalysis(a) 
             {
                 // Create tree table
                 $scope.hideLoader = true;
@@ -292,7 +211,6 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
                 $.each(logAnalysisJSONStringObj, function(logName, logBean) {
 
                     var logMap = logBean["logMap"];
-                    //var jobChain=logBean["jobChain"];
                     var mrChain = logBean["mrChain"];
                     var partitionerMap = logBean["partitionerMap"];
 
@@ -354,35 +272,12 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
                         var jobChainCounter = numOfJobs;
                         var jobChainCount = 10;
 
-                        /*if(jobChain)
-                        {
-                        $.each(jobChain, function(jobChainId, jobChainBean){    
-                            if(jobId == jobChainBean["name"])
-                            {
-                                jobChainName='<div class="jobChainIco"></div>';
-                                jobChainCounter = jobChainCount;
-                                //var jobChainInputKeys=jobChainBean["inputKeys"];
-                                //var jobChainContextWrites=jobChainBean["contextWrites"];
-                            }       
-                            jobChainCount++;
-
-                        });
-                        if(jobChainCounter != 1)
-                        {
-                            jobChainCounter = 9999;
-                            jobChainName = '<div class="jobChainFkIco"></div>';
-                        }
-                        }*/
-
                         // partitionerMap
                         if (partitionerMap) {
                             $.each(partitionerMap, function(partitionerMapId, partitionerMapBean) {
                                 if (jobId == partitionerMapId) {
                                     partitionerMapName = '<span class=""><span class="partitionerMapName" rel="' + partitionerMapId + '" href="javascript:void(0);">P</span>&nbsp;</span>';
                                     jobChainName += partitionerMapName;
-
-                                    //var partitionerMapInputKeys=jobChainBean["inputKeys"];
-                                    //var partitionerMapContextWrites=jobChainBean["contextWrites"];
                                 }
                             });
                         }
@@ -411,15 +306,11 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
                                 $.each(mrChain, function(mrJobChainId, mrJobChainBean) {
 
                                     if (jobId == mrJobChainId) {
-                                        //var marJobChain=mrJobChainBean[jobId];
-
                                         $.each(mrJobChainBean, function(mrMapChainId, mrMapChainBean) {
 
                                             if (mapReduceName == mrMapChainBean["name"]) {
                                                 mapChainName = '<div class="mapChainIco"></div>';
                                                 mapChainCounter = mapChainCount;
-                                                //var mapChainInputKeys=mrMapChainBean["inputKeys"];
-                                                //var mapChainContextWrites=mrMapChainBean["contextWrites"];
                                             }
                                             mapChainCount++;
 
@@ -587,7 +478,6 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
                     }
                 });
 
-
                 //job map/reduce grid
                 var logMapAnalysisJson = { "response": logMapChurningData };
                 mapGrid = jQuery("#maptreegrid");
@@ -682,8 +572,6 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
                 $("#jobtreegrid tr:eq(1)").trigger('click');
                 $('#mapptreegrid').find('div.ui-jqgrid-sdiv').insertBefore($('#mapptreegrid').find('div.ui-jqgrid-bdiv'));
                 $('#insptreegrid').find('div.ui-jqgrid-sdiv').insertBefore($('#insptreegrid').find('div.ui-jqgrid-bdiv'));
-
-                //createDebugReportPieCharts();
             }
 
             function addPaddInVal(cellvalue, options, rowObject) {
@@ -829,13 +717,6 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
                 $('#jobtreegrid').jqGrid("showCol", ["totalInputKeys", "totalContextWrites", "totalUnmatchedKeys", "totalUnmatchedValues"]);
                 $('#maptreegrid, #instreegrid').jqGrid("hideCol", ["totalInputKeys", "totalContextWrites", "totalUnmatchedKeys", "totalUnmatchedValues"]);
 
-                //$('#insptreegrid').find('div.ui-jqgrid-sdiv td').hide();
-                //$('#insptreegrid').find('div.ui-jqgrid-sdiv tr:eq(0) td:eq(0)').show();
-                //$('#insptreegrid').find('div.ui-jqgrid-sdiv tr:eq(1) td:eq(0)').show();
-
-                // Set all grid width
-                /*$('#jobtreegrid').jqGrid().setGridWidth(522);
-                $('#maptreegrid, #instreegrid').jqGrid().setGridWidth(221);*/
             });
 
             $("#mapsViewLink").click(function() {
@@ -857,15 +738,6 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
                 $('#maptreegrid').jqGrid("showCol", ["totalInputKeys", "totalContextWrites", "totalUnmatchedKeys", "totalUnmatchedValues"]);
                 $('#jobtreegrid, #instreegrid').jqGrid("hideCol", ["totalInputKeys", "totalContextWrites", "totalUnmatchedKeys", "totalUnmatchedValues"]);
 
-                //$('#insptreegrid').find('div.ui-jqgrid-sdiv td').hide();
-                //$('#insptreegrid').find('div.ui-jqgrid-sdiv tr:eq(0) td:eq(0)').show();
-                //$('#insptreegrid').find('div.ui-jqgrid-sdiv tr:eq(1) td:eq(0)').show();
-
-                //autoAdjustGridHeight();
-                // Set all grid width
-                /*$('#jobtreegrid').jqGrid().setGridWidth(222);
-                $('#maptreegrid').jqGrid().setGridWidth(521);
-                $('#instreegrid').jqGrid().setGridWidth(221);*/
             });
 
             $("#instViewLink").click(function() {
@@ -887,18 +759,12 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
                 $('#instreegrid').jqGrid("showCol", ["totalInputKeys", "totalContextWrites", "totalUnmatchedKeys", "totalUnmatchedValues"]);
                 $('#jobtreegrid, #maptreegrid').jqGrid("hideCol", ["totalInputKeys", "totalContextWrites", "totalUnmatchedKeys", "totalUnmatchedValues"]);
 
-                //$('#insptreegrid').find('div.ui-jqgrid-sdiv td').show();
-
-                // Set all grid width
-                /*$('#jobtreegrid').jqGrid().setGridWidth(222);
-                $('#maptreegrid').jqGrid().setGridWidth(221);
-                $('#instreegrid').jqGrid().setGridWidth(521);*/
             });
 
             //Click live jobs 
             $('#jobtreegrid tr').live('click', function() {
                 $scope.hideLoader = true;
-                var jobTitle = $scope.jobData.jobName; //$(this).find('.jobDetails').text();
+                var jobTitle = $scope.jobData.jobName; 
 
                 numOfMapReduce = 0;
                 var logJobChurningData = [];
@@ -939,8 +805,6 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
                         return;
                     }
 
-                    //$('.classDetails').append('<i class="fa fa-caret-right"></i>');
-
                     $.each(logMap[jobTitle].jobMap, function(mapReduceName, mapReduceBean) {
                         numOfMapReduce++;
                         var totalMapReduceInputKeys = mapReduceBean["totalInputKeys"];
@@ -961,8 +825,6 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
                         $.each(mrChain, function(mrJobChainId, mrJobChainBean) {
 
                             if (jobTitle == mrJobChainId) {
-                                //var marJobChain=mrJobChainBean[jobId];                    
-
                                 if (mrJobChainBean["mapChainList"]) {
                                     $.each(mrJobChainBean["mapChainList"], function(mrMapChainId, mrMapChainBean) {
 
@@ -970,8 +832,6 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
 
                                             mapChainName = '<div class="mapChainIco"></div>';
                                             mapChainCounter = mapChainCount;
-                                            //var mapChainInputKeys=mrMapChainBean["inputKeys"];
-                                            //var mapChainContextWrites=mrMapChainBean["contextWrites"];
                                         }
                                         mapChainCount++;
 
@@ -985,8 +845,6 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
 
                                             mapChainName = '<div class="redChainIco"><i class="fa fa-caret-right"></i></div>';
                                             mapChainCounter = mapChainCount;
-                                            //var mapChainInputKeys=mrMapChainBean["inputKeys"];
-                                            //var mapChainContextWrites=mrMapChainBean["contextWrites"];
                                         }
                                         mapChainCount++;
 
@@ -1021,7 +879,7 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
             $("#maptreegrid tr").live('click', function() {
                 $scope.hideLoader = true;
 
-                var jobTitle = $scope.jobData.jobName; //$("#jobtreegrid tr:nth-child("+parseInt(trIndex+1)+")").find('.jobDetails').text();  
+                var jobTitle = $scope.jobData.jobName;
                 var mapTitle = $(this).find('.classDetails').text();
                 $('.classDetails').removeClass('highlightedClass');
                 $(this).removeClass('ui-priority-secondary');
@@ -1359,14 +1217,13 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
                     mrPlot[k].replot();
                     iPlot[k].replot();
                 }
-                //iPlot.replot();
+                
             });
 
             $("#jobsChainSorting").live("click", function() {
                 $scope.hideLoader = true;
 
                 $("#jobtreegrid").jqGrid('setGridParam', { sortname: 'id', sortorder: 'asc' });
-                //$('#jobtreegrid').jqGrid("showCol", ["chain"]);
                 $('#jobtreegrid').trigger("reloadGrid");
                 $("#jobptreegrid").find(".jobChainIco").each(function() {
                     $(this).css({ "visibility": "visible" });
@@ -1378,7 +1235,6 @@ angular.module('analyzeJob.ctrl', ["ui.grid", 'ui.bootstrap'])
                 $scope.hideLoader = true;
 
                 $("#maptreegrid").jqGrid('setGridParam', { sortname: 'id', sortorder: 'asc' });
-                //$('#maptreegrid').jqGrid("showCol", ["chain"]);
                 $('#maptreegrid').trigger("reloadGrid");
                 $("#mapptreegrid").find(".mapChainIco, .redChainIco").each(function() {
                     $(this).css({ "visibility": "visible" });

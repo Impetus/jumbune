@@ -11,6 +11,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.SupportedHadoopDistributions;
 import org.jumbune.common.beans.cluster.Agent;
 import org.jumbune.common.beans.cluster.Cluster;
@@ -27,7 +28,6 @@ import org.jumbune.common.utils.locators.MapRLocator;
 import org.jumbune.common.utils.locators.MapRYarnLocator;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.client.RemoterFactory;
-import org.jumbune.remoting.common.BasicJobConfig;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.remoting.common.RemotingMethodConstants;
@@ -87,9 +87,6 @@ public final class RemotingUtil {
 	
 	/** The Constant HIVE_USER_SUBMISSION_FILE_SUFFIX. */
 	private static final String HIVE_USER_SUBMISSION_FILE_SUFFIX = "_conf.xml";
-
-	/** The Constant hiveKerberosPrincipalProp. */
-	private static final String hiveKerberosPrincipalProp = "hive.metastore.kerberos.principal";
 	
 	/**
 	 * Instantiates a new remoting util.
@@ -108,7 +105,7 @@ public final class RemotingUtil {
 	public static Remoter getRemoter(Cluster cluster, String receiveDirectory) {
 		Agent agent = cluster.getJumbuneAgent();
 	    return RemoterFactory.getRemoter(agent.getHost(), Integer.parseInt(agent.getPort()), null,
-				cluster.getAgents().isHaEnabled(), cluster.getNameNodes().isHaEnabled(), cluster.getZKs(), cluster.getClusterName());		
+				cluster.getAgents().isHaEnabled(), cluster.getNameNodes().isHaEnabled(), cluster.getZkHosts(), cluster.getClusterName());		
 	}
 	
 	/**
@@ -120,7 +117,7 @@ public final class RemotingUtil {
 	public static Remoter getRemoter(Cluster cluster) {
 		Agent agent = cluster.getJumbuneAgent();
 	    return RemoterFactory.getRemoter(agent.getHost(), Integer.parseInt(agent.getPort()), null,
-				cluster.getAgents().isHaEnabled(), cluster.getNameNodes().isHaEnabled(), cluster.getZKs(), cluster.getClusterName());		
+				cluster.getAgents().isHaEnabled(), cluster.getNameNodes().isHaEnabled(), cluster.getZkHosts(), cluster.getClusterName());		
 	}
 	
 	/**
@@ -436,10 +433,9 @@ public final class RemotingUtil {
 	 * @param destinationPath the destination path
 	 * @return the file from hdfs to path
 	 */
-	private static void getFileFromHDFSToPath (Cluster cluster, String hdfsSourcePath, String confFileName, String destinationPath) {		
-		String jumbuneHome = JobConfig.getJumbuneHome() + File.separator;
+	private static void getFileFromHDFSToPath (Cluster cluster, String hdfsSourcePath, String confFileName, String destinationPath) {
 		String clusterName = cluster.getClusterName();		
-		Remoter remoter = RemotingUtil.getRemoter(cluster, jumbuneHome);
+		Remoter remoter = RemotingUtil.getRemoter(cluster, JumbuneInfo.getHome());
 		CommandWritableBuilder fsGetBuilder;		
 		StringBuffer doneCommandToExecute = new StringBuffer().append(Constants.HADOOP_HOME).append(HDFS_FILE_GET_COMMAND).append(Constants.SPACE).
 		append(hdfsSourcePath).append(confFileName).append("*").append(Constants.SPACE).append(destinationPath);
@@ -464,9 +460,8 @@ public final class RemotingUtil {
 			JumbuneRequest jumbuneRequest, String hadoopConfigurationFile) {
 		
 		JobConfig jobConfig = jumbuneRequest.getJobConfig();
-		String jumbuneHome = JobConfig.getJumbuneHome();
 		String jumbuneJobName = jobConfig.getJumbuneJobName() + File.separator;
-		String dirInJumbuneHome = jumbuneHome + File.separator + Constants.JOB_JARS_LOC + jobConfig.getJumbuneJobName();
+		String dirInJumbuneHome = JumbuneInfo.getHome() + Constants.JOB_JARS_LOC + jobConfig.getJumbuneJobName();
 		File dir = new File(dirInJumbuneHome);
 		if (!dir.exists()) {
 			dir.mkdirs();
@@ -476,11 +471,10 @@ public final class RemotingUtil {
 		HadoopDistributionLocator hadoopUtility = getDistributionLocator(hadoopDistribution,hadoopType);
 		String hadoopConfDir = hadoopUtility.getHadoopConfDirPath(jumbuneRequest.getCluster());
 		
-		jumbuneHome = new String(jumbuneHome+File.separator);
-		String destinationReceiveDir = jumbuneHome + Constants.JOB_JARS_LOC  + jumbuneJobName;
+		String destinationReceiveDir = JumbuneInfo.getHome() + Constants.JOB_JARS_LOC  + jumbuneJobName;
 		
 		Cluster cluster = jumbuneRequest.getCluster();
-		Remoter remoter = getRemoter(cluster, jumbuneHome);
+		Remoter remoter = getRemoter(cluster, JumbuneInfo.getHome());
 		String copyCommand = new StringBuilder().append("cp ").append(hadoopConfDir).append(hadoopConfigurationFile).append(" ").append(getAgentHome(cluster)).append("/jobJars/").append(jumbuneJobName).toString();
 		CommandWritableBuilder builder = new CommandWritableBuilder(cluster);
 		builder.addCommand(MAKE_JOBJARS_DIR_ON_AGENT + jumbuneJobName, false, null,CommandType.FS)
@@ -489,48 +483,6 @@ public final class RemotingUtil {
 		//If execution happended to fast, we won't be able to get a directory to find files for next command
 		remoter.receiveLogFiles(File.separator + Constants.JOB_JARS_LOC  + jumbuneJobName, File.separator + Constants.JOB_JARS_LOC + jumbuneJobName + hadoopConfigurationFile);
 		return destinationReceiveDir;
-	}
-	
-	/**
-	 * Gets the hadoop configuration value.
-	 *
-	 * @param cluster the cluster
-	 * @param jobId the job id
-	 * @param configurationToGet the configuration to get
-	 * @return the hadoop configuration value
-	 */
-	public static String getHiveSubmissionUser (Cluster cluster, String jobId, String configurationToGet) {
-		String hiveSubmissionUser = null;
-		String jobXmlConfFilePath = JobConfig.getJumbuneHome() + File.separator + Constants.JOB_JARS_LOC + cluster.getClusterName() +
-		File.separator + jobId + HIVE_USER_SUBMISSION_FILE_SUFFIX;		
-		if(!new File(jobXmlConfFilePath).exists()){			
-			String historyDoneIntermediateLocationPath = RemotingUtil.getHistoryDoneLocation(cluster);						
-			String agentDestinationLocation = new StringBuffer().append(getAgentHome(cluster)).append(Constants.JOB_JARS_LOC).append(cluster.getClusterName()).toString();
-			getFileFromHDFSToPath(cluster, historyDoneIntermediateLocationPath, jobId + HIVE_USER_SUBMISSION_FILE_SUFFIX, agentDestinationLocation);
-			hiveSubmissionUser = ConfigurationUtil.readProperty(jobXmlConfFilePath, configurationToGet);			
-		}else{			
-			hiveSubmissionUser = ConfigurationUtil.readProperty(jobXmlConfFilePath, configurationToGet);			
-		}		
-		return hiveSubmissionUser;
-	}
-	
-	/**
-	 * Gets the hive kerberos principal.
-	 *
-	 * @param cluster the cluster
-	 * @return the hive kerberos principal
-	 */
-	public static String getHiveKerberosPrincipal (Cluster cluster){		
-		String hivePrincipal = null;		
-		String hiveJobConfigFile = JobConfig.getJumbuneHome() + File.separator + Constants.JOB_JARS_LOC + File.separator 
-		+ cluster.getClusterName() + File.separator + HIVE_SITE;				
-		if (!new File(hiveJobConfigFile).exists()){			
-			hivePrincipal = getHiveConfParam(cluster, hiveKerberosPrincipalProp);			
-		}else{			
-			String hiveParamValue = ConfigurationUtil.readProperty(hiveJobConfigFile, hiveKerberosPrincipalProp);		
-			hivePrincipal = hiveParamValue.substring(0, hiveParamValue.indexOf("/"));			
-		}		
-		return hivePrincipal;
 	}
 
 	
@@ -553,18 +505,16 @@ public final class RemotingUtil {
 			JumbuneRequest jumbuneRequest, String hadoopConfDir, String hadoopConfigurationFile) {
 		
 		JobConfig jobConfig =  jumbuneRequest.getJobConfig();
-		String jumbuneHome = JobConfig.getJumbuneHome();
 		String jumbuneJobName = jobConfig.getJumbuneJobName() + File.separator;
 		
-		jumbuneHome = new String(jumbuneHome+File.separator);
-		String destinationReceiveDir = jumbuneHome + Constants.JOB_JARS_LOC  + jumbuneJobName;
+		String destinationReceiveDir = JumbuneInfo.getHome() + Constants.JOB_JARS_LOC  + jumbuneJobName;
 		//Checking if configuration file exists or not
 		File file = new File(destinationReceiveDir + File.separator + hadoopConfigurationFile);
 		if (file.exists()) {
 			return destinationReceiveDir;
 		}
 		Cluster cluster = jumbuneRequest.getCluster();
-		Remoter remoter = getRemoter(cluster, jumbuneHome);
+		Remoter remoter = getRemoter(cluster, JumbuneInfo.getHome());
 		if(!hadoopConfDir.endsWith(File.separator)){
 			hadoopConfDir = hadoopConfDir+File.separator;
 		}
@@ -618,11 +568,9 @@ public final class RemotingUtil {
 			Cluster cluster, String hadoopConfDir, String hadoopConfigurationFile) {
 		
 		
-		String jumbuneHome = JobConfig.getJumbuneHome();
 		String clusterName = cluster.getClusterName() + File.separator;
 		
-		jumbuneHome = new String(jumbuneHome+File.separator);
-		String destinationReceiveDir = jumbuneHome + Constants.JOB_JARS_LOC  + clusterName;
+		String destinationReceiveDir = JumbuneInfo.getHome() + Constants.JOB_JARS_LOC  + clusterName;
 		//Checking if configuration file exists or not
 		File file = new File(destinationReceiveDir + File.separator + hadoopConfigurationFile);
 		if (file.exists()) {
@@ -636,7 +584,7 @@ public final class RemotingUtil {
 		CommandWritableBuilder builder = new CommandWritableBuilder(cluster);
 		builder.addCommand(MAKE_JOBJARS_DIR_ON_AGENT + clusterName, false, null,CommandType.FS)
 		.addCommand(copyCommand, false, null, CommandType.FS);
-		Remoter remoter = getRemoter(cluster, jumbuneHome);
+		Remoter remoter = getRemoter(cluster, JumbuneInfo.getHome());
 		
 		if(hadoopConfigurationFile.contains(Constants.CORE_SITE_XML) || hadoopConfigurationFile.contains(Constants.HDFS_SITE_XML)){
 			remoter.fireAndForgetCommand(builder.getCommandWritable());
@@ -682,13 +630,12 @@ public final class RemotingUtil {
 			JumbuneRequest jumbuneRequest, String hadoopXmlFilePath, String JobId) {
 		
 		JobConfig jobConfig =  jumbuneRequest.getJobConfig();
-		String jumbuneHome = JobConfig.getJumbuneHome();
 		String jumbuneJobName = jobConfig.getFormattedJumbuneJobName();
 		
 		
-		String destinationReceiveDir = jumbuneHome + Constants.JOB_JARS_LOC  + jumbuneJobName +JobId + File.separator;
+		String destinationReceiveDir = JumbuneInfo.getHome() + Constants.JOB_JARS_LOC  + jumbuneJobName +JobId + File.separator;
 		Cluster cluster = jumbuneRequest.getCluster();
-		Remoter remoter = getRemoter(cluster, jumbuneHome);
+		Remoter remoter = getRemoter(cluster, JumbuneInfo.getHome());
 		String copyCommand = new StringBuilder().append("cp ").append(hadoopXmlFilePath).append(" ").append(getAgentHome(cluster)).append("/jobJars/").append(jumbuneJobName)
 				.append(JobId).append(File.separator).toString();
 		CommandWritableBuilder builder = new CommandWritableBuilder(cluster);
@@ -712,8 +659,7 @@ public final class RemotingUtil {
 	 */
 	public static String getHadoopConfigurationDirPath(JumbuneRequest jumbuneRequest){
 		JobConfig jobConfig = jumbuneRequest.getJobConfig();
-		String jumbuneHome = JobConfig.getJumbuneHome();
-		String dirInJumbuneHome = jumbuneHome + File.separator + Constants.JOB_JARS_LOC + jobConfig.getJumbuneJobName();
+		String dirInJumbuneHome = JumbuneInfo.getHome() + Constants.JOB_JARS_LOC + jobConfig.getJumbuneJobName();
 		File dir = new File(dirInJumbuneHome);
 		if (!dir.exists()) {
 			dir.mkdirs();
@@ -757,15 +703,13 @@ public final class RemotingUtil {
 			JumbuneRequest jumbuneRequest, String remoteAbsolutePath){
 		
 		JobConfig jobConfig =  jumbuneRequest.getJobConfig();
-		String jumbuneHome = JobConfig.getJumbuneHome();
-		String dirInJumbuneHome = jumbuneHome + File.separator + Constants.JOB_JARS_LOC + jobConfig.getJumbuneJobName();
+		String dirInJumbuneHome = JumbuneInfo.getHome() + Constants.JOB_JARS_LOC + jobConfig.getJumbuneJobName();
 		File dir = new File(dirInJumbuneHome);
 		if (!dir.exists()) {
 			dir.mkdirs();
 		}
 		String jumbuneJobName = jobConfig.getJumbuneJobName() + File.separator;
-		jumbuneHome = new String(jumbuneHome+File.separator);
-		String destinationReceiveDir = jumbuneHome + Constants.JOB_JARS_LOC  + jumbuneJobName;
+		String destinationReceiveDir = JumbuneInfo.getHome() + Constants.JOB_JARS_LOC  + jumbuneJobName;
 
 		Cluster cluster = jumbuneRequest.getCluster();
 		Remoter remoter = getRemoter(cluster, "");
@@ -791,15 +735,14 @@ public final class RemotingUtil {
 			JumbuneRequest jumbuneRequest, String hadoopConfigurationFile) {
 
 		JobConfig jobConfig =  jumbuneRequest.getJobConfig();
-		String jumbuneHome = JobConfig.getJumbuneHome();
-		String dirInJumbuneHome = jumbuneHome + File.separator + Constants.JOB_JARS_LOC + jobConfig.getJumbuneJobName();
+		String dirInJumbuneHome = JumbuneInfo.getHome() + Constants.JOB_JARS_LOC + jobConfig.getJumbuneJobName();
 		File dir = new File(dirInJumbuneHome);
 		if (!dir.exists()) {
 			dir.mkdirs();
 		}
 		String jumbuneJobName = jobConfig.getJumbuneJobName() + File.separator;
-		String destinationReceiveDir = jumbuneHome + File.separator + Constants.JOB_JARS_LOC  + jumbuneJobName;
-		Remoter remoter = getRemoter(jumbuneRequest.getCluster(), jumbuneHome + File.separator);
+		String destinationReceiveDir = JumbuneInfo.getHome() + Constants.JOB_JARS_LOC  + jumbuneJobName;
+		Remoter remoter = getRemoter(jumbuneRequest.getCluster(), JumbuneInfo.getHome());
 		remoter.receiveLogFiles(File.separator + Constants.JOB_JARS_LOC  + jumbuneJobName, File.separator + Constants.JOB_JARS_LOC + jumbuneJobName + hadoopConfigurationFile);
 		remoter.close();
 		return destinationReceiveDir;
@@ -1051,11 +994,9 @@ public final class RemotingUtil {
 			Cluster cluster, String hadoopConfDir, String hadoopConfigurationFile,String host) {
 		
 		
-		String jumbuneHome = JobConfig.getJumbuneHome();
 		String clusterName = cluster.getClusterName() + File.separator;
 		
-		jumbuneHome = new String(jumbuneHome+File.separator);
-		String destinationReceiveDir = jumbuneHome + Constants.JOB_JARS_LOC  + clusterName + File.separator + host;
+		String destinationReceiveDir = JumbuneInfo.getHome() + Constants.JOB_JARS_LOC  + clusterName + File.separator + host;
 		//Checking if configuration file exists or not
 		File file = new File(destinationReceiveDir + File.separator + hadoopConfigurationFile);
 		if (file.exists()) {
@@ -1069,7 +1010,7 @@ public final class RemotingUtil {
 		CommandWritableBuilder builder = new CommandWritableBuilder(cluster);
 		builder.addCommand(MAKE_JOBJARS_DIR_ON_AGENT + clusterName + File.separator + host, false, null,CommandType.FS)
 		.addCommand(copyCommand, false, null, CommandType.FS);
-		Remoter remoter = getRemoter(cluster, jumbuneHome);
+		Remoter remoter = getRemoter(cluster, JumbuneInfo.getHome());
 		
 		if(hadoopConfigurationFile.contains(Constants.CORE_SITE_XML) || hadoopConfigurationFile.contains(Constants.HDFS_SITE_XML)){
 			remoter.fireAndForgetCommand(builder.getCommandWritable());
@@ -1100,33 +1041,6 @@ public final class RemotingUtil {
 					File.separator + Constants.JOB_JARS_LOC + clusterName + File.separator + host + File.separator + hadoopConfigurationFile);
 		}
 		return destinationReceiveDir;
-	}
-	
-	/**
-	 * Gets the hive conf param.
-	 *
-	 * @param cluster the cluster
-	 * @param paramToGet the param to get
-	 * @return the hive conf param
-	 */
-	private static String getHiveConfParam (Cluster cluster, String paramToGet) {		
-		String clusterName = cluster.getClusterName();		
-		String jumbuneHome = JobConfig.getJumbuneHome() + File.separator;		
-		HadoopDistributionLocator hadoopUtility = getDistributionLocator(FileUtil.getClusterInfoDetail(Constants.HADOOP_DISTRIBUTION),
-		FileUtil.getClusterInfoDetail(Constants.HADOOP_TYPE));
-		String copyCommand = new StringBuilder().append("cp ").append(hadoopUtility.getHiveConfDirPath(cluster)).append(File.separator).append(HIVE_SITE).append(" ")
-		.append(getAgentHome(cluster)).append("/jobJars/").append(clusterName).toString();		
-		CommandWritableBuilder builder = new CommandWritableBuilder(cluster);		
-		builder.addCommand(copyCommand, false, null, CommandType.FS);
-		Remoter remoter = RemotingUtil.getRemoter(cluster, jumbuneHome);
-		remoter.fireAndForgetCommand(builder.getCommandWritable());		
-		//If execution happended to fast, we won't be able to get a directory to find files for next command
-		remoter.receiveLogFiles(File.separator + Constants.JOB_JARS_LOC  + clusterName, File.separator + Constants.JOB_JARS_LOC + clusterName + File.separator
-		+ HIVE_SITE);
-		String jumbuneDestinationPath = new StringBuffer().append(jumbuneHome).append(File.separator).append(Constants.JOB_JARS_LOC).append(clusterName).toString();
-		String hiveParamValue = ConfigurationUtil.readProperty(jumbuneDestinationPath + File.separator + HIVE_SITE, paramToGet);
-		hiveParamValue = hiveParamValue.substring(0, hiveParamValue.indexOf("/"));
-		return hiveParamValue;
 	}
 
 }

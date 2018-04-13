@@ -8,6 +8,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,18 +20,17 @@ import java.util.Properties;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.JobStatus;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.beans.cluster.ClusterDefinition;
 import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.job.JumbuneRequest;
-import org.jumbune.common.utils.Constants;
-import org.jumbune.common.utils.FileUtil;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-import org.jumbune.common.beans.cluster.EnterpriseCluster;
-import org.jumbune.common.beans.cluster.EnterpriseClusterDefinition;
-import org.jumbune.common.job.EnterpriseJobConfig;
 
 public class JobRequestUtil {
 
@@ -54,8 +54,6 @@ public class JobRequestUtil {
 	private static String ANALYZE_DATA = "analyzeData";
 	
 	private static String ANALYZE_JOB = "analyzeJob";
-	
-	private static String OPTIMIZE_JOB = "optimizeJob";
 
 	private static Properties analyseClusterStats;
 
@@ -102,22 +100,22 @@ public class JobRequestUtil {
 	 */
 	public static Config prepareJobConfig(String data) throws IOException {
 		Gson gson = new Gson();
-		return gson.fromJson(data, EnterpriseJobConfig.class);
+		return gson.fromJson(data, JobConfig.class);
 
 	}
 
 	public static JumbuneRequest addJobConfigWithCluster(String jobConfigJSON) throws IOException {
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) prepareJobConfig(
+		JobConfig jobConfig = (JobConfig) prepareJobConfig(
 				jobConfigJSON);
-		String clusterName = enterpriseJobConfig.getOperatingCluster();
-		EnterpriseCluster cluster = getClusterByName(clusterName);
+		String clusterName = jobConfig.getOperatingCluster();
+		Cluster cluster = getClusterByName(clusterName);
 		JumbuneRequest jumbuneRequest = new JumbuneRequest();
 		jumbuneRequest.setCluster(cluster);
-		jumbuneRequest.setConfig(enterpriseJobConfig);
+		jumbuneRequest.setConfig(jobConfig);
 		return jumbuneRequest;
 	}
 
-	public static EnterpriseClusterDefinition getClusterByName(String clusterName)
+	public static ClusterDefinition getClusterByName(String clusterName)
 			throws IOException {
 		File file = new File(System.getenv(JUMBUNE_HOME) + CLUSTERS_DIR + clusterName + ".json");
 		if (!file.exists()) {
@@ -137,7 +135,7 @@ public class JobRequestUtil {
 			}
 		}
 		Gson gson = new Gson();
-		return gson.fromJson(json.toString(), EnterpriseClusterDefinition.class);
+		return gson.fromJson(json.toString(), ClusterDefinition.class);
 	}
 
 	public static List<String> getClusterNodes(Cluster cluster) {
@@ -225,12 +223,12 @@ public class JobRequestUtil {
 	 * @throws FileNotFoundException
 	 *             the file not found exception
 	 */
-	private static EnterpriseJobConfig loadJob(String jobName) throws JsonSyntaxException, IOException {
-		return new Gson().fromJson(getJobJson(jobName), EnterpriseJobConfig.class);
+	private static JobConfig loadJob(String jobName) throws JsonSyntaxException, IOException {
+		return new Gson().fromJson(getJobJson(jobName), JobConfig.class);
 	}
 	
 	public static String getJobJson(String jobName) throws IOException {
-		String[] jobTypes = { ANALYZE_DATA, ANALYZE_JOB, OPTIMIZE_JOB };
+		String[] jobTypes = { ANALYZE_DATA, ANALYZE_JOB };
 
 		String jsonRepoPath = System.getenv(JUMBUNE_HOME) + JSON_REPO;
 		String slashJsonName = File.separator + jobName + JOB_REQUEST_JSON;
@@ -273,7 +271,7 @@ public class JobRequestUtil {
 
 	private static String getScheduledDQTJobTime(String jobName) throws FileNotFoundException {
 		
-		EnterpriseJobConfig config = loadJobForDQT(jobName);
+		JobConfig config = loadJobForDQT(jobName);
 		String time = config.getDataQualityTimeLineConfig().getTime();
 		if (time == null) {
 			time = config.getDataQualityTimeLineConfig().getCronExpression();
@@ -281,7 +279,7 @@ public class JobRequestUtil {
 		return time;
 	}
 
-	private static EnterpriseJobConfig loadJobForDQT(String jobName) throws FileNotFoundException {
+	private static JobConfig loadJobForDQT(String jobName) throws FileNotFoundException {
 		String jobConfigFilePath = System.getenv(JUMBUNE_HOME) + DQ_JOBS_DIR + jobName
 				+ DQT_SCHEDULED_JSON;
 		InputStream inputStream = null;
@@ -291,7 +289,7 @@ public class JobRequestUtil {
 			inputStream = new FileInputStream(file);
 			Gson gson = new Gson();
 			inputStreamReader = new InputStreamReader(inputStream);
-			return gson.fromJson(inputStreamReader, EnterpriseJobConfig.class);
+			return gson.fromJson(inputStreamReader, JobConfig.class);
 		} finally {
 			if (inputStreamReader != null) {
 				try {
@@ -321,6 +319,64 @@ public class JobRequestUtil {
 			}
 		}
 		return JobStatus.SCHEDULED;
+	}
+	
+	/**
+	 * Returns job status of job. It will not work in case of scheduling
+	 * @param jobName
+	 * @return
+	 * @throws IOException
+	 */
+	public static JobStatus getJobStatus(String jobName) throws IOException {
+		String[] jobTypes = { Constants.ANALYZE_DATA, Constants.ANALYZE_JOB };
+		String path;
+		File statusFile;
+		for (String jobType : jobTypes) {
+			path = new StringBuilder(JumbuneInfo.getHome())
+					.append("jsonrepo/").append(jobType).append(File.separator)
+					.append(jobName).append(File.separator)
+					.append(Constants.JOB_STATUS).toString() ;
+			statusFile = new File(path);
+			if (statusFile.exists()) {
+				return JobStatus.valueOf(FileUtils.readFileToString(statusFile));
+			}
+		}
+		return JobStatus.IN_PROGRESS;
+	}
+	
+	public static void setJobStatus(JobConfig jobConfig, JobStatus jobStatus) {
+		setJobStatus(jobConfig.getJumbuneJobName(), getJobType(jobConfig), jobStatus);
+	}
+	
+	public static void setJobStatus(String jobName, String jobType, JobStatus jobStatus) {
+		String parent = new StringBuilder(JumbuneInfo.getHome())
+				.append("jsonrepo/").append(jobType).append(File.separator)
+				.append(jobName).append(File.separator).toString();
+		File parentFile = new File(parent);
+		if (!parentFile.exists()) {
+			parentFile.mkdirs();
+		}
+		try {
+			PrintWriter out = new PrintWriter(parent + Constants.JOB_STATUS);
+			out.print(jobStatus.toString());
+			out.flush();
+			out.close();
+		} catch (Exception e) {
+			// case already handled
+		}
+	}
+	
+	public static String getJobType(JobConfig jobConfig) {
+		if (jobConfig.getEnableDataValidation() == Enable.TRUE
+				|| jobConfig.getEnableDataQualityTimeline() == Enable.TRUE
+				|| jobConfig.getEnableJsonDataValidation() == Enable.TRUE
+				|| jobConfig.getEnableDataProfiling() == Enable.TRUE
+				|| jobConfig.getEnableXmlDataValidation() == Enable.TRUE
+				|| jobConfig.getIsDataSourceComparisonEnabled() == Enable.TRUE) {
+			return Constants.ANALYZE_DATA;
+		} else {
+			return Constants.ANALYZE_JOB;
+		} 
 	}
 
 }

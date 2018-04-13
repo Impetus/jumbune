@@ -17,10 +17,10 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.datavalidation.ArrayListWritable;
 import org.jumbune.datavalidation.xml.helper.GrammarPreParser;
 import org.jumbune.datavalidation.xml.helper.XMLParserImpl;
 import org.jumbune.utils.JobUtil;
-import org.jumbune.datavalidation.ArrayListWritable;
 
 import com.sun.org.apache.xerces.internal.util.XMLGrammarPoolImpl;
 
@@ -31,7 +31,6 @@ import com.sun.org.apache.xerces.internal.util.XMLGrammarPoolImpl;
 
  * 
  */
-@SuppressWarnings({ "deprecation" })
 public class XmlDataValidationMapper extends Mapper<Object, Text, Text, XmlDVWB> {
 	
 	private long totalTuple;

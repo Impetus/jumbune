@@ -19,8 +19,6 @@ package org.jumbune.org.apache.hadoop.tools.rumen;
 
 import java.util.regex.Pattern;
 
-import org.apache.hadoop.mapreduce.JobID;
-
 /**
  * 
  *

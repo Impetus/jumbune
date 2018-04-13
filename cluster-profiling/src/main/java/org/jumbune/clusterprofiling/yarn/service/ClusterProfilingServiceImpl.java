@@ -38,7 +38,7 @@ public class ClusterProfilingServiceImpl implements ClusterProfilingService {
 
 	
 	/* (non-Javadoc)
-	 * @see com.impetus.jumbune.clusterprofiling.service.ClusterProfilingService#getQueueStats(org.jumbune.common.job.JumbuneRequest)
+	 * @see org.jumbune.clusterprofiling.service.ClusterProfilingService#getQueueStats(org.jumbune.common.job.JumbuneRequest)
 	 */
 	@Override
 	public List <QueueStats> getQueueStats(Cluster cluster) throws IOException, InterruptedException {
@@ -46,7 +46,7 @@ public class ClusterProfilingServiceImpl implements ClusterProfilingService {
 	}
 
 	/* (non-Javadoc)
-	 * @see com.impetus.jumbune.clusterprofiling.service.ClusterProfilingService#getRackAwareStats(org.jumbune.common.job.JumbuneRequest)
+	 * @see org.jumbune.clusterprofiling.service.ClusterProfilingService#getRackAwareStats(org.jumbune.common.job.JumbuneRequest)
 	 */
 	@Override
 	public RackAwareStats getRackAwareStats(Cluster cluster) throws Exception {
@@ -54,7 +54,7 @@ public class ClusterProfilingServiceImpl implements ClusterProfilingService {
 	}
 
 	/* (non-Javadoc)
-	 * @see com.impetus.jumbune.clusterprofiling.service.ClusterProfilingService#getEffCapUtilizationStats(org.jumbune.common.job.JumbuneRequest, java.lang.String)
+	 * @see org.jumbune.clusterprofiling.service.ClusterProfilingService#getEffCapUtilizationStats(org.jumbune.common.job.JumbuneRequest, java.lang.String)
 	 */
 	@Override
 	public List <EffCapUtilizationStats> getEffCapUtilizationStats(Cluster cluster, List<ApplicationReport> list) throws Exception {
@@ -63,7 +63,7 @@ public class ClusterProfilingServiceImpl implements ClusterProfilingService {
 	}
 
 	/* (non-Javadoc)
-	 * @see com.impetus.jumbune.clusterprofiling.service.ClusterProfilingService#getJobStats(org.jumbune.common.job.JumbuneRequest, java.lang.String)
+	 * @see org.jumbune.clusterprofiling.service.ClusterProfilingService#getJobStats(org.jumbune.common.job.JumbuneRequest, java.lang.String)
 	 */
 	@Override
 	public JobOutput getJobStats(Cluster cluster, String jobId) {
@@ -71,7 +71,7 @@ public class ClusterProfilingServiceImpl implements ClusterProfilingService {
 	}
 
 	/* (non-Javadoc)
-	 * @see com.impetus.jumbune.clusterprofiling.service.ClusterProfilingService#getContainerStatus(org.jumbune.common.beans.cluster.Cluster)
+	 * @see org.jumbune.clusterprofiling.service.ClusterProfilingService#getContainerStatus(org.jumbune.common.beans.cluster.Cluster)
 	 */
 	@Override
 	public LiveCapacityStats getContainerStatus(Cluster cluster) throws IOException {

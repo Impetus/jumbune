@@ -20,9 +20,6 @@ public interface DataValidationConstants {
 	/** The tokens for dv report. */
 	int TOKENS_FOR_DV_REPORT = 4;
 	
-	/** The tokens for dv report. */
-	int TOKENS_FOR_DC_REPORT = 3;
-	
 	/** The null check. */
 	String NULL_CHECK = "nullCheck";
 	
@@ -75,10 +72,6 @@ public interface DataValidationConstants {
 	/** The job name. */
 	String JOB_NAME = "Data Validation";
 	
-	/** The job name for data cleansing. */
-	String JOB_NAME_DC = "Data Cleansing";
-	
-	
 	/** The data validation bean string. */
 	String DATA_VALIDATION_BEAN_STRING = "dvBeanString";
 	
@@ -99,9 +92,6 @@ public interface DataValidationConstants {
 	
 	/** The dv report. */
 	String DV_REPORT = "dvr:";
-	
-	/** The dv report. */
-	String DC_REPORT = "dc:";
 	
 	String DC_DIR_SEPARATOR = "DCDS";
 	

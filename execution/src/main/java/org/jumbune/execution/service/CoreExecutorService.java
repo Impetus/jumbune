@@ -1,15 +1,11 @@
 package org.jumbune.execution.service;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -19,44 +15,38 @@ import java.util.concurrent.Executors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import org.jumbune.common.job.EnterpriseJobConfig;
-import org.jumbune.common.scheduler.ScheduleTaskUtil;
-import org.jumbune.execution.processor.DataQualityProcessor;
-import org.jumbune.execution.processor.DebugProcessor;
-import org.jumbune.execution.processor.Processor;
-import org.jumbune.execution.processor.ProfilingProcessor;
-
 import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.HttpReportsBean;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.Module;
 import org.jumbune.common.beans.ReportsBean;
-import org.jumbune.common.beans.cluster.Agent;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.beans.cluster.NameNodes;
 import org.jumbune.common.beans.cluster.Workers;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.job.JumbuneRequest;
+import org.jumbune.common.scheduler.ScheduleTaskUtil;
 import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.JobConfigUtil;
 import org.jumbune.common.utils.RemotingUtil;
-
+import org.jumbune.execution.beans.CommunityModule;
+import org.jumbune.execution.beans.DataQualityTaskEnum;
+import org.jumbune.execution.processor.DataQualityProcessor;
+import org.jumbune.execution.processor.DebugProcessor;
+import org.jumbune.execution.processor.Processor;
+import org.jumbune.execution.processor.ProfilingProcessor;
 import org.jumbune.execution.utils.ExecutionConstants;
 import org.jumbune.execution.utils.ExecutionUtil;
 import org.jumbune.execution.utils.ProcessHelper;
-
 import org.jumbune.remoting.client.Remoter;
-import org.jumbune.remoting.client.RemoterFactory;
 import org.jumbune.remoting.common.BasicJobConfig;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
-import org.jumbune.execution.beans.CommunityModule;
-import org.jumbune.execution.beans.DataQualityTaskEnum;
 
 
 /**
@@ -77,7 +67,6 @@ public abstract class CoreExecutorService {
 	protected static final boolean SCHEDULER_BASED = false;
 	protected static final ProcessHelper HELPER = new ProcessHelper();
 	private static final String JSON_FILE = "/jsonInfo.ser";
-	private static final String SIGNATUREFAILURE = "Verify Signature on license key....[FAILED]";
 	/** The Constant MAKE_JOBJARS_DIR_ON_AGENT. */
 	private static final String MAKE_JOBJARS_DIR_ON_AGENT = "mkdir -p AGENT_HOME/jobJars/";
 	
@@ -119,16 +108,16 @@ public abstract class CoreExecutorService {
 	private List<Module> addModules(Config config) {
 		List<Module> modules = new ArrayList<Module>();
 		boolean isAddProfiling = false;
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig)config;
-		if (enterpriseJobConfig.getEnableDataValidation().equals(Enable.TRUE)){
+		JobConfig jobConfig = (JobConfig)config;
+		if (jobConfig.getEnableDataValidation().equals(Enable.TRUE)){
 			modules.add(CommunityModule.DATA_QUALITY);
 		}
 
-		if (enterpriseJobConfig.getEnableStaticJobProfiling().equals(Enable.TRUE)){
+		if (jobConfig.getEnableStaticJobProfiling().equals(Enable.TRUE)){
 			isAddProfiling = true;
 		}
 
-		if (enterpriseJobConfig.getDebugAnalysis().equals(Enable.TRUE)) {
+		if (jobConfig.getDebugAnalysis().equals(Enable.TRUE)) {
 			modules.add(CommunityModule.DEBUG_ANALYSER);
 		}
 
@@ -136,22 +125,19 @@ public abstract class CoreExecutorService {
 			modules.add(CommunityModule.PROFILING);
 		}
 		
-		if (enterpriseJobConfig.getEnableDataProfiling().equals(Enable.TRUE)){
+		if (jobConfig.getEnableDataProfiling().equals(Enable.TRUE)){
 			modules.add(CommunityModule.DATA_QUALITY);
 		}
-		if (enterpriseJobConfig.getEnableDataQualityTimeline().equals(Enable.TRUE)){
+		if (jobConfig.getEnableDataQualityTimeline().equals(Enable.TRUE)){
 			modules.add(CommunityModule.DATA_QUALITY);
 		}
-		if (enterpriseJobConfig.getEnableJsonDataValidation().equals(Enable.TRUE)){
+		if (jobConfig.getEnableJsonDataValidation().equals(Enable.TRUE)){
 			modules.add(CommunityModule.DATA_QUALITY);
 		}
-		if (enterpriseJobConfig.getEnableXmlDataValidation().equals(Enable.TRUE)){
+		if (jobConfig.getEnableXmlDataValidation().equals(Enable.TRUE)){
 			modules.add(CommunityModule.DATA_QUALITY);
 		}
-		if (enterpriseJobConfig.getIsDataSourceComparisonEnabled().equals(Enable.TRUE)){
-			modules.add(CommunityModule.DATA_QUALITY);
-		} 
-		if (enterpriseJobConfig.getIsDataCleansingEnabled().equals(Enable.TRUE)){
+		if (jobConfig.getIsDataSourceComparisonEnabled().equals(Enable.TRUE)){
 			modules.add(CommunityModule.DATA_QUALITY);
 		}
 		return modules;
@@ -221,9 +207,6 @@ public abstract class CoreExecutorService {
 			}else if(jobConfig.getEnableJsonDataValidation().equals(Enable.TRUE) && !alreadyAdded.contains(DataQualityTaskEnum.JSON_DATA_VALIDATION)){
 				processor = new DataQualityProcessor(isCommand,DataQualityTaskEnum.JSON_DATA_VALIDATION);
 				alreadyAdded.add(DataQualityTaskEnum.JSON_DATA_VALIDATION);
-			}else if(jobConfig.getIsDataCleansingEnabled().equals(Enable.TRUE) && !alreadyAdded.contains(DataQualityTaskEnum.DATA_CLEANSING)){
-				processor = new DataQualityProcessor(isCommand,DataQualityTaskEnum.DATA_CLEANSING);
-				alreadyAdded.add(DataQualityTaskEnum.DATA_CLEANSING);
 			}
 		}
 		
@@ -242,7 +225,7 @@ public abstract class CoreExecutorService {
 	 * request. So that any other request can be served
 	 */
 	protected void deleteTokenFile() {
-		String tokenFilePath = JobConfig.getJumbuneHome() + ExecutionConstants.TEMP_DIR + ExecutionConstants.TOKEN_FILE;
+		String tokenFilePath = JumbuneInfo.getHome() + ExecutionConstants.TEMP_DIR + ExecutionConstants.TOKEN_FILE;
 		LOGGER.debug("Since all the process are complete so deleting the token file kept at "
 				+ tokenFilePath);
 		File fToken = new File(tokenFilePath);
@@ -273,11 +256,11 @@ public abstract class CoreExecutorService {
 
 	public void scheduleTask(Config config, boolean isReAttempt)
 			throws JumbuneException {
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig)config ;
-		String scheduleJobTiming = enterpriseJobConfig.getJumbuneScheduleTaskTiming();
+		JobConfig jobConfig = (JobConfig) config ;
+		String scheduleJobTiming = jobConfig.getJumbuneScheduleTaskTiming();
 		ScheduleTaskUtil scheduleTasks = new ScheduleTaskUtil();
 		try {
-			scheduleTasks.scheduleJumbuneTaskAndCopyResources(enterpriseJobConfig,
+			scheduleTasks.scheduleJumbuneTaskAndCopyResources(jobConfig,
 					isReAttempt);
 			LOGGER.info("Job Scheduled at [" + scheduleJobTiming
 					+ "] executed successfully!");
@@ -287,7 +270,7 @@ public abstract class CoreExecutorService {
 	}
 
 	protected boolean checkProfilingState() throws JumbuneException {
-		String tokenFilePath = EnterpriseJobConfig.getJumbuneHome() + ExecutionConstants.TEMP_DIR + ExecutionConstants.TOKEN_FILE;
+		String tokenFilePath = JumbuneInfo.getHome() + ExecutionConstants.TEMP_DIR + ExecutionConstants.TOKEN_FILE;
 
 		File fToken = new File(tokenFilePath);
 
@@ -331,7 +314,6 @@ public abstract class CoreExecutorService {
 	protected static  void cleanUpSlavesTempFldr(JumbuneRequest jumbuneRequest) throws JumbuneException, IOException, InterruptedException
 	{
 		Cluster cluster = jumbuneRequest.getCluster();
-		JobConfigUtil.setRelativeWorkingDirectoryForLog(jumbuneRequest);
 		ExecutorService cleanUpSlavesService = null;
 		LOGGER.debug("Starting clean up process................");
 		try {
@@ -351,19 +333,18 @@ public abstract class CoreExecutorService {
 
 	protected void cleanUpJumbuneAgentCurrentJobFolder(JumbuneRequest jumbuneRequest) {
 		//Remove Agent Home/Job jar/Jobname folder, this is skipped only in case if cluster monitoring
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) jumbuneRequest.getConfig();
-		Cluster cluster = jumbuneRequest.getCluster();
-		JobConfigUtil.setRelativeWorkingDirectoryForLog(jumbuneRequest);		
+		JobConfig jobConfig = (JobConfig) jumbuneRequest.getConfig();
+		Cluster cluster = jumbuneRequest.getCluster();	
 		Remoter remoter = RemotingUtil.getRemoter(cluster);
 		CommandWritableBuilder builder = new CommandWritableBuilder(cluster);
-		if (!enterpriseJobConfig.getHadoopJobProfile()
+		if (!jobConfig.getHadoopJobProfile()
 				.getEnumValue()) {
 			StringBuilder cleanLocationAgentStrBuilder = new StringBuilder()
 					.append(RemotingConstants.REMOVE_FOLDER)
 					.append(RemotingConstants.SINGLE_SPACE)
 					.append(RemotingConstants.AGENT_HOME)
 					.append(Constants.JOB_JARS_LOC)
-					.append(enterpriseJobConfig.getJumbuneJobName());
+					.append(jobConfig.getJumbuneJobName());
 			LOGGER.debug("Cleanup agent temporary directories command ["
 					+ cleanLocationAgentStrBuilder + "]");
 			
@@ -402,15 +383,13 @@ public abstract class CoreExecutorService {
 	@Override
 	public void run() {
 		
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) jumbuneRequest.getConfig();
-		Cluster cluster = jumbuneRequest.getCluster();
-		JobConfigUtil.setRelativeWorkingDirectoryForLog(jumbuneRequest);		
-		Workers workers = cluster.getWorkers();
+		JobConfig jobConfig = (JobConfig) jumbuneRequest.getConfig();
+		Cluster cluster = jumbuneRequest.getCluster();	
 		Remoter remoter = RemotingUtil.getRemoter(cluster);
 		StringBuilder cleanLocationStrBuilder = new StringBuilder()
 	    .append(RemotingConstants.REMOVE_FOLDER)
-		.append(RemotingConstants.SINGLE_SPACE).append(workers.getWorkDirectory())
-		.append(Constants.JOB_JARS_LOC).append(enterpriseJobConfig.getJumbuneJobName());
+		.append(RemotingConstants.SINGLE_SPACE).append(jobConfig.getTempDirectory())
+		.append(Constants.JOB_JARS_LOC).append(jobConfig.getJumbuneJobName());
 
 		CommandWritableBuilder builder = new CommandWritableBuilder(cluster, hostNode);
 		builder.addCommand(cleanLocationStrBuilder.toString(), false, null, CommandType.FS);//.setApiInvokeHints(ApiInvokeHintsEnum.JOB_EXECUTION);
@@ -424,21 +403,20 @@ public abstract class CoreExecutorService {
 	protected void persistJsonInfoForShutdownHook(JumbuneRequest jumbuneRequest, String agentHome) throws IOException{
 		ObjectOutputStream oos = null;
 		FileOutputStream fout = null;
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) jumbuneRequest.getConfig();
+		JobConfig jobConfig = (JobConfig) jumbuneRequest.getConfig();
 		Cluster cluster = jumbuneRequest.getCluster();
 		
 		Object[] workers = cluster.getWorkers().getHosts().toArray();
 		String[] workerHosts = Arrays.copyOf(workers, workers.length, String[].class);
-		NameNodes nameNodes = cluster.getNameNodes();		
-		BasicJobConfig agentConfig = new BasicJobConfig(enterpriseJobConfig.getJumbuneJobName(),
+		BasicJobConfig agentConfig = new BasicJobConfig(jobConfig.getJumbuneJobName(),
 				cluster.getNameNode(), cluster.getJumbuneAgent().getPort());		
 		agentConfig.setUser(cluster.getHadoopUsers().getFsUser());
 		agentConfig.setSshAuthKeysFile(cluster.getAgents().getSshAuthKeysFile());
 		agentConfig.setWorkers(workerHosts);
-		agentConfig.setTmpDir(cluster.getWorkers().getWorkDirectory());
+		agentConfig.setTmpDir(jobConfig.getTempDirectory());
 		try{
 			//persisting  object
-			String jsonFile = JobConfig.getJumbuneHome()+JSON_FILE;
+			String jsonFile = JumbuneInfo.getHome() + JSON_FILE;
 			File file = new File(jsonFile);
 			if(file.exists()){
 				file.delete();
@@ -459,8 +437,8 @@ public abstract class CoreExecutorService {
 
 		Remoter remoter = RemotingUtil.getRemoter(jumbuneRequest.getCluster(),"");
 		CommandWritableBuilder builder = new CommandWritableBuilder(jumbuneRequest.getCluster());
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) jumbuneRequest.getConfig();
-		String agentJobJarPath = MAKE_JOBJARS_DIR_ON_AGENT + enterpriseJobConfig.getJumbuneJobName();
+		JobConfig jobConfig = (JobConfig) jumbuneRequest.getConfig();
+		String agentJobJarPath = MAKE_JOBJARS_DIR_ON_AGENT + jobConfig.getJumbuneJobName();
 		builder.addCommand(agentJobJarPath, false, null, CommandType.FS);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 		

@@ -1,5 +1,7 @@
 package org.jumbune.common.beans.cluster;
 
+import java.util.Set;
+
 public interface Cluster {
 	
 	String getClusterName();
@@ -26,7 +28,9 @@ public interface Cluster {
 	
 	boolean isJmxPluginEnabled();
 	
-	public String[] getZKs();
+	public Set<ZK> getZks();
+	
+	public String[] getZkHosts();
 	
 	/**
 	 * It returns history server ip

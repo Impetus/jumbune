@@ -2,13 +2,10 @@ package org.jumbune.web.beans;
 
 import org.jumbune.utils.conf.beans.AlertActionConfiguration;
 import org.jumbune.utils.conf.beans.AlertConfiguration;
-import org.jumbune.utils.conf.beans.ChargeBackConfigurations;
-import org.jumbune.utils.conf.beans.DlcConfiguration;
 import org.jumbune.utils.conf.beans.BackgroundProcessConfiguration;
 import org.jumbune.utils.conf.beans.EmailConfiguration;
 import org.jumbune.utils.conf.beans.HAConfiguration;
 import org.jumbune.utils.conf.beans.InfluxDBConf;
-import org.jumbune.utils.conf.beans.KDCConfiguration;
 import org.jumbune.utils.conf.beans.SlaConfigurations;
 import org.jumbune.utils.conf.beans.TicketConfiguration;
 
@@ -31,16 +28,9 @@ public class AdminConfiguration {
 	
 	private TicketConfiguration ticketConfiguration;
 	
-	private KDCConfiguration kdcConfiguration;
-	
 	private SlaConfigurations slaConfigurations;
-	
-	private DlcConfiguration dlcConfiguration;
-	
 
 	private BackgroundProcessConfiguration backgroundProcessConfiguration;
-
-	private ChargeBackConfigurations chargeBackConfigurations;
 
 	
 	public String getClusterName() {
@@ -98,14 +88,6 @@ public class AdminConfiguration {
 	public void setTicketConfiguration(TicketConfiguration ticketConfiguration) {
 		this.ticketConfiguration = ticketConfiguration;
 	}
-
-	public KDCConfiguration getKdcConfiguration() {
-		return kdcConfiguration;
-	}
-
-	public void setKdcConfiguration(KDCConfiguration kdcConfiguration) {
-		this.kdcConfiguration = kdcConfiguration;
-	}
 	
 	public SlaConfigurations getSlaConfigurations() {
 		return slaConfigurations;
@@ -114,23 +96,6 @@ public class AdminConfiguration {
 	public void setSlaConfigurations(SlaConfigurations slaConfigurations) {
 		this.slaConfigurations = slaConfigurations;
 	}
-
-	public DlcConfiguration getDlcConfiguration() {
-		return dlcConfiguration;
-	}
-
-	public void setDlcConfiguration(DlcConfiguration dlcConfiguration) {
-		this.dlcConfiguration = dlcConfiguration;
-	}
-
-	public ChargeBackConfigurations getChargeBackConfigurations() {
-		return chargeBackConfigurations;
-	}
-
-	public void setChargeBackConfigurations(ChargeBackConfigurations chargeBackConfigurations) {
-		this.chargeBackConfigurations = chargeBackConfigurations;
-	}
-	
 	
 	public BackgroundProcessConfiguration getBackgroundProcessConfiguration() {
 		return backgroundProcessConfiguration;

@@ -1,8 +1,6 @@
 package org.jumbune.common.beans;
 
 public enum Feature {
-
-	OPTIMIZE_JOB("Optimize Job"),
 	
 	ANALYZE_JOB("Analyze Job"),
 	

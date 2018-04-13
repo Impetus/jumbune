@@ -12,7 +12,6 @@ angular.module('jobpreview.ctrl', [])
         self.dataValidationJson = common.getDataValidationJsonData();
         self.debuggerJson = common.getDebuggerJsonData();
         self.jobProfilingJson = common.getJobProfilingJsonData();
-        self.tuningJson = common.getTuningJsonData();
         //End of Report Json Read
 
         self.user = null;
@@ -46,10 +45,8 @@ angular.module('jobpreview.ctrl', [])
 			}
 			if(self.widgetsDtl.debuggerDtl !== undefined){
 				self.widgetsDtl.debuggerDtl.enableDebChk && (self.displayJSON.enableDebugger =  'Debugger');
-				//self.widgetsDtl.debuggerDtl.useRegexChk && (self.displayJSON.useRegexChk =  'Use Regex');
 				self.displayJSON.useRegexChk =  'Use Regex';
 				self.displayJSON.usrDefChk =  'User Defined Validations';
-				//self.widgetsDtl.debuggerDtl.usrDefChk && (self.displayJSON.usrDefChk =  'User Defined Validations');
 			}
 			if(self.widgetsDtl.whatIfDtl !== undefined){
 				self.widgetsDtl.whatIfDtl.enableWhatIf && (self.displayJSON.enableWhatIf =  'What If');
@@ -58,15 +55,10 @@ angular.module('jobpreview.ctrl', [])
 				self.widgetsDtl.jobProfilingDtl.enableprofilingCheck && (self.displayJSON.enableprofilingCheck =  'Job Profiling');
 				self.widgetsDtl.jobProfilingDtl.runFromJumbune && (self.displayJSON.runFromJumbune =  'Run From Jumbune');
 			}
-			if(self.widgetsDtl.tuningDtl !== undefined){
-				self.widgetsDtl.tuningDtl.enableTuningChk && (self.displayJSON.enableTuning =  'Tuning');
-			}
 			if(self.widgetsDtl.dataValidation !== undefined){
-				//self.widgetsDtl.dataValidation.enableDataValidation && (self.displayJSON.enableDataValidation =  'Data Validation');
 				self.displayJSON.enableDataValidation =  'Data Validation';
 			}
 			if(self.dataConfigDtl !== undefined){
-				//self.dataConfigDtl.enblDataValidation && (self.displayJSON.enblDataValidation = 'Data Validation');
 				self.displayJSON.enableDataValidation =  'Data Validation';
 				self.dataConfigDtl.enblDataQuality && (self.displayJSON.enblDataValidation = 'View Data Quality');
 				self.dataConfigDtl.enblDataProfiler && (self.displayJSON.enblDataValidation = 'View Data Profiler');
@@ -239,28 +231,6 @@ angular.module('jobpreview.ctrl', [])
             saveJSON.isLocalSystemJar = "FALSE";
             saveJSON.enableDataProfiling = "FALSE";
             saveJSON.criteriaBasedDataProfiling = "FALSE";
-			
-			if(self.widgetsDtl.tuningDtl !== undefined){
-				saveJSON.selfTuning = !self.widgetsDtl.tuningDtl.enableTuningChk;
-				saveJSON.clusterTuning = {};
-				saveJSON.clusterTuning.applyConfig = self.widgetsDtl.tuningDtl.enableTuningChk;
-				if(saveJSON.clusterTuning.applyConfig == true){
-					if(self.widgetsDtl.tuningDtl.resourceShareRadios == 'fairScheduler'){
-						isFairSchedulerEnabled = true;
-					}
-					if(self.widgetsDtl.tuningDtl.mapReduceJarRadios == 'userSuppliedJar'){
-						useStandardWordCountJar = false;
-					}
-					saveJSON.clusterTuning.hadoopPerformance = self.widgetsDtl.tuningDtl.jobTypeOpn;
-					saveJSON.clusterTuning.isFairSchedulerEnabled = isFairSchedulerEnabled;
-					saveJSON.clusterTuning.availableMapTasks = self.widgetsDtl.tuningDtl.mapSlotsText;
-					saveJSON.clusterTuning.availableReduceTasks = self.widgetsDtl.tuningDtl.reduceSlotsText;
-					saveJSON.clusterTuning.jobInputPath = self.widgetsDtl.tuningDtl.jobDataPathText;
-					saveJSON.clusterTuning.outputFolder = self.widgetsDtl.tuningDtl.outputFileText;
-					saveJSON.clusterTuning.useStandardWordCountJar = useStandardWordCountJar;
-					/* "objective": "REDUCE_TIME_OF_JOB_EXECUTION", NA */
-				}	
-			}
             saveJSON.slaveParam=  {
                 "nodeManagerJmxPort": "5680",
                     "dataNodeJmxPort": "5679",
@@ -274,13 +244,7 @@ angular.module('jobpreview.ctrl', [])
 					saveJSON.toField = self.widgetsDtl.whatIfDtl.toField;
 				}
 			}
-
-			console.log('saveJSON',saveJSON);
-
-			//json.jumbuneJobName = saveJSON.jumbuneJobName;
-			
 			self.json = JSON.stringify(saveJSON);
-			console.log("sadfsdf:::", self.json, saveJSON);
 			self.validateJson({"json": self.json});
 		};
 		
@@ -570,42 +534,6 @@ angular.module('jobpreview.ctrl', [])
 
 
 /**
- * Tuning - plot chart
- * @type {*[]}
- */
-        var tuningData = [];
-        for(var i=0; i< self.tuningJson.length; i++){
-            tuningData.push(self.tuningJson[i].executionTimeInMsecs/1000);   //Converted miliseconds to seconds
-        };
-
-        self.plotChartModel = {
-            chartData : [tuningData],
-            chartOptions : {
-                seriesColors:["#41BECC"],
-                legend:{show:true},
-                axesDefaults: {
-                    labelRenderer: $.jqplot.CanvasAxisLabelRenderer
-                },
-                seriesDefaults: {
-                    rendererOptions: {
-                        smooth: true
-                    }
-                },
-                axes: {
-                    xaxis: {
-                        label: "Iteration",
-                        pad: 0
-                    },
-                    yaxis: {
-                        label: "Execution Time(sec)"
-                    }
-                }
-            }
-        };
-//END OF TUNING
-
-
-/**
  * Job Profiling
   * @type {*[]}
  */
@@ -630,11 +558,6 @@ angular.module('jobpreview.ctrl', [])
                 cpuUsageArray.push(cpuUsage);
             }
         };
-
-        /*var lineChartData1 = [[1, 6.29], [2, 8.21], [3, 8.92], [4, 7.33], [5, 7.91], [6, 3.6], [7, 6.88],
-            [8, 1.5], [9, 0.08], [10, 6.36], [11, 0.5]];
-        var lineChartData2 = [[5, 6.29], [6, 8.21], [7, 8.92], [8, 7.33], [9, 7.91], [10, 3.6], [11, 6.88],
-            [18, 1.5], [19, 0.08], [20, 6.36], [21, 0.5]];*/
 
         var scatterChartData = [[10, 1], [11, 2], [12, 3], [13, 4], [14, 5], [15, 6], [16, 7],
             [17, 8], [18, 9]];

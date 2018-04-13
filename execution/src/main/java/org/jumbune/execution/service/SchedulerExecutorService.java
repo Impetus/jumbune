@@ -12,6 +12,7 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.JobStatus;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.ReportsBean;
 import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.common.utils.ConfigurationUtil;
@@ -21,8 +22,8 @@ import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
 
 import com.google.gson.Gson;
-import org.jumbune.common.beans.cluster.EnterpriseClusterDefinition;
-import org.jumbune.common.job.EnterpriseJobConfig;
+import org.jumbune.common.beans.cluster.ClusterDefinition;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.scheduler.ScheduleTaskUtil;
 import org.jumbune.common.utils.ExtendedConfigurationUtil;
 import org.jumbune.common.utils.ExtendedConstants;
@@ -53,7 +54,7 @@ public class SchedulerExecutorService extends CoreExecutorService {
 		String currentScheduledJobLoc = args[0];
 		String frameworkHome = formatPath(args[1]);
 
-		EnterpriseJobConfig.setJumbuneHome(frameworkHome);
+		JumbuneInfo.setHome(frameworkHome);
 		System.setProperty("JUMBUNE_HOME",frameworkHome );
 		String currentScheduledJobJsonFilePath = ExtendedConfigurationUtil
 				.getScheduleJobJsonFileLoc(currentScheduledJobLoc);
@@ -62,7 +63,6 @@ public class SchedulerExecutorService extends CoreExecutorService {
 		JumbuneRequest jumbuneRequest = null;
 		try {
 			jumbuneRequest = loadJob(currentScheduledJobJsonFilePath, frameworkHome);
-			EnterpriseJobConfig ejc=(EnterpriseJobConfig)jumbuneRequest.getConfig();
 			
 			ReportsBean reports = new ReportsBean();
 			isScheduleJobExecuted = schedulerExecService.run(
@@ -92,7 +92,7 @@ public class SchedulerExecutorService extends CoreExecutorService {
 			try {
 				LOG.debug("clean up process slave tmp + agent home schedule case ");
 				if (jumbuneRequest != null && jumbuneRequest.getConfig() != null) {
-					EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) jumbuneRequest.getConfig();
+					JobConfig jobConfig = (JobConfig) jumbuneRequest.getConfig();
 					cleanUpSlavesTempFldr(jumbuneRequest);
 					LOG.debug("clean up done");
 				}
@@ -113,18 +113,18 @@ public class SchedulerExecutorService extends CoreExecutorService {
 	 */
 	private static JumbuneRequest loadJob(String configfilePath, String jumbuneHome) throws IOException {
 		Gson gson = new Gson();
-		EnterpriseJobConfig config = gson.fromJson(
-				FileUtil.readFileIntoString(configfilePath), EnterpriseJobConfig.class);
+		JobConfig config = gson.fromJson(
+				FileUtil.readFileIntoString(configfilePath), JobConfig.class);
 		String clusterJsonFilePath = jumbuneHome + "/clusters/" + config.getOperatingCluster() + ".json";
-		EnterpriseClusterDefinition enterpriseClusterDefinition = gson.fromJson(
-				FileUtil.readFileIntoString(clusterJsonFilePath), EnterpriseClusterDefinition.class);
+		ClusterDefinition clusterDefinition = gson.fromJson(
+				FileUtil.readFileIntoString(clusterJsonFilePath), ClusterDefinition.class);
 		JumbuneRequest jumbuneRequest = new JumbuneRequest();
-		jumbuneRequest.setCluster(enterpriseClusterDefinition);
+		jumbuneRequest.setCluster(clusterDefinition);
 		jumbuneRequest.setConfig(config);
 		return jumbuneRequest;
 	}
 	
-	public static EnterpriseClusterDefinition getClusterByName(String clusterJsonFilePath) throws IOException {
+	public static ClusterDefinition getClusterByName(String clusterJsonFilePath) throws IOException {
 		File file = new File(clusterJsonFilePath);
 		StringBuffer json = new StringBuffer();
 		BufferedReader br = null;
@@ -140,7 +140,7 @@ public class SchedulerExecutorService extends CoreExecutorService {
 			}
 		}
 		Gson gson = new Gson();
-		return gson.fromJson(json.toString(), EnterpriseClusterDefinition.class);
+		return gson.fromJson(json.toString(), ClusterDefinition.class);
 	}
 
 
@@ -162,13 +162,13 @@ public class SchedulerExecutorService extends CoreExecutorService {
 
 	private boolean run(String currentScheduledJobLoc, JumbuneRequest jumbuneRequest,
 			ReportsBean reports) throws JumbuneException {
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) jumbuneRequest.getConfig();
+		JobConfig jobConfig = (JobConfig) jumbuneRequest.getConfig();
 		boolean isStartExecution = checkProfilingState();
 		if (isStartExecution) {
 			updateStatusFile(currentScheduledJobLoc, JobStatus.IN_PROGRESS.toString());
 			// Scheduling is not enabled execute job now.
 			List<Processor> processors = getProcessorChain(
-					enterpriseJobConfig, false);
+					jobConfig, false);
 
 			int index = 0;
 			for (Processor p : processors) {
@@ -214,9 +214,9 @@ public class SchedulerExecutorService extends CoreExecutorService {
 			}
 			LOG.debug("Since some other task is executing will be queue this task and execute it after 10 mins");
 
-			enterpriseJobConfig
+			jobConfig
 			.setJumbuneScheduleTaskTiming(REATTEMPT_TASK_SCHEDULING_TIME);
-			scheduleTask(enterpriseJobConfig, false);
+			scheduleTask(jobConfig, false);
 			return false;
 		}
 	}

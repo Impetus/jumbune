@@ -9,19 +9,6 @@
             <form autocomplete="off" ng-submit="save()" name="DpForm" enctype="multipart/form-data" novalidate>
                 <table class="frm-tbl" align="center" width="98%">
                     <tbody>
-                    <!-- <tr>
-                       <td width="43%"><label class="fieldLabel">HDFS Input Path<s>*</s></label></td>
-                        <td>
-                            <input type="text" name="inputPath" ng-model="selProfilingObj.inputPath" required ng-class="{'has-error':(DpForm.inputPath.$invalid && !DpForm.inputPath.$pristine && DpForm.inputPath.blur) || (DpForm.inputPath.$invalid && submitForm)}">
-
-                            <div class="error" ng-show="DpForm.inputPath.$dirty && DpForm.inputPath.$invalid">
-                                <span class="error" ng-show="DpForm.inputPath.$error.required">Please enter HDFS input path value.</span> 
-                            </div>
-                            <div class="error">
-                                <span class="error" ng-show="errorMessageShow">{{errorMessage}}</span> 
-                            </div>
-                        </td> 
-                    </tr> -->
                     <tr>
                         <td><label class="fieldLabel">Tuple Record Separator<s>*</s></label></td>
                         <td>
@@ -68,15 +55,10 @@
                     <tr ng-repeat="arr in fieldArray track by $index">
                         <td><input class="width80" type="text" ng-model="arr.fieldNumber" jumbune-only-digits></td>
                          <td>
-                            <select ng-model="arr.dataProfilingOperand" ng-options="o.value as o.label for o in dataProfilingOperandArr"><!--  <select ng-model="fieldProfilingRules[$index].dataProfilingOperand"> -->
+                            <select ng-model="arr.dataProfilingOperand" ng-options="o.value as o.label for o in dataProfilingOperandArr">
                                 <option value="">Please Select</option>
                             </select>
                         </td> 
-                        <!-- <td>
-                                <select ng-disabled="!field.enable" ng-model="field.nullCheck" ng-options="nullCheck as nullCheck for nullCheck in profileController.dataProfilingOperandArr">ng-options="size as size.name for size in sizes "
-                                    <option value="">Please Select</option>
-                                </select>
-                            </td> -->
                         <td>
                             <input class="width230" type="text" ng-model="arr.comparisonValue" jumbune-only-digits>
                         </td>
@@ -88,123 +70,8 @@
                     <button type="button" class="btn btn-default" ng-click="back()">Back</button>
                     <button type="submit" ng-disabled="DpForm.$invalid" id="formDisableOneClick" ng-click="save()" class="btn btn-primary">Submit</button>
                 </div> 
-                <!-- <div jumbune-widget-form-buttons-three cancel="cancel()" back="back()" next="submitForm = true" ng-disabled="DpForm.$invalid"></div> -->
             </form>
         </div>
          <div class="clear"></div>
     </div>
 </div>
-<!--div class="container" ng-init="init()">
-    <div class="inner-container">
-        <div class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock" >{{blockMessage}}</div>
-        <h2>Define Data Profiler</h2>
-        <div class="main-container">
-            <p><strong>Note:</strong> Tab collect data profiling information.</p>
-            <form autocomplete="off" ng-submit="save()" name="DpForm" novalidate>
-                <table class="frm-tbl">
-                    <tbody>
-                    <tr>
-                        <td>Name<s>*</s></td>
-                        <td>
-                            <input type="text" name="nameDP" ng-model="selProfilingObj.nameDP" required ng-class="{'has-error':(DpForm.nameDP.$invalid && !DpForm.nameDP.$pristine && DpForm.nameDP.blur) || (DpForm.nameDP.$invalid && submitForm)}">
-
-                            <div class="error" ng-show="DpForm.nameDP.$dirty && DpForm.nameDP.$invalid">
-                                <span class="error" ng-show="DpForm.nameDP.$error.required">Please enter name.</span> 
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                       <td>HDFS Input Path<s>*</s></td>
-                        <td>
-                            <input type="text" name="inputPath" ng-model="selProfilingObj.inputPath" required ng-class="{'has-error':(DpForm.inputPath.$invalid && !DpForm.inputPath.$pristine && DpForm.inputPath.blur) || (DpForm.inputPath.$invalid && submitForm)}">
-
-                            <div class="error" ng-show="DpForm.inputPath.$dirty && DpForm.inputPath.$invalid">
-                                <span class="error" ng-show="DpForm.inputPath.$error.required">Please enter HDFS input path value.</span> 
-                            </div>
-                        </td> 
-                    </tr>
-                    <tr>
-                        <td>Tuple Record Separator<s>*</s></td>
-                        <td>
-                            <input style="width: 50px" type="text" name="tupleRS" ng-model="selProfilingObj.tupleRS" required ng-class="{'has-error':(DpForm.tupleRS.$invalid && !DpForm.tupleRS.$pristine && DpForm.tupleRS.blur) || (DpForm.tupleRS.$invalid && submitForm)}">
-
-                            <div class="error" ng-show="DpForm.tupleRS.$dirty && DpForm.tupleRS.$invalid">
-                                <span class="error" ng-show="DpForm.tupleRS.$error.required">Please enter tuple record separator value.</span> 
-                            </div>
-                        </td>
-                        
-                    </tr>
-                    <tr>
-                        <td>Tuple Field Separator<s>*</s></td>
-                        <td colspan="3">
-                                <input style="width: 50px" type="text" name="tupleFS" ng-model="selProfilingObj.tupleFS" required ng-class="{'has-error':(DpForm.tupleFS.$invalid && !DpForm.tupleFS.$pristine && DpForm.tupleFS.blur) || (DpForm.tupleFS.$invalid && submitForm)}">
-
-                                <div class="error" ng-show="DpForm.tupleFS.$dirty && DpForm.tupleFS.$invalid">
-                                    <span class="error" ng-show="DpForm.tupleFS.$error.required">Please enter tuple field separator value.</span> 
-                                </div>
-                        </td>
-                    </tr>
-                    </tbody>
-                    <tbody>
-                        <tr>
-                            <td></td>
-                            <td><input type="checkbox" ng-model="selProfilingObj.isDataProfiling" ng-click="enableDP(selProfilingObj.isDataProfiling)"><span>Enable Data Profiling</span></td>
-                        </tr>
-                    </tbody>
-                    <tbody>
-                        <tr ng-if="!enable && !select">
-                            <td style="vertical-align:top">Choose System</td>
-                            <td>
-                                <label class="option-label">
-                                    <input type="radio" name="optionsRadios" value="withCriteria" ng-model="selProfilingObj.enableDataProfiling" ng-change="criteriaBased()"/><span>Criteria Based</span>
-                                </label>
-                                <label class="option-label">
-                                    <input type="radio" name="optionsRadios" value="noCriteria" ng-model="selProfilingObj.enableDataProfiling" ng-change="criteriaBased()"/><span>No Criteria</span>
-                                </label>
-                            </td>
-                        </tr>
-                    </tbody>
-                    <tbody ng-show="selProfilingObj.enableDataProfiling=='withCriteria' && startCriteria">
-                        <tr>
-                            <td>No. of Fields</td>
-                            <td>
-                            <input style="width: 50px" type="text" class="num-input" ng-model="selProfilingObj.fields" jumbune-only-digits> <a data-grid="#/data-profiling"><i class="fa fa-plus circle-icon green-icon" ng-click="generateFields(selProfilingObj.fields)"></i></a>
-                            </td>
-                    </tr>
-                    </tbody>
-                </table>
-                <table class="table table-striped dtl-tbl" ng-show="selProfilingObj.enableDataProfiling=='withCriteria' && startCriteria">
-                    <thead>
-                    <tr ng-if="fieldArray.length > 0">
-                        <th>Enable Row</th>
-                        <th>Field Number</th>
-                        <th>Check Type</th>
-                        <th>Comparison Value</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr ng-repeat="arr in fieldArray">
-                        <td>
-                            <input type="checkbox" ng-model="selProfilingObj.isEnableRow[arr]">
-                        </td>
-                        <td>{{arr}}</td>
-                        <td>
-                            <select ng-model="selProfilingObj.nullCheck[arr]">
-                                <option>greater than equal to</option>
-                                <option>less than equal to</option>
-                            </select>
-                        </td>
-                        <td>
-                            <input style="width: 230px" type="text" ng-model="selProfilingObj.comparisonVal[arr]" jumbune-only-digits>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
-                <div class="textCenter">
-                    <button type="button" class="btn btn-default btnLink" ng-click="cancel()">Cancel</button>
-                    <button type="submit" ng-disabled="DpForm.$invalid" ng-click="submitForm = true" class="btn btn-primary">Submit</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div-->

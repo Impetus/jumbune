@@ -6,7 +6,6 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -27,11 +26,10 @@ import javax.mail.internet.MimeMultipart;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.Alert;
 import org.jumbune.utils.conf.AdminConfigurationUtil;
 import org.jumbune.utils.conf.beans.AlertAction;
 import org.jumbune.utils.conf.beans.EmailConfiguration;
-
-import org.jumbune.common.beans.Alert;
 
 import freemarker.template.Configuration;
 import freemarker.template.Template;

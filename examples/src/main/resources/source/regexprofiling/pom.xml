@@ -2,13 +2,13 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-	<groupId>com.impetus.jumbune</groupId>
+	<groupId>org.jumbune</groupId>
 	<artifactId>jumbune</artifactId>
 	<version>${build.number}</version>
 	<relativePath>../../pom.xml</relativePath>
 
 	</parent>
-	<groupId>com.impetus.jumbune</groupId>
+	<groupId>org.jumbune</groupId>
 	<artifactId>examples-regexprofiling</artifactId>
 	<name>examples-profiling</name>
 	<version>${project.parent.version}</version>
@@ -54,7 +54,7 @@
 					<configuration>
 						<archive>
 							<manifest>
-						<mainClass>com.impetus.profiling.regex.execution.RegexValidationProfilerJobExecutor</mainClass>
+						<mainClass>org.profiling.regex.execution.RegexValidationProfilerJobExecutor</mainClass>
 							</manifest>
 						</archive>
 					</configuration>

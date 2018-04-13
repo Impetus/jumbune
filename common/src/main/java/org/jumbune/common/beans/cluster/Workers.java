@@ -7,11 +7,6 @@ public class Workers {
 	/** The host */
 	private List<String> hosts;
 	
-	/** The workDirectory. */
-	private String workDirectory;
-	
-	private String relativeWorkingDirectory;
-	
 	/** The user. */
 	private String user;
 	
@@ -29,14 +24,6 @@ public class Workers {
 
 	public void setHosts(List<String> hosts) {
 		this.hosts = hosts;
-	}
-
-	public String getWorkDirectory() {
-		return workDirectory;
-	}
-
-	public void setWorkDirectory(String location) {
-		this.workDirectory = location;
 	}
 
 	public String getUser() {
@@ -63,14 +50,6 @@ public class Workers {
 		this.taskExecutorJmxPort = taskExecutorJmxPort;
 	}
 
-	public String getRelativeWorkingDirectory() {
-		return relativeWorkingDirectory;
-	}
-
-	public void setRelativeWorkingDirectory(String relativeWorkingDirectory) {
-		this.relativeWorkingDirectory = relativeWorkingDirectory;
-	}
-
 	public boolean isSpotInstances() {
 		return spotInstances;
 	}
@@ -81,8 +60,7 @@ public class Workers {
 
 	@Override
 	public String toString() {
-		return "Workers [hosts=" + hosts + ", workDirectory=" + workDirectory
-				+ ", relativeWorkingDirectory=" + relativeWorkingDirectory
+		return "Workers [hosts=" + hosts
 				+ ", user=" + user + ", dataNodeJmxPort=" + dataNodeJmxPort
 				+ ", taskExecutorJmxPort=" + taskExecutorJmxPort + "]";
 	}

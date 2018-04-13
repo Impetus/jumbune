@@ -5,12 +5,13 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -19,28 +20,27 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.beans.cluster.ClusterDefinition;
 import org.jumbune.common.beans.cluster.HadoopUsers;
+import org.jumbune.common.influxdb.InfluxDBUtil;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.FileUtil;
+import org.jumbune.common.utils.JMXUtility;
+import org.jumbune.common.utils.JobRequestUtil;
 import org.jumbune.remoting.common.StringUtil;
 import org.jumbune.utils.conf.AdminConfigurationUtil;
 import org.jumbune.utils.conf.beans.InfluxDBConf;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
-
-import com.google.gson.Gson;
-import org.jumbune.common.beans.cluster.EnterpriseCluster;
-import org.jumbune.common.beans.cluster.EnterpriseClusterDefinition;
-import org.jumbune.common.influxdb.InfluxDBUtil;
-import org.jumbune.common.utils.JMXUtility;
-import org.jumbune.common.utils.JobRequestUtil;
 import org.jumbune.web.utils.WebConstants;
 
 
@@ -52,6 +52,9 @@ import org.jumbune.web.utils.WebConstants;
  */
 @Path(WebConstants.CLUSTER_SERVICE_URL)
 public class ClusterOperationsService{
+	
+	@Context
+	private HttpServletRequest servletRequest;
 
 	/** The Constant LOGGER. */
 	private static final Logger LOGGER = LogManager
@@ -69,14 +72,10 @@ public class ClusterOperationsService{
 	@POST
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces(MediaType.TEXT_PLAIN)
-	public Response persistCluster(EnterpriseClusterDefinition cluster) throws Exception {
+	public Response persistCluster(ClusterDefinition cluster) throws Exception {
+		
     	LOGGER.debug("Cluster(deserialized based on info from UI): " + cluster);
-    	//Appending '/' at the end of worker directory if not present
-    	String workDirectory = cluster.getWorkers().getWorkDirectory();
-		if (!(workDirectory.endsWith(File.separator))) {
-			workDirectory = workDirectory + File.separator;
-			cluster.getWorkers().setWorkDirectory(workDirectory);
-		}
+    	
 		
 		String password = cluster.getAgents().getPassword();
 		if (password != null && !password.isEmpty()) {
@@ -94,6 +93,7 @@ public class ClusterOperationsService{
     	String clusterName = cluster.getClusterName();
     	AdminConfigurationService.checkAndCreateConfAndInfluxDatabase(clusterName);
     	AdminConfigurationService.enableWorkersNodeUpdater(cluster);
+
     	return Response.ok("Cluster persisted SUCCESSFULLY").build();
 	}
 
@@ -114,7 +114,7 @@ public class ClusterOperationsService{
 		
 		String response;
 		try{
-           response = new Gson().toJson(JobRequestUtil.getClusterByName(clusterName));
+           response = Constants.gson.toJson(JobRequestUtil.getClusterByName(clusterName));
 		} catch (Exception e) {
 			response = "No cluster with name " + clusterName + " exists. Please provide a valid cluster name";
 		}
@@ -128,7 +128,7 @@ public class ClusterOperationsService{
 	public Response getTotalClusterNodesAdded() {
 		try {
 			int totalNodesAdded = 0;
-			List<String> list = getAllClusterNames();
+			Collection<String> list = getAllClusterNames();
 			for (String clusterName : list) {
 				Cluster cluster = JobRequestUtil.getClusterByName(clusterName);
 				totalNodesAdded += cluster.getWorkers().getHosts().size();
@@ -138,8 +138,35 @@ public class ClusterOperationsService{
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
 		}
 	}
+	/**
+	 * Gets all clusters.
+	 *
+	 * @return JSON for all defined clusters
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	@GET
+	@Produces({ MediaType.APPLICATION_JSON })
+	public Response getAllClusters() throws IOException {
+		return Response.ok(Constants.gson.toJson(getAllClusterNames())).build();
+	}
 	
-	private List<String> getAllClusterNames() {
+	@GET
+	@Path("/clusters-list-for-management")
+	@Produces({ MediaType.APPLICATION_JSON })
+	public Response getAllClustersListForManagement() throws IOException {
+		List<String> clusters;
+		clusters = new ArrayList<String>();
+		File clusterJsonFile = new File(getClusterJsonDir());
+		for (File file : clusterJsonFile.listFiles()) {
+			if(file.getName().endsWith(WebConstants.JSON_EXTENSION)){
+				clusters.add(file.getName().replace(WebConstants.JSON_EXTENSION, ""));				
+			}
+		}
+		
+		return Response.ok(Constants.gson.toJson(clusters)).build();
+	}
+	
+	private Collection<String> getAllClusterNames() {
 		List<String> clusters = new ArrayList<String>();
 		File clusterJsonFile = new File(getClusterJsonDir());
 		for (File file : clusterJsonFile.listFiles()) {
@@ -161,22 +188,17 @@ public class ClusterOperationsService{
 	@Path("/{clusterName}")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({ MediaType.APPLICATION_JSON })
-	public Response updateCluster(final EnterpriseClusterDefinition modifiedCluster)
+	public Response updateCluster(final ClusterDefinition modifiedCluster)
 			throws Exception {
+		LOGGER.debug("Updating cluster [ " + modifiedCluster.getClusterName() + " ]");
+
 		boolean updated = false;
 		String clusterName = modifiedCluster.getClusterName();
-		EnterpriseCluster oldCluster = JobRequestUtil.getClusterByName(clusterName);
+		Cluster oldCluster = JobRequestUtil.getClusterByName(clusterName);
 		String newPassword = modifiedCluster.getAgents().getPassword();
 		String oldPassword = oldCluster.getAgents().getPassword();
 		if ( newPassword!= null && (oldPassword == null || !newPassword.equals(oldPassword))) {
 			modifiedCluster.getAgents().setPassword(StringUtil.getEncrypted(newPassword));
-		}
-		
-		//Appending '/' at the end of worker directory if not present
-    	String workDirectory = modifiedCluster.getWorkers().getWorkDirectory();
-		if (!(workDirectory.endsWith(File.separator))) {
-			workDirectory = workDirectory + File.separator;
-			modifiedCluster.getWorkers().setWorkDirectory(workDirectory);
 		}
 		
 		updated = deleteClusterJsonFile(clusterName);
@@ -187,7 +209,7 @@ public class ClusterOperationsService{
 		}
 		AdminConfigurationService.checkAndCreateConfAndInfluxDatabase(clusterName);
 		AdminConfigurationService.enableWorkersNodeUpdater(modifiedCluster);
-		return Response.ok(new Gson().toJson(updated)).build();
+		return Response.ok(Constants.gson.toJson(updated)).build();
 	}
 
 	/**
@@ -241,7 +263,7 @@ public class ClusterOperationsService{
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	private boolean saveClusterToJsonFile(final EnterpriseClusterDefinition cluster) throws IOException {
+	private boolean saveClusterToJsonFile(final ClusterDefinition cluster) throws IOException {
 		HadoopUsers hadoopUsers = new HadoopUsers();
 		hadoopUsers.setFsUser(cluster.getAgents().getUser());
 		hadoopUsers.setFsPrivateKeyPath(cluster.getAgents().getSshAuthKeysFile());
@@ -250,8 +272,7 @@ public class ClusterOperationsService{
 		cluster.setHadoopUsers(hadoopUsers);
 		String jsonFilePath = getClusterJsonDir() + File.separator + cluster.getClusterName() + WebConstants.JSON_EXTENSION;
 		PrintWriter out = new PrintWriter(jsonFilePath);
-		Gson gson = new Gson();
-		out.print(gson.toJson(cluster));
+		out.print(Constants.gson.toJson(cluster));
 		out.flush();
 		out.close();
 		LOGGER.debug("Cluster "+ cluster.getClusterName() + " persisted successfully");
@@ -301,12 +322,11 @@ public class ClusterOperationsService{
 	@Produces({ MediaType.APPLICATION_JSON })
 	public Response getHadoopType()
 			throws IOException {
-		Gson gson = new Gson();
 		Map<String, String> hadoopTypeMap  = new HashMap<String, String>();
 		hadoopTypeMap.put("hadoopType", FileUtil.getClusterInfoDetail(Constants.HADOOP_TYPE));
-		String hadoopType = gson.toJson(hadoopTypeMap);
+		String hadoopType = Constants.gson.toJson(hadoopTypeMap);
 		return Response.ok(hadoopType).build();
 	
 	}
-	
+
 }

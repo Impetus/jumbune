@@ -25,18 +25,16 @@ import org.apache.commons.lang.math.NumberUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.IntervalStats;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.NodeSystemStats;
-import org.jumbune.common.beans.cluster.Agent;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.beans.profiling.JobOutput;
 import org.jumbune.common.beans.profiling.PhaseDetails;
 import org.jumbune.common.beans.profiling.PhaseOutput;
 import org.jumbune.common.beans.profiling.PhaseType;
 import org.jumbune.common.beans.profiling.TaskOutputDetails;
-import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.remoting.client.Remoter;
-import org.jumbune.remoting.client.RemoterFactory;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.remoting.common.RemotingMethodConstants;
@@ -126,7 +124,7 @@ public class ResourceUsageCollector {
 	 */
 	public void fireTopCmdOnSlaves(String receiveDirectory) { 
 		Cluster cluster = jumbuneRequest.getCluster();
-		String slaveTmpDir = cluster.getWorkers().getWorkDirectory();
+		String slaveTmpDir = jumbuneRequest.getJobConfig().getTempDirectory();
 		List<String> params = new ArrayList<String>();
 		params.add(slaveTmpDir);
 
@@ -159,7 +157,7 @@ public class ResourceUsageCollector {
 	 */
 	public void processTopDumpFile(String receiveDirectory, List<String> hosts) {
 		Cluster cluster = jumbuneRequest.getCluster();
-		String slaveTmpDir = cluster.getWorkers().getWorkDirectory();
+		String slaveTmpDir = jumbuneRequest.getJobConfig().getTempDirectory();
 		String topDumpFile = slaveTmpDir + File.separator + TOP_DUMP_FILE;
 		String cpuDumpFile = slaveTmpDir + File.separator + CPU_DUMP_FILE;
 		String memDumpFile = slaveTmpDir + File.separator + MEM_DUMP_FILE;
@@ -385,7 +383,7 @@ public class ResourceUsageCollector {
 	 *             Signals that an I/O exception has occurred.
 	 */
 	public Map<String, NodeSystemStats> getNodeStats() throws IOException {
-		String systemStatsFile = JobConfig.getJumbuneHome() + File.separator
+		String systemStatsFile = JumbuneInfo.getHome()
 				+ SYSTEM_STATS_DIR;
 		File dir = new File(systemStatsFile);
 		File[] files = dir.listFiles();

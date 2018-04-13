@@ -2,9 +2,8 @@
 'use strict';
 angular.module('newjobconfig.ctrl', [])
 
-.controller('NewJobConfigController', ['$scope', '$http', '$rootScope', 'common', '$location', 'editClusterFactory', 'analyzeClusterFactory', 'deleteRecurringFactory', 'getRecurringFactory', 'validateLicenseFactory', 'getJobValidateFactory','$timeout','getDefaultRootFactory',
-    // function ($scope, $rootScope, common, $location,editClusterFactory,analyzeClusterFactory,deleteRecurringFactory,getRecurringFactory) {
-    function($scope, $http, $rootScope, common, $location, editClusterFactory, analyzeClusterFactory, deleteRecurringFactory, getRecurringFactory, validateLicenseFactory, getJobValidateFactory,$timeout,getDefaultRootFactory) {
+.controller('NewJobConfigController', ['$scope', '$http', '$rootScope', 'common', '$location', 'editClusterFactory', 'analyzeClusterFactory', 'deleteRecurringFactory', 'getRecurringFactory', 'getJobValidateFactory','$timeout',
+    function($scope, $http, $rootScope, common, $location, editClusterFactory, analyzeClusterFactory,  deleteRecurringFactory, getRecurringFactory, getJobValidateFactory,$timeout) {
         var self = this;
         self.clusterList = [];
         self.selectedCluster = "";
@@ -17,33 +16,28 @@ angular.module('newjobconfig.ctrl', [])
         $scope.hideJob = false;
         $scope.errorSelctedClus = false;
         $scope.errorHdfspath = false;
-        $scope.errordlcdata = false;
-        $scope.errorCleandata = false;
         self.jobName = "";
         self.jobSubUser = "";
-        //$scope.getClusterList=[];
         var dataAnalysisArr = [];
-        //  self.getClusterList = [];
-        //self.getClusterList = {"DQT_04":"/final01","DQT_03":"/final01"};
         self.getClusterList = [];
 
         var dataAnalysisObj = {};
 
-        //this.dataValidation = 'false';
         this.dataValidation = undefined;
-        //this.dataValidation;
+
         $scope.errorFile = false;
         $scope.errorFileXML = false;
         this.manualRadio = "TEXT";
         this.dataValidationXml = 'xml';
         this.dataValidationJson = 'json';
-        //self.enableProfiling = 'false';
+
         self.enableProfiling = undefined;
         self.enableDataComp = undefined;
-        //self.enableProfiling;
+
         self.dataValidationTab = false;
         self.selectedTab = false;
         self.hideManageTable = false;
+        self.tempDirectory = "/tmp";
 
         $scope.change = function(device) {
             angular.forEach($scope.devices, function(item) {
@@ -57,9 +51,7 @@ angular.module('newjobconfig.ctrl', [])
             self.showTableAnalyzeData = true;
             self.showDataFormat = true;
             self.showhdfsPath = true;
-            self.showhdlc = false;
             self.showdqt = false;
-            self.showdlc = false;
         }
         self.dataProfilingShow = function() {
             self.active = 'dataProfilingShow';
@@ -68,8 +60,6 @@ angular.module('newjobconfig.ctrl', [])
             self.showdqt = false;
             self.showDataFormat = false;
             self.showhdfsPath = true;
-            self.showhdlc = false;
-            self.showdlc = false;
         }
         self.dataQualityShow = function() {
             self.active = 'dataQualityShow';
@@ -77,19 +67,7 @@ angular.module('newjobconfig.ctrl', [])
             self.showTableAnalyzeData = true;
             self.showDataFormat = false;
             self.showhdfsPath = true;
-            self.showhdlc = false;
             self.showdqt = true;
-            self.showdlc = false;
-        }
-        self.dataLCShow = function() {
-            self.active = 'dataLCShow';
-            self.activeTab = 'Data Cleansing';
-            self.showTableAnalyzeData = true;
-            self.showDataFormat = false;
-            self.showhdfsPath = true;
-            self.showhdlc = true;
-            self.showdqt = false;
-            self.showdlc = true;
         }
         self.dataSourceShow = function() {
             self.active = 'dataSCShow';
@@ -98,8 +76,6 @@ angular.module('newjobconfig.ctrl', [])
             self.showDataFormat = false;
             self.showhdfsPath = false;
             self.showdqt = false;
-            self.showhdlc = false;
-            self.showdlc = false;
         }
         self.viewRecurring = function() {
             $scope.hideRecurring = true;
@@ -119,12 +95,6 @@ angular.module('newjobconfig.ctrl', [])
                 if ( backActiveTab == 'Data Quality' ) {
                     self.dataQualityShow();
                 }
-                /*if ( backActiveTab == 'Data Source Comparison' ) {
-                    self.dataSourceShow();
-                }*/
-                if ( backActiveTab == 'Data Cleansing' ) {
-                    self.dataLCShow();
-                }
                 if ( backActiveTab == 'Data Profiling' ) {
                     self.dataProfilingShow();
                 }
@@ -132,11 +102,8 @@ angular.module('newjobconfig.ctrl', [])
                 self.showTableAnalyzeData = false;
                 self.showDataFormat = false;
                 self.showhdfsPath = true;
-                self.showhdlc = true;
                 self.showdqt = false;
-                self.showdlc = false;
             }
-            //$("a.my-tool-tip").tooltip();
             $("td.my-tool-tip").tooltip();
             $("h2.my-tool-tip").tooltip();
             $(".my-tool-tip").tooltip();
@@ -145,6 +112,9 @@ angular.module('newjobconfig.ctrl', [])
             $scope.jobConfigMethods = common.getJobConfigMethod();
             $scope.recentJobResponse = common.getResonseData();
 
+            if ( $scope.recentJobResponse.tempDirectory == null || $scope.recentJobResponse.tempDirectory == undefined ) {
+                $scope.recentJobResponse.tempDirectory = "/tmp";
+            }
 
             self.clusterList = common.getClusterName();
             editClusterFactory.getCluster({
@@ -159,6 +129,18 @@ angular.module('newjobconfig.ctrl', [])
                 function(e) {
                     console.log(e);
                 });
+                var reqGetclusterList = {
+                method: 'GET',
+                url: 'apis/clusteranalysis/clusters-list',
+                headers: { 'Content-Type': undefined },
+                transformRequest: angular.identity,
+                data: self.getclusterListDistribution,
+            };
+            $http(reqGetclusterList).then(function(data) {
+                self.getclusterListDistribution = data.data;
+            }, function(error) {
+                console.log("error", error)
+            });
             var req = {
                 method: 'GET',
                 url: 'apis/jobanalysis/jobhdfsdetails',
@@ -175,8 +157,20 @@ angular.module('newjobconfig.ctrl', [])
             }, function(error) {
                 console.log("error", error)
             });
+            $scope.showSelectAllLabel = true;
 
-            //self.clusterList = ["First","secnd"]
+            $scope.showAllClus = function () {
+              $scope.limitVariable = Object.keys($scope.getclusterListDistribution).length;
+
+            }
+            $scope.limitVariable = 5;
+            if ( $scope.getclusterListDistribution != undefined || $scope.getclusterListDistribution != null ) {
+                if ( Object.keys($scope.getclusterListDistribution).length <= 5) {
+                    $scope.limitVariable = Object.keys($scope.getclusterListDistribution).length;
+                } else {
+                    $scope.showSelectAllLabel = false;
+                }
+            }
             var jobDetails = common.getJobDetails();
             if (!jobDetails) {
                 jobDetails = { data: false, job: false, monitor: false, jobName: "", clusterName: "" };
@@ -196,53 +190,41 @@ angular.module('newjobconfig.ctrl', [])
             var searchModule = $location.search().module;
 
             if (searchModule) {} else {
-                $scope.autoFillFunObj = { analyzeJob: self.autoFillAnalyzeJob(), optimizedJob  : self.autoFillOptimizeJob(), analyzeData: self.autoFillAnalyzeData() } 
+                $scope.autoFillFunObj = {
+                    analyzeJob: self.autoFillAnalyzeJob(),
+                    analyzeData: self.autoFillAnalyzeData()
+                } 
                 $scope.autoFillFunObj.searchModule;
             }
         };
         self.autoFillAnalyzeJob = function() {
-            //$scope.recentJobResponse = common.getResonseData();
             $scope.NewJobConfigController.jobName = $scope.recentJobResponse.jumbuneJobName;
             $scope.NewJobConfigController.selectedCluster = $scope.recentJobResponse.operatingCluster;
+            $scope.NewJobConfigController.tempDirectory = $scope.recentJobResponse.tempDirectory;
         }
         self.autoFillAnalyzeData = function() {
             $scope.recentJobResponse = common.getResonseData();
-            //$scope.setCurrentTab();
             $scope.NewJobConfigController.jobName = $scope.recentJobResponse.jumbuneJobName;
             $scope.NewJobConfigController.jobSubUser = $scope.recentJobResponse.operatingUser;
             $scope.NewJobConfigController.selectedCluster = $scope.recentJobResponse.operatingCluster;
             $scope.NewJobConfigController.hdfsInputPath = $scope.recentJobResponse.hdfsInputPath;
             $scope.NewJobConfigController.parameters = $scope.recentJobResponse.parameters;
+            $scope.NewJobConfigController.tempDirectory = $scope.recentJobResponse.tempDirectory;
              if ($scope.recentJobResponse.enableDataProfiling == 'TRUE') {
-                //$scope.NewJobConfigController.enableProfiling = 'dataProfiling';
-                //$location.path('/define-analyzeData-info');
                 self.active = 'dataProfilingShow';
                 self.activeTab = 'Data Profiling';
                 self.showTableAnalyzeData = true;
                 self.showdqt = false;
                 self.showhdfsPath = true;
             }
-         /*   if ($scope.recentJobResponse.enableDataProfiling == 'FALSE') {
-                //$scope.NewJobConfigController.enableProfiling = 'dataQuality';
-                self.showTableAnalyzeData = true;
-                self.showdqt = true;
-                self.activeTab = 'Data Quality';
-            }*/
             if ($scope.recentJobResponse.isDataSourceComparisonEnabled == 'TRUE') {
-                //$scope.NewJobConfigController.enableProfiling = 'dataComparison';
                 self.showTableAnalyzeData = true;
                 self.showdqt = false;
                 self.active = 'dataSCShow'
                 self.showhdfsPath = false;
                 self.activeTab = 'Data Source Comparison';
             }
-            /*if ($scope.recentJobResponse.enableDataValidation == 'FALSE') {
-                //$scope.NewJobConfigController.dataValidation = 'false';
-                self.showTableAnalyzeData = true;
-                self.showdqt = false;
-            }*/
             if ($scope.recentJobResponse.enableDataQualityTimeline == 'TRUE') {
-                //$scope.NewJobConfigController.dataValidation = 'true';
                 self.showTableAnalyzeData = true;
                 self.showdqt = true;
                 self.active = 'dataQualityShow'
@@ -250,7 +232,6 @@ angular.module('newjobconfig.ctrl', [])
                 self.showhdfsPath = true;
             }
             if ($scope.recentJobResponse.enableDataValidation == 'TRUE') {
-                //$scope.NewJobConfigController.dataValidation = 'false';
                 self.showTableAnalyzeData = true;
                 self.showdqt = false;
                 self.activeTab = 'Data Validation';
@@ -277,36 +258,13 @@ angular.module('newjobconfig.ctrl', [])
                 self.showhdfsPath = true;
                 $scope.NewJobConfigController.manualRadio = 'XML';
             }
-            if ($scope.recentJobResponse.isDataCleansingEnabled == 'TRUE') {
-                self.activeTab = 'Data Cleansing';
-                self.active = 'dataLCShow';
-                self.showTableAnalyzeData = true;
-                self.showDataFormat = false;
-                self.showhdfsPath = true;
-                self.showhdlc = true;
-                self.showdqt = false;
-                self.showdlc = true;
-                $scope.NewJobConfigController.dlcRoot = $scope.recentJobResponse.dataCleansing.dlcRootLocation;
-                $scope.NewJobConfigController.cleanDataRoot = $scope.recentJobResponse.dataCleansing.cleanDataRootLocation;
-            }
-
-
-
-        }
-
-        self.autoFillOptimizeJob = function() {
-            $scope.recentJobResponse = common.getResonseData();
-            $scope.NewJobConfigController.jobName = $scope.recentJobResponse.jumbuneJobName;
-            $scope.NewJobConfigController.selectedCluster = $scope.recentJobResponse.operatingCluster;
-
         }
 
         self.disableCheckbox = function() {
             return (self.jobName === "" || self.clusterList.length === 0 || !self.selectedCluster)
         };
         self.disableCheckboxAnalyzeData = function() {
-            return (self.jobName === "" || self.clusterList.length === 0 || !self.selectedCluster || self.jobSubUser === "")/* return (self.jobName === "" || self.clusterList.length === 0 || !self.selectedCluster || self.jobSubUser === "" || self.enableProfiling === undefined
-                || self.enableProfiling === "" || !self.enableProfiling )*/
+            return (self.jobName === "" || self.clusterList.length === 0 || !self.selectedCluster || self.jobSubUser === "")
         };
         self.disableSelectCluster = function() {
             return (!self.jobName || !self.clusterList.length);
@@ -314,41 +272,6 @@ angular.module('newjobconfig.ctrl', [])
 
         self.disableSubmitSelectCluster = function() {
             return (self.clusterList.length === 0 || !self.selectedCluster)
-        };
-        self.nextTunning = function() {
-            //$location.path('/job-widget');
-            var errorSelctedClusValue = document.getElementById("selectedCluster").value;
-                if (!errorSelctedClusValue) {
-                    $scope.errorSelctedClus = true;
-                    return false;
-                } else {
-                    $scope.errorSelctedClus = false;
-                }
-            getJobValidateFactory.getJobValidate(
-                //{requestType : 'DELETE'clusterName : 'key'},
-                { jobName: self.jobName }, {},
-                function(data) {
-                    if (data.STATUS == "ERROR" && data.jobName) {
-                        $scope.errorMessage = data.jobName;
-                        $scope.errorMessageShow = true;
-                    } else {
-                        var temp = {
-                            "jobName": self.jobName,
-                            "selCluster": self.selectedCluster
-                        }
-
-                        common.setNewJobDetail(temp);
-                        $location.path('/define-optimized-info');
-                    }
-
-                },
-                function(e) {
-                    console.log(e);
-                });
-            //$location.path('/define-optimized-info').search({flag: 'nextTunning'});
-        };
-        self.backTunning = function() {
-            $location.path('/');
         };
 
         self.next = function() {
@@ -360,7 +283,6 @@ angular.module('newjobconfig.ctrl', [])
                 $scope.errorSelctedClus = false;
             }
             getJobValidateFactory.getJobValidate(
-                //{requestType : 'DELETE'clusterName : 'key'},
                 { jobName: self.jobName }, {},
                 function(data) {
                     if (data.STATUS == "ERROR" && data.jobName) {
@@ -369,12 +291,11 @@ angular.module('newjobconfig.ctrl', [])
                     } else {
                         var jobDetails = {
                             jobName: self.jobName,
-                            clusterName: self.selectedCluster
+                            clusterName: self.selectedCluster,
+                            tempDirectory:self.tempDirectory
                         };
-                        //common.setSelectedJobName(self.jobName);
                         common.setJobDetails(jobDetails);
                         $location.path('/define-job-info');
-                        //$location.path('/job-widget');
                     }
 
                 },
@@ -383,52 +304,23 @@ angular.module('newjobconfig.ctrl', [])
                 });
 
         };
-        self.submitRecurring = function(key, clusterName) {
-            var clusList = common.getAnalyzeDataDetail();
-
-            var dataRecurringSubmit = {
-                "dataQualityTimeLineConfig": { "showJobResult": "TRUE" },
-                "enableDataQualityTimeline": "TRUE",
-                "jumbuneJobName": key,
-                "operatingCluster": clusterName
-            }
-            common.setOptimizeJobName(key);
-            common.setDataRecurring(dataRecurringSubmit);
-            common.setDQTRecFlag(dataRecurringSubmit.enableDataQualityTimeline);
-            var mergedObject = angular.extend({}, dataRecurringSubmit);
-            var jsonDataIs = JSON.stringify(mergedObject);
-            $scope.content = new FormData();
-            $scope.content.append("jsonData", jsonDataIs);
-            var req = {
-                method: 'POST',
-                url: 'apis/jobanalysis/save',
-                headers: { 'Content-Type': undefined },
-                transformRequest: angular.identity,
-                data: $scope.content,
-            };
-
-            $http(req).then(function(data) {
-                $location.path('/analyze-data-quality');
-
-            }, function(error) {
-                console.log("error", error)
-            });
-
+        self.submitRecurring = function(jobName,clusterName) {
+            common.setJobName(jobName);
+            common.setWidgetObject();
+            $location.path('/analyze-data-quality')
         };
         self.backJob = function() {
-            $location.path('/');
+            $location.path('/index');
         };
         /** Function to delete already running DQT jobs */
         self.deleteRecurring = function(key, index) {
 
             var listDeleted = key;
             deleteRecurringFactory.deleteRecurringForm(
-                //{requestType : 'DELETE'clusterName : 'key'},
                 { jobName: listDeleted }, {},
                 function(data) {
                     if (data) {
                         self.getClusterList.data.splice(index, 1);
-                        //delete self.getClusterList.data[key];
                     }
 
                 },
@@ -450,17 +342,6 @@ angular.module('newjobconfig.ctrl', [])
                 $location.path('/add-data-quality')
             }
         });
-        $scope.getDefaultRootFun = function() {
-             getDefaultRootFactory.getDefaultRoot(
-                { clusterName: self.selectedCluster }, {},
-                function(data) {
-                   self.dlcRoot = data.dlcRoot;
-                },
-                function(e) {
-                    console.log(e);
-                });
-
-        }
         self.nextAnalyzeData = function() {
             var currTab = common.getCurrentTab();
             var errorSelctedClusValue = document.getElementById("selectedCluster").value;
@@ -489,7 +370,8 @@ angular.module('newjobconfig.ctrl', [])
                             jumbuneJobName: self.jobName,
                             operatingUser: self.jobSubUser,
                             operatingCluster: self.selectedCluster,
-                            parameters: self.parameters
+                            parameters: self.parameters,
+                            tempDirectory: self.tempDirectory
                         };
                         var mergedObject = angular.extend({}, AnalyzeDataJsonValidation);
                         var jsonDataIs = JSON.stringify(mergedObject);
@@ -527,7 +409,8 @@ angular.module('newjobconfig.ctrl', [])
                                     jumbuneJobName: self.jobName,
                                     operatingUser: self.jobSubUser,
                                     operatingCluster: self.selectedCluster,
-                                    parameters: self.parameters
+                                    parameters: self.parameters,
+                                    tempDirectory: self.tempDirectory
                                 };
 
 
@@ -565,7 +448,8 @@ angular.module('newjobconfig.ctrl', [])
                             jumbuneJobName: self.jobName,
                             operatingUser: self.jobSubUser,
                             operatingCluster: self.selectedCluster,
-                            parameters: self.parameters
+                            parameters: self.parameters,
+                            tempDirectory: self.tempDirectory
                         };
                         var mergedObject = angular.extend({}, AnalyzeDataJsonValidation);
                         var jsonDataIs = JSON.stringify(mergedObject);
@@ -601,7 +485,8 @@ angular.module('newjobconfig.ctrl', [])
                                     jobSubmissionUser: self.jobSubUser,
                                     selectedCluster: self.selectedCluster,
                                     hdfsInputPath: self.hdfsInputPath,
-                                    parameters: self.parameters
+                                    parameters: self.parameters,
+                                    tempDirectory: self.tempDirectory
                                 };
                                 common.setAnalyzeDataDetailJSON(AnalyzeData);
                                 var filenameis = $scope.filePath;
@@ -743,11 +628,8 @@ angular.module('newjobconfig.ctrl', [])
                         console.log(e);
                     });
             }
-            //var dataProradio = document.getElementById('dataProfilingRadio');
             var dataQualityradio = document.getElementById('dataQuality');
-            /*if (dataProradio.checked == true) {
-                currTab = 'DataProfiling'
-            }*/
+
             if (self.active == 'dataProfilingShow' && self.showTableAnalyzeData == true) {
                 getJobValidateFactory.getJobValidate({
                         jobName: self.jobName
@@ -760,7 +642,8 @@ angular.module('newjobconfig.ctrl', [])
                             jumbuneJobName: self.jobName,
                             operatingUser: self.jobSubUser,
                             operatingCluster: self.selectedCluster,
-                            parameters: self.parameters
+                            parameters: self.parameters,
+                            tempDirectory: self.tempDirectory
                         };
                         var mergedObject = angular.extend({}, AnalyzeDataJsonValidation);
                         var jsonDataIs = JSON.stringify(mergedObject);
@@ -796,7 +679,8 @@ angular.module('newjobconfig.ctrl', [])
                                     jobSubUser: self.jobSubUser,
                                     clusterName: self.selectedCluster,
                                     hdfsInputPath: self.hdfsInputPath,
-                                    parameters: self.parameters
+                                    parameters: self.parameters,
+                                    tempDirectory: self.tempDirectory
                                 };
                                 common.setAnalyzeDataDetail(AnalyzeData);
                                 $location.path('/define-analyzeData-info')
@@ -813,7 +697,6 @@ angular.module('newjobconfig.ctrl', [])
             }
             var dataSCradio = document.getElementById('dataSourceComparison');
             if (self.active == 'dataSCShow' && self.showTableAnalyzeData == true) {
-                    //$location.path('/data-validation-comp')
                 getJobValidateFactory.getJobValidate({
                         jobName: self.jobName
                     }, {},
@@ -867,7 +750,6 @@ angular.module('newjobconfig.ctrl', [])
                     });
             }
             if (self.active == 'dataQualityShow' && self.showTableAnalyzeData == true || self.showdqt == true) {
-                //$location.path('/recurring-info');
                 getJobValidateFactory.getJobValidate({
                         jobName: self.jobName
                     }, {},
@@ -879,7 +761,8 @@ angular.module('newjobconfig.ctrl', [])
                             jumbuneJobName: self.jobName,
                             operatingUser: self.jobSubUser,
                             operatingCluster: self.selectedCluster,
-                            parameters: self.parameters
+                            parameters: self.parameters,
+                            tempDirectory: self.tempDirectory
                         };
                         var mergedObject = angular.extend({}, AnalyzeDataJsonValidation);
                         var jsonDataIs = JSON.stringify(mergedObject);
@@ -915,7 +798,8 @@ angular.module('newjobconfig.ctrl', [])
                                     jobSubUser: self.jobSubUser,
                                     clusterName: self.selectedCluster,
                                     hdfsInputPath: self.hdfsInputPath,
-                                    parameters: self.parameters
+                                    parameters: self.parameters,
+                                    tempDirectory: self.tempDirectory
                                 };
                                 common.setAnalyzeDataDetail(AnalyzeData);
                                 $location.path('/add-data-quality');
@@ -930,98 +814,12 @@ angular.module('newjobconfig.ctrl', [])
                     });
             }
 
-            if (self.active == 'dataLCShow' && self.showTableAnalyzeData == true) {
-                var errordlcdataValue = document.getElementById("dlcRoot").value;
-                if (!errordlcdataValue) {
-                    $scope.errordlcdata = true;
-                    return false;
-                } else {
-                    $scope.errordlcdata = false;
-                }
-                var errorCleandataValue = document.getElementById("cleanDataRoot").value;
-                if (!errorCleandataValue) {
-                    $scope.errorCleandata = true;
-                    return false;
-                } else {
-                    $scope.errorCleandata = false;
-                }
-                getJobValidateFactory.getJobValidate({
-                        jobName: self.jobName
-                    }, {},
-                    function(data) {
-                        var filePath = common.getJobJarFile();
-                        var AnalyzeDataJsonValidation = {
-                            hdfsInputPath: self.hdfsInputPath,
-                            jumbuneJobName: self.jobName,
-                            operatingUser: self.jobSubUser,
-                            operatingCluster: self.selectedCluster,
-                            parameters: self.parameters,
-                            dlcRootLocation: self.dlcRoot,
-                            cleanDataRootLocation: self.cleanDataRoot
-                        };
-                        var mergedObject = angular.extend({}, AnalyzeDataJsonValidation);
-                        var jsonDataIs = JSON.stringify(mergedObject);
-                        $scope.content = new FormData();
-                        $scope.content.append("jsonData", jsonDataIs);
-                        var req = {
-                            method: 'POST',
-                            url: '/apis/validateservice/validatejobinput',
-                            headers: { 'Content-Type': undefined },
-                            transformRequest: angular.identity,
-                            data: $scope.content,
-                        };
-
-                        $http(req).then(function(data1) {
-
-                            if (data.STATUS == "ERROR") {
-                                $scope.errorMessage = data.jobName;
-                                $scope.errorMessageShow = true;
-                            } else {
-                                $scope.errorMessageShow = false;
-                            }
-
-                            if (data1.data.STATUS == "ERROR") {
-                                $scope.errorMessageHdfs = data1.data.hdfsInputPath;
-                                $scope.errorMessageShowHdfs = true;
-                            } else {
-                                $scope.errorMessageShowHdfs = false;
-                            }
-
-                            if (data.STATUS == "SUCCESS" && data1.data.STATUS == "SUCCESS") {
-                                var AnalyzeData = {
-                                    jumbuneJobName: self.jobName,
-                                    operatingUser: self.jobSubUser,
-                                    operatingCluster: self.selectedCluster,
-                                    hdfsInputPath: self.hdfsInputPath,
-                                    parameters: self.parameters,
-                                    dlcRootLocation: self.dlcRoot,
-                                    cleanDataRootLocation: self.cleanDataRoot
-                                };
-                                common.setAnalyzeDataDetail(AnalyzeData);
-                                common.setOptimizeJobName(self.jobName);
-                                //$location.path('/define-analyzeData-cleansing')
-                                $location.path('/data-cleansing')
-                            }
-                        }, function(error) {
-                            console.log("error", error)
-                        });
-
-                    },
-                    function(e) {
-                        console.log(e);
-                    });
-
-            }
-
-
         };
         self.backAnalyzeData = function() {
             self.showTableAnalyzeData = false;
-            //$location.path('/');
-            //$location.path('/add-analyze-data-configuration');
         };
         self.backAnalyzeDataModule = function() {
-			$location.path('/');
+			$location.path('/index');
 		};
         this.isFormInvalid = function() {};
 
@@ -1036,11 +834,9 @@ angular.module('newjobconfig.ctrl', [])
         };
 
         self.disableNextButton = function() {
-            //return !(!self.disableCheckbox() && (self.dataAnalysis || self.jobAnalysis || self.monitoring));
             return !(!self.disableCheckbox());
         };
         self.disableNextAnalyzeData = function() {
-            //return !(!self.disableCheckbox() && (self.dataAnalysis || self.jobAnalysis || self.monitoring));
             return !(!self.disableCheckboxAnalyzeData());
         };
 
@@ -1048,32 +844,10 @@ angular.module('newjobconfig.ctrl', [])
             common.setJobConfigMethod(index, checked);
         };
 
-        self.submit = function() {
+        self.submit = function(cluster) {
             var selectClus = self.selectedCluster;
-            /*analyzeClusterFactory.submitAnalyzeCluster({
-                },selectClus,
-                function(data){
-                    console.log("submitAnalyzeCluster",data)
-                },
-                function(e){
-                    console.log(e);
-                });*/
-            var selectClus = self.selectedCluster;
+            var selectClus = cluster;
             common.setSelectedClusterNameForRun(selectClus);
-            validateLicenseFactory.validateLicense(
-                //{requestType : 'DELETE'clusterName : 'key'},
-                { clusterName: selectClus }, {},
-                function(data) {
-                    //if(data == true) {
-                    //var test = JSON.parse(data)
-                    //$location.path('/analyze-cluster');
-                    // }
-
-
-                },
-                function(e) {
-                    console.log("error")
-                });
             $location.path('/analyze-cluster');
 
 
@@ -1082,9 +856,8 @@ angular.module('newjobconfig.ctrl', [])
             $location.path('/index');
 
         };
-        self.cancelRecurring = function() {
-            //$location.path('/add-analyze-data-configuration');
-            $location.path('/');
+		self.cancelRecurring = function() {
+            $location.path('/index');
 
         };
 

@@ -1,9 +1,8 @@
-/* Dashboard controller */
+/* Analyze Data controller */
 'use strict';
 angular.module('analyzeData.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagination'])
 	.controller('AnalyzeData', ['$scope', 'common', '$http', '$location', '$timeout', 'uiGridConstants', 'getTableDataFactory', 'getXmlTableDataFactory', 'getJsonTableDataFactory', function($scope, common, $http, $location, $timeout, uiGridConstants, getTableDataFactory, getXmlTableDataFactory, getJsonTableDataFactory) {
-		//Voilation detail grid
-		var jobName                        = common.getOptimizeJobName();
+		var jobName                        = common.getJobName();
 		$scope.showJobName                 = jobName;
 		$scope.violationTable              = {};
 		$scope.violationJSONTable          = {};
@@ -17,8 +16,6 @@ angular.module('analyzeData.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.paginati
 		$scope.hideTopFieldCounter         = false;
 		$scope.hideTopTypeViolationMessage = false;
 		$scope.webSocketErrorFlag = false;
-		$scope.licenseExpireTrue = false;
-        $scope.licenseExpireDays = false;
 		var graphJson                      = [{
 			"key": "clean Tuples",
 			"values": ""
@@ -45,9 +42,8 @@ angular.module('analyzeData.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.paginati
 			$scope.selectedGraphPoint = {};
 			var host                  = window.location.hostname;
 			var port                  = window.location.port;
-			var jobName               = common.getOptimizeJobName();
+			var jobName               = common.getJobName();
 			$('[data-toggle="tooltip"]').tooltip();
-            licenseExpireMessage();
 			if (jobName != null && jobName != undefined && jobName.length != 0) {               
 				localStorage.setItem('jobName', jobName);
 			} else {            
@@ -55,10 +51,15 @@ angular.module('analyzeData.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.paginati
 			}   
 			$scope.finalJobName = jobName;
 			if ($scope.finalJobName == null || $scope.finalJobName == undefined || $scope.finalJobName == "") {
-				$location.path('/');
+				$location.path('/dashboard');
 			} else {
-				     
-			var url = "ws://" + host + ":" + port + "/results/jobanalysis?jobName=" + $scope.finalJobName;                  
+								     
+				if (document.location.protocol === 'https:') {
+					var url = "wss://" + host + ":" + port + "/results/jobanalysis?jobName=" + $scope.finalJobName;;
+				} else {
+					var url = "ws://" + host + ":" + port + "/results/jobanalysis?jobName=" + $scope.finalJobName;;
+				}   
+				              
 			$scope.showJobName = $scope.finalJobName;
 			var webSocket = new WebSocket(url);
 
@@ -72,20 +73,19 @@ angular.module('analyzeData.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.paginati
 				$('.message-loader').remove();
 				$scope.webSocketErrorFlag = true;
 				var serverData = angular.copy(event.data);
-				console.log("webSocket data", serverData);
 				var localData = JSON.parse(serverData).DATA_QUALITY_TIMELINE;
 				var doErrorsExist = $scope.containErrors(localData);
 				if (doErrorsExist) {
 					return;
 				}
-				//$scope.createGraph(localData); 
-				//$scope.dataQualityTimeline(localData);
 				$scope.makeAndShowGraph(localData);
 			};
 			webSocket.onerror = function(error) {
 				$scope.displayErrorMessage("Connection lost to server");
 			};
 			webSocket.onclose = function(event) {
+				$('.ring-loader').remove();
+				$('.message-loader').remove();
 				if ($scope.webSocketErrorFlag == false) {
 						$scope.displayErrorMessage("Connection lost to server");
 					} else {
@@ -94,64 +94,10 @@ angular.module('analyzeData.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.paginati
 			};
 			
 			}
-
-			//$scope.dataProfiling();
 		}
-		function licenseExpireMessage ()  { 
-            //licenseValidateFactory.submitLicense({},function(data) {
-                    var data = common.getNodeSize();
-                    var currentDate = data.currentTime;
-                    if (data['Valid Until']) {
-                        var expiryDate = data['Valid Until'];
-                        var temp = new Date(data['Valid From']).toString();
-                        data['Valid From'] = temp.substring(4, 16) + temp.substring(25);
-                        temp = new Date(data['Valid Until']).toString();
-                        data['Valid Until'] = temp.substring(4, 16) + temp.substring(25); 
-                        var milliseconds = (expiryDate - currentDate);
-                        var daysDiff = milliseconds/86400000;
-                        if ( daysDiff <= 3) {
-                            if ( daysDiff >= 1) {
-                                $scope.daysDiffShow = Math.round(daysDiff);
-                                $scope.licenseExpireDays = true;
-                                $scope.licenseExpireTrue = false;
-                            } else {
-                                $scope.licenseExpireTrue = true;
-                                $scope.licenseExpireDays = false;
-                            }
-                        } 
-                    }
-                //},
-            //function(e) {
-                //console.log(e);
-            //}); 
-        }
 		$scope.containErrors = function(localData) {
 			localData = JSON.parse(localData);
-			/*var errorMessageToDisplay;
-			if (localData == undefined) {
-				$scope.displayErrorMessage("Unable to fetch data from server");
-			}
-			var errorData = localData.ErrorAndException;
-			if (errorData != null) {
-
-				if (jQuery.isEmptyObject(errorData)) {
-					errorMessageToDisplay = "Error occurs while running job."
-				} else {
-					for (var key in errorData) {
-						if (key == undefined) {
-							continue;
-						}
-						if (key != errorData[key]) {
-							errorMessageToDisplay = key + '. ' + errorData[key];
-						} else {
-							errorMessageToDisplay = key + ".";
-						}
-						errorMessageToDisplay = key + ".";
-					}
-				}
-				$scope.displayErrorMessage(errorMessageToDisplay);
-				return true;*/
-				var errorMessageToDisplay = "Something went wrong, Please contact 'help@jumbune.com'.";
+			var errorMessageToDisplay = "Something went wrong, Please contact 'help@jumbune.com'.";
             if (localData == undefined) {
                 $scope.displayErrorMessage("Unable to fetch data from server");
             }
@@ -183,7 +129,7 @@ angular.module('analyzeData.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.paginati
 
 			var dataValGraph = common.getDQTFlag();
 			if (dataValGraph) {
-				$("#tuningWidgetWrapper").remove();
+				$("#qualityWidgetWrapper").remove();
 			}
 			var errorDiv = document.getElementById('errorMessage');
 			errorDiv.style.display = '';
@@ -204,7 +150,7 @@ angular.module('analyzeData.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.paginati
 			$scope.init();
 		}
 		$scope.clickedHomeIcon = function() {
-			$location.path("/");
+			$location.path("/dashboard");
 		}
 		$scope.totalViolationsArray = new Array();
 		$scope.fieldArray = new Array();
@@ -213,10 +159,6 @@ angular.module('analyzeData.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.paginati
 
 				var jsonObj = JSON.parse(dataMaster[key].jsonReport);
 				$scope.countersDataValidation(jsonObj);
-				//$scope.JsonDataValidation(jsonObj);
-				//var data_type = (jsonObj["data_type"] == "undefined")? 0:jsonObj["Data Type"].totalViolations;
-
-				//var null_check = (jsonObj["Null Check"] == "undefined")? 0:jsonObj["Null Check"].totalViolations;
 				var regex = 0;
 				if (jsonObj["Regex"]) {
 					regex = jsonObj["Regex"].totalViolations;
@@ -261,9 +203,6 @@ angular.module('analyzeData.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.paginati
 					sunburstJson['children'].push(obj);
 				}
 				$scope.printGraph("#dataValidationGraph", sunburstJson);
-
-
-				//("in createGraph",null_check)
 				var sum_main_total = data_type + null_check + regex;
 				var sum_num_total = num_type;
 				var per_data_type = Math.round((data_type / sum_main_total) * 10000, 2) / 100;
@@ -284,7 +223,6 @@ angular.module('analyzeData.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.paginati
 
 
 					var sub_num_type_array = [];
-					//var fieldMap =[];
 					for (var sub_key in sub_num_type) {
 						var per_data_type1 = Math.round((sub_num_type[sub_key] / sum_sub_num_type) * 10000, 2) / 100;
 						var fieldMap = (sub_key)
@@ -305,10 +243,8 @@ angular.module('analyzeData.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.paginati
 
 
 					var sub_data_type_array = [];
-					//var fieldMap =[];
 					for (var sub_key in sub_data_type) {
 						var per_data_type1 = Math.round((sub_data_type[sub_key] / sum_sub_data_type) * 10000, 2) / 100;
-						//fieldMap.push(sub_key)
 						var fieldMap = (sub_key);
 						sub_data_type_array.push({ "nodeData": { "age": "Data Type", "population": sub_data_type[sub_key], "percent": per_data_type1, "fieldMap": fieldMap } })
 					}
@@ -356,8 +292,6 @@ angular.module('analyzeData.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.paginati
 					cleanTuple = jsonObj["DVSUMMARY"].cleanTuples;
 					dirtyTuple = jsonObj["DVSUMMARY"].dirtyTuples;
 				}
-				//var cleanTuple = jsonObj["Data Type"].cleanTuple;
-				//var dirtyTuple = jsonObj["Data Type"].dirtyTuple;
 				sunburstJson = {
 					'name': 'Total Tuples',
 					'children': [{
@@ -423,7 +357,7 @@ angular.module('analyzeData.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.paginati
 				if (keysPresent.indexOf("Null Check") >= 0) {
 					nullInfected = jsonReport["Null Check"]["dirtyTuple"];
 				}
-				nullTemp[1] = nullInfected; //((nullInfected/totalTuples)*100)//
+				nullTemp[1] = nullInfected;
 				nullValues[i] = nullTemp;
 
 				//calculation of datatype violations 
@@ -432,7 +366,7 @@ angular.module('analyzeData.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.paginati
 				if (keysPresent.indexOf("Data Type") >= 0) {
 					dataTypeInfected = jsonReport["Data Type"]["dirtyTuple"];
 				}
-				dataTypeTemp[1] = dataTypeInfected; //((dataTypeInfected/totalTuples)*100)//
+				dataTypeTemp[1] = dataTypeInfected;
 				dataTypeValues[i] = dataTypeTemp;
 
 				//calculation of Regex violations 
@@ -441,7 +375,7 @@ angular.module('analyzeData.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.paginati
 				if (keysPresent.indexOf("Regex") >= 0) {
 					regexInfected = jsonReport["Regex"]["dirtyTuple"];
 				}
-				regexTemp[1] = regexInfected; //((dataTypeInfected/totalTuples)*100)//
+				regexTemp[1] = regexInfected;
 				regexValues[i] = regexTemp;
 
 				//calculation of Number of fields violations 
@@ -450,7 +384,7 @@ angular.module('analyzeData.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.paginati
 				if (keysPresent.indexOf("Number of Fields") >= 0) {
 					fieldInfected = jsonReport["Number of Fields"]["dirtyTuple"];
 				}
-				fieldTemp[1] = fieldInfected; //((dataTypeInfected/totalTuples)*100)//
+				fieldTemp[1] = fieldInfected;
 				fieldValues[i] = fieldTemp;
 
 			} // End of for

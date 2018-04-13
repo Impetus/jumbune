@@ -26,10 +26,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.jumbune.common.utils.FileUtil;
-import org.jumbune.datavalidation.DataValidationConstants;
 import org.jumbune.datavalidation.xml.helper.XMLFileInputFormat;
 import org.jumbune.datavalidation.xml.helper.XsdParser;
-import org.jumbune.datavalidation.ArrayListWritable;
 
 import com.google.gson.Gson;
 

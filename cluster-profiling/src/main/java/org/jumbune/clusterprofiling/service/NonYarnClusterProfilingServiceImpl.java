@@ -32,7 +32,7 @@ public class NonYarnClusterProfilingServiceImpl implements ClusterProfilingServi
 	}
 
 	/* (non-Javadoc)
-	 * @see com.impetus.jumbune.clusterprofiling.service.ClusterProfilingService#getQueueStats(org.jumbune.common.job.Config)
+	 * @see org.jumbune.clusterprofiling.service.ClusterProfilingService#getQueueStats(org.jumbune.common.job.Config)
 	 */
 	@Override
 	public List<QueueStats> getQueueStats(Cluster cluster) throws IOException, InterruptedException{
@@ -43,7 +43,7 @@ public class NonYarnClusterProfilingServiceImpl implements ClusterProfilingServi
 	}
 
 	/* (non-Javadoc)
-	 * @see com.impetus.jumbune.clusterprofiling.service.ClusterProfilingService#getRackAwareStats(org.jumbune.common.job.Config)
+	 * @see org.jumbune.clusterprofiling.service.ClusterProfilingService#getRackAwareStats(org.jumbune.common.job.Config)
 	 */
 	@Override
 	public RackAwareStats getRackAwareStats(Cluster cluster) throws IOException {
@@ -54,7 +54,7 @@ public class NonYarnClusterProfilingServiceImpl implements ClusterProfilingServi
 	}
 
 	/* (non-Javadoc)
-	 * @see com.impetus.jumbune.clusterprofiling.service.ClusterProfilingService#getEffCapUtilizationStats(org.jumbune.common.job.Config)
+	 * @see org.jumbune.clusterprofiling.service.ClusterProfilingService#getEffCapUtilizationStats(org.jumbune.common.job.Config)
 	 */
 	@Override
 	public List<EffCapUtilizationStats> getEffCapUtilizationStats(Cluster cluster, List<ApplicationReport> list) throws IOException, InterruptedException {
@@ -63,7 +63,7 @@ public class NonYarnClusterProfilingServiceImpl implements ClusterProfilingServi
 	}
 
 	/* (non-Javadoc)
-	 * @see com.impetus.jumbune.clusterprofiling.service.ClusterProfilingService#getJobStats(org.jumbune.common.job.JumbuneRequest, java.lang.String)
+	 * @see org.jumbune.clusterprofiling.service.ClusterProfilingService#getJobStats(org.jumbune.common.job.JumbuneRequest, java.lang.String)
 	 */
 	@Override
 	public JobOutput getJobStats(Cluster cluster, String jobID) throws IOException {

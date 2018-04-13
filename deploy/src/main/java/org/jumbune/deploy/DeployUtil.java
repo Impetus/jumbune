@@ -34,11 +34,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.CodeSource;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Scanner;
@@ -60,18 +58,13 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
-import org.jumbune.common.beans.cluster.Agent;
-import org.jumbune.common.beans.cluster.Agents;
-import org.jumbune.common.beans.cluster.HadoopUsers;
-import org.jumbune.common.beans.cluster.NameNodes;
 import org.jumbune.common.utils.Constants;
+import org.jumbune.common.utils.ExtendedConstants;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.utils.Versioning;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import org.jumbune.common.beans.cluster.EnterpriseClusterDefinition;
-import org.jumbune.common.utils.ExtendedConstants;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 
@@ -124,7 +117,7 @@ public final class DeployUtil {
 	private DeployUtil() {
 		agentJars = new String[] { "jumbune-datavalidation", "log4j-core-", "log4j-api-", "jumbune-common-",
 				"jumbune-utils-", "gson-", "commons-logging-", "commons-configuration-", "commons-lang-",
-				"jackson-mapper-asl-", "jackson-core-asl-", "jumbune-rumen-", "jumbune-ee-common-", "jumbune-ee-utils-",
+				"jackson-mapper-asl-", "jackson-core-asl-", "jumbune-rumen-",
 				"remoting-common-", "remoting-jsch-", "curator-client-", "curator-framework-", "curator-recipes-",
 				"zookeeper-", "jsch-", "guava-", "slf4j-api-", "slf4j-log4j12-", "slf4j-simple-" };
 		
@@ -134,35 +127,34 @@ public final class DeployUtil {
 		executableFiles = new String[] {"/bin/startWeb", "/bin/stopWeb", "/bin/runCli" };
 		
 		UPDATE_WAR_CLASSES_FILE = "/modules/jumbune-web-"
-				+ Versioning.ENTERPRISE_BUILD_VERSION + Versioning.ENTERPRISE_DISTRIBUTION_NAME
+				+ Versioning.COMMUNITY_BUILD_VERSION + Versioning.COMMUNITY_DISTRIBUTION_NAME
 				+ ".war WEB-INF/classes";
 		
 		CLEAN_UNUSED_FILES_AND_DIRS = "rm -rf WEB-INF/ skins META-INF/ jsp/ lib/";
 		
 		UPDATE_WAR_FILE = "/modules/jumbune-web-"
 				
-				+ Versioning.ENTERPRISE_BUILD_VERSION + Versioning.ENTERPRISE_DISTRIBUTION_NAME
+				+ Versioning.COMMUNITY_BUILD_VERSION + Versioning.COMMUNITY_DISTRIBUTION_NAME
 				+ ".war WEB-INF/lib";
 		
 		UPDATE_AGENT_JAR = "/agent-distribution/jumbune-remoting-"
-				+ Versioning.ENTERPRISE_BUILD_VERSION + Versioning.ENTERPRISE_DISTRIBUTION_NAME
+				+ Versioning.COMMUNITY_BUILD_VERSION + Versioning.COMMUNITY_DISTRIBUTION_NAME
 				+ "-agent.jar lib/";
 		
 		influxDBConfMap = new HashMap<String, Object>();
 		FoundPaths = new HashMap<String, String>(3);
-		SCANNER = new Scanner(System.in);
 		
-		sampleClusterJsonFormat = "{\"zks\":[{\"host\":\"\",\"port\":\"2181\"}],\"cluste"
-				+ "rName\":\"%s\",\"nameNodes\":{\"hosts\":[\"%s\"],\"hasPasswordlessAcc"
-				+ "ess\":%s,\"haEnabled\":false},\"hadoopUsers\":{\"hdfsUser\":\"hdf"
-				+ "s\",\"yarnUser\":\"yarn\",\"mapredUser\":\"mapred\",\"fsUse"
-				+ "r\":\"%s\",\"hasSingleUser\":true,\"fsPrivateKeyPath\": %s, \"f"
-				+ "sUserPassword\" : %s},\"agents\":{\"user\":\"%s\",\"agents\":[{\"hos"
-				+ "t\":\"%s\",\"port\":\"2161\"}],\"hasPasswordlessAccess\": \"%s\",\"s"
-				+ "shAuthKeysFile\":%s, \"password\" : %s, \"haEnabled\":false},\"enableH"
-				+ "ostRange\":\"FALSE\",\"taskManagers\":{\"hosts\":[\"%s\"],\"hasPasswor"
-				+ "dlessAccess\":%s},\"workers\":{\"hosts\":[],\"workDirectory\":\"/hom"
-				+ "e/%s/temp/\",\"user\":\"%s\"},\"jmxPluginEnabled\":true}";
+		sampleClusterJsonFormat = "{\"zks\":[{\"host\":\"\",\"port\":\"2181\"}],\"clusterName\":\"%"
+				+ "s\",\"nameNodes\":{\"nameNodeJmxPort\": \"5677\",\"hosts\":[\"%s\"],\"hasPasswor"
+				+ "dlessAccess\":%s,\"haEnabled\":false},\"hadoopUsers\":{\"hdfsUser\":\"hdfs\",\"y"
+				+ "arnUser\":\"yarn\",\"mapredUser\":\"mapred\",\"fsUser\":\"%s\",\"hasSingleUser\""
+				+ ":true,\"fsPrivateKeyPath\": %s, \"fsUserPassword\" : %s},\"agents\":{\"user\":\""
+				+ "%s\",\"agents\":[{\"host\":\"%s\",\"port\":\"2161\"}],\"hasPasswordlessAccess\":"
+				+ " \"%s\",\"sshAuthKeysFile\":%s, \"password\" : %s, \"haEnabled\":false},\"enable"
+				+ "HostRange\":\"FALSE\",\"taskManagers\":{\"taskManagerJmxPort\": \"5680\",\"hosts"
+				+ "\":[\"%s\"],\"hasPasswordlessAccess\":%s},\"workers\":{\"dataNodeJmxPort\": \"56"
+				+ "79\",\"taskExecutorJmxPort\": \"5678\",\"hosts\":[],\"workDirectory\":\"/home/%s"
+				+ "/temp/\",\"user\":\"%s\"},\"jmxPluginEnabled\":false}";
 		
 	}
 
@@ -206,7 +198,7 @@ public final class DeployUtil {
 		String distributionType = prop.getProperty("hadoop-distribution");
 		boolean isYarn = !distributionType.equalsIgnoreCase("Non-Yarn") ? true : false;
 		Session session = null;
-		
+		SCANNER = new Scanner(System.in);
 		try {
 			CONSOLE_LOGGER.info(
 					"--Jumbune built for [" + distributionType + " based Hadoop] distributions--");
@@ -249,7 +241,7 @@ public final class DeployUtil {
 			moveConfigurationDirectory();
 			
 			copyFilesForSchedulerJarsIntoLib(distributionType, hadoopDistributionType);
-			
+			changeFilePermissionOfAgentScript();
 			changeFilePermissionOfInfluxDBScript();
 			createDefaultInfluxDBJsonFile();
 			
@@ -265,6 +257,7 @@ public final class DeployUtil {
 				session.disconnect();
 			}
 			cleanup();
+			SCANNER.close();
 		}
 	}
 	
@@ -564,6 +557,15 @@ public final class DeployUtil {
 			jumbuneHome = jumbuneHome + "/";
 		}
 		File file = new File(jumbuneHome + "bin/install-influxdb.sh");
+		file.setExecutable(true, true);
+	}
+	
+	private void changeFilePermissionOfAgentScript() {
+		String jumbuneHome = FoundPaths.get(JUMBUNE_HOME);
+		if (!jumbuneHome.endsWith("/")) {
+			jumbuneHome = jumbuneHome + "/";
+		}
+		File file = new File(jumbuneHome + "agent-distribution/bin/startAgent");
 		file.setExecutable(true, true);
 	}
 	
@@ -1216,8 +1218,8 @@ public final class DeployUtil {
 		Deployer deployer = DeployerFactory.getDeployer(distributionType, hadoopDistributionType);
 		String[] SchedularJars = deployer.getSchedularJars();
 		String jumbuneHome = FoundPaths.get(JUMBUNE_HOME);
-		String warPath = jumbuneHome + "/modules/jumbune-web-" + Versioning.ENTERPRISE_BUILD_VERSION
-				+ Versioning.ENTERPRISE_DISTRIBUTION_NAME + ".war";
+		String warPath = jumbuneHome + "/modules/jumbune-web-" + Versioning.COMMUNITY_BUILD_VERSION
+				+ Versioning.COMMUNITY_DISTRIBUTION_NAME + ".war";
 		String libLocation = jumbuneHome + "/lib/";
 		URL url = new URL("jar:file:" + warPath + "!/");
 		JarURLConnection jarConnection = (JarURLConnection) url.openConnection();

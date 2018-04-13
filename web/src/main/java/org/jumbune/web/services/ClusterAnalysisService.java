@@ -3,7 +3,6 @@ package org.jumbune.web.services;
 import static org.jumbune.web.utils.WebConstants.CLUSTER_NAME;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Type;
@@ -23,7 +22,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.DefaultValue;
@@ -41,19 +39,45 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.ApplicationResourceUsageReport;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.jumbune.common.beans.JumbuneInfo;
+import org.jumbune.clusterprofiling.SchedulerService;
+import org.jumbune.clusterprofiling.beans.JobQueueBean;
+import org.jumbune.clusterprofiling.beans.QueueStats;
+import org.jumbune.clusterprofiling.service.ClusterProfilingService;
+import org.jumbune.clusterprofiling.yarn.AlertGenerator;
+import org.jumbune.clusterprofiling.yarn.ClusterAnalysisMetrics;
+import org.jumbune.clusterprofiling.yarn.MajorCounters;
+import org.jumbune.clusterprofiling.yarn.QueueAlert;
+import org.jumbune.clusterprofiling.yarn.beans.CapacitySchedulerQueueInfo;
+import org.jumbune.clusterprofiling.yarn.beans.ClusterMetrics;
+import org.jumbune.clusterprofiling.yarn.beans.FairSchedulerQueueInfo;
+import org.jumbune.clusterprofiling.yarn.beans.Scheduler;
+import org.jumbune.common.alerts.HAAlert;
+import org.jumbune.common.alerts.YarnAlert;
+import org.jumbune.common.beans.Alert;
+import org.jumbune.common.beans.EffCapUtilizationStats;
 import org.jumbune.common.beans.cluster.Cluster;
-import org.jumbune.common.job.JobConfig;
+import org.jumbune.common.beans.cluster.ClusterCache;
+import org.jumbune.common.beans.cluster.ClusterDefinition;
+import org.jumbune.common.influxdb.InfluxDBUtil;
+import org.jumbune.common.influxdb.InfluxDataReader;
+import org.jumbune.common.influxdb.InfluxDataWriter;
+import org.jumbune.common.influxdb.beans.Query;
+import org.jumbune.common.influxdb.beans.ResultSet;
+import org.jumbune.common.influxdb.beans.ResultSet.Result.Series;
+import org.jumbune.common.integration.notification.AlertMailSender;
+import org.jumbune.common.integration.notification.AlertNotifier;
+import org.jumbune.common.integration.notification.TicketingImpl;
+import org.jumbune.common.integration.notification.TrapSender;
 import org.jumbune.common.utils.Constants;
+import org.jumbune.common.utils.ExtendedConstants;
 import org.jumbune.common.utils.FileUtil;
+import org.jumbune.common.utils.JMXUtility;
+import org.jumbune.common.utils.JobRequestUtil;
 import org.jumbune.profiling.beans.ClusterInfo;
 import org.jumbune.profiling.beans.JMXDeamons;
 import org.jumbune.profiling.beans.NodeInfo;
@@ -76,59 +100,22 @@ import org.jumbune.utils.conf.beans.ProcessType;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
 import org.jumbune.utils.yarn.communicators.MRCommunicator;
 import org.jumbune.utils.yarn.communicators.RMCommunicator;
-
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.reflect.TypeToken;
-import org.jumbune.clusterprofiling.SchedulerService;
-import org.jumbune.clusterprofiling.beans.JobQueueBean;
-import org.jumbune.clusterprofiling.beans.QueueStats;
-import org.jumbune.clusterprofiling.recommendations.RecommendationAlerts;
-import org.jumbune.clusterprofiling.recommendations.Recommendations;
-import org.jumbune.clusterprofiling.recommendations.RecommendationsAlertImpl;
-import org.jumbune.clusterprofiling.service.ClusterProfilingService;
-import org.jumbune.clusterprofiling.yarn.beans.CapacitySchedulerQueueInfo;
-import org.jumbune.clusterprofiling.yarn.beans.ClusterMetrics;
-import org.jumbune.clusterprofiling.yarn.beans.FairSchedulerQueueInfo;
-import org.jumbune.clusterprofiling.yarn.beans.Scheduler;
-import org.jumbune.clusterprofiling.yarn.AlertGenerator;
-import org.jumbune.common.alerts.HAAlert;
-import org.jumbune.common.alerts.YarnAlert;
-import org.jumbune.common.beans.Alert;
-import org.jumbune.common.beans.ApplicationType;
-import org.jumbune.common.beans.EffCapUtilizationStats;
-import org.jumbune.common.beans.cluster.ClusterCache;
-import org.jumbune.common.beans.cluster.EnterpriseCluster;
-import org.jumbune.common.beans.cluster.EnterpriseClusterDefinition;
-import org.jumbune.clusterprofiling.yarn.MajorCounters;
-import org.jumbune.common.influxdb.InfluxDBUtil;
-import org.jumbune.common.influxdb.InfluxDataReader;
-import org.jumbune.common.influxdb.InfluxDataWriter;
-import org.jumbune.common.influxdb.beans.Query;
-import org.jumbune.common.influxdb.beans.ResultSet;
-import org.jumbune.common.influxdb.beans.ResultSet.Result.Series;
-import org.jumbune.common.integration.notification.AlertMailSender;
-import org.jumbune.common.integration.notification.AlertNotifier;
-import org.jumbune.common.integration.notification.TicketingImpl;
-import org.jumbune.common.integration.notification.TrapSender;
-import org.jumbune.clusterprofiling.yarn.ClusterAnalysisMetrics;
-import org.jumbune.common.utils.ExtendedConstants;
-import org.jumbune.common.utils.JMXUtility;
-import org.jumbune.common.utils.JobRequestUtil;
-import org.jumbune.clusterprofiling.yarn.QueueAlert;
 import org.jumbune.web.beans.AppFinishTimeComparator;
 import org.jumbune.web.beans.DataLoad;
 import org.jumbune.web.beans.Graph;
 import org.jumbune.web.beans.Graphs;
 import org.jumbune.web.beans.NodeSpecificSetting;
 import org.jumbune.web.process.BackgroundProcessManager;
-import org.jumbune.web.utils.AnalyzeClusterExcelExport;
 import org.jumbune.web.utils.FairSchedularEnabledCache;
 import org.jumbune.web.utils.SessionUtils;
 import org.jumbune.web.utils.StatsManager;
 import org.jumbune.web.utils.WebConstants;
 import org.jumbune.web.utils.YarnQueuesUtils;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 
 /**
  * The Class ClusterAnalysisService.
@@ -138,23 +125,24 @@ public class ClusterAnalysisService{
 
 	private List<Alert> saveAlerts;
 	
-	private YarnQueuesUtils yarnQueuesUtils;
+	@Context
+	private HttpServletRequest servletRequest;
 	
-	private SchedulerService schedulerService;
+	private static YarnQueuesUtils yarnQueuesUtils;
 	
-	private BackgroundProcessManager processesManager;
+	private static SchedulerService schedulerService;
+	
+	private static BackgroundProcessManager processesManager;
 
-	private ClusterAnalysisMetrics metrics;
+	private static ClusterAnalysisMetrics metrics;
 	
-	private RecommendationAlerts recommendationAlerts;
+	private static SessionUtils sessionUtils;
 	
-	private SessionUtils sessionUtils;
+	private static AlertGenerator alertGenerator;
 	
-	private AlertGenerator alertGenerator;
+	private static YarnAlert yarnAlert;
 	
-	private YarnAlert yarnAlert;
-	
-	private AppFinishTimeComparator appsComparator;
+	private static AppFinishTimeComparator appsComparator;
 	
 	private static JsonParser jsonParser;
 	
@@ -177,44 +165,38 @@ public class ClusterAnalysisService{
 	 */
 	public static FairSchedularEnabledCache fairSchedularCache;
 	
-	private static Set<String> appTypes;
-
-	@Context
-	private HttpServletRequest servletRequest;
-	
-	private Subject subject = null;
-	private boolean isSubjectInitialized = false;
+	private static Set<String> mapreduceAppType;
 	
 	private static final Logger LOGGER;
 	
 	static {
+		alertGenerator = AlertGenerator.getInstance();
+		appsComparator = AppFinishTimeComparator.getInstance();
+		schedulerService = SchedulerService.getInstance();
+		metrics = ClusterAnalysisMetrics.getInstance();
+		processesManager = BackgroundProcessManager.getInstance();
+		sessionUtils = SessionUtils.getInstance();
+		yarnAlert = QueueAlert.getInstance();
+		yarnQueuesUtils = YarnQueuesUtils.getInstance();
+		
 		fairSchedularCache = new FairSchedularEnabledCache(3);
 		jsonParser = new JsonParser();
-		appTypes = new HashSet<>(1);
-		appTypes.add("MAPREDUCE");
+		mapreduceAppType = new HashSet<>(1);
+		mapreduceAppType.add("MAPREDUCE");
 		hmssType = new TypeToken<Map<String, YarnCategoryInfo>>() {
 		}.getType();
 		LOGGER = LogManager.getLogger(ClusterAnalysisService.class);
 	}
 
 	public ClusterAnalysisService() {
-		alertGenerator = AlertGenerator.getInstance();
-		appsComparator = AppFinishTimeComparator.getInstance();
-		schedulerService = SchedulerService.getInstance();
-		metrics = ClusterAnalysisMetrics.getInstance();
-		processesManager = BackgroundProcessManager.getInstance();
-		recommendationAlerts = RecommendationsAlertImpl.getInstance();
 		saveAlerts = new ArrayList<>();
-		sessionUtils = SessionUtils.getInstance();
-		yarnAlert = QueueAlert.getInstance();
-		yarnQueuesUtils = YarnQueuesUtils.getInstance();
 	}
 	
 	private HttpSession getSession() {
 		return servletRequest.getSession();
 	}
 	
-	public static void updateClusterCache(String clusterName, EnterpriseCluster cluster) {
+	public static void updateClusterCache(String clusterName, Cluster cluster) {
 		cache.put(clusterName, cluster);
 	}
 
@@ -231,7 +213,7 @@ public class ClusterAnalysisService{
 		}
 		if (cluster.isJmxPluginEnabled()) {
 			new JMXUtility()
-					.establishConnectionToJmxAgent((EnterpriseClusterDefinition) cluster);
+					.establishConnectionToJmxAgent((ClusterDefinition) cluster);
 		}
 		try {
 			AdminConfigurationService.checkAndCreateConfAndInfluxDatabase(clusterName);
@@ -241,19 +223,6 @@ public class ClusterAnalysisService{
 		return Response.ok(Constants.gson.toJson(true)).build();
 		
 		
-	}
-
-	@POST
-	@Path(WebConstants.LICENCE + "/{clusterName}")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response checkNodesAndCluster(@PathParam(CLUSTER_NAME) String clusterName) {
-		try {
-			Cluster cluster = cache.getCluster(clusterName);
-			return Response.ok(Constants.gson.toJson(true)).build();
-		} catch (Exception e) {
-			LOGGER.error("Error while checking nodes and cluster", e);
-			return Response.ok(Constants.gson.toJson(false)).build();
-		}
 	}
 	
 	@GET
@@ -594,10 +563,12 @@ public class ClusterAnalysisService{
 			if(!alertConfiguration.getHdfsDirPaths().isEmpty()){
 			alertsList.addAll(alertGenerator.getHDFSMaxFilesInDirAlert(cluster, alertConfiguration.getHdfsDirPaths()));
 			}
+
 			// fragmented files alert added for non-secured cluster and non-mapr cluster only
-			if(!Constants.MAPR.equalsIgnoreCase(hadoopDistribution) && !Constants.EMRMAPR.equalsIgnoreCase(hadoopDistribution)){
-				alertsList.addAll(alertGenerator.getFragmenedFilesAlert(cluster));
-			}
+//			if(!Constants.MAPR.equalsIgnoreCase(hadoopDistribution) && !Constants.EMRMAPR.equalsIgnoreCase(hadoopDistribution)){
+//				alertsList.addAll(alertGenerator.getFragmenedFilesAlert(cluster));
+//			}
+			
 			Alert resourceManagerDownAlert = null;
 			Alert historyServerDownAlert = null;
 			if(nonConfigurableAlerts.get(AlertType.HADOOP_DAEMON_DOWN)) {
@@ -676,45 +647,6 @@ public class ClusterAnalysisService{
 			LOGGER.error("Unable to get alerts", e);
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
 		}
-	}
-	
-	
-	/**
-	 * Gets the recommendations for the cluster.
-	 *
-	 * @param clusterName the cluster name
-	 * @return the recommendations
-	 */
-	@GET
-	@Path(WebConstants.RECOMMENDATIONS + "/{clusterName}")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response getRecommendations(@PathParam(CLUSTER_NAME) String clusterName) {
-		Set<Recommendations> recommendationsSet = null ;
-		try{		
-			Cluster cluster = cache.getCluster(clusterName);
-			recommendationsSet = new HashSet<Recommendations>();
-			
-			recommendationsSet.addAll(recommendationAlerts.checkMemoryConfiguration(cluster));
-			recommendationsSet.addAll(recommendationAlerts.checkYarnProperty(cluster));
-			recommendationsSet.addAll(recommendationAlerts.getRecommendedContainerConfiguration(cluster));
-			recommendationsSet.addAll(recommendationAlerts.checkTransparentHugePageStatus(cluster));
-			recommendationsSet.addAll(recommendationAlerts.checkSELinuxStatus(cluster));
-			recommendationsSet.addAll(recommendationAlerts.checkVMSwappinessParam(cluster));
-			// spark recommendations
-			recommendationsSet.addAll(recommendationAlerts.getSparkConfigurations(cluster,
-					fairSchedularCache.isFairScheduler(cluster), schedulerService,
-					sessionUtils.getRM(cluster, getSession())));
-			
-			return Response.ok(Constants.gson.toJson(recommendationsSet)).build();
-		} catch (Exception e) {
-			if(recommendationsSet != null && recommendationsSet.size() > 0){
-				LOGGER.warn("Got" + recommendationsSet.size() + "recommendations of many");
-				return Response.ok(Constants.gson.toJson(recommendationsSet)).build();
-			}else{
-				LOGGER.error("Unable to get recommendations", e);
-				return Response.status(Status.INTERNAL_SERVER_ERROR).build();
-			}
-			}
 	}
 
 	/**
@@ -1112,7 +1044,7 @@ public class ClusterAnalysisService{
 			} else {
 				Cluster cluster = cache.getCluster(clusterName);
 				List<ApplicationReport> list = sessionUtils.getRM(cluster, getSession()).getApplications(
-						null, null, null, appTypes, null, EnumSet.of(YarnApplicationState.FINISHED), lastCheckpoint, currentTime, null);
+						null, null, null, mapreduceAppType, null, EnumSet.of(YarnApplicationState.FINISHED), lastCheckpoint, currentTime, null);
 				
 				map.put(WebConstants.JOBS_LIST, getJobsCapacityUtilization(cluster, list, true));
 			}
@@ -1149,7 +1081,7 @@ public class ClusterAnalysisService{
 			while (listSize == 0 && endTime > oneYearBefore) {
 				LOGGER.debug("Getting Jobs between [" + new Date(startTime) + "] and [" + new Date(endTime) + "]");
 				list = sessionUtils.getRM(cluster, getSession()).getApplications(
-						null, null, null, appTypes, null, EnumSet.of(
+						null, null, null, mapreduceAppType, null, EnumSet.of(
 								YarnApplicationState.FINISHED), startTime, endTime, null);
 				listSize = list.size();
 				
@@ -1781,27 +1713,6 @@ public class ClusterAnalysisService{
 		}
 	}
 	
-	
-	/**
-	 * This method updates the user queue utilization information.
-	 *
-	 * @param clusterName the cluster name
-	 * @return the response
-	 */
-	@POST
-	@Path("/update-user-queue-utilization" + "/{clusterName}")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response updateUserQueueUtilization(@PathParam(CLUSTER_NAME) String clusterName) {
-		try {
-			Cluster cluster = cache.getCluster(clusterName);
-			yarnQueuesUtils.updateInfluxForHiveImpersonisation(cluster, sessionUtils.getRM(cache.getCluster(clusterName), getSession()));
-			return Response.ok(Constants.gson.toJson(true)).build();
-		} catch (Exception e) {
-			LOGGER.error("Unable to update user queue utilization  ", e);
-			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
-		}
-	}
-	
 	/**
 	 * 
 	 * @param queueName job name
@@ -1840,36 +1751,6 @@ public class ClusterAnalysisService{
 			return Response.ok(Constants.gson.toJson(Collections.EMPTY_LIST)).build();
 		}
 	}
-	
-	
-	/**
-	 * Gets the charge back data based on the current or previous or user configured month.
-	 *
-	 * @param clusterName
-	 *            the cluster name
-	 * @return the charge back data
-	 */
-	@GET
-	@Path(WebConstants.CHARGE_BACK_URL + "/{clusterName}")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response getChargeBackData(@PathParam(CLUSTER_NAME) String clusterName,
-			@QueryParam("month") String month,
-			@QueryParam("rangeFrom") @DefaultValue("") String rangeFrom,
-			@QueryParam("rangeTo") @DefaultValue("") String rangeTo) {
-
-		try {
-			Cluster cluster = cache.getCluster(clusterName);
-			List<Map<String, Object>> finalOutput = 
-					yarnQueuesUtils.getchargeBackData(cluster,month,rangeFrom,rangeTo, sessionUtils.getRM(cache.getCluster(clusterName), getSession()));
-			
-			return Response.ok(
-					Constants.gson.toJson(yarnQueuesUtils.convertDataChargeBackModelStructure(finalOutput))
-					).build();
-		} catch (Exception e) {
-			LOGGER.error("Unable to get charge back data", e);
-			return Response.ok(Constants.gson.toJson(Collections.EMPTY_LIST)).build();
-		}
-	}
 
 	@GET
 	@Path(WebConstants.CLUSTERWIDE_MAJORCOUNTERS + "/{clusterName}")
@@ -1902,111 +1783,6 @@ public class ClusterAnalysisService{
 			LOGGER.error("Unable to get mapr cldb metrices stats", e);
 			return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e).build();
 		}
-	}
-	
-	@GET
-	@Path("/export-as-excel")
-	@Produces("application/vnd.ms-excel")
-	public Response writeExcel(@QueryParam("clusterName") String clusterName,
-			@QueryParam("selectedWidgets") String selectedWidgetsJson,
-			@QueryParam("parameters") String parametersJson) {
-		try {
-			HSSFWorkbook workbook = createWorkbook(clusterName, selectedWidgetsJson, parametersJson);
-			File file = new File(clusterName + ".xls");
-			FileOutputStream fos = new FileOutputStream(file);
-			workbook.write(fos);
-			fos.close();
-			return Response.ok((Object) file)
-					.header("content-disposition","attachment; filename = " + clusterName + ".xls")
-					.build();
-		} catch (Exception e) {
-			LOGGER.error("Unable to create excel file", e);
-			return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e).build();
-		}
-		
-	}
-	
-	public HSSFWorkbook createWorkbook(String clusterName, String selectedWidgetsJson,
-			String parametersJson) throws NumberFormatException, Exception {
-		Cluster cluster = cache.getCluster(clusterName);
-		
-		String[] selectedWidgets = Constants.gson.fromJson(selectedWidgetsJson, String [].class);
-		Map<String, String> parameters = Constants.gson.fromJson(parametersJson, new TypeToken<Map<String, String>>(){}.getType());
-		
-		HSSFWorkbook workbook = new HSSFWorkbook();
-		HSSFSheet sheet = workbook.createSheet();
-		sheet.createRow(0);
-		int rowNumber = 1;
-		
-		String month = parameters.get("month");
-		String rangeFrom = parameters.get("rangeFrom");
-		String rangeTo = parameters.get("rangeTo");
-		
-		AnalyzeClusterExcelExport excel = new AnalyzeClusterExcelExport();
-		for (String widget : selectedWidgets) {
-			switch (widget) {
-			case "Queue Utilization Summary" : {
-				boolean isFair = fairSchedularCache.isFairScheduler(cluster);
-				try {
-					Scheduler scheduler = schedulerService.fetchSchedulerInfo(cluster);
-					ClusterMetrics clusterMetrics = schedulerService.fetchClusterMetrics(cluster);
-					long clusterCapacity = clusterMetrics.getTotalMB() ;
-					List<Map<String, Object>> list = yarnQueuesUtils.getQueueUtilizationSummary(clusterName, scheduler, clusterCapacity);
-					
-					rowNumber = excel.queueUtilizationSummary(workbook, sheet, list, rowNumber, isFair);
-					rowNumber += 2;
-				} catch (Exception e) {
-					LOGGER.error("Error while getting queue utilization summary, not adding in excel report", e);
-				}
-				break;
-			}
-			case "Long Duration Applications" : {
-				try {
-					List<Map<String, Object>> list = metrics.getLongRunningApplications(
-							Long.parseLong(parameters.get("thresholdMillis")), cluster, sessionUtils.getRM(cluster, getSession()));
-					rowNumber = excel.longDurationApps(workbook, sheet, list, rowNumber);
-					rowNumber += 2;
-				} catch (Exception e) {
-					LOGGER.error("Unable to get Long running applications", e);
-				}
-				break;
-			}
-			
-			case "Resource Utilization Metering" : {
-				try {
-					List<Map<String, Object>> data = 
-							yarnQueuesUtils.getchargeBackData(
-									cluster, month, rangeFrom, rangeTo, sessionUtils.getRM(cluster, getSession()));
-					String date = excel.getTimePeriod(month, rangeFrom, rangeTo);
-					rowNumber = excel.resouceUtilizationMetering(workbook, sheet, data, rowNumber, date);
-					rowNumber += 2;
-				} catch (Exception e) {
-					LOGGER.error("Error while getting Charge Back Model data, not adding in excel report", e);
-				}
-				break;
-			}
-			
-			case "Detailed Resource Utilization Metering" : {
-				try {
-					
-					
-					List<Map<String, Object>> data = 
-							yarnQueuesUtils.getDetailedChargeBackData(
-									cluster, month, rangeFrom, rangeTo, sessionUtils.getRM(cluster, getSession()));
-					
-					String date = excel.getTimePeriod(month, rangeFrom, rangeTo);
-					rowNumber = excel.detailedresouceUtilizationMetering(workbook, sheet, data, rowNumber, date);
-					rowNumber += 2;
-				} catch (Exception e) {
-					LOGGER.error("Error while getting Charge Back Model data details, not adding in excel report", e);
-				}
-				break;
-			}
-			}
-		}
-		excel.autoSizeColumns(workbook);
-		
-		return workbook;
 	}
 
 	/**

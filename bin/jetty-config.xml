@@ -1,0 +1,103 @@
+<?xml version="1.0"?>
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "http://www.eclipse.org/jetty/configure_9_3.dtd">
+
+<Configure id="Server" class="org.eclipse.jetty.server.Server">
+    <!-- Force all communication over secure channels. -->
+    <Set name="handler">
+        <New id="Handlers" class="org.eclipse.jetty.server.handler.HandlerCollection">
+            <Set name="handlers">
+                <Array type="org.eclipse.jetty.server.Handler">
+		    <!--Uncomment below block for running Jumbune on https transport-->
+                    <!--Item>
+                        <New id="SecuredRedirectHandler" class="org.eclipse.jetty.server.handler.SecuredRedirectHandler" />
+                    </Item-->
+                    <Item>
+                        <New id="Contexts" class="org.eclipse.jetty.server.handler.ContextHandlerCollection" />
+                    </Item>
+                    <Item>
+                        <New id="DefaultHandler" class="org.eclipse.jetty.server.handler.DefaultHandler" />
+                    </Item>
+                </Array>
+            </Set>
+        </New>
+    </Set>
+
+    <New id="httpConfig" class="org.eclipse.jetty.server.HttpConfiguration">
+        <Set name="secureScheme">https</Set>
+        <Set name="securePort">8443</Set>
+    </New>
+
+    <New id="httpsConfig" class="org.eclipse.jetty.server.HttpConfiguration">
+        <Call name="addCustomizer">
+            <Arg>
+                <New class="org.eclipse.jetty.server.SecureRequestCustomizer" />
+            </Arg>
+        </Call>
+    </New>
+
+    <New id="connector" class="org.eclipse.jetty.server.ServerConnector">
+        <Arg name="server">
+            <Ref refid="Server" />
+        </Arg>
+        <Arg name="factories">
+            <Array type="org.eclipse.jetty.server.ConnectionFactory">
+                <Item>
+                    <New class="org.eclipse.jetty.server.HttpConnectionFactory">
+                        <Arg name="config">
+                            <Ref refid="httpConfig" />
+                        </Arg>
+                    </New>
+                </Item>
+            </Array>
+        </Arg>
+
+        <Set name="port">9080</Set>
+    </New>
+    <!--Uncomment below block for running Jumbune on https transport. Generate keystore file, update the file and password below-->
+    <!--New id="sslContextFactory" class="org.eclipse.jetty.util.ssl.SslContextFactory">
+        <Set name="KeyStorePath">/home/impadmin/JumbuneHome/bin/keystore</Set>
+        <Set name="KeyStorePassword">password</Set>
+    </New-->
+
+    <New id="sslConnectionFactory" class="org.eclipse.jetty.server.SslConnectionFactory">
+        <Arg name="sslContextFactory">
+            <Ref refid="sslContextFactory" />
+        </Arg>
+        <Arg name="next">http/1.1</Arg>
+    </New>
+
+    <New id="sslConnector" class="org.eclipse.jetty.server.ServerConnector">
+        <Arg name="server">
+            <Ref refid="Server" />
+        </Arg>
+        <Arg name="factories">
+            <Array type="org.eclipse.jetty.server.ConnectionFactory">
+                <Item>
+                    <Ref refid="sslConnectionFactory" />
+                </Item>
+                <Item>
+                    <New class="org.eclipse.jetty.server.HttpConnectionFactory">
+                        <Arg name="config">
+                            <Ref refid="httpsConfig" />
+                        </Arg>
+                    </New>
+                </Item>
+            </Array>
+        </Arg>
+
+        <Set name="port">8443</Set>
+    </New>
+
+    <Call name="setConnectors">
+        <Arg>
+            <Array type="org.eclipse.jetty.server.ServerConnector">
+                <Item>
+                    <Ref refid="connector" />
+                </Item>
+                <Item>
+                    <Ref refid="sslConnector" />
+                </Item>
+            </Array>
+        </Arg>
+    </Call>
+</Configure>

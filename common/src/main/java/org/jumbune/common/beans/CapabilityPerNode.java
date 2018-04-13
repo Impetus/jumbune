@@ -1,4 +1,4 @@
-package com.impetus.jumbune.common.beans;
+package org.jumbune.common.beans;
 
 public enum CapabilityPerNode {
 	CALCULATE_INTERNALLY("CALCULATE_INTERNALLY"),MANUAL("MANUAL"),FAIRSCHEDULER("FAIRSCHEDULER");

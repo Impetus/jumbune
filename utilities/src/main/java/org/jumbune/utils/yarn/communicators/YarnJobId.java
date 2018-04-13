@@ -1,9 +1,8 @@
 package org.jumbune.utils.yarn.communicators;
 
 
-import org.jumbune.utils.beans.NativeJobId;
 import org.apache.hadoop.mapreduce.v2.api.records.JobId;
-import org.apache.hadoop.mapreduce.v2.util.MRBuilderUtils;
+import org.jumbune.utils.beans.NativeJobId;
 
 /**
  * This class constructs the jobId which is required for Yarn distributions of hadoop.

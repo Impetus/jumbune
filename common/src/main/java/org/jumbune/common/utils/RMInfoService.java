@@ -8,11 +8,8 @@ import javax.xml.bind.JAXBContext;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.utils.Constants;
-import org.jumbune.common.utils.RemotingUtil;
-
 import org.jumbune.common.beans.RMInfo;
-import org.jumbune.common.beans.cluster.EnterpriseClusterDefinition;
+import org.jumbune.common.beans.cluster.ClusterDefinition;
 
 /**
  * This service is responsible for fetching the Resource Manager information
@@ -29,12 +26,12 @@ public class RMInfoService {
 	private String activeRM = null;
 
 	private long lastChecked = 0;
-	private EnterpriseClusterDefinition cluster;
+	private ClusterDefinition cluster;
 	private String rmWebAppProtocol = null;
 	private String rmWebAppPort = null;
 	private String rmPort = null;
 
-	public RMInfoService(EnterpriseClusterDefinition cluster) {
+	public RMInfoService(ClusterDefinition cluster) {
 		this.cluster = cluster;
 	}
 

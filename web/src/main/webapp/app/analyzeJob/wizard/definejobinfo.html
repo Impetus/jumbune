@@ -7,13 +7,13 @@
 			
 				<form name="DefineJobInfoController.jobInfoForm" id="defineJobForm" novalidate enctype="multipart/form-data">
 				<div class="form-group row my-tool-tip"><h5 style="color: #23b4c0;border-bottom:#e2e2e2 solid 1px">Specify job jar information</h5></div>
-					<div class="form-group row my-tool-tip">
+					<div class="form-group row my-tool-tip col-md-12">
 						<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Choose system</label>
-						<div>
+						<div class="col-md-7">
 							<label class="option-label">
 								<input type="radio" name="optionsRadios" value="local" ng-model="DefineJobInfoController.systemType" /><span>Local</span><i data-toggle="tooltip" title="Location of the MapReduce jar file on filesystem. Local- Jar location on local filesystem when accessing Jumbune UI remotely from deveoper laptop/workstation, Jumbune- location of jar file, when jar is located at Jumbune container machine" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i></label>
 							<label class="option-label">
-								<input type="radio" name="optionsRadios" value="server" ng-model="DefineJobInfoController.systemType" /><span>Jumbune</span><!-- <i data-toggle="tooltip" title="Location of the MapReduce jar file on filesystem. Local- Jar location on local filesystem when accessing Jumbune UI remotely from deveoper laptop/workstation, Jumbune- location of jar file, when jar is located at Jumbune container machine" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i> --></label>
+								<input type="radio" name="optionsRadios" value="server" ng-model="DefineJobInfoController.systemType" /><span>Jumbune</span></label>
 						</div>
 					</div>
 					<div class="form-group row my-tool-tip">
@@ -36,7 +36,6 @@
 					</div>
 					<div class="form-group row my-tool-tip "><h5 style="color: #23b4c0;border-bottom:#e2e2e2 solid 1px">Jobs</h5></div>
 					<div class="form-group row my-tool-tip">
-						<!-- <label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Sender Password</label> -->
 						<label style="text-align:right;color:#747474;font-weight:300" class="option-label col-md-5">
 							<input type="checkbox" ng-model="DefineJobInfoController.jarManifest" ng-click="DefineJobInfoController.setClassJarMani($event.target.checked)" /> <span>Job class defined in the jar manifest</span></label>
 					</div>
@@ -46,7 +45,7 @@
 								<s>*</s>
 							</label>
 							<div>
-								<input type="text" name="jobName" ng-model="DefineJobInfoController.jobName" required ng-class="{'error':DefineJobInfoController.hasError('jobName')}" />
+								<input type="text" name="jobName" ng-model="DefineJobInfoController.jobName" ng-class="{'error':DefineJobInfoController.hasError('jobName')}" />
 								<div class="error" ng-show="DefineJobInfoController.jobInfoForm.jobName.$dirty && DefineJobInfoController.jobInfoForm.jobName.$invalid">
 									<span class="error" ng-show="DefineJobInfoController.jobInfoForm.jobName.$error.required">Please enter the job submission user.</span>
 								</div>

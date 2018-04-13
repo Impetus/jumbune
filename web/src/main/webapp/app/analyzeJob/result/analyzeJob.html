@@ -4,8 +4,8 @@
         <div jumbune-header=""></div>
         <div class="widgetRow job-data-container">
             <div class="widgetWrapper">
-                <h2><span class="tracking"><i class="fa fa-home" style="font-size:30px;cursor:pointer;" ng-click="clickedHomeIcon()"></i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Job&nbsp;&nbsp;-&nbsp;&nbsp;{{jumbuneJobname}}(Analyze Job)</span><span class="tracking1" style="float:right;"></span><span style="float:right;margin-top:5px;padding-right:15px;"><i class="fa fa-key rotateClass tip" data-toggle="tooltip" ng-show="licenseExpireTrue" title="License will expire soon." data-placement="right" style="color:#F44336"></i>
-            	<i ng-show="licenseExpireDays" class="fa fa-key rotateClass tip" data-toggle="tooltip" title="License will expire in {{daysDiffShow}} day." data-placement="right" style="color:#F44336"></i> </span></h2>
+				<h2><span class="tracking"><i class="fa fa-home" style="font-size:30px;cursor:pointer;" ng-click="clickedHomeIcon()"></i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Job&nbsp;&nbsp;-&nbsp;&nbsp;{{jumbuneJobname}}(Analyze Job)</span><span class="tracking1" style="float:right;"></span>
+					</h2>
                 <div class="ring-loader" style="margin-top:145px;"></div>
 				<p id="errorMessage" style="text-align: center;
 	            color: rgb(169, 68, 66);
@@ -17,16 +17,6 @@
 	            position: relative;
 	            top: 150px;
 	            display: none"></p>
-                <!-- <p class="loaderMessage" style="text-align: center;
-                    color: #00838F;
-                    width: 600px;
-                    padding: 20px;
-                    border-radius: 5px;
-                    background-color: #B2EBF2;
-                    margin: 0 auto;
-                    position: relative;
-                    top: 20px;
-                    font-size:16px;">Analyzing the job, please wait.</p> -->
 	            <div class="loaderMessage" style="min-height:300px" ng-hide="showErrorMessage == true "/>
 	                <ul ng-show="hideLoader==true && showErrorMessage != true" class="clearfix jobDetails">
 	                    <li>

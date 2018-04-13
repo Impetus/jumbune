@@ -1,10 +1,9 @@
 <div jumbune-header=""></div>
 <div class="resultWrapper">
     <div class="widgetRow" ng-init="init()">
-        <div class="widgetWrapper" id="tuningWidgetWrapper">
-            <!-- <div> <h2>Optimize Job&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Optimize Job</h2> </div> -->
-            <h2><span class="tracking"><i class="fa fa-home" style="font-size:30px;cursor:pointer;" ng-click="clickedHomeIcon()"></i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Job&nbsp;&nbsp;-&nbsp;&nbsp;{{showJobName}}(Data Quality TimeLine Job)</span><span class="tracking1" style="float:right;"><i class="fa fa-refresh" style="font-size:30px;cursor:pointer;" ng-click="manualRefresh()"></i></span><span style="float:right;margin-top:5px;padding-right:15px;"><i class="fa fa-key rotateClass tip" data-toggle="tooltip" ng-show="licenseExpireTrue" title="License will expire soon." data-placement="right" style="color:#F44336"></i>
-            <i ng-show="licenseExpireDays" class="fa fa-key rotateClass tip" data-toggle="tooltip" title="License will expire in {{daysDiffShow}} day." data-placement="right" style="color:#F44336"></i> </span></h2>
+        <div class="widgetWrapper" id="qualityWidgetWrapper">
+            <h2><span class="tracking"><i class="fa fa-home" style="font-size:30px;cursor:pointer;" ng-click="clickedHomeIcon()"></i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Job&nbsp;&nbsp;-&nbsp;&nbsp;{{showJobName}}(Data Quality TimeLine Job)</span>
+                <span class="tracking1" style="float:right;"><i class="fa fa-refresh" style="font-size:30px;cursor:pointer;" ng-click="manualRefresh()"></i></span></h2>
             <div class="ring-loader" style="margin-top:145px;"></div>
             <p class="message-loader" style="text-align: center;
                     color: #00838F;

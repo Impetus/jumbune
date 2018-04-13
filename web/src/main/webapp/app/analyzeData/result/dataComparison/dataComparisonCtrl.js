@@ -1,9 +1,9 @@
-/* Dashboard controller */
+/* Data comparison controller */
 'use strict';
 angular.module('dataComparisonCtrl.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagination'])
     .controller('AnalyzeDataComp', ['$scope', 'common', '$http', '$location', '$timeout', 'uiGridConstants', 'getTableDataFactory', 'getDataComparisonTableFactory', function($scope, common, $http, $location, $timeout, uiGridConstants, getTableDataFactory, getDataComparisonTableFactory) {
             //Voilation detail grid
-            var jobName = common.getOptimizeJobName();
+            var jobName = common.getJobName();
             $scope.showJobName = jobName
             $scope.violationTable = {};
             $scope.violationJSONTable = {};
@@ -12,32 +12,29 @@ angular.module('dataComparisonCtrl.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.p
             $scope.dataFlag = false;
             $scope.DataFlag = false;
             $scope.webSocketErrorFlag = false;
-            $scope.licenseExpireTrue = false;
-            $scope.licenseExpireDays = false;
             var finaljson;
-            
+
             var data = [];
             /** init function */
             $scope.init = function() {
                 $('[data-toggle="tooltip"]').tooltip();
-                licenseExpireMessage();
                 $scope.gridOptionsDataComp = {};
                 $scope.finalTableData = {};
                 var host = window.location.hostname;
                 var port = window.location.port;
 
-                var jobName = common.getOptimizeJobName();
+                var jobName = common.getJobName();
 
-                $scope.finalJobName = jobName;   
+                $scope.finalJobName = jobName;
                 if ($scope.finalJobName == null || $scope.finalJobName == undefined || $scope.finalJobName == "") {
-                    $location.path('/');
-                } 
+                    $location.path('/index');
+                }
                 else {
                     var url = "ws://" + host + ":" + port + "/results/jobanalysis?jobName=" + $scope.finalJobName;
 
                 }
                 $scope.showJobName = $scope.finalJobName;
-                
+
                 /** websocket call start */
                 var webSocket = new WebSocket(url);
 
@@ -75,40 +72,11 @@ angular.module('dataComparisonCtrl.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.p
                 /** websocket call end */
 
             }
-            /** License expire message */
-            function licenseExpireMessage ()  { 
-                //licenseValidateFactory.submitLicense({},function(data) {
-                        var data = common.getNodeSize();
-                        var currentDate = data.currentTime;
-                        if (data['Valid Until']) {
-                            var expiryDate = data['Valid Until'];
-                            var temp = new Date(data['Valid From']).toString();
-                            data['Valid From'] = temp.substring(4, 16) + temp.substring(25);
-                            temp = new Date(data['Valid Until']).toString();
-                            data['Valid Until'] = temp.substring(4, 16) + temp.substring(25); 
-                            var milliseconds = (expiryDate - currentDate);
-                            var daysDiff = milliseconds/86400000;
-                            if ( daysDiff <= 3) {
-                                if ( daysDiff >= 1) {
-                                    $scope.daysDiffShow = Math.round(daysDiff);
-                                    $scope.licenseExpireDays = true;
-                                    $scope.licenseExpireTrue = false;
-                                } else {
-                                    $scope.licenseExpireTrue = true;
-                                    $scope.licenseExpireDays = false;
-                                }
-                            } 
-                        }
-                    //},
-                //function(e) {
-                    //console.log(e);
-                //}); 
-            }
             /* Creates sunbrust json */
             $scope.DataSourceComparison = function(json) {
                 var sunburstJson = $scope.getSunburstJsonForDataComparison(json);
                 printGraphDataComparison('#dataComparisonGraphViolations', sunburstJson, json);
-                setDataComparisonCounter(json)
+                setDataComparisonCounter(json);
 
             }
 
@@ -153,7 +121,7 @@ angular.module('dataComparisonCtrl.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.p
                         value += json['transformationViolationMap'][violationType]['violations'][sum]
 
                     }
-                    
+
                     children.push({
                         'name': violationType,
                         'size': value
@@ -171,15 +139,15 @@ angular.module('dataComparisonCtrl.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.p
                 var name = violationType;
                 $scope.selectedViolation = violationType;
                 $scope.tableData = finaljson['transformationViolationMap'][violationType].violations;
-                
-                $scope.tableComp(violationType)
+
+                $scope.tableComp(violationType);
 
             }
             var newLegend = window;
             newLegend.xyz = function(d) {
                 var str = d.key;
                 var res = str.substring(0, str.lastIndexOf(" "));
-                $scope.generateTableForViolations(res)
+                $scope.generateTableForViolations(res);
             }
 
             /** Function creates data comparison graph */
@@ -342,9 +310,10 @@ angular.module('dataComparisonCtrl.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.p
             function isJson(str) {
                 try {
                     JSON.parse(str);
-                } catch (e) {
-                    return false;
-                    console.log("Invalid json")
+								} catch (e) {
+									console.log("Invalid json");
+                  return false;
+
                 }
                 return true;
             }
@@ -375,7 +344,7 @@ angular.module('dataComparisonCtrl.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.p
 
             /** Redirect to home page */
             $scope.clickedHomeIcon = function() {
-                $location.path("/");
+                $location.path("/dashboard");
             }
 
             /** for digest cycle of apply function */
@@ -389,8 +358,7 @@ angular.module('dataComparisonCtrl.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.p
             $scope.tableComp = function(legendData) {
                 $scope.tableCompHideFlag = true;
                 $scope.violationJSONTable.label = legendData;
-                $scope.applyFun()
-
+                $scope.applyFun();
             }
 
             var cellToolTipTemplate = '<div class="ui-grid-cell-contents" title="{{COL_FIELD}}">Custom:{{ COL_FIELD }}</div>'
@@ -442,9 +410,9 @@ angular.module('dataComparisonCtrl.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.p
 
             var colors = d3.scale.category20();
             var keyColor = function(d, i) {
-                return colors(d.key)
+                return colors(d.key);
             };
 
-        }
+    }
 
     ]);

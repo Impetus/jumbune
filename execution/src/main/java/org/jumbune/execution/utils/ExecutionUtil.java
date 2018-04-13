@@ -48,7 +48,7 @@ import java.util.Scanner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import org.jumbune.common.job.EnterpriseJobConfig;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.execution.beans.YesNo;
 
 import org.jumbune.common.beans.JobDefinition;
@@ -250,8 +250,8 @@ public final class ExecutionUtil {
 	 * @param index
 	 */
 	public static void excludeJobs(Config config, String[] index) {
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig)config;
-		List<JobDefinition> jobList = enterpriseJobConfig.getJobs();
+		JobConfig jobConfig = (JobConfig)config;
+		List<JobDefinition> jobList = jobConfig.getJobs();
 		excludeJobs(jobList, index);
 	}
 

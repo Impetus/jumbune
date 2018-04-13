@@ -9,9 +9,11 @@
 			</line>
 		</g>
 		<g ng-repeat="queue in queuesData" ng-attr-transform="translate(0, {{queue.gTranslateY}})">
+			<!-- Displaying label (queue name) -->
 			<text ng-attr-x="{{queue.queueNameLabel.x}}" ng-attr-dy="{{queue.queueNameLabel.dy}}">
 				{{queue.queueNameLabel.text}}
 			</text>
+			<!-- Drawing horizonatal bar graph (rectangle) -->
 			<rect ng-attr-height="{{queue.bar.height}}"
 				ng-attr-width="{{queue.bar.width}}"
 				ng-attr-x="{{queue.bar.x}}"
@@ -20,10 +22,12 @@
 				ng-mouseover="showTooltipBar($event, queue)"
 				ng-mouseleave="hideTooltip()">
 			</rect>
+			<!-- Displaying queue percentage -->
 			<text class="queueValueLabelText" ng-attr-x="{{queue.valueLabel.x}}" ng-attr-dy="{{queue.valueLabel.dy}}">
 				{{queue.valueLabel.text}}
 			</text>
-			<line
+			<!-- Drawing Steady fair share line / Absolute queue capacity-->
+			<line ng-if="graphOptions.graphType == 'Absolute'"
 				class="sfsLine"
 				ng-attr-x1="{{queue.sfs.x1}}"
 				ng-attr-x2="{{queue.sfs.x2}}"

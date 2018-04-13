@@ -1,16 +1,13 @@
 package org.jumbune.web.utils;
 
-import javax.security.auth.Subject;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.clusterprofiling.SchedulerService;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.FileUtil;
 import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.utils.LRUCache;
-
-import org.jumbune.clusterprofiling.SchedulerService;
 import org.jumbune.web.services.ClusterAnalysisService;
 
 public class FairSchedularEnabledCache extends LRUCache<String, Boolean> {

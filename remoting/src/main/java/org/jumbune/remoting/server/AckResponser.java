@@ -1,12 +1,11 @@
 package org.jumbune.remoting.server;
 
-import io.netty.channel.SimpleChannelInboundHandler;
-
-import java.io.File;
 import java.io.Serializable;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import io.netty.channel.SimpleChannelInboundHandler;
 
 /**
  * The Class AckResponser is used for acknowledging the response when something is written into a channel.

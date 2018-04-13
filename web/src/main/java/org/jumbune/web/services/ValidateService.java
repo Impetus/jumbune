@@ -17,7 +17,7 @@ import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.common.utils.Constants;
 
 import com.google.gson.Gson;
-import org.jumbune.common.job.EnterpriseJobConfig;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.JobRequestUtil;
 import org.jumbune.common.utils.ValidateInput;
 import org.jumbune.web.utils.WebConstants;
@@ -36,14 +36,14 @@ public class ValidateService {
 		try {
 
 			// Creating JumbuneRequest Object
-			String enterpriseJobConfigJSON = form.getField(JSON_DATA).getValue();
+			String jobConfigJSON = form.getField(JSON_DATA).getValue();
 			Gson gson = new Gson();
-			EnterpriseJobConfig enterpriseJobConfig = gson.fromJson(enterpriseJobConfigJSON,
-					EnterpriseJobConfig.class);
+			JobConfig jobConfig = gson.fromJson(jobConfigJSON,
+					JobConfig.class);
 			JumbuneRequest jumbuneRequest = new JumbuneRequest();
-			jumbuneRequest.setConfig(enterpriseJobConfig);
+			jumbuneRequest.setConfig(jobConfig);
 			jumbuneRequest.setCluster(
-					JobRequestUtil.getClusterByName(enterpriseJobConfig.getOperatingCluster()));
+					JobRequestUtil.getClusterByName(jobConfig.getOperatingCluster()));
 
 			// Validating
 			ValidateInput validateInput = new ValidateInput();

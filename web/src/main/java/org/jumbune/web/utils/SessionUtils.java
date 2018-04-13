@@ -3,7 +3,6 @@ package org.jumbune.web.utils;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.security.auth.Subject;
 import javax.servlet.http.HttpSession;
 
 import org.jumbune.common.beans.cluster.Cluster;

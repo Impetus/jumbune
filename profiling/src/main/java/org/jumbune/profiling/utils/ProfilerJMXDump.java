@@ -49,7 +49,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.WordUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.beans.cluster.Agent;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JumbuneRequest;
@@ -69,7 +68,6 @@ import org.jumbune.profiling.healthview.ResultInfo;
 import org.jumbune.profiling.hprof.DFSEnum;
 import org.jumbune.profiling.hprof.NodePerformance;
 import org.jumbune.remoting.client.Remoter;
-import org.jumbune.remoting.client.RemoterFactory;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.jmx.client.JumbuneJMXClient;
 

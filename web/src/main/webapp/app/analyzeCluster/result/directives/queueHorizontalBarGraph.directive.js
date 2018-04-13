@@ -8,7 +8,8 @@ angular.module('analyzeCluster.ctrl')
 			isFairScheduler: '=',
 			redrawFunction: '=',
 			hasError: '=',
-			loader: '='
+			loader: '=',
+			graphOptions: '='
 		},
 		templateUrl: 'app/analyzeCluster/result/directives/queue-horizontal-bar-graph.directive.html',
 		link: function(scope, element, attrs) {
@@ -26,7 +27,7 @@ angular.module('analyzeCluster.ctrl')
 
 			var tooltip = document.getElementById('tooltip');
 
-			var paddingRight = 15;
+			var paddingRight = 65;
 			var paddingLeft = 15;
 			var paddingTop = 10;
 
@@ -36,37 +37,62 @@ angular.module('analyzeCluster.ctrl')
 			var barMinPadding = 20;
 			var barMaxHeight = 50;
 			var barMinHeight = 20;
+
+			/**
+			 * height of individual bar (vertically)
+			 */
 			var barHeight;
+
+			/**
+			 * barPadding means space between two bars
+			 */
 			var barPadding;
 			var yLabelPaddingRight = 10;
 			var valueLabelPaddingLeft = 10;
-			var noOfXAxisLines = 6;
+			var noOfXAxisLines = 4;
 
 			var ctx = element[0].children[2].getContext("2d");
 			ctx.font = '14px sans-serif';
 
 			var unit;
-			
 
+
+			// This variable to used to show 'No Data' label on screen if no data available
 			scope.dataAvailable = false;
 
-			scope.redrawFunction = function(data) {
-				if (data == null || data == undefined || data.length == 0) {
-					scope.dataAvailable = true;
+			scope.redrawFunction = function(response) {
+				// Checking if response from server contains any data or not
+				if (response == null || response == undefined
+					|| response.summary == undefined
+					|| response.summary.length == 0) {
+					scope.dataAvailable = false;
 					return;
 				}
+
 				scope.dataAvailable = true;
-				if (scope.isFairScheduler) {
+
+				/**
+				 * Defining the unit of graph. If fair scheduler is enabled and graph type (from queue utilization summary options)  is absolute then unit will be in 'memory' otherwise we will display whole graph in terms of percentage
+				 */
+				if (scope.graphOptions.graphType == 'Absolute' && scope.isFairScheduler) {
 					unit = 'memory';
 				} else {
 					unit = 'percent';
 				}
 
+				// getting array
+				var data = response.summary;
+
+				// Sorting data according to the utilization of queues
 				data.sort(function(a, b) {
-					return b.utilization - a.utilization;
+					return b.utilizationPercentWRTQueue - a.utilizationPercentWRTQueue;
 				});
 
-
+				/*
+					Dynamically calculating bar graph height,
+					barHeight (height of individual bar (vertically)) and
+					barPadding (space between two bars) )
+				*/
 				var height = data.length * (barMinPadding + barMinHeight) + barMinPadding;
 
 				if (height < divHeight) {
@@ -87,33 +113,50 @@ angular.module('analyzeCluster.ctrl')
 					barHeight = barMinHeight;
 					barPadding = barMinPadding;
 				}
+				// Setting svg height
 				svg.style.height = height + 'px';
 
 
+				// Calculating the maximum value. If the unit is in percentage the maximum value should always be 100.
 				var MAX;
 				if (unit == 'percent') {
 					MAX = 100;
 				} else {
-					MAX = getMaxValue(data);
+					MAX = getMaxValueForFairScheduler(data);
 					if (MAX % 10 > 0) {
 						MAX = MAX + 10 - (MAX % 10);
 					}
 				}
-
+				// Setting maximum value globally
 				scope.MAX = MAX;
+
+				// Adding some extra information.
 				for (var i = 0; i < data.length; i++) {
-					data[i]['printedUtilization'] = getLabelWithUnit(data[i].utilization);
+
+
+					// Setting Label (utilization in percentage / memory) which will be displayed on the screen
+					if (scope.graphOptions.graphType == 'Absolute') {
+						if (scope.isFairScheduler) {
+							data[i]['printedUtilization'] = getLabelWithUnit(data[i].usedResourcesMemory);
+						} else {
+							data[i]['printedUtilization'] = getLabelWithUnit(data[i].utilizationPercentWRTCluster);
+						}
+					} else {
+						data[i]['printedUtilization'] = getLabelWithUnit(data[i].utilizationPercentWRTQueue);
+					}
+
+					// Width of the label (utilization in percentage)
 					data[i]['valueLabelWidth'] = getTextWidth(data[i]['printedUtilization']);
 				}
+
+				// Calculating the maximum width of the label ( among queues'name)
 				var maxQueueNameWidth = getMaxQueueNameWidth(data);
+
 				var spaceForNames = paddingLeft + maxQueueNameWidth + yLabelPaddingRight;
 				scope.spaceForNames = spaceForNames;
 				var maxValueLabelWidth = getMaxValueLabelWidth(data);
 				var maxBarWidth = svgWidth - spaceForNames - valueLabelPaddingLeft - maxValueLabelWidth - paddingRight;
-				var scale = maxBarWidth / MAX;
-				var heightCounter = 0;
 
-				var color = generateColor('#E3F2FD', '#0D47A1', data.length);
 
 				/* Creating x Axis vertical Lines Data*/
 				scope.xAxisLines = [];
@@ -137,13 +180,28 @@ angular.module('analyzeCluster.ctrl')
 					});
 				}
 
+				// Generating colors for queues
+				var color = generateColor('#E3F2FD', '#0D47A1', data.length);
+				var scale = maxBarWidth / MAX;
 				scope.queuesData = [];
 
 				for (var i = 0; i < data.length; i++) {
-					heightCounter = i * barHeight + (i + 1) * barPadding;
-
+					var queueBarWidth;
+					if (scope.graphOptions.graphType == 'Absolute') {
+						if (scope.isFairScheduler) {
+							queueBarWidth = data[i].usedResourcesMemory * scale;
+						} else {
+							var temp5 = data[i].utilizationPercentWRTCluster;
+							temp5 =  temp5 > 105 ? 105 : temp5;
+							queueBarWidth = temp5 * scale;
+						}
+					} else {
+						var temp5 = data[i].utilizationPercentWRTQueue;
+						temp5 =  temp5 > 105 ? 105 : temp5;
+						queueBarWidth = temp5 * scale;
+					}
 					var queue = {
-						'gTranslateY': heightCounter,
+						'gTranslateY': i * barHeight + (i + 1) * barPadding,
 						"queueNameLabel": {
 							'x': paddingLeft,
 							'dy': barHeight / 2 + 6,
@@ -151,26 +209,39 @@ angular.module('analyzeCluster.ctrl')
 						},
 						'bar': {
 							'height': barHeight,
-							'width': (data[i].utilization * scale),
+							'width': queueBarWidth,
 							'x': spaceForNames,
 							'y': 0,
 							'fill': color[i]
 						},
 						'valueLabel': {
-							'x': spaceForNames + (data[i].utilization * scale) + valueLabelPaddingLeft,
+							'x': spaceForNames + queueBarWidth + valueLabelPaddingLeft,
 							'dy': barHeight / 2 + 6,
 							'text': data[i].printedUtilization
 						}
 					};
+					if (!scope.isFairScheduler) {
+						queue['usedResourcesMemory'] = data[i].usedResourcesMemory;
+					}
 
-					if (scope.isFairScheduler == true) {
-						queue['sfs'] = {
-							'x1': spaceForNames + data[i].steadyFairShare * scale,
-							'x2': spaceForNames + data[i].steadyFairShare * scale,
-							'y1': -8,
-							'y2': barHeight + 8,
-							'text': data[i].steadyFairShare,
-						};
+					if (scope.graphOptions.graphType == 'Absolute') {
+						if (scope.isFairScheduler) {
+							queue['sfs'] = {
+								'x1': spaceForNames + data[i].steadyFairShare * scale,
+								'x2': spaceForNames + data[i].steadyFairShare * scale,
+								'y1': -8,
+								'y2': barHeight + 8,
+								'text': data[i].steadyFairShare
+							};
+						} else {
+							queue['sfs'] = {
+								'x1': spaceForNames + data[i].absoluteQueueCapacityPercent * scale,
+								'x2': spaceForNames + data[i].absoluteQueueCapacityPercent * scale,
+								'y1': -8,
+								'y2': barHeight + 8,
+								'text': data[i].absoluteQueueCapacityPercent
+							};
+						}
 					}
 					scope.queuesData.push(queue);
 				}
@@ -179,22 +250,32 @@ angular.module('analyzeCluster.ctrl')
 
 			/* Adding mousemove event on Steady Fair Share Line */
 			scope.showTooltipFS = function(event, queue) {
-				tooltip.innerHTML = 'Steady Fair Share : ' + getLabelWithUnit(Number(queue.sfs.text));
-				tooltip.style.opacity = 1;
+				if (scope.isFairScheduler) {
+					tooltip.innerHTML = 'Steady Fair Share : ' + getLabelWithUnit(Number(queue.sfs.text));
+				} else {
+					tooltip.innerHTML = 'Queue Capacity : ' + getLabelWithUnit(Number(queue.sfs.text));
+				}
+
+				tooltip.style.opacity = '1';
 				tooltip.style.top = (event.pageY - 30) + 'px';
-				tooltip.style.left = (event.pageX - 190) + 'px';
+				tooltip.style.left = (event.pageX - 90) + 'px';
 			}
 
 			/* Adding mousemove event on bar/rectangle */
 			scope.showTooltipBar = function(event, queue) {
 				tooltip.innerHTML = 'Average Queue Utilization : ' + queue.valueLabel.text;
-				tooltip.style.opacity = 1;
+				if (!scope.isFairScheduler) {
+					tooltip.innerHTML += ' (' + getLabelWithUnit(queue.usedResourcesMemory, 'memory') + ')';
+					tooltip.style.left = (event.pageX - 150) + 'px';
+				} else {
+					tooltip.style.left = (event.pageX - 120) + 'px';
+				}
+				tooltip.style.opacity = '1';
 				tooltip.style.top = (event.pageY - 30) + 'px';
-				tooltip.style.left = (event.pageX - 120) + 'px';
 			}
 
 			scope.hideTooltip = function() {
-				tooltip.style.opacity = 0;
+				tooltip.style.opacity = '0';
 			}
 
 			function getMaxValueLabelWidth(data) {
@@ -219,18 +300,15 @@ angular.module('analyzeCluster.ctrl')
 				return max;
 			}
 
-			function getMaxValue(data) {
+			function getMaxValueForFairScheduler(data) {
 				var max = 0;
 				for (var i = 0; i < data.length; i++) {
-					if (max < data[i].utilization) {
-						max = data[i].utilization;
+					if (max < data[i].usedResourcesMemory) {
+						max = data[i].usedResourcesMemory;
 					}
-					if (scope.isFairScheduler) {
-						if (max < data[i].steadyFairShare) {
-							max = data[i].steadyFairShare;
-						}
+					if (max < data[i].steadyFairShare) {
+						max = data[i].steadyFairShare;
 					}
-
 				}
 				if (max == 0) {
 					max = 1024;
@@ -238,41 +316,37 @@ angular.module('analyzeCluster.ctrl')
 				return max;
 			}
 
-			function getLabelWithUnit(d) {
+			function getLabelWithUnit(d, unitTemp) {
 				var suffix;
 				var MAX = scope.MAX;
-				switch (unit) {
+				if (!unitTemp) {
+					unitTemp = unit;
+				}
+				switch (unitTemp) {
 					case "percent":
 						return getFormattedPercent(d);
 					case "memory":
-						if ((d / 1073741824) >= 1) {
-							d = d / 1073741824;
+						if ((d / 1048576) >= 1) {
+							d = d / 1048576;
+							// if max values less than 20 TB
+							if (MAX > 20971520) {
+								d = Math.ceil(d);
+							} else {
+								d = d.toFixed(2);
+							}
+							suffix = " TB";
+						} else if ((d / 1024) >= 1) {
+							d = d / 1048;
 							// if max values less than 20 GB
-							if (MAX > 21474836480) {
+							if (MAX > 20480) {
 								d = Math.ceil(d);
 							} else {
 								d = d.toFixed(2);
 							}
 							suffix = " GB";
-						} else if ((d / 1048576) >= 1) {
-							d = d / 1048576;
-							if (MAX > 20971520) {
-								d = Math.ceil(d);
-							} else {
-								d = d.toFixed(1);
-							}
-							suffix = " MB";
-						} else if ((d / 1024) >= 1) {
-							d = d / 1024;
-							if (MAX > 20480) {
-								d = Math.ceil(d);
-							} else {
-								d = d.toFixed(1);
-							}
-							suffix = " KB";
 						} else {
 							d = Math.ceil(d);
-							suffix = " Bytes";
+							suffix = " MB";
 						}
 						return d + suffix;
 				}
@@ -281,7 +355,7 @@ angular.module('analyzeCluster.ctrl')
 			function getFormattedPercent(number) {
 				var formattedPer = number.toFixed(2);
 				var length = formattedPer.length;
-				if (formattedPer.charAt(length - 1) == '0') { 
+				if (formattedPer.charAt(length - 1) == '0') {
 					if (formattedPer.charAt(length - 2) == '0') {
 						return formattedPer.substring(0, length - 3) + '%';
 					} else {

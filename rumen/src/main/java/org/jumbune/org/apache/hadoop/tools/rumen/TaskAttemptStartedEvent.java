@@ -18,8 +18,6 @@
 
 package org.jumbune.org.apache.hadoop.tools.rumen;
 
-import java.io.IOException;
-
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskID;
 

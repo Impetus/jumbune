@@ -2,57 +2,43 @@ package org.jumbune.web.services;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.lang.reflect.Type;
-import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.GenericEntity;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.glassfish.jersey.media.multipart.FormDataBodyPart;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.Constants;
-import org.jumbune.common.utils.FileUtil;
 import org.jumbune.datavalidation.dsc.DataSourceCompConstants;
 import org.jumbune.utils.JobUtil;
-import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
+import org.jumbune.web.beans.DVFileReport;
+import org.jumbune.web.beans.DVReport;
+import org.jumbune.web.beans.DataSourceCompReport;
+import org.jumbune.web.utils.WebConstants;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
-import org.jumbune.common.job.EnterpriseJobConfig;
-import org.jumbune.web.beans.DVFileReport;
-import org.jumbune.web.beans.DVReport;
-import org.jumbune.web.beans.DataSourceCompReport;
-import org.jumbune.web.utils.WebConstants;
 
 /**
  * For fetching data validation reports corresponding to a violation failed in a
@@ -109,7 +95,7 @@ public class DVReportService{
 			throws IOException {
 		LOGGER.debug("Starting to process Data Validation report");
 		Gson gson = new Gson();
-		EnterpriseJobConfig enterpriseJobConfig = null;
+		JobConfig jobConfig = null;
 		DVReport dvReport = getDVReport(fileName, dvType, pageNum, rows, jobName);
 		return Response.ok(dvReport).build();
 
@@ -155,7 +141,7 @@ public class DVReportService{
 			Gson gson = new Gson();
 			DataSourceCompReport dvReport = new DataSourceCompReport();
 			StringBuilder stringBuilder = new StringBuilder();
-			stringBuilder.append(EnterpriseJobConfig.getJumbuneHome()).append(JOB_JAR_LOCATION).append(jobName)
+			stringBuilder.append(JumbuneInfo.getHome()).append(JOB_JAR_LOCATION).append(jobName)
 					.append(File.separator).append(Constants.SLAVE_DV_LOC).append(File.separator)
 					.append(DataSourceCompConstants.TRANSFORMATION_VIOLATION).append(File.separator)
 					.append(transformationNumber).append(File.separator).append(fileName);
@@ -290,7 +276,7 @@ public class DVReportService{
 			rows = Integer.parseInt(noOfRows);
 		}
 		StringBuilder stringBuilder = new StringBuilder();
-		stringBuilder.append(EnterpriseJobConfig.getJumbuneHome()).append(JOB_JAR_LOCATION).append(jobName)
+		stringBuilder.append(JumbuneInfo.getHome()).append(JOB_JAR_LOCATION).append(jobName)
 				.append(File.separator).append(DV_FOLDER_LOCATION);
 		String dataValidationDirPath = stringBuilder.toString();
 		StringBuffer sb = new StringBuffer(JobUtil.getAndReplaceHolders(dataValidationDirPath));
@@ -334,7 +320,7 @@ public class DVReportService{
 			rows = Integer.parseInt(noOfRows);
 		}
 		StringBuilder stringBuilder = new StringBuilder();
-		stringBuilder.append(EnterpriseJobConfig.getJumbuneHome()).append(JOB_JAR_LOCATION).append(jobName)
+		stringBuilder.append(JumbuneInfo.getHome()).append(JOB_JAR_LOCATION).append(jobName)
 				.append(File.separator).append(JSON_DV_FOLDER_LOCATION);
 		String dataValidationDirPath = stringBuilder.toString();
 		StringBuffer sb = new StringBuffer(JobUtil.getAndReplaceHolders(dataValidationDirPath));

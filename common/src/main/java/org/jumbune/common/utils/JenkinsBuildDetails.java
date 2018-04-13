@@ -17,7 +17,7 @@ import org.jumbune.utils.Versioning;
 public class JenkinsBuildDetails {
 	
 	private static String jenkinsBuildNumber = null;
-	private static String jumbuneEnterpriseBuildNumber = null;
+	private static String jumbuneBuildNumber = null;
 	private static List<String> listOfFilesToCreate = new ArrayList<String>();
 	
 	/** The LOGGER. */
@@ -32,7 +32,7 @@ public class JenkinsBuildDetails {
 				jenkinsBuildNumber = System.getProperty("jenkinsbuildno");				
 			}
 		}
-		listOfFilesToCreate.add("common-ee/src/main/resources/jumbune.version");
+		listOfFilesToCreate.add("common/src/main/resources/jumbune.version");
 		listOfFilesToCreate.add("jumbune.version");
 		writeJenkinsBuild();
 	}
@@ -66,8 +66,8 @@ public class JenkinsBuildDetails {
 	public static void writeJenkinsBuild() {
 		FileOutputStream fop = null;
 		File file;
-		jumbuneEnterpriseBuildNumber = Versioning.ENTERPRISE_BUILD_VERSION;
-		String content = "Build # " + jumbuneEnterpriseBuildNumber + "_" +jenkinsBuildNumber;		
+		jumbuneBuildNumber = Versioning.COMMUNITY_BUILD_VERSION;
+		String content = "Build # " + jumbuneBuildNumber + "_" +jenkinsBuildNumber;		
 		for(String filePath : listOfFilesToCreate)
 		{
 			try {

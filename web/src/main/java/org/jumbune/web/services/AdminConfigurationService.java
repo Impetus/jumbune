@@ -3,11 +3,8 @@ package org.jumbune.web.services;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import javax.security.auth.Subject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.Consumes;
@@ -24,9 +21,10 @@ import javax.ws.rs.core.Response.Status;
 import org.apache.hadoop.yarn.api.records.QueueInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.influxdb.InfluxDBUtil;
 import org.jumbune.common.utils.Constants;
+import org.jumbune.common.utils.ExtendedConstants;
 import org.jumbune.common.utils.FileUtil;
 import org.jumbune.remoting.common.StringUtil;
 import org.jumbune.utils.conf.AdminConfigurationUtil;
@@ -37,9 +35,6 @@ import org.jumbune.utils.conf.beans.InfluxDBConf;
 import org.jumbune.utils.conf.beans.ProcessType;
 import org.jumbune.utils.conf.beans.TicketConfiguration;
 import org.jumbune.utils.yarn.communicators.RMCommunicator;
-
-import org.jumbune.common.influxdb.InfluxDBUtil;
-import org.jumbune.common.utils.ExtendedConstants;
 import org.jumbune.web.beans.AdminConfiguration;
 import org.jumbune.web.process.BackgroundProcessManager;
 import org.jumbune.web.utils.SessionUtils;
@@ -85,10 +80,8 @@ public class AdminConfigurationService {
 			admin.setTicketConfiguration(
 						AdminConfigurationUtil.getTicketConfiguration(clusterName));
 			admin.setSlaConfigurations(AdminConfigurationUtil.getSlaConfigurations(clusterName));
-			admin.setDlcConfiguration(AdminConfigurationUtil.getDlcConfiguration(clusterName));
 			admin.setBackgroundProcessConfiguration(
 						AdminConfigurationUtil.getBackgroundProcessConfiguration(clusterName));
-			admin.setChargeBackConfigurations(AdminConfigurationUtil.getChargeBackConfiguration(clusterName));
 			
 			return Response.ok(Constants.gson.toJson(admin)).build();
 	}
@@ -308,9 +301,6 @@ public class AdminConfigurationService {
 			AdminConfigurationUtil.saveTicketConfiguration(clusterName, ticketConfiguration);
 			
 			AdminConfigurationUtil.saveSlaConfigurations(clusterName, admin.getSlaConfigurations());
-			AdminConfigurationUtil.saveDlcConfiguration(clusterName, admin.getDlcConfiguration());
-			
-			AdminConfigurationUtil.saveChargeBackConfiguration(clusterName, admin.getChargeBackConfigurations());
 
 			BackgroundProcessConfiguration bpc = admin.getBackgroundProcessConfiguration();
 				boolean isQueuesProcessEnabled = bpc.getProcessMap().get(ProcessType.QUEUE_UTILIZATION).booleanValue();
@@ -388,17 +378,5 @@ public class AdminConfigurationService {
 			return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e).build();
 		}
 	}
-	
-	@GET
-	@Path("/dlc-root/{clusterName}")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response getDlcRoot(@PathParam("clusterName") final String clusterName) {
-		try {
-			Map<String, String> map = new HashMap<>(1);
-			map.put("dlcRoot", AdminConfigurationUtil.getDlcConfiguration(clusterName).getDefaultDlcRoot());
-			return Response.ok(map).build();
-		} catch (Exception e) {
-			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
-		}
-	}
+
 }

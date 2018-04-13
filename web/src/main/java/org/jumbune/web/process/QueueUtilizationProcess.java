@@ -2,27 +2,22 @@ package org.jumbune.web.process;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.utils.CommunicatorFactory;
-import org.jumbune.common.utils.Constants;
-import org.jumbune.utils.conf.AdminConfigurationUtil;
-import org.jumbune.utils.yarn.communicators.RMCommunicator;
-
 import org.jumbune.clusterprofiling.SchedulerService;
 import org.jumbune.clusterprofiling.beans.JobQueueBean;
 import org.jumbune.clusterprofiling.beans.QueueStats;
-import org.jumbune.clusterprofiling.yarn.beans.FairSchedulerQueueInfo;
 import org.jumbune.clusterprofiling.yarn.beans.Scheduler;
 import org.jumbune.clusterprofiling.yarn.helper.ClusterProfilingHelper;
-import org.jumbune.common.beans.cluster.EnterpriseCluster;
-import org.jumbune.common.beans.cluster.EnterpriseClusterDefinition;
+import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.beans.cluster.ClusterDefinition;
+import org.jumbune.common.utils.CommunicatorFactory;
+import org.jumbune.common.utils.Constants;
+import org.jumbune.utils.yarn.communicators.RMCommunicator;
 import org.jumbune.web.services.ClusterAnalysisService;
 import org.jumbune.web.utils.YarnQueuesUtils;
 
@@ -49,7 +44,7 @@ public class QueueUtilizationProcess extends Thread
 	 * Temporary variables
 	 */
 
-	private EnterpriseCluster cluster;
+	private Cluster cluster;
 	private ClusterProfilingHelper cph;
 	private List<QueueStats> queueStats;
 	private List<JobQueueBean> jobQueueBeans;
@@ -192,7 +187,7 @@ public class QueueUtilizationProcess extends Thread
 				}
 			}
 			this.cluster = Constants.gson.fromJson(json.toString(),
-					EnterpriseClusterDefinition.class);
+					ClusterDefinition.class);
 			ClusterAnalysisService.updateClusterCache(clusterName,
 					this.cluster);
 		}

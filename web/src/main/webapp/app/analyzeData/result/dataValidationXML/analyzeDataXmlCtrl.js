@@ -1,9 +1,9 @@
-/* Dashboard controller */
+/* Analyze data XML controller */
 'use strict';
 angular.module('analyzeDataXml.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagination'])
     .controller('AnalyzeDataXml', ['$scope', 'common', '$http', '$location', '$timeout', 'uiGridConstants', 'getTableDataFactory', 'getXmlTableDataFactory', 'getJsonTableDataFactory', function($scope, common, $http, $location, $timeout, uiGridConstants, getTableDataFactory, getXmlTableDataFactory, getJsonTableDataFactory) {
             //Voilation detail grid
-            var jobName = common.getOptimizeJobName();
+            var jobName = common.getJobName();
             $scope.showJobName = jobName;
             $scope.violationTable = {};
             $scope.violationJSONTable = {};
@@ -17,8 +17,6 @@ angular.module('analyzeDataXml.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagin
             $scope.counterValidationFlagJson = false;
             $scope.hideTopFieldCounter = false;
             $scope.hideTopTypeViolationMessage = false;
-            $scope.licenseExpireTrue = false;
-            $scope.licenseExpireDays = false;
             var finaljson;
             var graphJson = [{
                 "key": "clean Tuples",
@@ -46,7 +44,6 @@ angular.module('analyzeDataXml.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagin
 
             $scope.init = function() {
                 $('[data-toggle="tooltip"]').tooltip();
-                licenseExpireMessage();
                 $scope.selectedGraphPoint = {};
                 $scope.gridOptionsTest = {};
                 $scope.gridOptionsTestJson = {};
@@ -59,7 +56,7 @@ angular.module('analyzeDataXml.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagin
                 var host = window.location.hostname;
                 var port = window.location.port;
 
-                var jobName = common.getOptimizeJobName();
+                var jobName = common.getJobName();
                 $scope.finalJobName = jobName;
 
                 var url = "ws://" + host + ":" + port + "/results/jobanalysis?jobName=" + $scope.finalJobName;
@@ -82,8 +79,8 @@ angular.module('analyzeDataXml.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagin
                         }
                     var KeyData = (Object.keys(localData)[0]);
                     var dataKey = localData[KeyData].jsonReport
-                    var dvData = JSON.parse(dataKey);                    
-                    var dvSummary = dvData['DVSUMMARY'].dirtyTuples;                    
+                    var dvData = JSON.parse(dataKey);
+                    var dvSummary = dvData['DVSUMMARY'].dirtyTuples;
                     if ( dvSummary == 0 || dvSummary == undefined) {
                         $scope.safeApply($scope.noXmlDataViolatnFlag = true);
                     }
@@ -105,34 +102,6 @@ angular.module('analyzeDataXml.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagin
                 function closeSocket() {
                     webSocket.close();
                 }
-            }
-            function licenseExpireMessage ()  { 
-                //licenseValidateFactory.submitLicense({},function(data) {
-                        var data = common.getNodeSize();
-                        var currentDate = data.currentTime;
-                        if (data['Valid Until']) {
-                            var expiryDate = data['Valid Until'];
-                            var temp = new Date(data['Valid From']).toString();
-                            data['Valid From'] = temp.substring(4, 16) + temp.substring(25);
-                            temp = new Date(data['Valid Until']).toString();
-                            data['Valid Until'] = temp.substring(4, 16) + temp.substring(25); 
-                            var milliseconds = (expiryDate - currentDate);
-                            var daysDiff = milliseconds/86400000;
-                            if ( daysDiff <= 3) {
-                                if ( daysDiff >= 1) {
-                                    $scope.daysDiffShow = Math.round(daysDiff);
-                                    $scope.licenseExpireDays = true;
-                                    $scope.licenseExpireTrue = false;
-                                } else {
-                                    $scope.licenseExpireTrue = true;
-                                    $scope.licenseExpireDays = false;
-                                }
-                            } 
-                        }
-                    //},
-                //function(e) {
-                    //console.log(e);
-                //}); 
             }
             $scope.XMLDataValidation = function(json) {
                 var sunburstJson = $scope.getSunburstJsonForXMLValidation(json);
@@ -267,7 +236,7 @@ angular.module('analyzeDataXml.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagin
                         } else if (d.name == "Dirty Tuples") {
                             if (jsonC["Dirty Tuples"] == undefined) {
                                 return d.name;
-                            } 
+                            }
                         }
                     })
                     .attr("d", arc)
@@ -481,7 +450,7 @@ angular.module('analyzeDataXml.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagin
                     .style("font-size", "12px")
                     .style("cursor", "pointer")
                     .call(d3.legend)
-                  
+
                 function click(d) {
                     svg.transition()
                         .duration(750)
@@ -542,9 +511,9 @@ angular.module('analyzeDataXml.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagin
             function isJson(str) {
                 try {
                     JSON.parse(str);
-                } catch (e) {
+								} catch (e) {
+									console.log("Invalid json");
                     return false;
-                    console.log("Invalid json")
                 }
                 return true;
             }
@@ -573,7 +542,7 @@ angular.module('analyzeDataXml.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagin
                 $scope.init();
             }
             $scope.clickedHomeIcon = function() {
-                $location.path("/");
+                $location.path("/dashboard");
             }
             $scope.applyFun = function() {
                 if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest') {
@@ -626,7 +595,7 @@ angular.module('analyzeDataXml.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagin
                     columnDefs: [
 
                             { field: 'lineNumber', index: 'lineNumber', displayName: 'LineNumber', width: "15%", align: "center", sorttype: "integer" },
-                            /*{field:'fieldNumber',index:'fieldNumber', displayName: 'FieldNumber', width: "25%", align:"center", sorttype: "integer"},          
+                            /*{field:'fieldNumber',index:'fieldNumber', displayName: 'FieldNumber', width: "25%", align:"center", sorttype: "integer"},
                             {field:'expectedValue',index:'expectedValue', displayName: 'ExpectedValue', width: "25%", align:"center"},
                             {field:'fileName',index:'fileName', displayName: 'FileName',  visible: false},*/
                             { field: 'message', index: 'message', displayName: 'Error Message', width: "85%", align: "center", style: "cursor:pointer", cellTemplate: cellToolTipTemplate }
@@ -644,7 +613,7 @@ angular.module('analyzeDataXml.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagin
                                                 gridApi.pagination.on.paginationChanged($scope, function (newPage, pageSize) {
                                                     paginationOptions.pageNumber = newPage;
                                                     paginationOptions.pageSize = pageSize;
-                                                   
+
                                                 });
                                             }*/
                 };

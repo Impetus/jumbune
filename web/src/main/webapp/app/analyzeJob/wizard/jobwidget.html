@@ -17,9 +17,9 @@
 							<div ng-include="'app/analyzeJob/wizard/debugger-tab-form.html'"></div>
 						</form>
 						<div class="textCenter" ng-show="showLoader"><i class="fa fa-spinner fa-spin"></i> Please Wait</div>
-						<!-- <form-button></form-button> -->
-						<!-- <div jumbune-widget-form-buttons cancel="cancel()" next="preview()"></div> -->
-						<!-- <div jumbune-widget-form-buttons-three cancel="cancel()" back="backDebugger()" next="preview()"></div> -->
+						<div class="error textCenter">
+							<span class="error" ng-show="unableUploadJarFileError">Error while submitting job, kindly check jumbune logs.</span>
+						</div>
 					</div>
 
 					<div class="tab-pane" id="WhatIf" ng-show="methodWhatIfDiv" ng-controller="WhatIfController">
@@ -32,21 +32,8 @@
 						<form name='jobProfilingTab.jobProfilingForm' id='jobProfilingForm' novalidate>	
 							<div ng-include="'app/newjobconfig/profiling-tab-form.html'"></div>
 						</form>
-						 <!-- <form-button></form-button> -->
 						 <div jumbune-widget-form-buttons cancel="cancel()" next="preview()"></div>
 					</div>
-					<!-- <div class="tab-pane" id="Tuning" ng-show="methodTuningDiv" ng-controller="TuningController">
-						<form name='tuningTab.tuningForm' id='tuningForm' novalidate>
-							<div ng-include="'app/newjobconfig/tuning-tab-form.html'"></div>
-						</form>
-						
-						 <div jumbune-widget-form-buttons cancel="cancel()" next="preview()"></div>
-					</div> -->
-<!-- 
-					<div class="tab-pane" id="DataValidation" ng-show="dataValidationDiv" ng-controller="dataValidationController">
-						<div ng-include="'app/newjobconfig/data-validation-tab-form.html'" ng-init="dataValidationTab.init()"></div>
-						<form-button></form-button>
-					</div> -->
 
 				</div>
 			</div>

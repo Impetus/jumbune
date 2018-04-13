@@ -9,17 +9,13 @@ import javax.xml.transform.TransformerException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.ConfigurationUtil;
-import org.jumbune.common.utils.ConsoleLogUtil;
-import org.jumbune.common.utils.Constants;
-import org.jumbune.utils.exception.JumbuneRuntimeException;
+import org.jumbune.web.process.BackgroundProcessManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import org.jumbune.web.process.BackgroundProcessManager;
 
 /**
  * Web Context Listener.
@@ -61,16 +57,7 @@ public class JumbuneWebContextListener implements ServletContextListener {
 	 */
 	@Override
 	public void contextInitialized(ServletContextEvent arg0) {
-		// TODO Auto-generated method stub
-		String jumbuneHome = (null == System
-				.getenv(Constants.JUMBUNE_ENV_VAR_NAME)) ? JobConfig
-				.getJumbuneHome() : System
-				.getenv(Constants.JUMBUNE_ENV_VAR_NAME);
-		if (jumbuneHome == null) {
-			jumbuneHome = System.getProperty(Constants.JUMBUNE_ENV_VAR_NAME);
-		}
 		BackgroundProcessManager.getInstance().initiate();
-
 	}
 
 	/**

@@ -20,6 +20,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.job.JumbuneRequest;
@@ -115,7 +116,7 @@ public final class FileUtil {
 	 */
 	public static String getClusterDetail(Config config, String propertyKey){
 		JobConfig jobConfig = (JobConfig)config;
-		String expectedLocation = new StringBuilder().append(JobConfig.getJumbuneHome()).append(File.separator).append(Constants.JOB_JARS_LOC).append(jobConfig.getFormattedJumbuneJobName()).append("cluster-configuration.properties").toString();
+		String expectedLocation = new StringBuilder().append(JumbuneInfo.getHome()).append(File.separator).append(Constants.JOB_JARS_LOC).append(jobConfig.getFormattedJumbuneJobName()).append("cluster-configuration.properties").toString();
 		return getPropertyFromFile(expectedLocation, propertyKey);
 	}
 
@@ -125,7 +126,7 @@ public final class FileUtil {
 	 * @return
 	 */
 	public static String getClusterInfoDetail(String propertyKey){
-		String expectedLocation = new StringBuilder().append(JobConfig.getJumbuneHome()).append(File.separator).append(Constants.CONFIGURATION).append(File.separator).append(Constants.CLUSTER_INFO).toString();
+		String expectedLocation = new StringBuilder().append(JumbuneInfo.getHome()).append(File.separator).append(Constants.CONFIGURATION).append(File.separator).append(Constants.CLUSTER_INFO).toString();
 		return getPropertyFromFile(expectedLocation, propertyKey);
 	}
 	

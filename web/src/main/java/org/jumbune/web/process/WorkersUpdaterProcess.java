@@ -20,8 +20,8 @@ import org.jumbune.profiling.utils.ProfilerJMXDump;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import org.jumbune.common.beans.cluster.EnterpriseCluster;
-import org.jumbune.common.beans.cluster.EnterpriseClusterDefinition;
+import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.beans.cluster.ClusterDefinition;
 import org.jumbune.common.utils.JMXUtility;
 import org.jumbune.web.services.ClusterAnalysisService;
 import org.jumbune.web.utils.StatsManager;
@@ -49,7 +49,7 @@ public class WorkersUpdaterProcess extends Thread implements BackgroundProcess {
 
 	private int totalErrors;
 
-	private EnterpriseCluster cluster;
+	private Cluster cluster;
 
 	private Type type;
 
@@ -75,7 +75,7 @@ public class WorkersUpdaterProcess extends Thread implements BackgroundProcess {
 		if (this.cluster.isJmxPluginEnabled()) {
 			JMXUtility utility = new JMXUtility();
 			utility.sendJmxAgentToAllDaemons(cluster);
-			utility.establishConnectionToJmxAgent((EnterpriseClusterDefinition) cluster);
+			utility.establishConnectionToJmxAgent((ClusterDefinition) cluster);
 		}
 		
 		this.gson = new Gson();
@@ -124,7 +124,7 @@ public class WorkersUpdaterProcess extends Thread implements BackgroundProcess {
 					br.close();
 				}
 			}
-			this.cluster = new Gson().fromJson(json.toString(), EnterpriseClusterDefinition.class);
+			this.cluster = new Gson().fromJson(json.toString(), ClusterDefinition.class);
 			ClusterAnalysisService.updateClusterCache(clusterName, this.cluster);
 		}
 	}
@@ -215,7 +215,7 @@ public class WorkersUpdaterProcess extends Thread implements BackgroundProcess {
 			if (this.cluster.isJmxPluginEnabled()) {
 				JMXUtility utility = new JMXUtility();
 				utility.sendJmxAgentToAllDaemons(cluster);
-				utility.establishConnectionToJmxAgent((EnterpriseClusterDefinition) cluster);
+				utility.establishConnectionToJmxAgent((ClusterDefinition) cluster);
 			}
 		}
 	}

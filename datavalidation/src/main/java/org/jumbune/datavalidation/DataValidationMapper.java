@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -153,9 +154,8 @@ public class DataValidationMapper extends Mapper<Object, Text, Text, DataDiscrep
 		lineNumber++;
 		recordsEmittByMap++;	
 		
-		String recordValue = value.toString();		
-		String[] fields = recordValue.split(fieldSeparator);		
-		
+		String recordValue = value.toString();	
+		String[] fields = getSplits(recordValue, fieldSeparator);
 		int actualNumOfFields = fields.length;
 		String actualFieldValue = null;
 		int fieldNumber = 0;
@@ -239,10 +239,12 @@ public class DataValidationMapper extends Mapper<Object, Text, Text, DataDiscrep
 		builder.append(outputKey).append(DDAW).append(dataValidationDiscripancies.get().hashCode());
 		Text finalMapKey = new Text();
 		finalMapKey.set(builder.toString());
+		if(!dataViolationWB.getFieldMap().isEmpty()){
 		context.write(finalMapKey, dataValidationDiscripancies);
-		
+		}
+		//Clean up operation below
 		MapWritable fieldMap = dataViolationWB.getFieldMap();
-		
+	
 		for (Map.Entry<Writable, Writable> entry : fieldMap.entrySet()) {
 			FieldLWB fieldLWB = (FieldLWB) fieldMap.get(entry.getKey());
 			MapWritable typeViolateMap = fieldLWB.getTypeViolationMap();
@@ -558,5 +560,27 @@ public class DataValidationMapper extends Mapper<Object, Text, Text, DataDiscrep
 	        }
 	    }
 	    return true;
+	}
+	
+	private String[] getSplits(String line, String character) {
+		int from = 0, to = 0, charLength = character.length();
+		List<String> splits = new ArrayList<>();
+		while (true) {
+			to = line.indexOf(character, from);
+			// if this is the last split
+			if (to == -1) {
+				splits.add(line.substring(from));
+				break;
+			}
+			// if line ends with character
+			if (to == line.length() - 1) {
+				splits.add(line.substring(from, to));
+				splits.add("");
+				break;
+			}
+			splits.add(line.substring(from, to));
+			from = to + charLength;
+		}
+		return splits.toArray(new String[splits.size()]);
 	}
 }

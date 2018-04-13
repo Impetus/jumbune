@@ -288,7 +288,7 @@ public interface RemotingConstants {
 	String REDIRECT_SYMBOL = ">";
 	
 	/** The data validation jar. */
-	String DATA_VALIDATION_JAR = "jumbune-datavalidation-" + Versioning.ENTERPRISE_BUILD_VERSION+Versioning.ENTERPRISE_DISTRIBUTION_NAME + ".jar";
+	String DATA_VALIDATION_JAR = "jumbune-datavalidation-" + Versioning.COMMUNITY_BUILD_VERSION+Versioning.COMMUNITY_DISTRIBUTION_NAME + ".jar";
 	
 	/** The job jars loc. */
 	String JOB_JARS_LOC = "jobJars/";

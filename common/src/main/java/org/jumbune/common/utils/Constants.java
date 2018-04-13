@@ -129,13 +129,10 @@ public interface Constants {
 	String LOG_LEVEL_INFO = "INFO";
 
 	/** The dv jar path. */
-	String DV_JAR_PATH = "lib/jumbune-datavalidation-"+Versioning.ENTERPRISE_BUILD_VERSION+Versioning.ENTERPRISE_DISTRIBUTION_NAME + JAR;
+	String DV_JAR_PATH = "lib/jumbune-datavalidation-"+Versioning.COMMUNITY_BUILD_VERSION+Versioning.COMMUNITY_DISTRIBUTION_NAME + JAR;
 	
 	/** The dv main class. */
 	String DV_MAIN_CLASS = "org.jumbune.datavalidation.DataValidationJobExecutor";
-	
-	/** The dc main class. */
-	String DC_MAIN_CLASS = "org.jumbune.datavalidation.DataCleansingJobExecutor";
 	
 	/** The dv main class. */
 	String XML_DV_MAIN_CLASS = "org.jumbune.datavalidation.xml.XmlDataValidationJobExecutor";
@@ -150,10 +147,10 @@ public interface Constants {
 	String GSON_JAR = "lib/gson-2.2.4"+ JAR;
 	
 	/** The common jar. */
-	String COMMON_JAR = "lib/jumbune-common-"+Versioning.ENTERPRISE_BUILD_VERSION+Versioning.ENTERPRISE_DISTRIBUTION_NAME + JAR;
+	String COMMON_JAR = "lib/jumbune-common-"+Versioning.COMMUNITY_BUILD_VERSION+Versioning.COMMUNITY_DISTRIBUTION_NAME + JAR;
 	
 	/** The utilities jar. */
-	String UTILITIES_JAR = "lib/jumbune-utils-"+Versioning.ENTERPRISE_BUILD_VERSION+Versioning.ENTERPRISE_DISTRIBUTION_NAME + JAR;
+	String UTILITIES_JAR = "lib/jumbune-utils-"+Versioning.COMMUNITY_BUILD_VERSION+Versioning.COMMUNITY_DISTRIBUTION_NAME + JAR;
 	
 	/** The exception. */
 	String EXCEPTION = "Exception";
@@ -343,7 +340,7 @@ public interface Constants {
 	String DIR_SEPARATOR = "/";
 	
 	/** The jumbune relative dv jar path. */
-	String JUMBUNE_RELATIVE_DV_JAR_PATH = "modules/jumbune-datavalidation-"+Versioning.ENTERPRISE_BUILD_VERSION+Versioning.ENTERPRISE_DISTRIBUTION_NAME+".jar";
+	String JUMBUNE_RELATIVE_DV_JAR_PATH = "modules/jumbune-datavalidation-"+Versioning.COMMUNITY_BUILD_VERSION+Versioning.COMMUNITY_DISTRIBUTION_NAME+".jar";
 	
 	/** The hash. */
 	String HASH = "#";
@@ -566,8 +563,6 @@ public interface Constants {
 	String USER_DEFINED_REGEX_CHECK = "Regex";
 	
 	String UNIT = "unit";
-	
-	String DATA_CLEANSING = "DATA_CLEANSING";
 
 	String IPC_CLIENT_FALLBACK = "ipc.client.fallback-to-simple-auth-allowed";
 	

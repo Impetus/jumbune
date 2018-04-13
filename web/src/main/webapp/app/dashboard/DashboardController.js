@@ -1,35 +1,30 @@
 /* Dashboard controller */
 'use strict';
 angular.module('dashboard.ctrl', ["ngAnimate"])
-	.controller('DashboardController', ['$scope', '$rootScope', 'common', '$location', 'editClusterFactory', 'deleteClusterFactory', 'getRecentJobFactory', 'GetScheduledTuningJobsListFactory', 'getJobDataFactory', 'getExampleDataFactory', 'getExampleListFactory', 'licenseValidateFactory', 'ClusterResultFactoryNew', 'deleteJobFactory', 'GetScheduledDQTJobsListFactory', 'getSupportedFeaturesFactory', 'getIsMaprDistributionFactory', 'getJenkinsBuildNumberFactory',
+	.controller('DashboardController', ['$scope', '$http', '$rootScope', 'common', '$location', 'editClusterFactory', 'getManageClusterFactory', 'deleteClusterFactory', 'getRecentJobFactory', 'getJobDataFactory', 'getExampleDataFactory', 'getExampleListFactory', 'ClusterResultFactoryNew', 'deleteJobFactory', 'GetScheduledDQTJobsListFactory', 'getSupportedFeaturesFactory', 'getIsMaprDistributionFactory', 'getJenkinsBuildNumberFactory',
 
-		function($scope, $rootScope, common, $location, editClusterFactory, deleteClusterFactory, getRecentJobFactory, GetScheduledTuningJobsListFactory, getJobDataFactory, getExampleDataFactory, getExampleListFactory, licenseValidateFactory, ClusterResultFactoryNew, deleteJobFactory, GetScheduledDQTJobsListFactory, getSupportedFeaturesFactory, getIsMaprDistributionFactory,getJenkinsBuildNumberFactory) {
+		function($scope, $http, $rootScope, common, $location, editClusterFactory, getManageClusterFactory, deleteClusterFactory, getRecentJobFactory, getJobDataFactory, getExampleDataFactory, getExampleListFactory, ClusterResultFactoryNew, deleteJobFactory, GetScheduledDQTJobsListFactory, getSupportedFeaturesFactory, getIsMaprDistributionFactory, getJenkinsBuildNumberFactory) {
 
 			var self = this;
 			self.selectedTab = false;
 			self.jobNames = [];
 			self.viewAllJobs = false;
 			self.clusterCreated = false;
-
 			$scope.infoMessageVal = true;
 			$scope.getClusterList = [];
-			$scope.getlicense = {};
 			$scope.getJobList = [];
 			$scope.getExampleList = [];
-			$scope.scheduledTuningJobList = [];
 			$scope.scheduledDQTJobList = [];
 			$scope.deleted = false;
 			$scope.manageClusterClicked = false;
 			$scope.jobToDelete = '';
-			$scope.licenseExpireTrue = false;
-
+			$scope.inValidRealm = false;
+			$scope.hideManageClusterButtons = common.getHideManageClusterButtons();
 			self.hideAllDropdown = function() {
 				$scope.manageClusterValue = true;
 				$scope.recentJobsValue = true;
 				$scope.scheduledJobsValue = true;
-				$scope.licenseValue = true;
 				$scope.exampleValue = true;
-				$scope.acThreadsValue = true;
 				$scope.aboutUsValue = true;
 			};
 
@@ -42,9 +37,7 @@ angular.module('dashboard.ctrl', ["ngAnimate"])
 
 			self.showClusterDropdown = function() {
 				self.hideAllDropdown();
-				//Show
 				$scope.manageClusterValue = false;
-				//$scope.hoverEdit = false;
 			};
 
 			self.showRecentJobsDropdown = function() {
@@ -52,7 +45,6 @@ angular.module('dashboard.ctrl', ["ngAnimate"])
 				//Show
 				$scope.recentJobsValue = false;
 			};
-
 			self.showSheduledJobsDropdown = function() {
 				self.hideAllDropdown();
 				//Show
@@ -60,21 +52,10 @@ angular.module('dashboard.ctrl', ["ngAnimate"])
 				self.updateScheduledJobsList();
 			};
 
-			self.showLicenseDropdown = function() {
-				self.hideAllDropdown();
-				//Show
-				$scope.licenseValue = false;
-			};
-
 			self.showExampleDropdown = function() {
 				self.hideAllDropdown();
 				//Show
 				$scope.exampleValue = false;
-			};
-
-			self.showACThreads = function() {
-				self.hideAllDropdown();
-				$scope.acThreadsValue = false;
 			};
 			self.showAboutUs = function() {
 				self.hideAllDropdown();
@@ -102,32 +83,15 @@ angular.module('dashboard.ctrl', ["ngAnimate"])
 					}, 5000);
 				}
 			};
-
-			//ANAYLYZE ZOB
-			$scope.showOptimizeJob = false;
-			$scope.showAnalyzeDataJob = false;
-			$scope.showAnalyzeJob = false;
 			$scope.showAnalyzeClusterJob = false;
 
-			//var scheduled = ['ClusterAnalysis', 'JobQuality']
-
-
-			self.optimizeJob = function() {
-				//$location.path("/analyze-cluster");
-				$location.path("/add-optimized-job-configuration").search({ module: 'optimizeJob' });
-			};
-
-
-
 			self.analyzeData = function() {
-				//$location.path("/analyze-cluster");
 				common.setJobDetailsFlagRes(false);
 				$location.path("/add-analyze-data-configuration").search({ module: 'analyzeData' });
 			};
 
 			//Set container height
 			$("#homeContainer").height($(window).height() - 116);
-
 			$(window).resize(function() {
 				$("#homeContainer").height($(window).height() - 116);
 			});
@@ -168,7 +132,7 @@ angular.module('dashboard.ctrl', ["ngAnimate"])
 						console.log(e);
 					});
 
-				editClusterFactory.getCluster({},
+				getManageClusterFactory.getManageCluster({},
 					function(data) {
 						$scope.getClusterList = data;
 					},
@@ -198,109 +162,8 @@ angular.module('dashboard.ctrl', ["ngAnimate"])
 					function(e) {
 						console.log(e);
 					});
-				getSupportedFeaturesFactory.getSupportedFeaturesList({},
-					function(data) {
-						$scope.getFeaturesList = data;
-						for (var arr in $scope.getFeaturesList) {
-							if ($scope.getFeaturesList[arr] == 'ClusterAnalysis') {
-								$scope.showAnalyzeClusterJob = true;
-							} else if ($scope.getFeaturesList[arr] == 'JobQuality') {
-								$scope.showAnalyzeJob = true;
-							} else if ($scope.getFeaturesList[arr] == 'DataQuality') {
-								$scope.showAnalyzeDataJob = true;
-							} else if ($scope.getFeaturesList[arr] == 'OptimizeJob') {
-								$scope.showOptimizeJob = true;
-							}
-						}
-						if ($scope.getFeaturesList.length == 3) {
-							if ($scope.showAnalyzeDataJob && $scope.showAnalyzeClusterJob) {
-								$("#showDataQualityJob").css("margin-left", 235);
-							} else {
-								if ($scope.showAnalyzeDataJob == true) {
-									$("#showDataQualityJob").css("margin-left", 235);
-								}
-								if ($scope.showAnalyzeClusterJob == true) {
-									$("#showClusterAnalysisJob").css("margin-left", 235);
-								}
-							}
-						}
-						if ($scope.getFeaturesList.length == 1) {
-							$("#show" + $scope.getFeaturesList[0] + "Job").css("margin-left", 235);
-						}
-					},
-					function(e) {
-						console.log(e);
-					});
-
-				$scope.isACThreadMapEmpty = true;
-				
-				/*getACThreadsListFactory.getACThreadsList({},
-					function(data) {
-						$scope.acThreadsList = data;
-						if (data.length == 0) {
-							$scope.isACThreadMapEmpty = true;
-						} else {
-							$scope.isACThreadMapEmpty = false;
-						}
-					},
-					function(e) {
-						console.log(e);
-					});*/
-
-				/*licenseValidateFactory.submitLicense({},
-					function(data) {
-						$scope.getlicense = data;
-						common.setNodeSize($scope.getlicense)
-					},
-					function(e) {
-						console.log(e);
-					});*/
-					licenseValidateFactory.submitLicense({},
-					function(data) {
-						common.setNodeSize(data);
-						//var currentDate = new Date().getTime();
-						var currentDate = data.currentTime;
-						if ( data['Valid Until'] ) {
-						    var expiryDate = data['Valid Until'];
-							var milliseconds = (expiryDate - currentDate);
-							var daysDiff = milliseconds/86400000;
-							if ( daysDiff <= 3 ) {
-								$scope.licenseExpireTrue = true;
-							}
-						    var temp = new Date(data['Valid From']).toString();
-							if ( daysDiff <=3 ) {
-								  data['Valid From'] = temp.substring(4);
-							} else {
-								data['Valid From'] = temp.substring(4, 15);
-							}
-
-						    temp = new Date(data['Valid Until']).toString();
-							if ( daysDiff <=3 ) {
-								  data['Valid Until'] = temp.substring(4);
-							} else {
-								data['Valid Until'] = temp.substring(4, 15);
-							}
-							
-						} else {
-							var temp = new Date(data['Valid From']).toString();
-						    data['Valid From'] = temp.substring(4, 16) + temp.substring(25);
-						}
-						$scope.getlicense = data;
-					},
-					function(e) {
-						console.log(e);
-					});
 			};
-
-
 			self.updateScheduledJobsList = function() {
-				GetScheduledTuningJobsListFactory.getScheduledJobsList({},
-					function(data) {
-						$scope.scheduledTuningJobList = data;
-					},
-					function(e) {
-						console.log(e);
-					});
 				GetScheduledDQTJobsListFactory.getScheduledJobsList({},
 					function(data) {
 						$scope.scheduledDQTJobList = data;
@@ -309,7 +172,6 @@ angular.module('dashboard.ctrl', ["ngAnimate"])
 						console.log(e);
 					});
 			}
-
 			self.getJobRequest = function(jobType, jobName) {
 				getJobDataFactory.getJobForm({ jobName: jobName }, {},
 					function(data) {
@@ -319,9 +181,7 @@ angular.module('dashboard.ctrl', ["ngAnimate"])
 							$location.path('add-new-job-configuration');
 						} else if (jobType == 'Analyze Data') {
 							$location.path('add-analyze-data-configuration')
-						} else if (jobType == 'Optimize Job') {
-							$location.path('add-optimized-job-configuration');
-						}
+						} 
 					},
 					function(e) {
 						console.log(e)
@@ -337,9 +197,7 @@ angular.module('dashboard.ctrl', ["ngAnimate"])
 							$location.path('add-new-job-configuration');
 						} else if (jobType == 'Analyze Data') {
 							$location.path('add-analyze-data-configuration')
-						} else if (jobType == 'Optimize Job') {
-							$location.path('add-optimized-job-configuration');
-						}
+						} 
 					},
 					function(e) {
 						console.log(e)
@@ -396,7 +254,7 @@ angular.module('dashboard.ctrl', ["ngAnimate"])
 								function(e) {
 									console.log(e);
 								});
-							self.updateScheduledJobsList();
+								self.updateScheduledJobsList();
 						}
 					},
 					function(e) {
@@ -404,18 +262,10 @@ angular.module('dashboard.ctrl', ["ngAnimate"])
 					});
 			};
 
-			self.displayScheduledJobResult = function(jobName) {
-				common.setWidgetObject();
-				common.setOptimizeJobName(jobName);            
-				$location.path('/optimize-graph');
-			}
-
 			self.displayJobResult = function(jobName, jobType) {
-				common.setOptimizeJobName(jobName);
+				common.setJobName(jobName);
 				common.setWidgetObject();
-				if (jobType == 'Optimize Job') {
-					$location.path('/optimize-graph');
-				} else if (jobType == 'Analyze Job') {
+				if (jobType == 'Analyze Job') {
 					common.setJobDetails({ 'jobName': jobName });
 					$location.path('/analyze-job');
 				} else if (jobType == 'Analyze Data') {
@@ -431,13 +281,12 @@ angular.module('dashboard.ctrl', ["ngAnimate"])
 							$location.path('/analyze-data-quality');
 						} else if (jobConfig.isDataSourceComparisonEnabled == 'TRUE') {
                             $location.path('/analyze-data-comp');
-						} else if (jobConfig.isDataCleansingEnabled == 'TRUE') {
-							$location.path('/define-analyzeData-cleansing');
 						} else {
 							$location.path('/analyze-data');
 						}
 					});
 				}
 			}
+			
 		}
 	]);

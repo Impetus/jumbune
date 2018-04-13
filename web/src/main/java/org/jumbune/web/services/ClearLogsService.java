@@ -2,7 +2,6 @@ package org.jumbune.web.services;
 
 
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,10 +18,6 @@ import javax.ws.rs.core.Response;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.beans.cluster.Cluster;
-import org.jumbune.common.utils.RemoteFileUtil;
-
-import com.google.gson.Gson;
 import org.jumbune.web.utils.WebConstants;
 
 
@@ -74,18 +69,10 @@ public class ClearLogsService{
 	private Map<String, Object> processRequest(HttpServletResponse response) {
 
 		final Map<String, Object> data = new HashMap<String, Object>();
-		Gson gson = new Gson();
 		try {
 			final String logLocationJson = org.jumbune.common.utils.JobConfigUtil.getServiceJsonPath();
-			Cluster cluster = gson.fromJson(logLocationJson, Cluster.class);
-			RemoteFileUtil remoteFileUtil = new RemoteFileUtil();
-			remoteFileUtil.clearAllLogFiles(cluster);
 			data.put(SUCCESS, true);
-		} catch (IOException e) {
-			data.put(SUCCESS, false);
-			data.put(MESSAGE, e.getMessage());
-			LOGGER.error("IOException occured while clearing logs");
-		}catch (Exception e) {
+		} catch (Exception e) {
 			data.put(SUCCESS, false);
 			data.put(MESSAGE, e.getMessage());
 			LOGGER.error("exception occured while clearing logs");

@@ -2,9 +2,8 @@
 
 	angular.module('directives', []);
 	angular.module('factories', []);
-	angular.module('optimizeGraph.ctrl', []);
 
-	var appModule = angular.module('jumbune', ['ngRoute', 'ngSanitize', 'ngResource', 'dashboard.ctrl', 'cluster.ctrl', 'profile.ctrl', 'addCluster.ctrl', 'quality.ctrl', 'commmonService', 'newjobconfig.ctrl', 'configuration.ctrl', 'jobconfig.ctrl', 'dataconfig.ctrl', 'jobwidget.ctrl', 'datajob.ctrl', 'defineJobInfo.ctrl', 'jobpreview.ctrl', 'dataValidate.ctrl','dataCleansing.ctrl', 'dataValidateJSON.ctrl', 'dataValidateXML.ctrl', 'dataValidateComp.ctrl', 'formButtonDir.ctrl', 'directives', 'factories', 'optimizeGraph.ctrl', 'bistel.chart', 'dpdqpreview.ctrl', 'dpdqchart.ctrl', 'dapreview.ctrl', 'dachart.ctrl', 'jobchart.ctrl', 'analyzeCluster.ctrl', 'analyzeData.ctrl', 'analyzeJob.ctrl', 'analyzeDataXml.ctrl', 'analyzeDataJson.ctrl','dataComparisonCtrl.ctrl','dataCleansingCtrl.ctrl', 'analyzeDataText.ctrl', 'analyzeDataProfiling.ctrl']);
+	var appModule = angular.module('jumbune', ['ngRoute', 'ngSanitize', 'ngResource', 'dashboard.ctrl', 'profile.ctrl', 'addCluster.ctrl','quality.ctrl', 'commmonService', 'newjobconfig.ctrl', 'configuration.ctrl', 'jobconfig.ctrl', 'jobwidget.ctrl', 'datajob.ctrl', 'defineJobInfo.ctrl', 'jobpreview.ctrl', 'dataValidate.ctrl', 'dataValidateJSON.ctrl', 'dataValidateXML.ctrl', 'dataValidateComp.ctrl', 'formButtonDir.ctrl', 'directives', 'factories', 'bistel.chart', 'dpdqpreview.ctrl', 'dpdqchart.ctrl', 'dapreview.ctrl', 'dachart.ctrl', 'jobchart.ctrl', 'analyzeCluster.ctrl', 'analyzeData.ctrl', 'analyzeJob.ctrl', 'analyzeDataXml.ctrl', 'analyzeDataJson.ctrl','dataComparisonCtrl.ctrl', 'analyzeDataText.ctrl', 'analyzeDataProfiling.ctrl']);
 
 	appModule.config(function($routeProvider) {
 
@@ -14,22 +13,14 @@
 			controllerAs: 'DashboardController',
 			title: 'dashboard'
 		})
-		.when('/cluster', {
-			templateUrl: 'app/clusters-config/define-cluster-config.html',
-			controller: 'ClusterController'
-		})
-		.when('/add-dp', {
-			templateUrl: 'app/dataSuite-config/add-data-quality.html',
-			controller: 'QualityController'
+		.when('/add-cluster', {
+			templateUrl: 'app/cluster/basic-cluster.html',
+			controller: 'AddClusterController'
 		})
 		.when('/recurring-info', {
 			templateUrl: 'app/analyzeData/wizard/recurring.html',
 			controller: 'NewJobConfigController',
 			controllerAs: "NewJobConfigController"
-		})
-		.when('/add-cluster', {
-			templateUrl: 'app/cluster/basic-cluster.html',
-			controller: 'AddClusterController'
 		})
 		.when('/manage-cluster', {
 			templateUrl: 'app/cluster/configuration.html',
@@ -59,27 +50,9 @@
 			controller: 'NewJobConfigController',
 			controllerAs: "NewJobConfigController"
 		})
-		.when('/add-optimized-job-configuration', {
-			templateUrl: 'app/optimizeJob/wizard/newOptimizedJobConfig.html',
-			controller: 'NewJobConfigController',
-			controllerAs: "NewJobConfigController"
-		})
-		.when('/define-optimized-info', {
-			templateUrl: 'app/optimizeJob/wizard/tuning-tab-form.html',
-			controller: 'TuningController'
-		})
-		.when('/data-configuration', {
-			templateUrl: 'app/newjobconfig/dataconfiguration.html',
-			controller: 'DataConfigController',
-			controllerAs: 'DataConfigController'
-		})
 		.when('/define-analyzeData-info', {
 			templateUrl: 'app/analyzeData/wizard/profiling/data-profiling-dtl.html',
 			controller: 'ProfileController'
-		})
-		.when('/define-analyzeData-cleansing', {
-			templateUrl: 'app/analyzeData/result/dataCleansing/dataCleansing.html',
-			controller: 'AnalyzeDataCleansing'
 		})
 		.when('/job-configuration', {
 			templateUrl: 'app/newjobconfig/jobconfiguration.html',
@@ -90,10 +63,6 @@
 		})
 		.when('/data-validation', {
 			templateUrl: 'app/analyzeData/wizard/dataValidation/dataValidation.html'
-		})
-		.when('/data-cleansing', {
-			templateUrl: 'app/analyzeData/wizard/dataCleansing/dataCleansingPage.html',
-			controller: 'dataCleansingController'
 		})
 		.when('/data-validation-json', {
 			templateUrl: 'app/analyzeData/wizard/dataValidationJSON/dataValidationJSON.html',
@@ -182,18 +151,17 @@
 			templateUrl: 'app/analyzeJob/result/analyzeJob.html',
 			controller: 'AnalyzeJob'
 		})
-		.when('/optimize-graph', {
-			templateUrl: 'app/optimizeJob/result/optimizegraph.html',
-			controller: 'optimizeGraphController'
-		})
 		.otherwise({
 			redirectTo: '/index'
 		});
 	})
-	.run(['$rootScope', 'common', function($rootScope, common) {
+	.run(['$rootScope', 'common','$location', '$http', function($rootScope, common,$location,$http) {
 		$rootScope.root = {};
+		$rootScope.showLoaderIndex = true;
 		$rootScope.root.basePath = 'data/';
 		$rootScope.root.failMessageGeneric = "The information entered is either invalid or incomplete. Please correct to proceed";
 		$rootScope.root.common = common;
+		$rootScope.$on("$locationChangeStart", function (event, next, current) {
+        });
 	}]);
 

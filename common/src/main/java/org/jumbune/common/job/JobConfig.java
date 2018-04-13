@@ -9,7 +9,6 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Classpath;
-import org.jumbune.common.beans.DataCleansingBean;
 import org.jumbune.common.beans.DataProfilingBean;
 import org.jumbune.common.beans.DataQualityTimeLineConfig;
 import org.jumbune.common.beans.DebuggerConf;
@@ -17,6 +16,7 @@ import org.jumbune.common.beans.DoNotInstrument;
 import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.Feature;
 import org.jumbune.common.beans.JobDefinition;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.Validation;
 import org.jumbune.common.beans.XmlElementBean;
 import org.jumbune.common.beans.cluster.LogSummaryLocation;
@@ -145,14 +145,8 @@ public class JobConfig implements Config {
 	/** The data profiling bean. */
 	private DataProfilingBean dataProfilingBean;
 
-
-	/** This must be set explicitly. */
-	private static String jumbuneHome;
-
 	/** The data quality time line. */
 	private DataQualityTimeLineConfig dataQualityTimeLineConfig ;
-	
-	private DataCleansingBean dataCleansing;
 	
 	/** The XML Data Validation. */
 	private Enable enableXmlDataValidation = Enable.FALSE;
@@ -162,8 +156,6 @@ public class JobConfig implements Config {
 	
 	private Enable isDataSourceComparisonEnabled = Enable.FALSE;
 	
-	private Enable isDataCleansingEnabled = Enable.FALSE;
-	
 	private DataSourceCompValidationInfo dataSourceCompValidationInfo;
 	
 	/** The field validation list. */
@@ -171,18 +163,18 @@ public class JobConfig implements Config {
 	
 	/** The xml element bean list. */
 	private List<XmlElementBean> xmlElementBeanList ;
-
-	static {
-		// locating jumbune home form env properties
-		setJumbuneHome(null);
-	}
+	
+	/** String specifying time of jumbune task to be scheduled. */
+	private String jumbuneScheduleTaskTiming;
+	
+	private String tempDirectory;
 
 	/**
 	 * Instantiates a new Job Config.
 	 */
 	protected JobConfig() {
-		LOGGER.debug("JUMBUNE_HOME is set to : " + jumbuneHome);
-		if (!JobUtil.validateFileSystemLocation(jumbuneHome)) {
+		LOGGER.debug("JUMBUNE_HOME is set to : " + JumbuneInfo.getHome());
+		if (!JobUtil.validateFileSystemLocation(JumbuneInfo.getHome())) {
 			LOGGER.error("Environment variable \'JUMBUNE_HOME\' is either not set or is in incorrect format");
 			System.exit(1);
 		}
@@ -557,14 +549,6 @@ public class JobConfig implements Config {
 
 	public void setIsDataSourceComparisonEnabled(Enable isDataSourceComparisonEnabled){
 		this.isDataSourceComparisonEnabled = isDataSourceComparisonEnabled;
-	}
-
-	public Enable getIsDataCleansingEnabled(){
-		return isDataCleansingEnabled;
-	}
-
-	public void setIsDataCleansingEnabled(Enable isDataCleansingEnabled){
-		this.isDataCleansingEnabled = isDataCleansingEnabled;
 	}
 	
 	/**
@@ -1188,39 +1172,12 @@ public class JobConfig implements Config {
 	}
 
 	/**
-	 * Get the FrameWorkHome set by user.
-	 *
-	 * @return the jumbune home
-	 */
-	public static String getJumbuneHome() {
-			return jumbuneHome;
-	}
-
-	/**
-	 * Set the FrameworkHome.
-	 *
-	 * @param jumbuneHome
-	 *            the new jumbune home
-	 */
-	public static final void setJumbuneHome(final String jumbuneHome) {
-		String frameworkHome = jumbuneHome;
-		if (frameworkHome == null) {
-			frameworkHome = System.getenv(Constants.JUMBUNE_ENV_VAR_NAME);
-		}
-		if (frameworkHome != null && !(frameworkHome.endsWith(Constants.FORWARD_SLASH))) {
-			frameworkHome += Constants.FORWARD_SLASH;
-		}
-		JobConfig.jumbuneHome = frameworkHome;
-		LOGGER.debug("JUMBUNE HOME [" + JobConfig.jumbuneHome + "]");
-	}
-
-	/**
 	 * Gets the job jar loc.
 	 *
 	 * @return the job jar loc
 	 */
 	public String getJobJarLoc() {
-		return jumbuneHome + Constants.JOB_JARS_LOC;
+		return JumbuneInfo.getHome() + Constants.JOB_JARS_LOC;
 	}
 	
 	/**
@@ -1255,7 +1212,7 @@ public class JobConfig implements Config {
 	 * @see Constants#USER_LIB_LOC
 	 */
 	public String getUserLibLocationAtMaster() {
-		return jumbuneHome + Constants.USER_LIB_LOC;
+		return JumbuneInfo.getHome() + Constants.USER_LIB_LOC;
 	}
 
 	/**
@@ -1356,24 +1313,6 @@ public class JobConfig implements Config {
 	}
 	
 	/**
-	 * Gets the data cleansing.
-	 *
-	 * @return the data cleansing
-	 */
-	public DataCleansingBean getDataCleansing() {
-		return dataCleansing;
-	}
-
-	/**
-	 * Sets the data cleansing.
-	 *
-	 * @param dataCleansing the new data cleansing
-	 */
-	public void setDataCleansing(DataCleansingBean dataCleansing) {
-		this.dataCleansing = dataCleansing;
-	}
-	
-	/**
 	 * Gets the parameters.
 	 *
 	 * @return the parameters
@@ -1399,6 +1338,32 @@ public class JobConfig implements Config {
 		this.dataSourceCompValidationInfo = dataSourceCompValidationInfo;
 	}
 	
+	/**
+	 * Gets the jumbune schedule task timing.
+	 *
+	 * @return the jumbune schedule task timing
+	 */
+	public String getJumbuneScheduleTaskTiming() {
+		return jumbuneScheduleTaskTiming;
+	}
+
+	/**
+	 * Sets the jumbune schedule task timing.
+	 *
+	 * @param jumbuneScheduleTaskTiming the new jumbune schedule task timing
+	 */
+	public void setJumbuneScheduleTaskTiming(String jumbuneScheduleTaskTiming) {
+		this.jumbuneScheduleTaskTiming = jumbuneScheduleTaskTiming;
+	}
+	
+	public String getTempDirectory() {
+		return tempDirectory;
+	}
+
+	public void setTempDirectory(String tempDirectory) {
+		this.tempDirectory = tempDirectory;
+	}
+
 	@Override
 	public String toString() {
 		return "JobConfig [operatingCluster=" + operatingCluster + ", operatingUser=" + operatingUser

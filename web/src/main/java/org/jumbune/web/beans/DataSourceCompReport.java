@@ -3,8 +3,6 @@ package org.jumbune.web.beans;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jumbune.utils.conf.AdminConfigurationUtil;
-
 public class DataSourceCompReport {
 	
 	/** The page. */

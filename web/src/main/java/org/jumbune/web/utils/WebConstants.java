@@ -239,17 +239,11 @@ public interface WebConstants {
 	/** The data suite service url. */
 	String DATA_SUITE_SERVICE_URL = "/datasuite"; 	
 	
-	/** The optimize job service url. */
-	String OPTIMIZE_JOB_SERVICE = "/optimizejobservice" ;
-	
 	/** The analyse data. */
 	String ANALYZE_DATA = "analyzeData";
 	
 	/** The analyze job. */
 	String ANALYZE_JOB = "analyzeJob";
-	
-	/** The optimize job. */
-	String OPTIMIZE_JOB = "optimizeJob";
 	
 	/** The job analysis. */
 	String JOB_ANALYSIS = "/jobanalysis";
@@ -271,9 +265,6 @@ public interface WebConstants {
 
 	/** The delete table. */
 	String DELETE_TABLE = "/deletetable";
-	
-	/** The licence. */
-	String LICENCE = "/licence";
 
 	String SCHEDULED_TUNING_JOB_RESULT = "/scheduledtuningjobresult";
 

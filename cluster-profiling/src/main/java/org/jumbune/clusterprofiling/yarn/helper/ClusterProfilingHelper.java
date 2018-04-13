@@ -52,12 +52,14 @@ import org.jumbune.clusterprofiling.beans.LiveCapacityStats;
 import org.jumbune.clusterprofiling.beans.QueueStats;
 import org.jumbune.clusterprofiling.beans.RackAwareStats;
 import org.jumbune.clusterprofiling.yarn.beans.YarnQueueStats;
+import org.jumbune.common.beans.EffCapUtilizationStats;
 import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.beans.profiling.JobOutput;
 import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
+import org.jumbune.common.utils.ExtendedConstants;
 import org.jumbune.common.utils.FileUtil;
 import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.common.yarn.utils.DecoratedJobHistoryParser;
@@ -68,10 +70,6 @@ import org.jumbune.utils.exception.JumbuneRuntimeException;
 import org.jumbune.utils.yarn.communicators.MRCommunicator;
 import org.jumbune.utils.yarn.communicators.RMCommunicator;
 import org.jumbune.utils.yarn.communicators.YarnCommunicatorUtil;
-
-import org.jumbune.common.beans.EffCapUtilizationStats;
-import org.jumbune.common.job.EnterpriseJobConfig;
-import org.jumbune.common.utils.ExtendedConstants;
 
 /**
  * The Class ClusterProfilingHelper.
@@ -182,7 +180,7 @@ public class ClusterProfilingHelper {
 			+ "; fi; if [ $FOUNDING_STARTED == 1 ] && [ $THIS_LOOP_FOUND = 0 ]; then break; fi; done) && exit";
 	
 	/** The Constant PREFIX. */
-	public final static String PREFIX = EnterpriseJobConfig.getJumbuneHome() + ExtendedConstants.JOB_JARS_LOC;
+	public final static String PREFIX = JumbuneInfo.getHome() + ExtendedConstants.JOB_JARS_LOC;
 	
 	private static volatile ClusterProfilingHelper instance = null;
 	
@@ -675,7 +673,7 @@ public class ClusterProfilingHelper {
 		Long rackLocalJob = (long) 0;
 		Long otherLocalJob = (long) 0;
 		Long totalCounter = (long) 0;
-		StringBuffer jsonFile = new StringBuffer().append(EnterpriseJobConfig.getJumbuneHome()).append(File.separator).append(ExtendedConstants.JOB_JARS_LOC)
+		StringBuffer jsonFile = new StringBuffer().append(JumbuneInfo.getHome()).append(File.separator).append(ExtendedConstants.JOB_JARS_LOC)
 				.append(cluster.getClusterName()).append(RACK).append(JSON);
 		File rackAwareFile = new File(jsonFile.toString());
 
@@ -691,9 +689,9 @@ public class ClusterProfilingHelper {
 			String applicationId = appReport.getApplicationId().toString();
 			String jobId=applicationId.replace(Constants.APPLICATION, Constants.JOB);
 			if(appReport.getFinalApplicationStatus().equals(FinalApplicationStatus.SUCCEEDED)){
-				StringBuffer histFilePath = new StringBuffer().append(EnterpriseJobConfig.getJumbuneHome()).append(File.separator).append(ExtendedConstants.JOB_JARS_LOC)
+				StringBuffer histFilePath = new StringBuffer().append(JumbuneInfo.getHome()).append(ExtendedConstants.JOB_JARS_LOC)
 						.append(cluster.getClusterName()).append(CLUSTER_PROFILING).append(jobId).append(RACKWARE).append(jobId).append(JHIST);
-				StringBuffer newHistFilePath = new StringBuffer().append(EnterpriseJobConfig.getJumbuneHome()).append(File.separator).append(ExtendedConstants.JOB_JARS_LOC)
+				StringBuffer newHistFilePath = new StringBuffer().append(JumbuneInfo.getHome()).append(ExtendedConstants.JOB_JARS_LOC)
 						.append(cluster.getClusterName()).append(CLUSTER_PROFILING).append(jobId).append(RACKWARE).append(jobId).append(COPY).append(JHIST);
 				File histFile = new File(histFilePath.toString());
 				File copiedHistFile = new File(newHistFilePath.toString());
@@ -761,7 +759,7 @@ public class ClusterProfilingHelper {
 	 * @return the job details
 	 */
 	public JobOutput getJobDetails(Cluster cluster, String jobId){
-		StringBuffer sb = new StringBuffer().append(EnterpriseJobConfig.getJumbuneHome()).append(File.separator).append(ExtendedConstants.JOB_JARS_LOC)
+		StringBuffer sb = new StringBuffer().append(JumbuneInfo.getHome()).append(File.separator).append(ExtendedConstants.JOB_JARS_LOC)
 				.append(cluster.getClusterName()).append(CLUSTER_PROFILING).append(jobId).append("/jobprofiling/").append(jobId).append(JHIST);
 		String localPath = sb.toString();
 		Method method = null;

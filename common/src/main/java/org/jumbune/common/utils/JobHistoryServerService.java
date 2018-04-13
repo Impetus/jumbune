@@ -3,20 +3,15 @@ package org.jumbune.common.utils;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.security.auth.Subject;
 import javax.xml.bind.JAXBContext;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.security.authentication.client.AuthenticatedURL;
-import org.jumbune.common.beans.cluster.Cluster;
-import org.jumbune.common.utils.RemotingUtil;
-
 import org.jumbune.common.beans.JobDetails;
+import org.jumbune.common.beans.cluster.Cluster;
 
 public class JobHistoryServerService {
 

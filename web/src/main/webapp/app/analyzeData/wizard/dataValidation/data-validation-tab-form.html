@@ -11,7 +11,6 @@
             <table class="frm-tbl">
                 <tbody>
                     <tr>
-                        <!-- <td>Tuple Record Separator<s>*</s></td> -->
                         <td  width="55%"><label class="fieldLabel">Tuple Record Separator<s>*</s></label></td>
                         <td><input type="text" ng-blur="dataValidationTab.ChecktupleRecordSeparator()" ng-disabled="!dataValidationTab.enableDataValidation" class="validate" name="tupleRecordSeparator" ng-model="dataValidationTab.tupleRecordSeparator" ng-required="dataValidationTab.enableDataValidation && dataValidationTab.enableDataValidation" ng-class="{'has-error': dataValidationTab.hasError('tupleRecordSeparator')}"/>
                             <div class="error" ng-show="dataValidationTab.tupleRecordSeparatorValidate">
@@ -21,9 +20,8 @@
                     </tr>
 
                     <tr>
-                       <!--  <td>Tuple Field Separator<s>*</s></td> -->
                        <td  width="55%"><label class="fieldLabel">Tuple Field Separator<s>*</s></label></td>
-                        <td><input type="text" ng-blur="dataValidationTab.ChecktupleFieldSeparator()" ng-disabled="!dataValidationTab.enableDataValidation" class="validate" name="tupleFieldSeparator" ng-model="dataValidationTab.tupleFieldSeparator" ng-required="dataValidationTab.enableDataValidation && dataValidationTab.enableDataValidation" ng-class="{'has-error': dataValidationTab.hasError('tupleFieldSeparator')}"/>
+                        <td><input type="text" ng-blur="dataValidationTab.ChecktupleFieldSeparator()" ng-trim="false" ng-disabled="!dataValidationTab.enableDataValidation" class="validate" name="tupleFieldSeparator" ng-model="dataValidationTab.tupleFieldSeparator" ng-required="dataValidationTab.enableDataValidation && dataValidationTab.enableDataValidation" ng-class="{'has-error': dataValidationTab.hasError('tupleFieldSeparator')}"/>
                             <div class="error" ng-show="dataValidationTab.tupleFieldSeparatorValidate">
                                 <span class="error" >Please provide valid field separator.</span>
                             </div>
@@ -31,7 +29,6 @@
                     </tr>
 
                     <tr>
-                        <!-- <td>No. of Fields</td> -->
                         <td  width="55%"><label class="fieldLabel">No. of Fields<s>*</s></label></td>
                         <td>
                             <input type="text" ng-disabled="!dataValidationTab.enableDataValidation" ng-required="dataValidationTab.enableDataValidation && dataValidationTab.enableDataValidation" name="fieldCount" jumbune-only-digits jumbune-num-range-validate="{min:1, max:50}" class="num-input" ng-model="dataValidationTab.fieldCount" ng-class="{'has-error': dataValidationTab.hasError('fieldCount')}"/>
@@ -49,7 +46,7 @@
                 <table class="table table-striped dtl-tbl">
                     <thead>
                         <tr>
-                            <th>Enable Row</th>
+                            <th><input style="margin-bottom: 3px;" type="checkbox" ng-model="selectAll.checkboxes" ng-change="checkAll()"/><span style="margin-left: 5px;">Enable Row</span></th>
                             <th>Field Number</th>
                             <th>Null Check</th>
                             <th>Field Type</th>
@@ -62,11 +59,9 @@
                                 <input type="checkbox" ng-model="field.enable" ng-disabled="!dataValidationTab.enableDataValidation" />
                             </td>
                             <td>
-                                  <span ng-model="field.fieldNumber">{{field.fieldNumber}}</span> 
-                                  <!--  <span ng-model="dataValidationTab.fieldNumber[0] = $index+1">{{$index+1}}</span>  -->
+                                  <span ng-model="field.fieldNumber">{{field.fieldNumber}}</span>
                             </td>
                             <td>
-                                <!-- <select ng-disabled="!field.enable" ng-model="field.nullCheck" ng-options="nullCheck as nullCheck for nullCheck in dataValidationTab.nullCheckList"> -->
                                 <select ng-disabled="!field.enable" ng-model="field.nullCheck" ng-options="nullCheck.value as nullCheck.label for nullCheck in dataValidationTab.nullCheckList">
                                     <option value="">Please Select</option>
                                 </select>
@@ -82,11 +77,6 @@
                         </tr>
                     </tbody>
                 </table>
-                <!-- <div class="textCenter">
-                        <button type="button" class="btn btn-default"  ng-click="dataValidationTab.cancel()">Back</button>
-                        <button type="submit" ng-click="dataValidationTab.next()" class="btn btn-primary">Submit</button>
-                    </div>
-                -->
                  <div jumbune-widget-form-buttons-three cancel="dataValidationTab.cancel()" back="dataValidationTab.back()" disable=true next="dataValidationTab.next()"></div>
             </div>
         </form>

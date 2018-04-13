@@ -1,7 +1,7 @@
 /* Profile controller */
 'use strict';
 angular.module('profile.ctrl', [])
-    
+
 .controller('ProfileController', ['$scope', '$http', '$rootScope','$routeParams','$location', 'common', '$timeout','analyzeDataProfiling',
 
     function($scope, $http, $rootScope,$routeParams, $location,common, $timeout,analyzeDataProfiling) {
@@ -29,7 +29,7 @@ angular.module('profile.ctrl', [])
         $scope.fieldProfilingRules = [];
         var clusList = common.getAnalyzeDataDetail();
 				$scope.selProfilingObj.enableDataProfiling = 'noCriteria';
-				$scope.hasError = function(fieldName) { 
+				$scope.hasError = function(fieldName) {
 						var error = ($scope.DpForm[fieldName].$invalid && !$scope.DpForm[fieldName].$pristine) || ($scope.DpForm[fieldName].$invalid && submitForm)
 						return error;
 				};
@@ -39,33 +39,11 @@ angular.module('profile.ctrl', [])
              $scope.dataProfilingOperandArr = [
         {label:'greater than equal to', value:'GREATER_THAN_EQUAL_TO'},
         {label:'less than equal to', value:'LESS_THAN_EQUAL_TO'}];
-            
-            var local = common.getLocalDP();
-            /*if(!local) {
-                var dpObj = common.getSavedDP();
-                if (dpObj !== undefined) {
-                    $scope.selProfilingObj.nameDP = dpObj.name;
-                    $scope.selProfilingObj.inputPath = dpObj.HDFSInputPath;
-                    $scope.selProfilingObj.tupleRS = dpObj.tupleRS;
-                    $scope.selProfilingObj.tupleFS = dpObj.tupleFS;
-                    $scope.selProfilingObj.isDataProfiling = dpObj.isDataProfiling;
-                    $scope.selProfilingObj.isCriteriaBased = dpObj.isCriteriaBased;
-                    $scope.selProfilingObj.isNoCriteria = dpObj.isNoCriteria;
-                    $scope.selProfilingObj.fields = dpObj.noOfFields;
-                    $scope.selProfilingObj.isEnableRow = dpObj.isEnableRow;
-                    $scope.selProfilingObj.nullCheck = dpObj.nullCheck;
-                    $scope.selProfilingObj.comparisonVal = dpObj.comparisonVal;
-                    $scope.selProfilingObj.fieldVal = dpObj.fieldVal;
 
-                    if ($scope.selProfilingObj.isDataProfiling) {
-                        $scope.enable = !$scope.selProfilingObj.isDataProfiling;
-                        $scope.select = false;
-                    }
-                }
-            }*/
+            var local = common.getLocalDP();
+           
             if(common.jobMode === 'edit') {
                 if(typeof validationDataObj !== undefined) {
-                   // $scope.dataValidationTab = validationDataObj;
                     $scope.fieldArray = validationDataObj.enableRowData;
                     $scope.fieldCount = validationDataObj.enableRowData.length;
                 }
@@ -73,9 +51,8 @@ angular.module('profile.ctrl', [])
                 $scope.fieldArray.push(new getDefaultField(0));
             }
             common.setLocalDP(false);
-            console.log("loc param validatio" +$location.search().module);
             var searchModule = $location.search().module;
- 
+
            if(searchModule) { 
             } else {
                  $scope.autoFillProfiling = { analyzeData: $scope.dataProfilingAutoFill()};
@@ -83,29 +60,25 @@ angular.module('profile.ctrl', [])
         };
 
         $scope.dataProfilingAutoFill = function () {
-                //$scope.recentJobResponse = common.getResonseData();
                 var responseTRS = $scope.recentJobResponse.dataProfilingBean.recordSeparator;
                 var responseTuppleRS = JSON.stringify(responseTRS);
                 $scope.selProfilingObj.inputPath = $scope.recentJobResponse.hdfsInputPath;
-                //$scope.selProfilingObj.inputPath = $scope.recentJobResponse.hdfsInputPath;
                 $scope.selProfilingObj.tupleRS =    responseTuppleRS.split("\"")[1];
                 $scope.selProfilingObj.tupleFS = $scope.recentJobResponse.dataProfilingBean.fieldSeparator;
                 $scope.fieldCount = $scope.recentJobResponse.dataProfilingBean.numOfFields;
                 $scope.fieldArray = $scope.recentJobResponse.dataProfilingBean.fieldProfilingRules;
-                //$scope.selProfilingObj. = $scope.recentJobResponse.enableDataProfiling;
         }
         $scope.addZkHostPort = function(){
             $scope.fieldProfilingRules.push(angular.copy($scope.fieldProfilingRulesObj));
-       
+
         };
         $scope.save = function(){
-            //var obj = $scope.getObjectForJSON();
              $scope.enableRowData = [];
             $scope.fieldArray.forEach(function(field) {
                 if(field.fieldNumber){
                     $scope.enableRowData.push(field);
                 }
-		        
+
             });
 
 			var obj = {
@@ -120,6 +93,7 @@ angular.module('profile.ctrl', [])
                 "jumbuneJobName" : clusList.jobName,
                 "operatingUser" : angular.copy(clusList.jobSubUser),
                 "hdfsInputPath": angular.copy(clusList.hdfsInputPath),
+                "tempDirectory" : angular.copy(clusList.tempDirectory),
                 "parameters"  : angular.copy(clusList.parameters)
             };
                      common.setProfilingFlag(obj.enableDataProfiling);
@@ -129,7 +103,7 @@ angular.module('profile.ctrl', [])
                     $scope.content = new FormData();
                     $scope.content.append("jsonData", jsonDataIs);
                          var req = {
-                            method: 'POST', 
+                            method: 'POST',
                             url:'/apis/validateservice/validatejobinput',
                             headers: {'Content-Type': undefined },
                             transformRequest: angular.identity,
@@ -143,7 +117,7 @@ angular.module('profile.ctrl', [])
                             } else {
 
                                 var req = {
-                                    method: 'POST', 
+                                    method: 'POST',
                                     url:'apis/jobanalysis/save',
                                     headers: {'Content-Type': undefined },
                                     transformRequest: angular.identity,
@@ -151,14 +125,14 @@ angular.module('profile.ctrl', [])
                                 };
 
                                 $http(req).then(function(data){
-                                   common.setOptimizeJobName(data.data.JOB_NAME);
+                                   common.setJobName(data.data.JOB_NAME);
                                     $location.path('/analyze-data-profiling');
                                 }, function(error){
-                                    console.log("in error",error)
+                                    console.log("Error while saving the job details.",error)
                                 });
                             }
                         }, function(error){
-                            console.log("in error",error)
+							console.log("Error while validating the job details.", error);
                         });
 
 
@@ -181,6 +155,7 @@ angular.module('profile.ctrl', [])
                  "enableDataProfiling" : "TRUE",
                  "operatingCluster" : clusList.clusterName,
                 "jumbuneJobName" : clusList.jobName,
+                "tempDirectory" : angular.copy(clusList.tempDirectory),
                 "operatingUser" : angular.copy(clusList.jobSubUser),
                 "hdfsInputPath": angular.copy(clusList.hdfsInputPath),
                 "parameters"  : angular.copy(clusList.parameters)
@@ -197,7 +172,7 @@ angular.module('profile.ctrl', [])
 			$scope.startCriteria = false;
 			if($scope.selProfilingObj.enableDataProfiling === 'withCriteria'){
 				$scope.startCriteria = true;
-			}            
+			}
         };
 
         $scope.generateFields = function(){
@@ -212,14 +187,13 @@ angular.module('profile.ctrl', [])
             $location.path('/index');
         };
         $scope.back = function(){
-            //$location.path('/cluster');
             common.setJobDetailsFlagRes(true)
             common.setActiveTab('Data Profiling');
             $location.path('/add-analyze-data-configuration');
         };
 
         $scope.gotoIndex = function(){
-            $location.path('/index')
+            $location.path('/dashboard')
         };
 
         $scope.submit = function(){
@@ -243,7 +217,7 @@ angular.module('profile.ctrl', [])
             this.dataProfilingOperand = '';
             this.fieldNumber = '';
         }
-        $('#formDisableOneClick').one('click', function() {  
+        $('#formDisableOneClick').one('click', function() {
 			$(this).attr('disabled','disabled');
 		});
     }]);

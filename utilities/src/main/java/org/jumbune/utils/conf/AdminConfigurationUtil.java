@@ -19,9 +19,6 @@ import org.jumbune.utils.conf.beans.AlertActionConfiguration;
 import org.jumbune.utils.conf.beans.AlertConfiguration;
 import org.jumbune.utils.conf.beans.AlertType;
 import org.jumbune.utils.conf.beans.BackgroundProcessConfiguration;
-import org.jumbune.utils.conf.beans.ChargeBackConf;
-import org.jumbune.utils.conf.beans.ChargeBackConfigurations;
-import org.jumbune.utils.conf.beans.DlcConfiguration;
 import org.jumbune.utils.conf.beans.EmailConfiguration;
 import org.jumbune.utils.conf.beans.HAConfiguration;
 import org.jumbune.utils.conf.beans.InfluxDBConf;
@@ -240,47 +237,6 @@ public final class AdminConfigurationUtil {
 		return conf;
 	}
 	
-	
-	/*********************************** Charge Back ***********************************/
-	
-	
-	public static ChargeBackConfigurations getChargeBackConfiguration(String clusterName) {
-		String json = getJson(clusterName, ConfigurationConstants.CHARGE_BACK_CONFIGURATIONS);
-		if (json != null) {
-			return gson.fromJson(json, ChargeBackConfigurations.class);
-		} else {
-			ChargeBackConfigurations chargeBackConf = new ChargeBackConfigurations();
-			chargeBackConf.setChargeBackConfList(new ArrayList<ChargeBackConf>(1));
-			return chargeBackConf;
-		}
-		
-	}
-	
-	public static void saveChargeBackConfiguration(String clusterName, ChargeBackConfigurations conf) throws IOException {
-		String path = confPath + clusterName + File.separator + ConfigurationConstants.CHARGE_BACK_CONFIGURATIONS;
-		FileUtils.writeStringToFile(new File(path), gson.toJson(conf));
-	}
-	
-	
-	/***************************** DLC (Dead letter channel) ****************************/
-	
-	
-	public static void saveDlcConfiguration(String clusterName, DlcConfiguration conf) throws IOException {
-		String path = confPath + clusterName + File.separator + ConfigurationConstants.DLC_CONFIGURATION_FILE;
-		FileUtils.writeStringToFile(new File(path), gson.toJson(conf));
-	}
-	
-	public static DlcConfiguration getDlcConfiguration(String clusterName) {
-		String json = getJson(clusterName, ConfigurationConstants.DLC_CONFIGURATION_FILE);
-		if (json != null) {
-			return gson.fromJson(json, DlcConfiguration.class);
-		} else {
-			DlcConfiguration conf = new DlcConfiguration();
-			conf.setDefaultDlcRoot("");
-			return conf;
-		}
-		
-	}
 
 	/************************************** Email **************************************/
 	

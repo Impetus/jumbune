@@ -5,7 +5,6 @@ package org.jumbune.dataprofiling;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -28,7 +27,6 @@ import org.jumbune.common.beans.DataProfilingBean;
 import org.jumbune.common.beans.FieldProfilingBean;
 import org.jumbune.common.utils.FileUtil;
 import org.jumbune.dataprofiling.utils.DataProfilingConstants;
-import org.jumbune.datavalidation.DataValidationInputFormat;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

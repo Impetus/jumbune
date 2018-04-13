@@ -31,7 +31,7 @@ import org.jumbune.utils.exception.JumbuneException;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import org.jumbune.common.job.EnterpriseJobConfig;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.ExtendedConfigurationUtil;
 import org.jumbune.execution.utils.ReportGenerator;
 import org.jumbune.web.utils.WebConstants;
@@ -103,8 +103,8 @@ public class ExportExcelService {
 				if (isScheduledJob.equals("TRUE")) {
 					String yamlFileLoc = request.getParameter("yamlLocation");
 					InputStream inputStream = ConfigurationUtil.readFile(yamlFileLoc);
-					EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig)JobConfigUtil.jumbuneRequest(inputStream).getJobConfig();
-					String scheduledJobName = enterpriseJobConfig.getJumbuneJobName();
+					JobConfig jobConfig = (JobConfig)JobConfigUtil.jumbuneRequest(inputStream).getJobConfig();
+					String scheduledJobName = jobConfig.getJumbuneJobName();
 					String scheduleJobLoc = ExtendedConfigurationUtil.getUserScheduleJobLocation() + File.separator + scheduledJobName;
 					String reportJson = WebUtil.readScheduleJobReports(scheduleJobLoc);
 					Type type = new TypeToken<Map<String, String>>() {
@@ -163,9 +163,9 @@ public class ExportExcelService {
 			final String jumbuneJobName) throws FileNotFoundException, IOException,
 			JumbuneException {
 		String jobName = jumbuneJobName;
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig)config;
-		if (enterpriseJobConfig != null){
-			jobName = enterpriseJobConfig.getJumbuneJobName().substring(0, (enterpriseJobConfig.getJumbuneJobName().length()) - 1);}
+		JobConfig jobConfig = (JobConfig)config;
+		if (jobConfig != null){
+			jobName = jobConfig.getJumbuneJobName().substring(0, (jobConfig.getJumbuneJobName().length()) - 1);}
 		String contextRealPath = request.getRealPath("");
 		String xlsFolder = WebConstants.REPORT_DIR;
 		String fileName = "/" + (jobName == null ? "Report" : jobName) + System.currentTimeMillis() + WebConstants.XLS_EXT;
@@ -199,9 +199,9 @@ public class ExportExcelService {
 	 */
 	private void addDataValidationReportToMap(Map<String, String> map,
 			Config config) {
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig)config;
-		if (map.containsKey(Constants.DATA_VALIDATION) && enterpriseJobConfig != null) {
-			map.put(Constants.DATA_VALIDATION, enterpriseJobConfig.getJumbuneJobLoc());
+		JobConfig jobConfig = (JobConfig)config;
+		if (map.containsKey(Constants.DATA_VALIDATION) && jobConfig != null) {
+			map.put(Constants.DATA_VALIDATION, jobConfig.getJumbuneJobLoc());
 		}
 	}
 

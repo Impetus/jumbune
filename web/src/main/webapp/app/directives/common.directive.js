@@ -223,36 +223,6 @@ angular.module('directives').directive('circularChartF2', function(){
         }
     }
 });
-
-/*angular.module('directives').directive('fileUpload', ['common', function(common){
-    return {
-        scope: true,
-        link: function(scope,el,attrs) {
-            el.bind("change", function(event){
-                var file = event.target.files[0];
-                console.log("FileUpload Directive:::::", file);
-                common.setJobJarFile(file, attrs.fileUpload);
-            });
-        }
-    }
-}]);*/
-/*angular.module('directives').directive('fileModel', ['$parse', function ($parse) {
-    return {
-        restrict: 'A',
-        link: function(scope, element, attrs) {
-            var model = $parse(attrs.fileModel);
-            var modelSetter = model.assign;
-            
-            element.bind('change', function(){
-            	alert("on fileMOdel")
-                scope.$apply(function(){
-                    modelSetter(scope, element[0].files[0]);
-                });
-            });
-        }
-    };
-}]);*/
-
 angular.module('directives').directive('fileModel', ['common' ,'$parse' , function(common,$parse){
     return {
         restrict: 'A',
@@ -265,8 +235,6 @@ angular.module('directives').directive('fileModel', ['common' ,'$parse' , functi
             	scope.$apply(function(){
                     modelSetter(scope, el[0].files[0]);
                 });
-            	
-                //var file = event.target.files[0];
                	var file = el[0].files[0];
                 common.setJobJarFile(el[0].files[0], attrs.fileModel);
                 
@@ -276,120 +244,3 @@ angular.module('directives').directive('fileModel', ['common' ,'$parse' , functi
     			//		emnd
             }
 }]);
-
-angular.module('directives').directive('optimizeGraphData', function($compile){
-    return {
-        restrict: 'E',
-        replace: true,
-        scope: {
-            graphInfo: '=info',
-            quickInfo: '=quickInfo',
-            tunningFlag:'=tunningFlag'
-
-        },
-        link : function (scope, element, attrs) {
-            
-            if (scope.tunningFlag == 'TRUE'){
-                scope.$watch('quickInfo', function(newVal,oldVal) {
-                    if(Object.keys(newVal).length>0) {
-                      // var htmlData = '<div class="col-md-6">'+scope.quickInfo+'<p>'+scope.quickInfo['dfs.blocksize']+'</p></div>';
-                        /*var htmlData = '<div class="col-md-6" style="display: table;"><dl style="display: table-row;"><dt style="display: inline-block;text-align: right; width: 15%;font-weight: bold;">dfs.blocksize</dt>'+'<dd style="display: inline-block;margin: 0;text-align: left;width: 80%;">'+scope.quickInfo['dfs.blocksize']+'</dd>'+'<dt style="display: inline-block;text-align: right; width: 15%;font-weight: bold;">mapreduce.tasktracker.http.threads</dt>'+'<dd style="display: inline-block;margin: 0;text-align: left;width: 80%;">'+scope.quickInfo['mapreduce.tasktracker.http.threads']+'</dd>'+*/
-                        var htmlData = '<div class="col-md-6"><dl>';
-                        var htmlData1 = '<div class="col-md-6"><dl>';
-                        var alternate = false;
-                    	for (var key in scope.quickInfo) {
-                    		if (alternate) {
-	                    		htmlData1 = htmlData1 + '<dt>' + key + '</dt>'+'<dd>'+scope.quickInfo[key]+'</dd>';
-	                    		alternate = false;
-                    		} else {
-	                    		htmlData = htmlData + '<dt>' + key + '</dt>'+'<dd>'+scope.quickInfo[key]+'</dd>';
-	                    		alternate = true;
-	                    	}
-                        }
-                        htmlData = htmlData + '</dl></div>';
-                        htmlData1 = htmlData1 + '</dl></div>';
-                        htmlData = htmlData + htmlData1;
-                        $('#quickGraphData').html(htmlData);
-                    }
-                    
-                });
-            }
-            else if (scope.tunningFlag == 'FALSE') {
-                scope.$watch('graphInfo', function(newVal,oldVal) {
-                    if(Object.keys(newVal).length>0) {
-                    	var htmlData = '<div class="col-md-6"><dl>';
-                    	var htmlData1 = '<div class="col-md-6"><dl>';
-                    	var alternate = false;
-                    	for (var key in scope.graphInfo.coefficientNameValuePair) {
-                    		if (alternate) {
-                    			htmlData1 = htmlData1 + '<dt>' + key + '</dt>'+'<dd>'+scope.graphInfo.coefficientNameValuePair[key]+'</dd>';
-                    			alternate = false;
-                    		} else {
-	                    		htmlData = htmlData + '<dt>' + key + '</dt>'+'<dd>'+scope.graphInfo.coefficientNameValuePair[key]+'</dd>';
-	                    		alternate = true;
-	                    	}
-                        }
-                        htmlData = htmlData + '</dl></div>';
-                        htmlData1 = htmlData1 + '</dl></div>';
-                        htmlData = '<div class="row">' + htmlData + htmlData1 + '</div>';
-                        $('#graphData').html(htmlData);
-                    }
-                 });
-            }
-            /* scope.$watch('graphInfo', function(newVal,oldVal) {
-                    if(Object.keys(newVal).length>0) {
-                        var htmlData = '<div class="col-md-6"><dl><dt>Execution Time</dt>'+
-                            '<dd>'+scope.graphInfo.executionTimeInMsecs+'</dd>'+
-                            '<dt>Execution Time</dt>'+
-                            '<dd>'+scope.graphInfo.executionTimeInMsecs+'</dd>'+
-                            '<dt>dfs.blocksize</dt>'+
-                            '<dd>'+scope.graphInfo.coefficientNameValuePair['dfs.blocksize']+'</dd>'+
-                            '<dt>dfs.datanode.handler.count</dt>'+
-                            '<dd>'+scope.graphInfo.coefficientNameValuePair['dfs.datanode.handler.count']+'</dd>'+
-                            '<dt>dfs.namenode.handler.count</dt>'+
-                            '<dd>'+scope.graphInfo.coefficientNameValuePair['dfs.namenode.handler.count']+'</dd>'+
-                            '<dt>io.file.buffer.size</dt>'+
-                            '<dd>'+scope.graphInfo.coefficientNameValuePair['io.file.buffer.size']+'</dd>'+
-                            '<dt>mapreduce.input.fileinputformat.split.maxsize</dt>'+
-                            '<dd>'+scope.graphInfo.coefficientNameValuePair['mapreduce.input.fileinputformat.split.maxsize']+'</dd>'+
-                            '<dt>mapreduce.input.fileinputformat.split.minsize</dt>'+
-                            '<dd>'+scope.graphInfo.coefficientNameValuePair['mapreduce.input.fileinputformat.split.minsize']+'</dd>'+
-                            '<dt>mapreduce.job.jvm.numtasks</dt>'+
-                            '<dd>'+scope.graphInfo.coefficientNameValuePair['mapreduce.job.jvm.numtasks']+'</dd>'+
-                            '<dt>mapreduce.job.reduces</dt>'+
-                            '<dd>'+scope.graphInfo.coefficientNameValuePair['mapreduce.job.reduces']+'</dd>'+
-                            '<dt>mapreduce.map.java.opts</dt>'+
-                            '<dd>'+scope.graphInfo.coefficientNameValuePair['mapreduce.map.java.opts']+'</dd>'+
-                            '</dl></div>'+
-                            '<div class="col-md-6">'+
-                            '<dl>'+
-                            '<dt>mapreduce.map.memory.mb</dt>'+
-                            '<dd>'+scope.graphInfo.coefficientNameValuePair['mapreduce.map.memory.mb']+'</dd>'+
-                            '<dt>mapreduce.map.sort.spill.percent</dt>'+
-                            '<dd>'+scope.graphInfo.coefficientNameValuePair['mapreduce.map.sort.spill.percent']+'</dd>'+
-                            '<dt>mapreduce.reduce.input.buffer.percent</dt>'+
-                            '<dd>'+scope.graphInfo.coefficientNameValuePair['mapreduce.reduce.input.buffer.percent']+'</dd>'+
-                            '<dt>mapreduce.reduce.java.opts</dt>'+
-                            '<dd>'+scope.graphInfo.coefficientNameValuePair['mapreduce.reduce.java.opts']+'</dd>'+
-                            '<dt>mapreduce.reduce.memory.mb</dt>'+
-                            '<dd>'+scope.graphInfo.coefficientNameValuePair['mapreduce.reduce.memory.mb']+'</dd>'+
-                            '<dt>mapreduce.reduce.shuffle.input.buffer.percent</dt>'+
-                            '<dd>'+scope.graphInfo.coefficientNameValuePair['mapreduce.reduce.shuffle.input.buffer.percent']+'</dd>'+
-                            '<dt>mapreduce.reduce.shuffle.merge.percent</dt>'+
-                            '<dd>'+scope.graphInfo.coefficientNameValuePair['mapreduce.reduce.shuffle.merge.percent']+'</dd>'+
-                            '<dt>mapreduce.reduce.shuffle.parallelcopies</dt>'+
-                            '<dd>'+scope.graphInfo.coefficientNameValuePair['mapreduce.reduce.shuffle.parallelcopies']+'</dd>'+
-                            '<dt>mapreduce.task.io.sort.factor</dt>'+
-                            '<dd>'+scope.graphInfo.coefficientNameValuePair['mapreduce.task.io.sort.factor']+'</dd>'+
-                            '<dt>mapreduce.task.io.sort.mb</dt>'+
-                            '<dd>'+scope.graphInfo.coefficientNameValuePair['mapreduce.task.io.sort.mb']+'</dd>'+
-                            '</dl></div>';
-                        
-                        $('#graphData').html(htmlData);
-                    }
-                 });*/
-               
-            
-        }
-    }
-});

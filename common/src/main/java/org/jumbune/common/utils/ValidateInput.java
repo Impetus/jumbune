@@ -23,16 +23,9 @@ import org.jumbune.common.beans.cluster.Workers;
 import org.jumbune.common.beans.dsc.DataSourceCompValidationInfo;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.job.JumbuneRequest;
-import org.jumbune.common.utils.CommandWritableBuilder;
-import org.jumbune.common.utils.Constants;
-import org.jumbune.common.utils.ErrorMessageLoader;
-import org.jumbune.common.utils.ErrorMessages;
-import org.jumbune.common.utils.FileUtil;
-import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.CommandType;
 
-import org.jumbune.common.job.EnterpriseJobConfig;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
@@ -108,16 +101,16 @@ public class ValidateInput {
 	 */
 	public Map<String, String> validateJobInputDetails(JumbuneRequest jumbuneRequest) {
 		jobInputErrors = new HashMap<String, String>();
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) jumbuneRequest.getConfig();
+		JobConfig jobConfig = jumbuneRequest.getJobConfig();
 		
-	/*	if (isJobNameAlreadyExists(enterpriseJobConfig.getJumbuneJobName())) {
+	/*	if (isJobNameAlreadyExists(jobConfig.getJumbuneJobName())) {
 			jobInputErrors.put(JOB_NAME, errorMessages.get(ErrorMessages.BASIC_JOB_NAME_EXIST));
 		}
-*/		validateJarPath(enterpriseJobConfig);
+*/		validateJarPath(jobConfig);
 
 		checkIfHdfsPathExists(jumbuneRequest);
 		
-		if (isEnable(enterpriseJobConfig.getIsDataSourceComparisonEnabled())) {
+		if (isEnable(jobConfig.getIsDataSourceComparisonEnabled())) {
 			checkDscSourceAndDestinationPath(jumbuneRequest);
 		}
 
@@ -166,12 +159,12 @@ public class ValidateInput {
 	 * 
 	 * @param jobConfig
 	 */
-	public void validateJarPath(EnterpriseJobConfig enterpriseJobConfig) {
-		Enable isLocalSystemJar = enterpriseJobConfig.getIsLocalSystemJar();
+	public void validateJarPath(JobConfig jobConfig) {
+		Enable isLocalSystemJar = jobConfig.getIsLocalSystemJar();
 		
 		if ( isLocalSystemJar == null || isLocalSystemJar == Enable.FALSE) {
 			
-			String inputFile = enterpriseJobConfig.getInputFile();
+			String inputFile = jobConfig.getInputFile();
 			if (!isNullOrEmpty(inputFile)) {
 				boolean endsWithJar = inputFile.trim().endsWith(".jar");
 				if (!endsWithJar || !new File(inputFile).exists()) {
@@ -223,23 +216,7 @@ public class ValidateInput {
 		}
 		return date != null;
 	}
-
-	/**
-	 * This method checks initial settings ex hadoop home is set or not or
-	 * jumbune home is set or not
-	 * 
-	 * @param config
-	 *            the config
-	 * @return true if all case passes successfully
-	 */
-	protected boolean jumbuneHomeValid() {
-		jumbuneHome = JobConfig.getJumbuneHome();
-		if (isNullOrEmpty(jumbuneHome) || !new File(jumbuneHome).exists()) {
-			return false;
-		}
-		return true;
-	}
-
+	
 	/**
 	 * Check and validate hdfs path.
 	 *

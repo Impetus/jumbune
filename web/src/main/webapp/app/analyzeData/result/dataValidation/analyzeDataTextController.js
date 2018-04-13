@@ -1,9 +1,9 @@
-/* Dashboard controller */
+/* Analyze data text controller */
 'use strict';
 angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagination'])
     .controller('AnalyzeDataText', ['$scope', 'common', '$http', '$location', '$timeout', 'uiGridConstants', 'getTableDataFactory', 'getXmlTableDataFactory', 'getJsonTableDataFactory', function($scope, common, $http, $location, $timeout, uiGridConstants, getTableDataFactory, getXmlTableDataFactory, getJsonTableDataFactory) {
         //Voilation detail grid
-        var jobName = common.getOptimizeJobName();
+        var jobName = common.getJobName();
         $scope.showJobName = jobName
         $scope.violationTable = {};
         $scope.violationJSONTable = {};
@@ -19,8 +19,6 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
         $scope.hideTopFieldCounter = false;
         $scope.hideTopTypeViolationMessage = false;
         $scope.webSocketErrorFlag = false;
-        $scope.licenseExpireTrue = false;
-        $scope.licenseExpireDays = false;
         var graphJson = [
 
             {
@@ -49,7 +47,6 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
         var data_option = [];
         $scope.init = function() {
             $('[data-toggle="tooltip"]').tooltip();
-            licenseExpireMessage();
             $scope.selectedGraphPoint = {};
             $scope.gridOptionsTest = {};
             $scope.gridOptionsTestJson = {};
@@ -60,13 +57,17 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
             $scope.tableData = [{ "fieldName": "data", "violations": "12398" }]
             var host = window.location.hostname;
             var port = window.location.port;
-            var jobName = common.getOptimizeJobName();
+            var jobName = common.getJobName();
             $scope.finalJobName = jobName;  
             if ($scope.finalJobName == null || $scope.finalJobName == undefined || $scope.finalJobName == "") {
-                $location.path('/');
+                $location.path('/index');
             } 
             else {
-                var url = "ws://" + host + ":" + port + "/results/jobanalysis?jobName=" + $scope.finalJobName;
+                if (document.location.protocol === 'https:') {
+					var url = "wss://" + host + ":" + port + "/results/jobanalysis?jobName=" + jobName;
+				} else {
+					var url = "ws://" + host + ":" + port + "/results/jobanalysis?jobName=" + jobName;
+				}
 
 
                 var webSocket = new WebSocket(url);                  
@@ -80,7 +81,6 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                     $('.ring-loader').remove();
                     $scope.webSocketErrorFlag = true;
                     var serverData = angular.copy(event.data);
-                    console.log("webSocket data", serverData);
                     var localData = JSON.parse(JSON.parse(serverData).DATA_VALIDATION);
                     var doErrorsExist = $scope.containErrors(localData);
 
@@ -102,15 +102,9 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                             });
                             $scope.createGraph(localData);                    
                             $scope.dataViolationGraph();                    
-                            $scope.dataValidationGraph();                    
-                            //$("#dataValidationGraph").hide();
-                            //$("#noViolationHideTable").hide(); 
-                            $scope.noDataViolatnTable = false; 
-                            //$scope.safeApply($scope.counterValidationFlag = false);
-                            $scope.safeApply($scope.noDataViolatnFlag = true);                   
-                            //$(".dataValidationChartWrapper").append('<div class="yellow" style="position:relative;top:90px;text-align:center;font-weight:bold;font-size:21px;">No Data Violations Found</div>');
-
-                                                        
+                            $scope.dataValidationGraph();
+                            $scope.noDataViolatnTable = false;
+                            $scope.safeApply($scope.noDataViolatnFlag = true);
                         }                    
                     } else {
                         angular.forEach($scope.jsonData, function(obj, key) {                
@@ -135,52 +129,17 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                 webSocket.onclose = function(event) {
                     if ($scope.webSocketErrorFlag == false) {
                         $scope.displayErrorMessage("Connection lost to server");
-                        //setTimeout(function () { $location.path("/"); }, 500);
-                        /*$timeout(function() {
-				      $location.path('/');
-				      }, 3000);*/
                     } else {
                         console.log("socket closed sucessfully")
                     }
                 };
-
-                //$scope.dataProfiling();
             }
 
-        }        
-        function licenseExpireMessage ()  { 
-            //licenseValidateFactory.submitLicense({},function(data) {
-                    var data = common.getNodeSize();
-                    var currentDate = data.currentTime;
-                    if (data['Valid Until']) {
-                        var expiryDate = data['Valid Until'];
-                        var temp = new Date(data['Valid From']).toString();
-                        data['Valid From'] = temp.substring(4, 16) + temp.substring(25);
-                        temp = new Date(data['Valid Until']).toString();
-                        data['Valid Until'] = temp.substring(4, 16) + temp.substring(25); 
-                        var milliseconds = (expiryDate - currentDate);
-                        var daysDiff = milliseconds/86400000;
-                        if ( daysDiff <= 3) {
-                            if ( daysDiff >= 1) {
-                                $scope.daysDiffShow = Math.round(daysDiff);
-                                $scope.licenseExpireDays = true;
-                                $scope.licenseExpireTrue = false;
-                            } else {
-                                $scope.licenseExpireTrue = true;
-                                $scope.licenseExpireDays = false;
-                            }
-                        } 
-                    }
-                //},
-            //function(e) {
-                //console.log(e);
-            //}); 
         }
         $scope.containErrors = function(localData) {
 
             var dqtGraph = common.getDQTFlag();
             if (dqtGraph) {
-                //localData = JSON.parse(localData);
                  isJson(localData);
             }
             var errorMessageToDisplay = "Something went wrong, Please contact 'help@jumbune.com'.";
@@ -214,8 +173,8 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
             try {
                 JSON.parse(str);
             } catch (e) {
-                return false;
-                console.log("Invalid json")
+				console.log("Invalid json received from server", e);
+				return false;
             }
             return true;
         }
@@ -244,28 +203,22 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
             $scope.init();
         }
         $scope.clickedHomeIcon = function() {
-            $location.path("/");
+            $location.path("/dashboard");
         }
         $scope.tableJSON = function(legendData) {
             $scope.tableJSONHideFlag = true;
             $scope.violationJSONTable.label = legendData;
-            //$scope.violationTable.value = legendData.value;
-            //$scope.$apply();
-
+            
         }
         $scope.table = function(legendData) {
             $scope.tableHideFlag = true;
             $scope.violationTable.label = legendData;
-            //$scope.violationTable.value = legendData.value;
-            //$scope.$apply();
-
+           
         }
         $scope.tableChart = function(legendData) {
             $scope.tableHideFlag = true;
             $scope.violationTable.label = legendData.data.nodeData.age;
-            //$scope.violationTable.value = legendData.value;
-            //$scope.$apply();
-
+           
         }
 
         $scope.getCall = function(fileName) {
@@ -285,22 +238,13 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                     $scope.finalTableData = data;
                     $scope.gridOptionsTest.data = data.rows;
                     $scope.dataFlag = true;
-
-
                 },
                 function(e) {
-                    console.log(e);
+                    console.log("Unable to fetch violations of file [" + fileName + "]", e);
                 });
-
         }
 
         $scope.sampledetails = function(data) {
-            /* var paginationOptions = {
-                pageNumber: 1,
-                pageSize: 5,
-                sort: null
-              };*/
-            //$scope.getCall(fileName)
             $scope.gridOptionsTest = {
                 paginationPageSizes: [10, 50, 100],
                 paginationPageSize: 10,
@@ -314,26 +258,8 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                         { field: 'fileName', index: 'fileName', displayName: 'FileName', visible: false },
                         { field: 'actualValue', index: 'actualValue', displayName: 'ActualValue', width: "25%", align: "center" }
                     ]
-                    /*,
-                    					onRegisterApi: function(gridApi){
-                    						$scope.gridApi = gridApi;
-                    						$scope.gridApi.core.on.sortChanged($scope, function(grid, sortColumns) {
-                    					        if (sortColumns.length == 0) {
-                    					          paginationOptions.sort = null;
-                    					        } else {
-                    					          paginationOptions.sort = sortColumns[0].sort.direction;
-                    					        }
-                    					    });
-                    					   	gridApi.pagination.on.paginationChanged($scope, function (newPage, pageSize) {
-                    					        paginationOptions.pageNumber = newPage;
-                    					        paginationOptions.pageSize = pageSize;
-                    					       
-                    					    });
-                    					}*/
+                   
             };
-            /*$scope.gridOptionsTest.data = data.rows;
-            $scope.dataFlag = true;*/
-
         };
 
 
@@ -362,22 +288,15 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
             };
             $scope.gridOptions.data = data;
             $scope.dataRecievedFlag = true;
-            //$scope.$apply();
         }
 
         $scope.totalViolationsArray = new Array();
         $scope.fieldArray = new Array();
         $scope.createGraph = function(dataMaster) {
             for (var key in dataMaster) {
-
                 var jsonObj = JSON.parse(dataMaster[key].jsonReport);
                 $scope.countersDataValidation(jsonObj);
-                //$scope.JsonDataValidation(jsonObj);
-
-                //var data_type = (jsonObj["data_type"] == "undefined")? 0:jsonObj["Data Type"].totalViolations;
-
-                //var null_check = (jsonObj["Null Check"] == "undefined")? 0:jsonObj["Null Check"].totalViolations;
-
+                
                 var regex = 0;
                 if (jsonObj["Regex"]) {
                     regex = jsonObj["Regex"].totalViolations;
@@ -421,14 +340,8 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                     }
                     sunburstJson['children'].push(obj);
                 }
-                /*var numFieldObj = {
-                	'name' : 'Number of Fields Violation',
-                	'size' : num_type
-                };
-                sunburstJson['children'].push(numFieldObj);*/
-
                 $scope.printGraph("#dataValidationGraph", sunburstJson);
-                //("in createGraph",null_check)
+               
                 var sum_main_total = data_type + null_check + regex;
                 var sum_num_total = num_type;
                 var per_data_type = Math.round((data_type / sum_main_total) * 10000, 2) / 100;
@@ -448,7 +361,6 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                     }
 
                     var sub_num_type_array = [];
-                    //var fieldMap =[];
                     for (var sub_key in sub_num_type) {
                         var per_data_type1 = Math.round((sub_num_type[sub_key] / sum_sub_num_type) * 10000, 2) / 100;
                         var fieldMap = (sub_key)
@@ -467,10 +379,8 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
 
 
                     var sub_data_type_array = [];
-                    //var fieldMap =[];
                     for (var sub_key in sub_data_type) {
                         var per_data_type1 = Math.round((sub_data_type[sub_key] / sum_sub_data_type) * 10000, 2) / 100;
-                        //fieldMap.push(sub_key)
                         var fieldMap = (sub_key);
                         sub_data_type_array.push({ "nodeData": { "age": "Data Type", "population": sub_data_type[sub_key], "percent": per_data_type1, "fieldMap": fieldMap } })
                     }
@@ -518,8 +428,7 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                     cleanTuple = jsonObj["DVSUMMARY"].cleanTuples;
                     dirtyTuple = jsonObj["DVSUMMARY"].dirtyTuples;
                 }
-                //var cleanTuple = jsonObj["Data Type"].cleanTuple;
-                //var dirtyTuple = jsonObj["Data Type"].dirtyTuple;
+                
                 sunburstJson = {
                     'name': 'Total Tuples',
                     'children': [{
@@ -581,10 +490,6 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
 
             var dirtyTupleEle = new CountUp("dirtyTupleId", 0, dirtyTuple, 0, 2);
             dirtyTupleEle.start();
-
-            //setMaxTypeViolation(null_check, regex, data_type, num_type);
-
-            //	function setMaxTypeViolation(null_check, regex, data_type, num_type) {
             var map = {
                 'Null Check': null_check,
                 'Regex': regex,
@@ -647,9 +552,9 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                     continue;
                 }
                 var violationObj = JSON.parse(JSON.stringify(jsonObj[violationName]));
-                var fieldViolationsMap = violationObj['fieldMap'];
-                for (var fieldNumber in fieldViolationsMap) {
-                    var value = fieldViolationsMap[fieldNumber];
+                var fieldsMap = violationObj['fieldMap'];
+                for (var fieldNumber in fieldsMap) {
+                    var value = fieldsMap[fieldNumber];
                     if (!fieldViolationsMap[fieldNumber]) {
                         fieldViolationsMap[fieldNumber] = value;
                     } else {
@@ -766,13 +671,6 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                 .on("mouseout", function() {
                     return tooltip.style("display", "none");
                 });
-
-            /*	  g.append("text")
-            	      .attr("transform", function(d) { return "translate(" + arc.centroid(d) + ")"; })
-            	      .attr("dy", ".35em")
-            	      .style("text-anchor", "middle")
-            	      .text(function(d) { return d.data.age; });
-            */
             var legend = svg.selectAll(".legend")
                 .data(color.domain())
                 .enter().append("g")
@@ -923,9 +821,6 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                 .range([0, 2 * Math.PI]);
             var y = d3.scale.sqrt()
                 .range([0, radius]);
-            /*var color = d3.scale.ordinal()
-            .domain(["Total Violations","Null Check", "Data Type", "Regex", "Number of Fields"])
-            .range(["#FFF","#FFCA28", "#FFA726", "#BDBDBD", "#78909C"]);*/
             var color = {
                 'Total Violations': '#FFF',
                 'Data Type': '#FFA726',
@@ -960,13 +855,12 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                 .data(partition.nodes(json))
                 .enter().append("path")
                 .attr("data-legend", function(d) {
-                    //return (d.children ? d : d.parent).name
+                   
                     var stringNoViolation = (d.children ? d : d.parent).name.replace(' Violations','');
                     if ((d.children ? d : d.parent).name == "Data Type Violations") {
                         if ($scope.totalViolationsArray["Data Type"] == undefined) {
                             return (d.children ? d : d.parent).name;
                         } else {
-                            //return (d.children ? d : d.parent).name + " " + $scope.totalViolationsArray["Data Type"];
                             return stringNoViolation + " " + $scope.totalViolationsArray["Data Type"];
 
                         }
@@ -974,7 +868,7 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                         if ($scope.totalViolationsArray["Null Check"] == undefined) {
                             return (d.children ? d : d.parent).name;
                         } else {
-                            //return (d.children ? d : d.parent).name + " " + $scope.totalViolationsArray["Null Check"];
+                           
                             return stringNoViolation + " " + $scope.totalViolationsArray["Null Check"];
 
                         }
@@ -983,17 +877,17 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                         if ($scope.totalViolationsArray["Regex"] == undefined) {
                             return (d.children ? d : d.parent).name;
                         } else {
-                            //return (d.children ? d : d.parent).name + " " + $scope.totalViolationsArray["Regex"];
+                           
                             return stringNoViolation + " " + $scope.totalViolationsArray["Regex"];
 
                         }
 
                     } else if ((d.children ? d : d.parent).name == "Number of Fields Violations") {
-                        //return d+" "+$scope.totalViolationsArray["Number of Fields"];
+                        
                         if ($scope.totalViolationsArray["Number of Fields"] == undefined) {
                             return (d.children ? d : d.parent).name;
                         } else {
-                            //return (d.children ? d : d.parent).name + " " + $scope.totalViolationsArray["Number of Fields"];
+                            
                             return stringNoViolation + " " + $scope.totalViolationsArray["Number of Fields"];
 
                         }
@@ -1017,54 +911,13 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                 .text(function(d) {
                     return d.name + "\n" + formatNumber(d.value);
                 });
-            //var legendArr = ["Null Check", "Data Type", "Regex","Number of Fields"]
+           
             var legend = svg.append("g")
                 .attr("class", "legend")
                 .attr("transform", "translate(105,30)")
                 .style("font-size", "12px")
                 .style("cursor", "pointer")
                 .call(d3.legend)
-                /*legend.append("text")
-				.attr("x", 35)
-				.attr("y", 9)
-				.attr("dy", ".35em")
-				.style("text-anchor", "start")
-				.text(function(d) {
-					if (d == "Data Type") {
-						if ($scope.totalViolationsArray["Data Type"] == undefined) {
-							return d;
-						} else {
-							return d + " " + $scope.totalViolationsArray["Data Type"];
-
-						}
-					} else if (d == "Null Check") {
-						if ($scope.totalViolationsArray["Null Check"] == undefined) {
-							return d;
-						} else {
-							return d + " " + $scope.totalViolationsArray["Null Check"];
-
-						}
-
-					} else if (d == "Regex") {
-						if ($scope.totalViolationsArray["Regex"] == undefined) {
-							return d;
-						} else {
-							return d + " " + $scope.totalViolationsArray["Regex"];
-
-						}
-
-					} else if (d == "Number of Fields") {
-						//return d+" "+$scope.totalViolationsArray["Number of Fields"];
-						if ($scope.totalViolationsArray["Number of Fields"] == undefined) {
-							return d;
-						} else {
-							return d + " " + $scope.totalViolationsArray["Number of Fields"];
-
-						}
-
-					}
-				});
-	*/
 
             function click(d) {
                 svg.transition()
@@ -1105,13 +958,10 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                     currentLevelData = [],
                     queue = [];
                 for (var i = 0; i < data.length; i++) {
-                    /*if (window.CP.shouldStopExecution(1)) {
-
-                        break;
-                    }*/
+                    
                     queue.push(data[i]);
                 }
-                //window.CP.exitedLoop(1);
+                
                 while (!queue.length == 0) {
                     var node = queue.shift();
                     currentLevelData.push(node);
@@ -1175,11 +1025,9 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                                     return d.data.nodeData.age + " :: Field" + d.data.nodeData.fieldMap + " : " + d.data.nodeData.percent + "%";
                                 }
                             } else if (d.data.nodeData.age == "Number of Fields") {
-                                //if(index==0){
+                                
                                 return d.data.nodeData.age + " : " + d.data.nodeData.percent + "%";
-                                //} else{
-                                //return d.data.nodeData.age +" :: Field"+d.data.nodeData.fieldMap+" : "+d.data.nodeData.percent+ "%";
-                                //}
+                                
                             }
                         });
                         return tooltip.transition()
@@ -1222,11 +1070,9 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                                     return d.data.nodeData.age + " :: Field" + d.data.nodeData.fieldMap + " : " + d.data.nodeData.percent + "%";
                                 }
                             } else if (d.data.nodeData.age == "Number of Fields") {
-                                //if(index==0){
+                                
                                 return d.data.nodeData.age + " : " + d.data.nodeData.percent + "%";
-                                //} else{
-                                //return d.data.nodeData.age +" :: Field"+d.data.nodeData.fieldMap+" : "+d.data.nodeData.percent+ "%";
-                                //}
+                                
                             }
                         });
                         return tooltip.transition()
@@ -1244,15 +1090,13 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
             };
             setMultiLevelData(data);
             var pieWidth = parseInt(maxRadius / multiLevelData.length) - multiLevelData.length;
-            //var color = d3.scale.category20();
+           
             var color = d3.scale.ordinal()
                 .domain(["Null Check", "Data Type", "Regex", "Number of Fields"])
                 .range(["#D78542", "#AC4547", "#A87B7E", "#1f77b4"]);
 
             for (var i = 0; i < multiLevelData.length; i++) {
-                /*if (window.CP.shouldStopExecution(2)) {
-                    break;
-                }*/
+               
                 var _cData = multiLevelData[i];
                 drawPieChart(_cData, i);
             }
@@ -1264,7 +1108,7 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                 .style("cursor", "pointer")
                 .on("click", function(legendData) {
                     $scope.table(legendData);
-                    //$scope.table();
+                    
                 })
                 .attr("transform", function(d, i) {
                     return "translate(" + width / 4 + "," + (i * 20) + ")";
@@ -1300,7 +1144,7 @@ angular.module('analyzeDataText.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                         }
 
                     } else if (d == "Number of Fields") {
-                        //return d+" "+$scope.totalViolationsArray["Number of Fields"];
+                        
                         if ($scope.totalViolationsArray["Number of Fields"] == undefined) {
                             return d;
                         } else {

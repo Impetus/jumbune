@@ -13,7 +13,6 @@ import org.apache.logging.log4j.Logger;
  * its methods are injected in compiled classes so these methods will be called
  * from instrumented jar
  */
-@SuppressWarnings("deprecation")
 public final class LogUtil {
 	private static final String MAPRED_COUNTER = "org.apache.hadoop.mapred.Task$Counter";
 	private static final String MAP_INPUT_RECORDS = "MAP_INPUT_RECORDS";

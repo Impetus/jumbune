@@ -38,5 +38,7 @@ public interface RemotingMethodConstants {
 	String SHUT_DOWN_JMX_AGENTS = "shutDownJMXAgents";
 	
 	String GET_HADOOP_CLUSTER_TIME_MILLIS = "getHadoopClusterTimeMillis";
+	
+	String RUN_SCP_ACROSS_NODES= "runScpAcrossNodes" ;
 
 }

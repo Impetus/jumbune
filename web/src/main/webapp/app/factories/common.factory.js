@@ -78,35 +78,21 @@ angular.module('factories')
 	]);
 
 angular.module('factories')
-	.factory('DashboardFactory', ['$resource', '$rootScope',
-		function($resource, $rootScope) {
-			return {
-				dataCenter: $resource('/apis/clusteranalysis/datacenterheatmap', {}, {
-					post: {
-						method: 'POST',
-						isArray: false,
-						headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-					}
-				}),
-				initClusterFac: $resource('/apis/clusteranalysis/initcluster/:clusterName', {}, {
-					post: {
-						method: 'POST',
-						// isArray: false,
-						headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-						params: {
-							clusterName: '@clusterName'
-						}
-					}
-				})
-			}
-		}
-	]);
-
-angular.module('factories')
 	.factory('editClusterFactory', ['$resource',
 		function($resource) {
 			return $resource('/apis/cluster/', {}, {
 				getCluster: {
+					method: 'GET',
+					isArray: true
+				}
+			});
+		}
+	]);
+angular.module('factories')
+	.factory('getManageClusterFactory', ['$resource',
+		function($resource) {
+			return $resource('/apis/cluster/clusters-list-for-management', {}, {
+				getManageCluster: {
 					method: 'GET',
 					isArray: true
 				}
@@ -157,32 +143,6 @@ angular.module('factories')
 			});
 		}
 	]);
-
-angular.module('factories')
-	.factory('DashboardFactory', ['$resource', '$rootScope',
-		function($resource, $rootScope) {
-			return {
-				dataCenter: $resource('/apis/clusteranalysis/datacenterheatmap', {}, {
-					post: {
-						method: 'POST',
-						isArray: false,
-						headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-					}
-				}),
-				initClusterFac: $resource('/apis/clusteranalysis/initcluster/:clusterName', {}, {
-					post: {
-						method: 'POST',
-						// isArray: false,
-						headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-						params: {
-							clusterName: '@clusterName'
-						}
-					}
-				})
-			}
-		}
-	]);
-
 
 angular.module('factories')
 	.factory('deleteClusterFactory', ['$resource',
@@ -273,19 +233,6 @@ angular.module('factories')
 	]);
 
 angular.module('factories')
-	.factory('analyzeOptimizedJob', ['$resource',
-		function($resource) {
-			return $resource('/apis/optimizejobservice', {}, {
-				submitOptimizedJob: {
-					method: 'POST',
-					isArray: false
-
-				}
-			});
-		}
-	]);
-
-angular.module('factories')
 	.factory('getOtimizedYarn', ['$resource',
 		function($resource) {
 			return $resource('/apis/cluster/hadooptype', {}, {
@@ -321,7 +268,6 @@ angular.module('factories')
 			});
 		}
 	]);
-
 angular.module('factories')
 	.factory('getRecurringFactory', ['$resource',
 		function($resource) {
@@ -369,7 +315,7 @@ angular.module('factories')
 			});
 		}
 	]);
-	
+
 angular.module('factories')
     .factory('getDataComparisonTableFactory', ['$resource',
         function($resource) {
@@ -459,19 +405,6 @@ angular.module('factories')
 			});
 		}
 	]);
-
-angular.module('factories')
-	.factory('GetScheduledTuningJobsListFactory', ['$resource',
-		function($resource) {
-			return $resource('/apis/home/scheduledtuningjobs', {}, {
-				getScheduledJobsList: {
-					method: 'GET',
-					isArray: true
-				}
-			});
-		}
-	]);
-
 angular.module('factories')
 	.factory('GetScheduledDQTJobsListFactory', ['$resource',
 		function($resource) {
@@ -483,7 +416,6 @@ angular.module('factories')
 			});
 		}
 	]);
-
 angular.module('factories')
 	.factory('getExampleListFactory', ['$resource',
 		function($resource) {
@@ -502,19 +434,6 @@ angular.module('factories')
 				getSupportedFeaturesList: {
 					method: 'GET',
 					isArray: true
-				}
-			});
-		}
-	]);
-
-angular.module('factories')
-	.factory('licenseValidateFactory', ['$resource',
-		function($resource) {
-			return $resource('/apis/home/licence', {}, {
-				submitLicense: {
-					method: 'POST',
-					isArray: false
-
 				}
 			});
 		}
@@ -576,38 +495,6 @@ angular.module('factories')
 	]);
 
 angular.module('factories')
-	.factory('validateLicenseFactory', ['$resource',
-		function($resource) {
-			return $resource('/apis/clusteranalysis/licence/:clusterName', {}, {
-				validateLicense: {
-					method: 'POST',
-					isArray: false,
-					params: {
-						clusterName: '@clusterName'
-					}
-
-				}
-			});
-		}
-	]);
-
-angular.module('factories')
-	.factory('deleteThreadFactory', ['$resource',
-		function($resource) {
-			return $resource('/apis/clusteranalysis/licence/:clusterName', {}, {
-				validateLicense: {
-					method: 'POST',
-					isArray: false,
-					params: {
-						clusterName: '@clusterName'
-					}
-
-				}
-			});
-		}
-	]);
-
-angular.module('factories')
 	.factory('getJobValidateFactory', ['$resource',
 		function($resource) {
 			return $resource('/apis/validateservice/jobname/:jobName', {}, {
@@ -624,33 +511,6 @@ angular.module('factories')
 	]);
 
 angular.module('factories')
-    .factory('getTotalClusterNodeFactory', ['$resource',
-        function($resource) {
-            return $resource('/apis/cluster/total-cluster-nodes-added', {}, {
-                getTotalNodesList: {
-                    method: 'GET',
-                    isArray: false
-                }
-            });
-        }
-    ]);
- angular.module('factories')
-	.factory('getDefaultRootFactory', ['$resource',
-		function($resource) {
-			return $resource('/apis/adminconfig/dlc-root/:clusterName', {}, {
-				getDefaultRoot: {
-					method: 'GET',
-					isArray: false,
-					params: {
-						clusterName: '@clusterName'
-					}
-
-				}
-			});
-		}
-	]);
-
-angular.module('factories')
 	.factory('ClusterResultFactoryNew', ['$resource', '$rootScope',
 		function($resource, $rootScope) {
 			return {
@@ -659,7 +519,7 @@ angular.module('factories')
 						method: 'POST',
 						isArray: false,
 						headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-						timeout: 300000
+						timeout: 1200000
 					}
 				}),
 				isInfluxdbLive: $resource('/apis/clusteranalysis/is-influxdb-live/:clusterName', {}, {
@@ -679,7 +539,7 @@ angular.module('factories')
 						params: {
 							clusterName: '@clusterName'
 						},
-						timeout: 300000
+						timeout: 1200000
 					}
 				}),
 				resourceOverUsage: $resource('/apis/clusteranalysis/resourceoverusage/:clusterName?memoryThresholdMB=:memoryThresholdMB&vcoresThreshold=:vcoresThreshold', {}, {
@@ -715,7 +575,7 @@ angular.module('factories')
 						timeout: 300000
 					}
 				}),
-				
+
 				dataLoad: $resource('/apis/clusteranalysis/dataloadanddistribution/:clusterName', {}, {
 					get: {
 						method: 'GET',
@@ -748,7 +608,7 @@ angular.module('factories')
 					}
 				}),
 
-				//resource object to fetch queue stats required on cluster analysis result page         
+				//resource object to fetch queue stats required on cluster analysis result page
 				queueStats: $resource('/apis/clusteranalysis/clusterprofiling/queuestats/:clusterName', {}, {
 					get: {
 						method: 'POST',
@@ -756,6 +616,17 @@ angular.module('factories')
 						params: {
 							clusterName: '@clusterName'
 						},
+						timeout: 300000
+					}
+				}),
+				//resource object to fetch average waiting time on cluster analysis result page
+				averageWaitingTime: $resource('/apis/clusteranalysis/clusterprofiling/avgwaitingtime/:clusterName', {}, {
+					get: {
+						method: 'POST',
+						isArray: false,
+						params: {
+							clusterName: '@clusterName'
+							},
 						timeout: 300000
 					}
 				}),
@@ -769,20 +640,10 @@ angular.module('factories')
 						timeout: 300000
 					}
 				}),
-				meteredQueueUsage: $resource('/apis/clusteranalysis/clusterprofiling/metered-queue-usage/:clusterName', {}, {
-					get: {
-						method: 'GET',
-						isArray: true,
-						params: {
-							clusterName: '@clusterName'
-						},
-						timeout: 300000
-					}
-				}),
 				queueUtilizationSummary: $resource('/apis/clusteranalysis/clusterprofiling/queue-utilization-summary/:clusterName', {}, {
 					get: {
 						method: 'GET',
-						isArray: true,
+						isArray: false,
 						params: {
 							clusterName: '@clusterName'
 						},
@@ -823,17 +684,31 @@ angular.module('factories')
 					}
 				}),
 				//resource object to fetch effective capability utilization stats required on cluster analysis result page
-				effCapUtilizationStats: $resource('/apis/clusteranalysis/clusterprofiling/effCapUtilizationStats/:clusterName', {}, {
-					get: {
-						method: 'POST',
-						isArray: true,
+				capacityUtilizationLatestJobs: $resource('/apis/clusteranalysis/clusterprofiling/capacity-utilization-latest-jobs/:clusterName', {}, {
+			          get: {
+			            method: 'POST',
+			            isArray: false,
 
-						params: {
-							clusterName: '@clusterName'
-						},
-						timeout: 900000
-					}
-				}),
+			            params: {
+			              clusterName: '@clusterName',
+			              lastCheckpoint: '@lastCheckpoint'
+			            },
+			            timeout: 900000
+			          }
+			        }),
+			        capacityUtilizationOldJobs: $resource('/apis/clusteranalysis/clusterprofiling/capacity-utilization-old-jobs/:clusterName', {}, {
+			          get: {
+			            method: 'POST',
+			            isArray: false,
+
+			            params: {
+			              clusterName: '@clusterName',
+			              startTime: '@startTime',
+			              endTime : '@endTime'
+			            },
+			            timeout: 900000
+			          }
+			        }),
 
 				//Inititate history file copy to jumbune home
 				copyHistoryFile: $resource('/apis/clusteranalysis/clusterprofiling/copyHistoryFile/:clusterName', {}, {
@@ -886,7 +761,7 @@ angular.module('factories')
 							clusterName: '@clusterName',
 							jobName: '@jobName'
 						},
-						timeout: 300000
+						timeout: 600000
 					}
 				}),
 				jobhistoryGraphData: $resource('/apis/clusteranalysis/job-history?clusterName=:clusterName&jobName=:jobName&duration=:duration', {}, {
@@ -937,37 +812,27 @@ angular.module('factories')
 					post: {
 						method: 'POST',
 						isArray: false,
-						async: false,
+						async: true,
 						headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 						timeout: 210000
 					}
 				}),
-				// Girish
 				getNodeCategoryChartData: $resource('/apis/clusteranalysis/nodespecific', {}, {
 					post: {
 						method: 'POST',
 						isArray: false,
-						async: false,
+						async: true,
 						headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 						timeout: 210000
 					}
 				}),
-				getAlerts: $resource('/apis/clusteranalysis/alerts/:clusterName', {}, {
+				getAlerts: $resource('/apis/clusteranalysis/alerts/:clusterName?lastCheckpoint=:lastCheckpoint', {}, {
 					get: {
 						method: 'GET',
-						isArray: true,
+						isArray: false,
 						params: {
-							clusterName: '@clusterName'
-						},
-						timeout: 300000
-					}
-				}),
-				getRecommendations: $resource('/apis/clusteranalysis/recommendations/:clusterName', {}, {
-					get: {
-						method: 'GET',
-						isArray: true,
-						params: {
-							clusterName: '@clusterName'
+							clusterName: '@clusterName',
+							lastCheckpoint: '@lastCheckPoint'
 						},
 						timeout: 300000
 					}
@@ -1000,18 +865,9 @@ angular.module('factories')
 						timeout: 300000
 					}
 				}),
-				getQuickTuningResult: $resource('/apis/clusteranalysis/quicktuning', {}, {
-					post: {
-						method: 'POST',
-						isArray: true,
-						headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-						timeout: 240000
-					}
-				}),
 				initClusterFac: $resource('/apis/clusteranalysis/initcluster/:clusterName', {}, {
 					post: {
 						method: 'POST',
-						// isArray: false,
 						headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 						params: {
 							clusterName: '@clusterName'

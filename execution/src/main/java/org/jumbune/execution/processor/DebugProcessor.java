@@ -2,13 +2,12 @@ package org.jumbune.execution.processor;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.JobStatus;
 import org.jumbune.common.beans.Module;
 import org.jumbune.common.beans.cluster.Cluster;
-import org.jumbune.common.beans.cluster.Workers;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.common.utils.ClasspathUtil;
@@ -23,7 +22,8 @@ import org.jumbune.utils.beans.LogLevel;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
 
-import org.jumbune.common.job.EnterpriseJobConfig;
+import org.jumbune.common.job.JobConfig;
+import org.jumbune.common.utils.JobRequestUtil;
 import org.jumbune.execution.beans.CommunityModule;
 import org.jumbune.execution.beans.Parameters;
 
@@ -65,9 +65,9 @@ public class DebugProcessor extends BaseProcessor {
 			throws JumbuneException {
 		super.preExecute(params);
 
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) super.getJumbuneRequest().getConfig();
+		JobConfig jobConfig = (JobConfig) super.getJumbuneRequest().getConfig();
 		// copying user lib files to master from slave
-		if (enterpriseJobConfig.getClasspath().getUserSupplied().getSource() == ClasspathUtil.SOURCE_TYPE_SLAVES) {
+		if (jobConfig.getClasspath().getUserSupplied().getSource() == ClasspathUtil.SOURCE_TYPE_SLAVES) {
 			
 				try {
 					FileUtil.copyLibFilesToMaster(super.getJumbuneRequest());
@@ -93,19 +93,18 @@ public class DebugProcessor extends BaseProcessor {
 			LOGGER.info("Executing [Debug] Processor...");
 			JumbuneRequest jumbuneRequest = super.getJumbuneRequest();
 			Config config = jumbuneRequest.getConfig();
-			EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) config;
+			JobConfig jobConfig = (JobConfig) config;
 			Cluster cluster = jumbuneRequest.getCluster();
 			
-			enterpriseJobConfig.getDebuggerConf().getLogLevel().put("ifblock", LogLevel.TRUE);
-			enterpriseJobConfig.getDebuggerConf().setMaxIfBlockNestingLevel(2);
-			String instrumentedJarPath = enterpriseJobConfig.getInstrumentOutputFile();
-			
-			JobConfigUtil.setRelativeWorkingDirectoryForLog(jumbuneRequest);
-			String slaveLogLocation = cluster.getWorkers().getRelativeWorkingDirectory();
-			String locationOfLogFiles = cluster.getNameNodes().getRelativeWorkingDirectory();
+			jobConfig.getDebuggerConf().getLogLevel().put("ifblock", LogLevel.TRUE);
+			jobConfig.getDebuggerConf().setMaxIfBlockNestingLevel(2);
+			String instrumentedJarPath = jobConfig.getInstrumentOutputFile();
+			String tempDirLocation = jobConfig.getTempDirectory() + Constants.JOB_JARS_LOC
+					+ (jobConfig.getFormattedJumbuneJobName())  + Constants.SLAVE_LOG_LOC ;
+			JobConfigUtil.makeTempDirectory(jumbuneRequest, tempDirLocation);
 			// Instrument the pure jar
 			
-			Instrumenter instrumenter = new JarInstrumenter(config, slaveLogLocation);
+			Instrumenter instrumenter = new JarInstrumenter(config, tempDirLocation);
 			instrumenter.instrumentJar();
 			processHelper.executeJar(instrumentedJarPath, super.isCommandBased(), jumbuneRequest, true);
 			// marking report as complete
@@ -113,17 +112,18 @@ public class DebugProcessor extends BaseProcessor {
 			// slaves then don't go for copying
 			if (cluster.getWorkers().getHosts() != null && ! cluster.getWorkers().getHosts().isEmpty()) {
 				RemoteFileUtil remoteFileUtil = new RemoteFileUtil();
-				remoteFileUtil.copyRemoteDBLogFiles(cluster);
+				remoteFileUtil.copyRemoteAjLogFiles(jumbuneRequest, tempDirLocation, jobConfig.getMasterConsolidatedLogLocation());
 			}
 			LogAnalyzerUtil logUtil = new LogAnalyzerUtil();
-			LOGGER.debug("Consolidate logs files kept on master at ["+ locationOfLogFiles+"]");
-			debugAnalyserReport = logUtil.processLogs(locationOfLogFiles,
-					enterpriseJobConfig.isInstrumentEnabled("partitioner"), config,processHelper.getHadoopJobCounters());
+			LOGGER.debug("Consolidate logs files kept on master at ["+ jobConfig.getMasterConsolidatedLogLocation()+"]");
+			debugAnalyserReport = logUtil.processLogs(jobConfig.getMasterConsolidatedLogLocation(),
+					jobConfig.isInstrumentEnabled("partitioner"), config,processHelper.getHadoopJobCounters());
 			return true;
 		} catch (Exception e) {
 			debugAnalyserReport = Constants.LOG_PROCESSOR_ERROR;
 			throw JumbuneRuntimeException.throwDebugAnalysisFailedException(e.getStackTrace());
 		} finally {
+			JobRequestUtil.setJobStatus((JobConfig) super.getJumbuneRequest().getJobConfig(), JobStatus.COMPLETED);
 			report = super.getReports().getReport(CommunityModule.DEBUG_ANALYSER);
 			report.put(Constants.DEBUG_ANALYZER, debugAnalyserReport);
 			// setting the debug analyser report as complete

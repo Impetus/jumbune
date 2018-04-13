@@ -1,7 +1,7 @@
 angular.module('factories').factory('profilerGraph',function(){
     var bodyNode = d3.select('body').node();	 //No mapper information displayed on hover in JVM profiler.
-    var jvmConfig = { renderer:'#jvmGraphContainer', jvmSvg:'', barG:'', lineG:'', xAxisSVG:'', yAxisSVG:'', legendsSVG:'', svgW:800, svgWrapH:0, svgH:450, barH:30, totalTime:0, barRows:0, marginR: 20, marginT:15, marginL: 60, marginB:75, vScrollMargin:5, hScrollMargin:20, legendsW:165, barColors:["#2f7ed8", "#c43333", "#afe240", "#9ecf34", "#8bbc21", "#2b4158"], barLegends:["Setup", "Mapper", "Shuffle", "Sorter", "Reducer", "Cleanup"], lineColors:["#17bfee", "#b954e3", "#0d233a"], lineLegends:["Avg. CPU Usage(%)", "Avg. Memory Usage(%)", "Avg. Data Flow Rate(kb/sec)"], xAxisTitle:'Execution Time', yAxisTitle:'Percentage Utilization'};
-    
+    var jvmConfig = { renderer:'#jvmGraphContainer', jvmSvg:'', barG:'', lineG:'', xAxisSVG:'', yAxisSVG:'', legendsSVG:'', svgW:800, svgWrapH:0, svgH:450, barH:30, totalTime:0, barRows:0, marginR: 20, marginT:15, marginL: 60, marginB:75, vScrollMargin:5, hScrollMargin:20, legendsW:165, barColors:["#2f7ed8", "#c43333", "#ffc107", "#ff5702", "#8bbc21", "#2b4158"], barLegends:["Setup", "Mapper", "Shuffle", "Sorter", "Reducer", "Cleanup"], lineColors:["#17bfee", "#b954e3", "#0d233a"], lineLegends:["Avg. CPU Usage(%)", "Avg. Memory Usage(%)", "Avg. Data Flow Rate(kb/sec)"], xAxisTitle:'Execution Time', yAxisTitle:'Percentage Utilization'};
+
 
     var toolTipDiv= d3.select("body").append("div").attr("class", "tooltip").style("position", "absolute").style("z-index", "111111").style("opacity", 0);
 
@@ -14,8 +14,8 @@ angular.module('factories').factory('profilerGraph',function(){
             jvmConfig.svgH = 450;
             $("<div>").attr("id", "jvmGraphWrap").css({"width":jvmConfig.svgW, "height":jvmConfig.svgH, "position":"relative"}).appendTo(jvmConfig.renderer);
             $('#jvmGraphWrap').append('<div class="hint"></div>');
-            jvmConfig = { renderer:'#jvmGraphContainer', jvmSvg:'', barG:'', lineG:'', xAxisSVG:'', yAxisSVG:'', legendsSVG:'', svgW:800, svgWrapH:0, svgH:450, barH:30, totalTime:0, barRows:0, marginR: 20, marginT:15, marginL: 60, marginB:75, vScrollMargin:5, hScrollMargin:20, legendsW:165, barColors:["#2f7ed8", "#c43333", "#afe240", "#9ecf34", "#8bbc21", "#2b4158"], barLegends:["Setup", "Mapper", "Shuffle", "Sorter", "Reducer", "Cleanup"], lineColors:["#17bfee", "#b954e3", "#0d233a"], lineLegends:["Avg. CPU Usage(%)", "Avg. Memory Usage(%)", "Avg. Data Flow Rate(kb/sec)"], xAxisTitle:'Execution Time', yAxisTitle:'Percentage Utilization'};
-            
+            jvmConfig = { renderer:'#jvmGraphContainer', jvmSvg:'', barG:'', lineG:'', xAxisSVG:'', yAxisSVG:'', legendsSVG:'', svgW:800, svgWrapH:0, svgH:450, barH:30, totalTime:0, barRows:0, marginR: 20, marginT:15, marginL: 60, marginB:75, vScrollMargin:5, hScrollMargin:20, legendsW:165, barColors:["#2f7ed8", "#c43333", "#ffc107", "#ff5702", "#8bbc21", "#2b4158"], barLegends:["Setup", "Mapper", "Shuffle", "Sorter", "Reducer", "Cleanup"], lineColors:["#17bfee", "#b954e3", "#0d233a"], lineLegends:["Avg. CPU Usage(%)", "Avg. Memory Usage(%)", "Avg. Data Flow Rate(kb/sec)"], xAxisTitle:'Execution Time', yAxisTitle:'Percentage Utilization'};
+
             jvmConfig.svgW = jvmConfig.svgW - jvmConfig.marginL;
             jvmConfig.svgH = jvmConfig.svgH - jvmConfig.marginB - jvmConfig.marginT;
             jvmConfig.totalTime = data.totalTime;
@@ -85,7 +85,7 @@ angular.module('factories').factory('profilerGraph',function(){
                                 // this.showTooltip(d3.select(this).attr("data-hint"),d3.select(this).attr("x"),d3.select(this).attr("y"));
                                 //------------
                                 toolTipDiv.transition().duration(200).style("opacity", .9);
-                                toolTipDiv.text(d3.select(this).attr("data-hint")).style("left", (d3.event.pageX) + "px").style("top", (d3.event.pageY - 28) + "px"); 
+                                toolTipDiv.text(d3.select(this).attr("data-hint")).style("left", (d3.event.pageX) + "px").style("top", (d3.event.pageY - 28) + "px");
                                 //------------
 
                                 jvmConfig.barG.append("rect").attr("class", "hint--bottom").attr("id", "hoverObj").attr("x", obj.attr("x")).attr("y", obj.attr("y"))
@@ -112,7 +112,7 @@ angular.module('factories').factory('profilerGraph',function(){
                             var startPointPerc = (reduceStart*100)/jvmConfig.totalTime;
                             actStartPoint = (startPointPerc*jvmConfig.svgW)/100;
                             // var toolTipDiv = d3.select("body").append("div").attr("class", "tooltip").style("position", "absolute").style("z-index", "10").style("opacity", 0);
-                            
+
                             jvmConfig.barG.append("rect")
                                 .attr("class", "hint--bottom")
                                 .attr("height", jvmConfig.barH)
@@ -125,7 +125,7 @@ angular.module('factories').factory('profilerGraph',function(){
                                     var obj = d3.select(this);
                                     // this.showTooltip(d3.select(this).attr("data-hint"),d3.select(this).attr("x"),d3.select(this).attr("y"));
                                     //------------
-                                    toolTipDiv.transition().duration(200).style("opacity", .9).text(d3.select(this).attr("data-hint")).style("left", (d3.event.pageX) + "px").style("top", (d3.event.pageY - 28) + "px"); 
+                                    toolTipDiv.transition().duration(200).style("opacity", .9).text(d3.select(this).attr("data-hint")).style("left", (d3.event.pageX) + "px").style("top", (d3.event.pageY - 28) + "px");
                                     //------------
                                     jvmConfig.barG.append("rect").attr("class", "hint--bottom").attr("id", "hoverObj").attr("x", obj.attr("x")).attr("y", obj.attr("y"))
                                         .attr("width", obj.attr("width")).attr("height", obj.attr("height")).attr("data-hint", obj.attr("data-hint")).style("fill", obj.style("fill"))
@@ -314,12 +314,12 @@ angular.module('factories').factory('profilerGraph',function(){
                 obj.append("circle")
                     .on("mouseover", function() { d3.select(this).transition().duration(500).delay(function(d, i) { return i * 50; }).attr("r", 10).style("fill-opacity", "1");
                         // showTooltip(d3.select(this).attr("data-hint"),d3.select(this).attr("x"),d3.select(this).attr("y"));
-                        toolTipDiv.transition().duration(200).style("opacity", .9).text(d3.select(this).attr("data-hint")).style("left", (d3.event.pageX) + "px").style("top", (d3.event.pageY - 28) + "px"); 
+                        toolTipDiv.transition().duration(200).style("opacity", .9).text(d3.select(this).attr("data-hint")).style("left", (d3.event.pageX) + "px").style("top", (d3.event.pageY - 28) + "px");
                         //showTooltip2(this);
                     })
-                    .on("mouseout", function() { 
+                    .on("mouseout", function() {
                         toolTipDiv.style('opacity', 0);
-                        d3.select(this).transition().duration(500).delay(function(d, i) { return i * 50; }).attr("r", 5).style("fill-opacity", "0.7");//hideTooltip(); 
+                        d3.select(this).transition().duration(500).delay(function(d, i) { return i * 50; }).attr("r", 5).style("fill-opacity", "0.7");//hideTooltip();
                     })
                     .attr("class", "hint--bottom")
                     .attr("transform", "translate("+ x +", "+ y +")")
@@ -345,13 +345,15 @@ angular.module('factories').factory('profilerGraph',function(){
             var frArr = [];
             var xPoints = [];
             $.each(data.phaseOutput, function(frKey, frObj) {
-                var xStartPointPerc = (frObj.taskOutputDetails[0].startPoint*100)/jvmConfig.totalTime;
-                var xEndPointPerc = (frObj.taskOutputDetails[0].endPoint*100)/jvmConfig.totalTime;
-                var xStartPoint = (xStartPointPerc*jvmConfig.svgW)/100;
-                var xEndPoint = (xEndPointPerc*jvmConfig.svgW)/100;
-                var xcenterPoint = xStartPoint + (xEndPoint - xStartPoint)/2;
-                xPoints.push(xcenterPoint);
-                frArr.push(frObj.avgDataFlowRate);
+            	if(frObj.taskOutputDetails.length>0){
+	                var xStartPointPerc = (frObj.taskOutputDetails[0].startPoint*100)/jvmConfig.totalTime;
+	                var xEndPointPerc = (frObj.taskOutputDetails[0].endPoint*100)/jvmConfig.totalTime;
+	                var xStartPoint = (xStartPointPerc*jvmConfig.svgW)/100;
+	                var xEndPoint = (xEndPointPerc*jvmConfig.svgW)/100;
+	                var xcenterPoint = xStartPoint + (xEndPoint - xStartPoint)/2;
+	                xPoints.push(xcenterPoint);
+	                frArr.push(frObj.avgDataFlowRate);
+            	}
             });
             var maxPoint = Math.max.apply( Math, frArr );
             var i=0;
@@ -372,13 +374,13 @@ angular.module('factories').factory('profilerGraph',function(){
                     .delay(function(d, i) { return i * 50; })
                     .attr("r", 10);
                 flowRateG.append("circle")
-                    .on("mouseover", function() { 
+                    .on("mouseover", function() {
                         d3.select(this).transition().duration(500).delay(function(d, i) { return i * 50; }).attr("r", 10).style("fill-opacity", "1");
 
-                        toolTipDiv.transition().duration(200).style("opacity", .9).text(d3.select(this).attr("data-hint")).style("left", (d3.event.pageX) + "px").style("top", (d3.event.pageY - 28) + "px"); 
+                        toolTipDiv.transition().duration(200).style("opacity", .9).text(d3.select(this).attr("data-hint")).style("left", (d3.event.pageX) + "px").style("top", (d3.event.pageY - 28) + "px");
                         //showTooltip2(this);
                     })
-                    .on("mouseout", function() { 
+                    .on("mouseout", function() {
                         toolTipDiv.style('opacity', 0);
                         d3.select(this).transition().duration(500).delay(function(d, i) { return i * 50; }).attr("r", 5).style("fill-opacity", "0.7");//hideTooltip();
                     })

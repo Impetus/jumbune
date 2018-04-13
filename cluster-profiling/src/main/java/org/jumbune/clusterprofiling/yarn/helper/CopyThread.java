@@ -13,17 +13,16 @@ import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.Constants;
+import org.jumbune.common.utils.ExtendedConstants;
 import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingMethodConstants;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
-
-import org.jumbune.common.job.EnterpriseJobConfig;
-import org.jumbune.common.utils.ExtendedConstants;
 /**
  * The Class CopyThread. Thread for fetching history files to jumbune.
  */
@@ -34,9 +33,6 @@ class CopyThread implements Runnable {
 
 	/** The cluster. */
 	Cluster cluster = null;
-
-	/** The jumbune home. */
-	String jumbuneHome = null;
 
 	/** The agent home. */
 	String agentHome = null;
@@ -63,7 +59,6 @@ class CopyThread implements Runnable {
 	public CopyThread(List<String> jobList, Cluster cluster) {
 		this.jobList = jobList;
 		this.cluster = cluster;
-		jumbuneHome = EnterpriseJobConfig.getJumbuneHome();
 		agentHome = RemotingUtil.getAgentHome(cluster);
 		historyLocation = RemotingUtil.getHistoryDoneLocation(cluster);
 	}
@@ -78,13 +73,13 @@ class CopyThread implements Runnable {
 		try {
 			for (int i = 0; i < jobList.size(); i++) {
 				String jobId = jobList.get(i);
-				StringBuffer sb = new StringBuffer().append(jumbuneHome)
+				StringBuffer sb = new StringBuffer().append(JumbuneInfo.getHome())
 						.append(ExtendedConstants.JOB_JARS_LOC)
 						.append(cluster.getClusterName())
 						.append(CLUSTER_PROFILING).append(jobId)
 						.append(File.separator);
 				StringBuffer histFilePath = new StringBuffer()
-						.append(jumbuneHome)
+						.append(JumbuneInfo.getHome())
 						.append(ExtendedConstants.JOB_JARS_LOC)
 						.append(cluster.getClusterName())
 						.append(CLUSTER_PROFILING).append(jobId)

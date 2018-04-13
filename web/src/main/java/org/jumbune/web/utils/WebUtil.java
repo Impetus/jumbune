@@ -37,8 +37,8 @@ import org.jumbune.utils.exception.JumbuneRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import org.jumbune.common.beans.cluster.EnterpriseClusterDefinition;
-import org.jumbune.common.job.EnterpriseJobConfig;
+import org.jumbune.common.beans.cluster.ClusterDefinition;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.ExtendedConstants;
 import org.jumbune.utils.exception.ExtendedErrorCodesAndMessages;
 
@@ -125,10 +125,10 @@ public class WebUtil {
 		try {
 			inputStreamReader = new InputStreamReader(new FileInputStream(file));
 
-			EnterpriseJobConfig enterpriseJobConfig = gson.fromJson(inputStreamReader, EnterpriseJobConfig.class);
+			JobConfig jobConfig = gson.fromJson(inputStreamReader, JobConfig.class);
 
-			LOG.debug("JSON loaded successfully from " + file.getAbsolutePath() + " conf " + enterpriseJobConfig);
-			return enterpriseJobConfig;
+			LOG.debug("JSON loaded successfully from " + file.getAbsolutePath() + " conf " + jobConfig);
+			return jobConfig;
 
 		} catch (FileNotFoundException fne) {
 			LOG.error("Could not find JSON file : " + file.getAbsolutePath());
@@ -156,20 +156,20 @@ public class WebUtil {
 		StringBuilder tabBuilder = new StringBuilder();
 
 		final char separator = ',';
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) config;
-		if (enterpriseJobConfig.getEnableDataValidation().equals(Enable.TRUE)) {
+		JobConfig jobConfig = (JobConfig) config;
+		if (jobConfig.getEnableDataValidation().equals(Enable.TRUE)) {
 			tabBuilder.append("Data Validation");
 			isDashBoardNeeded = true;
 		}
 
-		if (enterpriseJobConfig.getHadoopJobProfile().equals(Enable.TRUE)) {
+		if (jobConfig.getHadoopJobProfile().equals(Enable.TRUE)) {
 			tabBuilder.append(separator).append("Cluster Profiling");
 		}
-		if (enterpriseJobConfig.getEnableStaticJobProfiling().equals(Enable.TRUE)) {
+		if (jobConfig.getEnableStaticJobProfiling().equals(Enable.TRUE)) {
 			tabBuilder.append(separator).append("Static Profiling");
 		}
 
-		if (enterpriseJobConfig.getDebugAnalysis().equals(Enable.TRUE)) {
+		if (jobConfig.getDebugAnalysis().equals(Enable.TRUE)) {
 			tabBuilder.append(separator).append("Debug Analysis");
 			isDashBoardNeeded = true;
 		}
@@ -224,9 +224,9 @@ public class WebUtil {
 	 * @return true if at least one required module is enabled
 	 */
 	public static boolean isRequiredModuleEnable(Config config) {
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) config;
-		return (JobConfigUtil.isEnable(enterpriseJobConfig.getHadoopJobProfile())
-				|| JobConfigUtil.isEnable(enterpriseJobConfig.getDebugAnalysis()));
+		JobConfig jobConfig = (JobConfig) config;
+		return (JobConfigUtil.isEnable(jobConfig.getHadoopJobProfile())
+				|| JobConfigUtil.isEnable(jobConfig.getDebugAnalysis()));
 	}
 
 	/**
@@ -384,21 +384,21 @@ public class WebUtil {
 	 */
 	public static Config prepareJobConfig(String data) throws IOException, FileUploadException {
 		Gson gson = new Gson();
-		return gson.fromJson(data, EnterpriseJobConfig.class);
+		return gson.fromJson(data, JobConfig.class);
 
 	}
 
 	public static JumbuneRequest addJobConfigWithCluster(String jobConfigJSON) throws IOException, FileUploadException {
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) prepareJobConfig(jobConfigJSON);
-		String clusterName = enterpriseJobConfig.getOperatingCluster();
+		JobConfig jobConfig = (JobConfig) prepareJobConfig(jobConfigJSON);
+		String clusterName = jobConfig.getOperatingCluster();
 		Cluster cluster = (Cluster) getClusterByName(clusterName);
 		JumbuneRequest jumbuneRequest = new JumbuneRequest();
 		jumbuneRequest.setCluster(cluster);
-		jumbuneRequest.setConfig(enterpriseJobConfig);
+		jumbuneRequest.setConfig(jobConfig);
 		return jumbuneRequest;
 	}
 
-	public static EnterpriseClusterDefinition getClusterByName(String clusterName) {
+	public static ClusterDefinition getClusterByName(String clusterName) {
 		File file = new File($JUMBUNE_HOME_CLUSTERS + clusterName);
 		if (!file.exists()) {
 			return null;
@@ -411,7 +411,7 @@ public class WebUtil {
 			return null;
 		}
 		Gson gson = new Gson();
-		return gson.fromJson(json, EnterpriseClusterDefinition.class);
+		return gson.fromJson(json, ClusterDefinition.class);
 	}
 
 	/**

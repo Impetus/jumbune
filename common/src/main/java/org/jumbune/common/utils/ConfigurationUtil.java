@@ -36,6 +36,7 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.ClasspathElement;
 import org.jumbune.common.beans.Doc;
 import org.jumbune.common.beans.DqtViewBean;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.Property;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.job.JobConfig;
@@ -380,7 +381,7 @@ public class ConfigurationUtil {
 	 */
 	public static ClasspathElement loadJumbuneSuppliedJarList() throws JumbuneException {
 		ClasspathElement classpathElement = new ClasspathElement();
-		String[] files = {"AGENT_HOMElib/jumbune-utils-"+ Versioning.ENTERPRISE_BUILD_VERSION + Versioning.ENTERPRISE_DISTRIBUTION_NAME + ".jar","AGENT_HOMElib/log4j-api-2.1.jar","AGENT_HOMElib/log4j-core-2.1.jar"};
+		String[] files = {"AGENT_HOMElib/jumbune-utils-"+ Versioning.COMMUNITY_BUILD_VERSION + Versioning.COMMUNITY_DISTRIBUTION_NAME + ".jar","AGENT_HOMElib/log4j-api-2.1.jar","AGENT_HOMElib/log4j-core-2.1.jar"};
 		classpathElement.setFiles(files);
 		classpathElement.setSource(-1);
 		return classpathElement;
@@ -493,7 +494,7 @@ public class ConfigurationUtil {
 		DqtViewBean dqtViewBean = null ;
 		List<DqtViewBean> dqtViewBeans = new ArrayList<DqtViewBean>();
 		StringBuilder sb = new StringBuilder();
-		String directoryPath = sb.append(JobConfig.getJumbuneHome()).append("ScheduledJobs")
+		String directoryPath = sb.append(JumbuneInfo.getHome()).append("ScheduledJobs")
 				.append(File.separator).append("IncrementalDQJobs").append(File.separator).toString();
 		
 		Properties prop = new Properties();
@@ -552,10 +553,8 @@ public class ConfigurationUtil {
 	 * @return the local configuration file path
 	 */
 	public static String getLocalConfigurationFilePath(Cluster cluster){
-		String jumbuneHome = JobConfig.getJumbuneHome();
 		String clusterName = cluster.getClusterName() + File.separator;
-		jumbuneHome = new String(jumbuneHome+File.separator);
-		String destinationReceiveDir = jumbuneHome + Constants.JOB_JARS_LOC  + clusterName;
+		String destinationReceiveDir = JumbuneInfo.getHome() + Constants.JOB_JARS_LOC  + clusterName;
 		return destinationReceiveDir;
 	}
 

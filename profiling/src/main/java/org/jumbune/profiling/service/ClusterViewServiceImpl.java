@@ -62,8 +62,6 @@ import org.jumbune.profiling.yarn.beans.YarnClusterWideInfo;
 import org.jumbune.profiling.yarn.beans.YarnWorkerJMXInfo;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
 
-;
-
 /**
  * Service to prepare various cluster view.
  */

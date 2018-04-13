@@ -65,8 +65,8 @@ angular.module('dataValidateJSON.ctrl', []).controller('dataValidationController
                 "enableJsonDataValidation" : "TRUE",
                 "jumbuneJobName" : angular.copy(clusList.jumbuneJobName),
                 "hdfsInputPath"  : angular.copy(clusList.hdfsInputPath),
+                "tempDirectory" : angular.copy(clusList.tempDirectory),
                 "parameters"  : angular.copy(clusList.parameters)
-
             }
             
             common.setDataValFlag(dataValidation1.enableJsonDataValidation);
@@ -76,7 +76,6 @@ angular.module('dataValidateJSON.ctrl', []).controller('dataValidationController
             common.setHdfsInputPath(mergedObject.hdfsInputPath);
             
            var jsonDataIs = JSON.stringify(mergedObject);
-           //jsonDataIs = jsonDataIs.replace(/\\\\/g, '\\')
                     $scope.content = new FormData();
                     $scope.content.append("jsonData", jsonDataIs);
                     var req = {
@@ -102,7 +101,7 @@ angular.module('dataValidateJSON.ctrl', []).controller('dataValidationController
                                 };
 
                                 $http(req).then(function(data){
-                                    common.setOptimizeJobName(data.data.JOB_NAME);
+                                    common.setJobName(data.data.JOB_NAME);
                                    $location.path('/analyze-data-json');
                                 }, function(error){
                                     console.log("in error",error)
@@ -112,40 +111,6 @@ angular.module('dataValidateJSON.ctrl', []).controller('dataValidationController
                         }, function(error){
                             console.log("in error",error)
                         });
-                   
-                     /* var req = {
-                            method: 'POST', 
-                            url:'/apis/validateservice/validatejobinput',
-                            headers: {'Content-Type': undefined },
-                            transformRequest: angular.identity,
-                            data:$scope.content,
-                        };
-
-                        $http(req).then(function(data){
-                            if(data.data.STATUS=="ERROR" && data.data.hdfsInputPath) {
-                                $scope.errorMessage = data.data.hdfsInputPath;
-                                $scope.errorMessageShow = true;
-                            } else {
-
-                                var req = {
-                                    method: 'POST', 
-                                    url:'apis/jobanalysis/save',
-                                    headers: {'Content-Type': undefined },
-                                    transformRequest: angular.identity,
-                                    data:$scope.content,
-                                };
-
-                                $http(req).then(function(data){
-                                    console.log("in succes",data);
-                                    common.setOptimizeJobName(data.data.JOB_NAME);
-                                   $location.path('/analyze-data-json');
-                                }, function(error){
-                                    console.log("in error",error)
-                                }); 
-                            }
-                        }, function(error){
-                            console.log("in error",error)
-                        });*/
 
         };
 

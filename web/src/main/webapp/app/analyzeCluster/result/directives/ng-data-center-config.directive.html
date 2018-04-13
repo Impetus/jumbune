@@ -1,7 +1,7 @@
 <ul class="dropdown-menu  pull-right dropdown-menu-form" style="position:absolute;width:272px;" ng-style="{display: openPopup ? 'block' : 'none', top: dcY + 10 + 'px', left: dcX - 270 + 'px'}">
 	<li class="dropdown-linechart">
 		<div>
-			<strong>systemStats.cpu.CpuUsage</strong>
+			<strong>Cpu Usage</strong>
 		</div>
 	</li>
 	<li class="dropdown-linechart">
@@ -43,7 +43,7 @@
 	<li class="divider"></li>
 	<li class="dropdown-linechart">
 		<div>
-			<strong>systemStats.memory.UsedMemory</strong>
+			<strong>Memory Usage</strong>
 		</div>
 	</li>
 	<li class="dropdown-linechart">
@@ -61,7 +61,7 @@
 			</span>
 			<span style="display: inline-block;margin-left:5px ">
 				<input ng-model="memValueBad" type="text" style="width: 66px;" value="25"> </span>
-			<span style="display: inline-block;margin-left:5px ">GB</span>
+			<span style="display: inline-block;margin-left:5px ">%</span>
 		</div>
 	</li>
 	<li class="dropdown-linechart">
@@ -78,8 +78,8 @@
 				</select>
 			</span>
 			<span style="display: inline-block;margin-left:5px ">
-				<input ng-model="memValueGood" type="text" style="width: 66px;" value="75"> </span>
-			<span style="display: inline-block;margin-left:5px ">GB</span>
+				<input ng-model="memValueGood" type="text" style="width: 66px;"> </span>
+			<span style="display: inline-block;margin-left:5px ">%</span>
 		</div>
 	</li>
 	<li class="divider"></li>

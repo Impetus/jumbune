@@ -2,7 +2,10 @@
 'use strict';
 angular.module('dataValidate.ctrl', []).controller('dataValidationController', ['$scope','$http', '$rootScope', 'common', '$location', 'DataValidationFactories','analyzeValidationFactory', function($scope, $http, $rootScope, common, $location, DataValidationFactories,analyzeValidationFactory){
     //alert("test")
-		var onlyDdvPage = false;
+		$scope.selectAll = {
+            checkboxes : false
+        };		
+        var onlyDdvPage = false;
 		if(!$scope.dataValidationTab){
 			onlyDdvPage = true;
 			$scope.dataValidationTab = {};
@@ -18,10 +21,6 @@ angular.module('dataValidate.ctrl', []).controller('dataValidationController', [
         $scope.dataValidationTab.errorMessageShow = false;
         $scope.dataValidationTab.tupleRecordSeparatorValidate= false;
         $scope.dataValidationTab.tupleFieldSeparatorValidate= false;
-        /*$scope.dataValidationTab.dataProfilingOperandArr = [
-        {label:'must be null', value:'mustBeNull'},
-        {label:'must not be null', value:'notNull'}];*/
-        //$scope.dataValidationTab.fieldNumber = [];
          var clusList = common.getAnalyzeDataDetail();
 
         $scope.dataValidationTab.createFields = function() {
@@ -33,7 +32,6 @@ angular.module('dataValidate.ctrl', []).controller('dataValidationController', [
         };
 
         $scope.dataValidationTab.cancel = function () {
-            //$location.path('/data-configuration');
             $location.path('/index');
         };
         
@@ -86,6 +84,7 @@ angular.module('dataValidate.ctrl', []).controller('dataValidationController', [
                  "enableDataValidation" : $scope.dataValidationTab.enableDataValidation,
                  "hdfsInputPath"  : angular.copy(clusList.hdfsInputPath),
                  "parameters" : angular.copy(clusList.parameters),
+                 "tempDirectory" : angular.copy(clusList.tempDirectory),
                 "jumbuneJobName" : angular.copy(clusList.jumbuneJobName)
             }
 			//common.setWidgetInfo('dataValidation', dataValidationDetails);
@@ -126,7 +125,7 @@ angular.module('dataValidate.ctrl', []).controller('dataValidationController', [
                                 };
 
                                 $http(req).then(function(data){
-                                    common.setOptimizeJobName(data.data.JOB_NAME);
+                                    common.setJobName(data.data.JOB_NAME);
                                     $location.path('/analyze-data');
                                 }, function(error){
                                     console.log("in error",error)
@@ -233,7 +232,11 @@ angular.module('dataValidate.ctrl', []).controller('dataValidationController', [
                 $scope.dataValidationTab.tupleFieldSeparatorValidate = false;
             }
         }
-
+        $scope.checkAll = function() {
+            $scope.dataValidationTab.fields.forEach(function(field) {
+               field.enable = $scope.selectAll.checkboxes;
+            });
+        };  
 
 
         /* Private Methods-- */

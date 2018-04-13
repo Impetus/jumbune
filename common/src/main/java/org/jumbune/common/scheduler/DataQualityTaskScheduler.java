@@ -28,17 +28,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.DataQualityTimeLineConfig;
 import org.jumbune.common.beans.Enable;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.SchedulingEvent;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
-import org.jumbune.common.utils.CronGenerator;
 import org.jumbune.common.utils.JobConfigUtil;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
 
-import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 
@@ -95,11 +94,6 @@ public class DataQualityTaskScheduler extends Scheduler {
 	/** The Constant INCREMENTAL_DQ_JOB. */
 	/* directory name for residing incremental DataQualityTimline job */
 	private static final String INCREMENTAL_DQ_JOB = "IncrementalDQJobs";
-
-	/** The Constant JUMBUNE_HOME. */
-	/* Jumbune home */
-	private static final String JUMBUNE_HOME = JobConfig.getJumbuneHome()
-			+ File.separator;
 	
 	/** The Constant NEW_LINE. */
 	/* New line */
@@ -137,7 +131,7 @@ public class DataQualityTaskScheduler extends Scheduler {
 					cronExpression, schedluedScriptPath));
 			addUpdatedFileToCron();
 			writeLatestCronTabToFile(updatedCronInfoBuilder.toString());
-			copyExecutionScriptToDestFolder(JUMBUNE_HOME + EXEC_DIR
+			copyExecutionScriptToDestFolder(JumbuneInfo.getHome() + EXEC_DIR
 					+ SCHEDULER_SCRIPT, schedluedScriptPath);
 		} catch (Exception e) {
 			LOGGER.error("Unable to schedule DataQuality Job ", e);
@@ -253,9 +247,8 @@ public class DataQualityTaskScheduler extends Scheduler {
 	 * @return the job config
 	 */
 	private JobConfig disableOtherModulesIfEnabled(JobConfig jobConfig) {
-		Gson gson = new Gson();
-		String configJson = gson.toJson(jobConfig, JobConfig.class);
-		JobConfig clonedJobConfig = gson.fromJson(configJson, JobConfig.class);
+		String configJson = Constants.gson.toJson(jobConfig, JobConfig.class);
+		JobConfig clonedJobConfig = Constants.gson.fromJson(configJson, JobConfig.class);
 		if (JobConfigUtil.isEnable(clonedJobConfig.getDebugAnalysis())) {
 			clonedJobConfig.setDebugAnalysis(Enable.FALSE);
 		}
@@ -278,9 +271,8 @@ public class DataQualityTaskScheduler extends Scheduler {
 	 * @param config the config
 	 */
 	private void writeConfigurationInScheduledJobDirectory(Config config) {
-		Gson gson = new Gson();
 		JobConfig jobConfig = (JobConfig) config;
-		String json = gson.toJson(jobConfig, JobConfig.class);
+		String json = Constants.gson.toJson(jobConfig, JobConfig.class);
 		File file = null;
 		FileWriter fileWriter = null;
 		try {
@@ -343,8 +335,7 @@ public class DataQualityTaskScheduler extends Scheduler {
 	public String getScheduledJobLocation(Config config) {
 		JobConfig jobConfig = (JobConfig) config;
 		String jobName = jobConfig.getJumbuneJobName();
-		String scheduledJobDirectory = JobConfig.getJumbuneHome()
-				+ File.separator + SCHEDULED_JOB + File.separator
+		String scheduledJobDirectory = JumbuneInfo.getHome() + SCHEDULED_JOB + File.separator
 				+ INCREMENTAL_DQ_JOB + File.separator + jobName
 				+ File.separator;
 		File file = new File(scheduledJobDirectory);
@@ -561,7 +552,7 @@ public class DataQualityTaskScheduler extends Scheduler {
 			populateDataTimeLineValues(dataQualityReport, 0, 0, "{}");
 		}
 		dqrWrapper.put(new Long(launchTime.getTime()).toString(), dataQualityReport);
-		return new Gson().toJson(dqrWrapper);
+		return Constants.gson.toJson(dqrWrapper);
 	}
 
 	/**
@@ -591,8 +582,7 @@ public class DataQualityTaskScheduler extends Scheduler {
 	private Integer getTupleResult(Config config, int lineToget, String dvName) {
 		JobConfig jobConfig = (JobConfig) config;
 		StringBuilder sb = new StringBuilder();
-		String tupleDirectory = sb.append(JobConfig.getJumbuneHome())
-				.append(File.separator).append(Constants.JOB_JARS_LOC)
+		String tupleDirectory = sb.append(JumbuneInfo.getHome()).append(Constants.JOB_JARS_LOC)
 				.append(File.separator).append(jobConfig.getJumbuneJobName())
 				.append(File.separator).append(dvName).append(File.separator)
 				.append("tuple").toString();
@@ -642,14 +632,12 @@ public class DataQualityTaskScheduler extends Scheduler {
 	 */
 	public String getDataQualityTimeLineReport(JobConfig jobConfig,
 			String jobName) {
-		Gson gson = new Gson();
 		int interval = 0;
 		boolean avoidFirstIteration = false;
 		StringBuilder sb = new StringBuilder();
 		TreeMap<String, Map<String, String>> timeStamp = new TreeMap<String, Map<String, String>>(
 				new TimestampComparator());
-		String directoryPath = sb.append(JobConfig.getJumbuneHome())
-				.append(File.separator).append(SCHEDULED_JOB)
+		String directoryPath = sb.append(JumbuneInfo.getHome()).append(SCHEDULED_JOB)
 				.append(File.separator).append(INCREMENTAL_DQ_JOB)
 				.append(File.separator).append(jobName).append(File.separator)
 				.toString();
@@ -673,8 +661,7 @@ public class DataQualityTaskScheduler extends Scheduler {
 		sb = new StringBuilder();
 		for (String jobResult : directories) {
 			if (!jobResult.equals("bin")) {
-				file = new File(sb.append(JobConfig.getJumbuneHome())
-						.append(File.separator).append(SCHEDULED_JOB)
+				file = new File(sb.append(JumbuneInfo.getHome()).append(SCHEDULED_JOB)
 						.append(File.separator).append(INCREMENTAL_DQ_JOB)
 						.append(File.separator).append(jobName)
 						.append(File.separator).append(jobResult)
@@ -691,7 +678,7 @@ public class DataQualityTaskScheduler extends Scheduler {
 					line = stringBuilder.toString().trim();
 					Type type = new TypeToken<Map<String, Map<String, String>>>() {
 					}.getType();
-					Map<String, Map<String, String>> scheduleJobResult = gson
+					Map<String, Map<String, String>> scheduleJobResult = Constants.gson
 							.fromJson(line, type);
 					for (Entry<String, Map<String, String>> map : scheduleJobResult
 							.entrySet()) {
@@ -715,7 +702,7 @@ public class DataQualityTaskScheduler extends Scheduler {
 			}
 
 		}
-		return gson.toJson(timeStamp);
+		return Constants.gson.toJson(timeStamp);
 
 	}
 	

@@ -35,7 +35,6 @@ import org.objectweb.asm.tree.VarInsnNode;
  * 
 
  */
-@SuppressWarnings("deprecation")
 public class ChainedTaskMethodAdapter extends BaseMethodAdpater {
 
 	/** The logger. */

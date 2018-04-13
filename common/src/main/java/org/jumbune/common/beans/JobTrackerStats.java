@@ -1,4 +1,4 @@
-package com.impetus.jumbune.common.beans;
+package org.jumbune.common.beans;
 
 import java.util.ArrayList;
 import java.util.List;

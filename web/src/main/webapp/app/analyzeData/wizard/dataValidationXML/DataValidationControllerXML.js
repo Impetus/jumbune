@@ -60,23 +60,6 @@ angular.module('dataValidateXML.ctrl', []).controller('dataValidationControllerX
             $location.path('/add-analyze-data-configuration');
         };
         $scope.next = function () {
-           /* var addThreadData = "schemaInput="+$scope.JSONdata+"&jumbuneJobName="+angular.copy(clusList.jobName);
-            var req = {
-                            method: 'POST', 
-                            url:'/apis/xmldvreport/saveSchema',
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded'  },
-                            isArray: false,
-                            data:addThreadData,
-                        };
-
-                        $http(req).then(function(data){
-                            if(data.data){
-                              $location.path('/analyze-data-hdfs'); 
-                            }
-                        console.log("data",data)
-                            
-                        }, function(error){
-                        }); */
                         if ($scope.workerNodeHostArrCount.length==1){
                             var obj = $scope.workerNodeHostArrCount[0];
                             var elementName = obj['elementName'];
@@ -96,6 +79,7 @@ angular.module('dataValidateXML.ctrl', []).controller('dataValidationControllerX
                 "enableXmlDataValidation" : "TRUE",
                 "jumbuneJobName" : angular.copy(clusList.jumbuneJobName),
                 "hdfsInputPath"  : angular.copy(clusList.hdfsInputPath),
+                "tempDirectory" : angular.copy(clusList.tempDirectory),
                 "parameters"  : angular.copy(clusList.parameters)
             }
             common.setWidgetInfo('dataValidation', xmlDataValidation);
@@ -138,10 +122,8 @@ angular.module('dataValidateXML.ctrl', []).controller('dataValidationControllerX
                                                 };
 
                                                 $http(req).then(function(data){
-                                                    //if(data.data=="SUCCESS") {
-                                                        common.setOptimizeJobName(data.data.JOB_NAME);
+                                                        common.setJobName(data.data.JOB_NAME);
                                                        $location.path('/analyze-data-xml');
-                                                   //}
                                                     
                                                 }, function(error){
                                                     console.log("in error",error)
@@ -161,38 +143,4 @@ angular.module('dataValidateXML.ctrl', []).controller('dataValidationControllerX
                         });
 
         };
-/*        $scope.submit = function () {
-               var xmlDataValidation = {
-
-                "operatingCluster" : angular.copy(clusList.selectedCluster),
-                "operatingUser" : angular.copy(clusList.jobSubmissionUser),
-                "enableXmlDataValidation" : "TRUE",
-                "jumbuneJobName" : angular.copy(clusList.jobName),
-                "hdfsInputPath"  : $scope.hdfsInputPath
-            }
-            common.setWidgetInfo('dataValidation', xmlDataValidation);
-            var mergedObject = angular.extend({} ,xmlDataValidation);
-            common.setXmlDataValFlag(mergedObject.enableXmlDataValidation);
-            common.setHdfsInputPath(mergedObject.hdfsInputPath);
-
-           var jsonDataIs = JSON.stringify(mergedObject);
-                    $scope.content = new FormData();
-                    $scope.content.append("jsonData", jsonDataIs);
-                    var req = {
-                                    method: 'POST', 
-                                    url:'/apis/jobanalysis/save',
-                                    headers: {'Content-Type': undefined },
-                                    transformRequest: angular.identity,
-                                    data:$scope.content,
-                                };
-
-                                $http(req).then(function(data){
-                                    console.log("in succes",data);
-                                    common.setOptimizeJobName(data.data.JOB_NAME);
-                                   $location.path('/analyze-data-xml');
-                                }, function(error){
-                                    console.log("in error",error)
-                                }); 
-        }*/
-
 }]);

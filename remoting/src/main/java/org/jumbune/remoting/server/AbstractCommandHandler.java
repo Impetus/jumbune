@@ -14,10 +14,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.TooLongFrameException;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.remoting.common.ActiveNodeInfo;
@@ -27,14 +23,15 @@ import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.remoting.common.ZKUtils;
 import org.jumbune.remoting.common.command.CommandWritable;
 import org.jumbune.remoting.common.command.CommandWritable.Command;
-import org.jumbune.remoting.server.jsch.ChannelReaderResponse;
-import org.jumbune.remoting.server.jsch.JschExecutor;
 import org.jumbune.remoting.server.jsch.JschResponse;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
+
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.TooLongFrameException;
 
 public abstract class AbstractCommandHandler extends SimpleChannelInboundHandler<CommandWritable>{
 

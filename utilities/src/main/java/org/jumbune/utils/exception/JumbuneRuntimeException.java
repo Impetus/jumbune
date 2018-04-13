@@ -44,9 +44,6 @@ public class JumbuneRuntimeException extends RuntimeException {
 	/** The no such provider exception. */
 	private static JumbuneRuntimeException noSuchProviderException = new JumbuneRuntimeException("Error, Failed to get expected security provider");
 	
-	/** The signature exception. */
-	private static JumbuneRuntimeException signatureException = new JumbuneRuntimeException("Error, Verify Signature on license key....[FAILED]");
-	
 	/** The no such algorithm exception. */
 	private static JumbuneRuntimeException noSuchAlgorithmException = new JumbuneRuntimeException("Error, No such Algorithm found");
 	
@@ -146,17 +143,6 @@ public class JumbuneRuntimeException extends RuntimeException {
 		stackTrace = trimStackTrace(stackTraceArrayTmp);
 		throw parseException;
 	}
-	/**
-	 * Typically throw when signature exception occur.
-	 *
-	 * @param stackTraceArray the stack trace array
-	 * @return the jumbune runtime exception
-	 */
-	public static JumbuneRuntimeException throwSignatureException(StackTraceElement[] stackTraceArray){
-		StackTraceElement[] stackTraceArrayTmp = stackTraceArray;
-		stackTrace = trimStackTrace(stackTraceArrayTmp);
-		throw signatureException;
-	}
 
 	/**
 	 * Typically throw when no such algorithm exception occur.
@@ -179,19 +165,6 @@ public class JumbuneRuntimeException extends RuntimeException {
 		StackTraceElement[] stackTraceArrayTmp = stackTraceArray;
 		stackTrace = trimStackTrace(stackTraceArrayTmp);
 		throw threadInterruptedException;
-	}
-	
-	
-	/**
-	 *  Typically throw when pgp exception occur.
-	 *
-	 * @param stackTraceArray the stack trace array
-	 * @return the jumbune runtime exception
-	 */
-	public static JumbuneRuntimeException throwPGPException(StackTraceElement [] stackTraceArray){
-		StackTraceElement[] stackTraceArrayTmp = stackTraceArray;
-		stackTrace = trimStackTrace(stackTraceArrayTmp);
-		throw signatureException;
 	}
 	
 	/**

@@ -30,7 +30,7 @@ directiveModule.directive('ngCategoryLineChart', ['$filter', '$http', '$document
 
 				element.html(template);
 			},
-			link: function($scope, $element, $attrs) {	
+			link: function($scope, $element, $attrs) {
 				$scope.$watch("optionData", function(value, oldValue) {
 					if (!value) {
 						return;
@@ -57,16 +57,12 @@ directiveModule.directive('ngCategoryLineChart', ['$filter', '$http', '$document
 				if (!$scope.metereQueue) {
 					if (nodeKey == 'All Nodes') {
 						$scope.getValue[$scope.category] = { "nodeKey": nodeKey, "duration": $scope.durationTextValue + "" + $scope.durationUnit, "rangeFrom": $scope.rangeFrom, "rangeTo": $scope.rangeTo, "aggregateFunction": $scope.aggregateFunction };
-						//$rootScope.$broadcast('add-chart', $scope.category);
-						
+
 					} else {
 						$scope.nodeServiceValues[$scope.category + nodeKey] = { "nodeKey": nodeKey, "duration": $scope.durationTextValue + "" + $scope.durationUnit, "rangeFrom": $scope.rangeFrom, "rangeTo": $scope.rangeTo, "aggregateFunction": $scope.aggregateFunction };
 						outPut.push($scope.nodeServiceValues[nodeKey]);
-						//$rootScope.$broadcast('add-nodeChart', $scope.category);
-
 					}
 				}
-				//angular.each() 
 				var $dropdownTrigger = $element.children()[0];
 				$scope.timeInterval  = false;
 				$scope.intervalMode  = "Duration";
@@ -109,7 +105,7 @@ directiveModule.directive('ngCategoryLineChart', ['$filter', '$http', '$document
 					var parentFound = false;
 
 					while (angular.isDefined(target) && target !== null && !parentFound) {
-						if (_.contains(target.className.split(' '), 'multiselect-parent') && !parentFound) {
+						if ( _.isString(target.className) && !parentFound) {
 							if (target === $dropdownTrigger) {
 								parentFound = true;
 							}
@@ -163,8 +159,28 @@ directiveModule.directive('ngCategoryLineChart', ['$filter', '$http', '$document
 							break;
 
 						case "memoryMB":
-
-							suffix = " MB";
+							if ((d / 1048576) >= 1) {
+								d = d / 1048576;
+								// if max values less than 20 TB
+								if (MAX > 20971520) {
+									d = Math.ceil(d);
+								} else {
+									d = d.toFixed(2);
+								}
+								suffix = " TB";
+							} else if ((d / 1024) >= 1) {
+								d = d / 1048;
+								// if max values less than 20 GB
+								if (MAX > 20480) {
+									d = Math.ceil(d);
+								} else {
+									d = d.toFixed(2);
+								}
+								suffix = " GB";
+							} else {
+								d = Math.ceil(d);
+								suffix = " MB";
+							}
 							break;
 
 						case "timeMillis":
@@ -288,18 +304,8 @@ directiveModule.directive('ngCategoryLineChart', ['$filter', '$http', '$document
 					})
 					if (!lenghtOfData) return;
 					$scope.firstRender = true;
-					//var tip = d3.tip()
-					//    .attr('class', 'd3-tip')
-					//    .offset([-10, 0])
-					//    .html(function (d) {
-					//        return "<span style='color:red'>" + d.name + "</span>";
-					//    })
 					var timeSeries = $scope.singleChartData.time;
-					// $scope.categoryData = $scope.singleChartData;
-					//delete $scope.categoryData.time;
-
-					//var data = $scope.categoryData.computer;
-
+					
 					var margin = { top: 30, right: 50, bottom: 60, left: 50 },
 						height = 400 - margin.top - margin.bottom;
 					var trans = 80;
@@ -335,10 +341,7 @@ directiveModule.directive('ngCategoryLineChart', ['$filter', '$http', '$document
 						.scale(x)
 						.orient("bottom");
 
-					//var maxValue = 
-
 					var line = d3.svg.line()
-						//.interpolate("basis")
 						.x(function(d) {
 							return x(d.date);
 						})
@@ -359,13 +362,20 @@ directiveModule.directive('ngCategoryLineChart', ['$filter', '$http', '$document
 						myDiv.attr("class", "allNodesGraph")
 					}
 
-					var svg = myDiv.append("svg")
+					if ($scope.metereQueue) {
+						var svg = myDiv.append("svg")
+						.attr("width", width + margin.left + margin.right)
+						.attr("height", height)
+						.attr("viewBox", "40 0 " + width +" 220")
+						.append("g")
+						.attr("transform", "translate(" + trans + "," + margin.top + ")");
+					} else {
+						var svg = myDiv.append("svg")
 						.attr("width", width + margin.left + margin.right)
 						.attr("height", height + margin.top + margin.bottom)
 						.append("g")
 						.attr("transform", "translate(" + trans + "," + margin.top + ")");
-					//.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
+					}
 
 					$scope.color.domain(d3.keys($scope.categoryData).filter(function(key) {
 						return key !== "date";
@@ -437,10 +447,29 @@ directiveModule.directive('ngCategoryLineChart', ['$filter', '$http', '$document
 									break;
 
 								case "memoryMB":
-
-									suffix = " MB";
+									if ((d / 1048576) >= 1) {
+										d = d / 1048576;
+										// if max values less than 20 TB
+										if (MAX > 20971520) {
+											d = Math.ceil(d);
+										} else {
+											d = d.toFixed(2);
+										}
+										suffix = " TB";
+									} else if ((d / 1024) >= 1) {
+										d = d / 1048;
+										// if max values less than 20 GB
+										if (MAX > 20480) {
+											d = Math.ceil(d);
+										} else {
+											d = d.toFixed(2);
+										}
+										suffix = " GB";
+									} else {
+										d = Math.ceil(d);
+										suffix = " MB";
+									}
 									break;
-
 								case "timeMillis":
 
 									if ((d / 3600000) > 1) {
@@ -550,10 +579,25 @@ directiveModule.directive('ngCategoryLineChart', ['$filter', '$http', '$document
 						})
 						.orient("left");
 
-					svg.append("g")
+					if ($scope.metereQueue) {
+						svg.append("g")
+						.attr("class", "x axis")
+						.attr("transform", "translate(0," + height + ")")
+						.call(xAxis)
+						.selectAll("text")
+						.style("text-anchor", "end")
+						.style("font-size", "10px")
+						.attr("dx", "-.8em")
+						.attr("dy", ".15em")
+						.attr("transform", function(d) {
+							return "rotate(-65)"
+							});
+					} else {
+						svg.append("g")
 						.attr("class", "x axis")
 						.attr("transform", "translate(0," + height + ")")
 						.call(xAxis);
+					}
 
 					svg.append("g")
 						.attr("class", "y axis")
@@ -563,7 +607,6 @@ directiveModule.directive('ngCategoryLineChart', ['$filter', '$http', '$document
 						.attr("y", 6)
 						.attr("dy", ".71em")
 						.style("text-anchor", "end");
-					//.text("Temperature (ºF)");
 
 					var city = svg.selectAll(".city")
 						.data($scope.cities)
@@ -597,7 +640,6 @@ directiveModule.directive('ngCategoryLineChart', ['$filter', '$http', '$document
 							chartsTooltip.style.display = "none";
 							d3.select(this).style("stroke-width", '2.5px');
 						});
-					//if ($scope.metereQueue) {
 					var tempData = $scope.cities;
 					var keyNameData, keyNameValues;
 					var newArr = [];
@@ -609,7 +651,6 @@ directiveModule.directive('ngCategoryLineChart', ['$filter', '$http', '$document
 							newArr.push(keyNameValues[ij])
 						}
 					}
-					// }
 					city.append("g").selectAll("circle")
 						.data(newArr).enter().append("circle")
 						.attr("cx", function(d) {
@@ -649,12 +690,9 @@ directiveModule.directive('ngCategoryLineChart', ['$filter', '$http', '$document
 						});
 
 				}
-				//$($element[0]).find(".dpFrom").datetimepicker()
-				//$compile($element.contents())($scope.$new());
 				if (!$scope.metereQueue && nodeKey == 'All Nodes') {
 					$scope.$on('$destroy', function() {
 						delete $scope.getValue[$scope.category];
-						//delete $scope.nodeServiceValues[$scope.category];
 					});
 				}
 
@@ -721,24 +759,13 @@ directiveModule.directive('ngQueueLineChart', ['$filter', '$document', '$compile
 					var unit       = $scope.singleChartData.unit;
 					var x          = d3.time.scale().range([margin.left, width - margin.right]);
 					var y          = d3.scale.linear().range([height - margin.top - 40, margin.bottom]);
-
-					/*var x = d3.time.scale()
-						.range([0, width]);
-
-					var y = d3.scale.linear()
-						.range([height, 0]);*/
-					//$scope.color = d3.scale.category10();
 					$scope.color = d3.scale.ordinal()
 						.range(['#2196F3', '#4CAF50', '#FF5722', '#0D47A1', '#2E7D32', '#F44336', '#03A9F4', '#8BC34A', '#5E35B1', '#00BCD4', '#5D4037', '#C0CA33', '#E91E63', '#009688', '#546E7A']);
 
 					var xAxis = d3.svg.axis()
 						.scale(x)
 						.orient("bottom");
-
-					//var maxValue = 
-
 					var line = d3.svg.line()
-						//.interpolate("basis")
 						.x(function(d) {
 							return x(d.date);
 						})
@@ -759,8 +786,6 @@ directiveModule.directive('ngQueueLineChart', ['$filter', '$document', '$compile
 						.attr("width", width + 'px')
 						.attr("height", height + 'px')
 						.append("g");
-					//.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
 
 					$scope.color.domain(d3.keys($scope.categoryData).filter(function(key) {
 						return key !== "date";

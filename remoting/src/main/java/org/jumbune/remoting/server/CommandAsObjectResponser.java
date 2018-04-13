@@ -56,6 +56,8 @@ public class CommandAsObjectResponser extends AbstractCommandHandler {
 	
 	/** The Constant SELINUX_COMMAND. */
 	private static final String SELINUX_COMMAND = "/etc/selinux/config";
+
+	private static final CharSequence FOR_FILE_IN_$_LS_D_1 = "for FILE in $(shopt -s nocaseglob;ls -1";
 	
 	/* (non-Javadoc)
 	 * @see org.jumbune.remoting.server.AbstractCommandHandler#channelRead0(io.netty.channel.ChannelHandlerContext, org.jumbune.remoting.common.command.CommandWritable;)
@@ -95,7 +97,7 @@ public class CommandAsObjectResponser extends AbstractCommandHandler {
 				return handleResponsiveFree(commandWritable, currentCommand);
 			}
 			// Command string starting with awk '/container-id with Jsch ShellChannel
-			if(commandString.contains("awk '/container-id ")){
+			if(commandString.contains(FOR_FILE_IN_$_LS_D_1)){
 				return handleResponsiveAwkContainer(commandWritable, currentCommand);
 			}
 			if(commandString.contains(CPU_USAGE_COMMAND) || commandString.contains(CPU_USAGE_COMMAND_WITHOUT_CARET) || commandString.equalsIgnoreCase("lscpu |grep Core && exit")
@@ -372,29 +374,29 @@ public class CommandAsObjectResponser extends AbstractCommandHandler {
 		JschExecutor jschExecutor = new JschExecutor();
 		Session session = jschExecutor.getSession(commandWritable, command);
 		ChannelReaderResponse channelReaderResponse = jschExecutor.executeResponsiveShellJsch(session, command);
-		BufferedReader reader = (BufferedReader)channelReaderResponse.getReader();
-		String response;
-		String line = "";
-		StringBuilder stringBuilder;
-		try{
-			reader = (BufferedReader)channelReaderResponse.getReader();
+		String line = null;
+		StringBuilder stringBuilder = new StringBuilder("");
+		try (BufferedReader reader = (BufferedReader)channelReaderResponse.getReader()) {
 			stringBuilder = new StringBuilder();
 			while ((line = reader.readLine()) != null) {
-				stringBuilder.append(line + System.lineSeparator());
-				if (line.contains(LOGOUT) || line.matches("[\\d]*[\\.]?[\\d]*[GPMKT]{1}B[ ]{1}[\\d]*[\\.]?[\\d]*[GPMKT]{1}B")) {			
-						stringBuilder = new StringBuilder(line);					
-						break;					
-				}						
-			}
-		}finally{
-			if(reader!=null){
-				reader.close();
+				if (line.contains(LOGOUT)) {
+					break;
+				}
+				if (line.contains("KB") || line.contains("MB") || line.contains("GB")
+						|| line.contains("TB") || line.contains("PB")) {			
+					
+					int totalSpaces = line.length() - line.replaceAll(" ", "").length();
+					if (totalSpaces != 3 || !line.split(" ")[0].matches("[-+]?\\d*\\.?\\d+")) {
+						continue;
+					}
+					stringBuilder = new StringBuilder(line);					
+					break;
+				}
 			}
 		}
-		response = stringBuilder.toString();
 		jschExecutor.closeChannel(channelReaderResponse.getChannel());
 		jschExecutor.closeSession(session);
-		return response;
+		return stringBuilder.toString();
 	}
 	
 

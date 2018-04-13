@@ -2,10 +2,8 @@
 	<div jumbune-header=""></div>
 	<div class="inner-container">
 	<div ng-init="dataValidationTab.init()">
-	<!-- <div class="main-container" ng-init="dataValidationTab.init()"> -->
 		<div class="alert" ng-class="root.common.messageObj.success == true ?  'alert-success' : 'alert-danger'" ng-show="root.common.messageObj.displayBlock" ng-bind-html="root.common.messageObj.blockMessage"></div>
 		<div ng-include="'app/analyzeData/wizard/dataValidation/data-validation-tab-form.html'"></div>
-		<!-- <div jumbune-form-buttons cancel="dataValidationTab.cancel()" save="dataValidationTab.next()"></div> -->
 	</div>
 	 <div class="clear"></div>
 	</div>

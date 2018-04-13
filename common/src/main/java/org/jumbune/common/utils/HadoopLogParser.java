@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.beans.profiling.AttemptDetails;
 import org.jumbune.common.beans.profiling.JobDetails;
@@ -33,7 +34,6 @@ import org.jumbune.common.beans.profiling.PhaseDetails;
 import org.jumbune.common.beans.profiling.PhaseOutput;
 import org.jumbune.common.beans.profiling.TaskDetails;
 import org.jumbune.common.beans.profiling.TaskOutputDetails;
-import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.CommandType;
@@ -149,7 +149,7 @@ public class HadoopLogParser {
 	 */
 	public JobOutput getJobDetails(Cluster cluster, String jobID, String jumbuneJobName) throws IOException{
 
-		String appHome = JobConfig.getJumbuneHome() + File.separator;
+		String appHome = JumbuneInfo.getHome();
 		String agentHome = RemotingUtil.getAgentHome(cluster);
 		Remoter remoter = RemotingUtil.getRemoter(cluster, appHome);
 		String logsHistory = null;
@@ -251,7 +251,7 @@ public class HadoopLogParser {
 			String commonsLangJar = agentHome + LIB + props.getProperty("COMMONS_LANG_JAR");
 			String jacksonMapperAslJar = agentHome + LIB + props.getProperty("JACKSON_MAPPER_ASL_JAR");
 			String jacksonMapperCoreJar = agentHome + LIB + props.getProperty("JACKSON_MAPPER_CORE_JAR");
-			String rumenJar = agentHome + LIB + props.getProperty("RUMEN_JAR")+"-"+Versioning.ENTERPRISE_BUILD_VERSION+Versioning.ENTERPRISE_DISTRIBUTION_NAME+".jar";
+			String rumenJar = agentHome + LIB + props.getProperty("RUMEN_JAR")+"-"+Versioning.COMMUNITY_BUILD_VERSION+Versioning.COMMUNITY_DISTRIBUTION_NAME+".jar";
 			
 			StringBuilder sb = new StringBuilder(JAVA_CP_CMD);
 			
@@ -524,7 +524,7 @@ public class HadoopLogParser {
 		};
 		LOGGER.debug("Rumen Processing Command: "+Arrays.asList(requiredJars));
 
-		String rumenJar = agentHome + LIB + props.getProperty("RUMEN_JAR")+"-"+Versioning.ENTERPRISE_BUILD_VERSION+Versioning.ENTERPRISE_DISTRIBUTION_NAME+".jar";				
+		String rumenJar = agentHome + LIB + props.getProperty("RUMEN_JAR")+"-"+Versioning.COMMUNITY_BUILD_VERSION+Versioning.COMMUNITY_DISTRIBUTION_NAME+".jar";				
 		StringBuilder sb = new StringBuilder(JAVA_CP_CMD);
 
 		//adding jars to classpath   

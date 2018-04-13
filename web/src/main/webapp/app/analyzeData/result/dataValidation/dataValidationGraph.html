@@ -28,14 +28,7 @@
 <div class="resultWrapper" id="dataValidationWrap">
     <div class="widgetRow" ng-init="init()">
         <div class="widgetWrapper" id="dataValidationWidget">
-           <!--  <h2>Data Validation</h2> -->
-            <!-- <h2><span class="tracking">Data Validation</span><span class="tracking1" style="float:right;">Jumbune Job&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;{{showJobName}}</span></h2> -->
-            <h2><span class="tracking"><i class="fa fa-home" style="font-size:30px;cursor:pointer;" ng-click="clickedHomeIcon()"></i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Job&nbsp;&nbsp;-&nbsp;&nbsp;{{showJobName}}(Data Validation Job)</span><span class="tracking1" style="float:right;"><!-- Jumbune Job Name&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;{{showJobName}} --></span>
-            <span style="float:right;margin-top:5px;"><i class="fa fa-key rotateClass tip" data-toggle="tooltip" ng-show="licenseExpireTrue" title="License will expire soon." data-placement="right" style="color:#F44336"></i>
-            <i ng-show="licenseExpireDays" class="fa fa-key rotateClass tip" data-toggle="tooltip" title="License will expire in {{daysDiffShow}} day." data-placement="right" style="color:#F44336"></i> </span></h2>
-            
-           
-            <!-- <div align="center" id="chart1" style="padding:15px 0;display:inline-block;"></div> -->
+            <h2><span class="tracking"><i class="fa fa-home" style="font-size:30px;cursor:pointer;" ng-click="clickedHomeIcon()"></i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Job&nbsp;&nbsp;-&nbsp;&nbsp;{{showJobName}}(Data Validation Job)</span><span class="tracking1" style="float:right;"></span></h2>
             <div ng-show="counterValidationFlag" class="col-lg-12">
                 <div class="panel panel-primary">
                     <div class="panel-heading">
@@ -86,9 +79,6 @@
                     </div>
                 </div>
             </div>
-          <!--   <div class="clearfix dataValidationChartWrapper" id="resultWidgetContainer"> 
-              
-            </div> -->
         <div class="clearfix dataValidationChartWrapper" id="resultWidgetContainer">
             <div class="col-lg-2" ng-hide="noDataViolatnTable">
             </div>
@@ -119,16 +109,13 @@
               <div class="col-md-4">
                     <h3>Clean vs Violated Data</h3>
                     <div class="ring-loader" alt="alternate text" style="margin-top:145px;margin-bottom:145px"></div>
-                    <!-- <div align="center" id="cleanViolatedData"></div> -->
                     <div align="center" id="tuplesGraph" style="height: 350px;"></div>
                 </div>
                 <div class="col-md-4">
                     <h3>Data Violations</h3>
                     <div ng-show="noDataViolatnFlag" class="yellow" style="position:relative;top:90px;text-align:center;font-weight:bold;font-size:21px;">No Data Violations Found</div>
                     <div class="ring-loader" style="margin-top:145px;margin-bottom:145px"></div>
-                   <!--  <div align="center" id="dataViolationGraphId" ng-click="sampledetails(finalTableData)"></div> -->
-                    <div ng-show="!noDataViolatnFlag" align="center" id="dataValidationGraph" ng-click="sampledetails(finalTableData)" style="height: 350px;"></div><!-- 
-                    <div align="center" id="dataViolationGraphId" ng-click="sampledetails(finalTableData)"></div> -->
+                    <div ng-show="!noDataViolatnFlag" align="center" id="dataValidationGraph" ng-click="sampledetails(finalTableData)" style="height: 350px;"></div>
                 </div>
         </div>
 

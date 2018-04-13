@@ -10,19 +10,11 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.security.SignatureException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -44,6 +36,8 @@ import org.jumbune.common.beans.DebuggerConf;
 import org.jumbune.common.beans.DqtViewBean;
 import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.Feature;
+import org.jumbune.common.beans.JobStatus;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.beans.cluster.ClusterDefinition;
 import org.jumbune.common.beans.cluster.Workers;
@@ -52,25 +46,22 @@ import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.common.scheduler.DataQualityTaskScheduler;
-import org.jumbune.common.utils.CollectionUtil;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
+import org.jumbune.common.utils.ExtendedConstants;
 import org.jumbune.common.utils.FileUtil;
 import org.jumbune.common.utils.JobConfigUtil;
+import org.jumbune.common.utils.JobRequestUtil;
 import org.jumbune.common.utils.RemotingUtil;
+import org.jumbune.common.utils.ValidateInput;
 import org.jumbune.profiling.utils.ProfilerConstants;
 import org.jumbune.utils.beans.LogLevel;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
-
-import com.google.gson.Gson;
-import org.jumbune.common.job.EnterpriseJobConfig;
-import org.jumbune.common.utils.ExtendedConstants;
-import org.jumbune.common.utils.JobRequestUtil;
-import org.jumbune.common.utils.ValidateInput;
-import org.jumbune.execution.service.HttpExecutorService;
 import org.jumbune.web.utils.WebConstants;
 import org.jumbune.web.utils.WebUtil;
+
+import com.google.gson.Gson;
 
 /**
  * The Class JobAnalysisService.
@@ -95,8 +86,8 @@ public class JobAnalysisService{
 	public Response saveData(FormDataMultiPart form) {
 		Map<String, String> response = null;
 		try{
-			String enterpriseJobConfigJSON = form.getField("jsonData").getValue();
-			LOGGER.debug("Received JSON: " + enterpriseJobConfigJSON);
+			String jobConfigJSON = form.getField("jsonData").getValue();
+			LOGGER.debug("Received JSON: " + jobConfigJSON);
 			response = saveDataAndCreateDirectories(form);
 			response.put(Constants.STATUS, Constants.SUCCESS);
 			return Response.ok(response).build();
@@ -120,10 +111,10 @@ public class JobAnalysisService{
 	 * @throws Exception
 	 *             the exception
 	 */
-	public Map<String, String> saveDataAndCreateDirectories(FormDataMultiPart form)
-			throws Exception {
+	public Map<String, String> saveDataAndCreateDirectories(FormDataMultiPart form) throws Exception {
 		JumbuneRequest jumbuneRequest = saveUserResources(form);
-		saveJsonToJumbuneHome(jumbuneRequest.getConfig());
+		JobConfig jobConfig = (JobConfig) jumbuneRequest.getConfig();
+		Cluster cluster = ClusterAnalysisService.cache.getCluster(jobConfig.getOperatingCluster());
 
 		ClasspathElement cse = ConfigurationUtil.loadJumbuneSuppliedJarList();
 		String agentHome = RemotingUtil.getAgentHome(jumbuneRequest.getCluster());
@@ -131,139 +122,87 @@ public class JobAnalysisService{
 
 		// place where list of dependent jars' path for instrumented job
 		// jar are getting created.
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) jumbuneRequest.getConfig();
-		enterpriseJobConfig.setClasspath(new Classpath());
-		enterpriseJobConfig.getClasspath().setJumbuneSupplied(cse);
+
+		String tempDir = jobConfig.getTempDirectory().trim();
+		if (!tempDir.endsWith("/")) {
+			tempDir = tempDir + "/";
+		}
+		jobConfig.setTempDirectory(tempDir);
+		jobConfig.setOperatingUser(cluster.getAgents().getUser());
+		jobConfig.setClasspath(new Classpath());
+		jobConfig.getClasspath().setJumbuneSupplied(cse);
 
 		// sends user uploaded MR job jars on agent
-		String jarFilePath = EnterpriseJobConfig.getJumbuneHome() + File.separator
-				+ Constants.JOB_JARS_LOC + enterpriseJobConfig.getFormattedJumbuneJobName()
-				+ Constants.MR_RESOURCES;
+		String jarFilePath = JumbuneInfo.getHome() + Constants.JOB_JARS_LOC
+				+ jobConfig.getFormattedJumbuneJobName() + Constants.MR_RESOURCES;
 
 		checkAndSendMrJobJarOnAgent(jumbuneRequest, jarFilePath);
-		LOGGER.debug("Configuration received [" + enterpriseJobConfig + "]");
+		LOGGER.debug("Configuration received [" + jobConfig + "]");
 
-		modifyDebugParameters(enterpriseJobConfig);
-		modifyProfilingParameters(enterpriseJobConfig);
-		setInputFileInConfig(enterpriseJobConfig);
+		modifyDebugParameters(jobConfig);
+		modifyProfilingParameters(jobConfig);
+		setInputFileInConfig(jobConfig);
 
 		Map<String, String> responseMap = new HashMap<>(3);
-		HttpExecutorService service = new HttpExecutorService();
-
 		saveJsonToJumbuneHome(jumbuneRequest.getConfig());
-
-		// uncomment the below line of code if you want to trigger jumbune job
-		// from here itself
-		// i.e. if result page is not capable of connecting to socket.
-
-		// jumbuneRequest = service.runInSeperateThread(jumbuneRequest,
-		// reports);
-
-		responseMap.put("JOB_NAME", enterpriseJobConfig.getJumbuneJobName());
+		JobRequestUtil.setJobStatus(jobConfig, JobStatus.INITIALIZED);
+		responseMap.put("JOB_NAME", jobConfig.getJumbuneJobName());
 		return responseMap;
-	}
-	
-
-	/**
-	 * Check time difference between browser and server time.
-	 *
-	 * @param sBrowserGMT
-	 *            the s browser gmt
-	 * @param date
-	 *            the date
-	 * @return the final date
-	 * @throws ParseException
-	 *             the parse exception
-	 */
-	private Date getFinalDate(String sBrowserGMT, Date date) throws ParseException {
-
-		long browserGMT = Long.parseLong(sBrowserGMT);
-
-		Calendar mCalendar = new GregorianCalendar();
-		TimeZone mTimeZone = mCalendar.getTimeZone();
-		int mGMTOffset = mTimeZone.getRawOffset();
-		long serverGMT = TimeUnit.MINUTES.convert(mGMTOffset, TimeUnit.MILLISECONDS);
-
-		long finalTime = date.getTime() - (browserGMT - serverGMT);
-		return new Date(finalTime);
-	}
-
-	/**
-	 * Sets the scheduled job.
-	 *
-	 * @param config
-	 *            the config
-	 * @param service
-	 *            the service
-	 * @param scheduleJobTiming
-	 *            the schedule job timing
-	 * @param schedulingMessage
-	 *            the scheduling message
-	 */
-	private void setScheduledJob(Config config, HttpExecutorService service,
-			String scheduleJobTiming, final String schedulingMessage) {
-		LOGGER.debug("Its a request to schedule job scheduleJobTiming " + scheduleJobTiming);
-		String scheduledMessage = schedulingMessage;
-		try {
-			service.scheduleTask(config, false);
-		} catch (JumbuneException e) {
-			scheduledMessage = e.getMessage();
-		}
 	}
 
 	/**
 	 * Sets the input file in config.
 	 *
-	 * @param enterpriseJobConfig
+	 * @param jobConfig
 	 *            the new input file in config
 	 */
-	private void setInputFileInConfig(EnterpriseJobConfig enterpriseJobConfig) {
-		if ((enterpriseJobConfig.getInputFile() != null)
-				&& (!enterpriseJobConfig.getInputFile().contains(Constants.FORWARD_SLASH))) {
-			String jarName = enterpriseJobConfig.getJobJarLoc()
-					+ enterpriseJobConfig.getFormattedJumbuneJobName()
-					+ enterpriseJobConfig.getInputFile();
+	private void setInputFileInConfig(JobConfig jobConfig) {
+		if ((jobConfig.getInputFile() != null)
+				&& (!jobConfig.getInputFile().contains(Constants.FORWARD_SLASH))) {
+			String jarName = jobConfig.getJobJarLoc()
+					+ jobConfig.getFormattedJumbuneJobName()
+					+ jobConfig.getInputFile();
 
-			enterpriseJobConfig.setInputFile(jarName);
+			jobConfig.setInputFile(jarName);
 		}
 	}
 
 	/**
 	 * Modify profiling parameters.
 	 *
-	 * @param enterpriseJobConfig
-	 *            the enterprise job config
+	 * @param jobConfig
+	 *            the job config
 	 */
-	private void modifyProfilingParameters(EnterpriseJobConfig enterpriseJobConfig) {
+	private void modifyProfilingParameters(JobConfig jobConfig) {
 		ProfilingParam param = new ProfilingParam();
-		if (enterpriseJobConfig.getHadoopJobProfile().getEnumValue()) {
+		if (jobConfig.getHadoopJobProfile().getEnumValue()) {
 			param.setReducers("0-1");
 			param.setMappers("0-1");
 			param.setStatsInterval(Constants.FIVE_THOUNSAND);
-			enterpriseJobConfig.setProfilingParams(param);
+			jobConfig.setProfilingParams(param);
 		}
 	}
 
 	/**
 	 * Modify debug parameters.
 	 *
-	 * @param enterpriseJobConfig
-	 *            the enterprise job config
+	 * @param jobConfig
+	 *            the job config
 	 */
-	private void modifyDebugParameters(EnterpriseJobConfig enterpriseJobConfig) {
-		enterpriseJobConfig.setPartitionerSampleInterval(Constants.FIFTY);
+	private void modifyDebugParameters(JobConfig jobConfig) {
+		jobConfig.setPartitionerSampleInterval(Constants.FIFTY);
 		Map<String, LogLevel> logLevel = new HashMap<String, LogLevel>();
 		logLevel.put("ifblock", LogLevel.TRUE);
 		logLevel.put("switchcase", LogLevel.TRUE);
 		// logLevel.put("partitioner", LogLevel.FALSE);
-		if (enterpriseJobConfig.getRegexValidations() != null
-				&& !enterpriseJobConfig.getRegexValidations().isEmpty()) {
+		if (jobConfig.getRegexValidations() != null
+				&& !jobConfig.getRegexValidations().isEmpty()) {
 			logLevel.put("instrumentRegex", LogLevel.TRUE);
 		} else {
 			logLevel.put("instrumentRegex", LogLevel.FALSE);
 		}
-		if (enterpriseJobConfig.getUserValidations() != null
-				&& !enterpriseJobConfig.getUserValidations().isEmpty()) {
+		if (jobConfig.getUserValidations() != null
+				&& !jobConfig.getUserValidations().isEmpty()) {
 			logLevel.put("instrumentUserDefValidate", LogLevel.TRUE);
 		} else {
 			logLevel.put("instrumentUserDefValidate", LogLevel.FALSE);
@@ -272,7 +211,7 @@ public class JobAnalysisService{
 		debuggerConf.setLogLevel(logLevel);
 		// ToDo check max if block nesting level
 		debuggerConf.setMaxIfBlockNestingLevel(2);
-		enterpriseJobConfig.setDebuggerConf(debuggerConf);
+		jobConfig.setDebuggerConf(debuggerConf);
 	}
 
 	/**
@@ -317,44 +256,41 @@ public class JobAnalysisService{
 	public void saveJsonToJumbuneHome(Config config) throws IOException {
 		BufferedWriter bufferedWriter = null;
 		try {
-			EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) config;
+			JobConfig jobConfig = (JobConfig) config;
 			String jsonDir = System.getenv("JUMBUNE_HOME") + WebConstants.JSON_REPO;
 
 			Gson gson = new Gson();
 
-			if (Enable.TRUE.equals(enterpriseJobConfig.getEnableDataQualityTimeline())) {
-				enterpriseJobConfig.setActivated(Feature.ANALYZE_DATA);
+			if (Enable.TRUE.equals(jobConfig.getEnableDataQualityTimeline())) {
+				jobConfig.setActivated(Feature.ANALYZE_DATA);
 				jsonDir = jsonDir + WebConstants.ANALYZE_DATA;
-			} else if (Enable.TRUE.equals(enterpriseJobConfig.getIsDataSourceComparisonEnabled())) {
-				enterpriseJobConfig.setActivated(Feature.ANALYZE_DATA);
+			} else if (Enable.TRUE.equals(jobConfig.getIsDataSourceComparisonEnabled())) {
+				jobConfig.setActivated(Feature.ANALYZE_DATA);
 				jsonDir = jsonDir + WebConstants.ANALYZE_DATA;
-			} else if (Enable.TRUE.equals(enterpriseJobConfig.getEnableJsonDataValidation())) {
-				enterpriseJobConfig.setActivated(Feature.ANALYZE_DATA);
+			} else if (Enable.TRUE.equals(jobConfig.getEnableJsonDataValidation())) {
+				jobConfig.setActivated(Feature.ANALYZE_DATA);
 				jsonDir = jsonDir + WebConstants.ANALYZE_DATA;
-			} else if (Enable.TRUE.equals(enterpriseJobConfig.getEnableXmlDataValidation())) {
-				enterpriseJobConfig.setActivated(Feature.ANALYZE_DATA);
+			} else if (Enable.TRUE.equals(jobConfig.getEnableXmlDataValidation())) {
+				jobConfig.setActivated(Feature.ANALYZE_DATA);
 				jsonDir = jsonDir + WebConstants.ANALYZE_DATA;
-			} else if (Enable.TRUE.equals(enterpriseJobConfig.getEnableDataProfiling())) {
-				enterpriseJobConfig.setActivated(Feature.ANALYZE_DATA);
+			} else if (Enable.TRUE.equals(jobConfig.getEnableDataProfiling())) {
+				jobConfig.setActivated(Feature.ANALYZE_DATA);
 				jsonDir = jsonDir + WebConstants.ANALYZE_DATA;
-			} else if (Enable.TRUE.equals(enterpriseJobConfig.getDebugAnalysis())) {
-				enterpriseJobConfig.setActivated(Feature.ANALYZE_JOB);
+			} else if (Enable.TRUE.equals(jobConfig.getDebugAnalysis())) {
+				jobConfig.setActivated(Feature.ANALYZE_JOB);
 				jsonDir = jsonDir + WebConstants.ANALYZE_JOB;
-			} else if (Enable.TRUE.equals(enterpriseJobConfig.getEnableDataValidation())) {
-				enterpriseJobConfig.setActivated(Feature.ANALYZE_DATA);
-				jsonDir = jsonDir + WebConstants.ANALYZE_DATA;
-			}else if (Enable.TRUE.equals(enterpriseJobConfig.getIsDataCleansingEnabled())) {
-				enterpriseJobConfig.setActivated(Feature.ANALYZE_DATA);
+			} else if (Enable.TRUE.equals(jobConfig.getEnableDataValidation())) {
+				jobConfig.setActivated(Feature.ANALYZE_DATA);
 				jsonDir = jsonDir + WebConstants.ANALYZE_DATA;
 			}
-			jsonDir = jsonDir + File.separator + enterpriseJobConfig.getJumbuneJobName();
+			jsonDir = jsonDir + File.separator + jobConfig.getJumbuneJobName();
 			File jsonDirectory = new File(jsonDir);
 
 			if (!jsonDirectory.exists()) {
 				jsonDirectory.mkdirs();
 			}
 
-			String jsonData = gson.toJson(enterpriseJobConfig, EnterpriseJobConfig.class);
+			String jsonData = gson.toJson(jobConfig, JobConfig.class);
 			jsonDir = jsonDir + WebConstants.JOB_REQUEST_JSON;
 			File file = new File(jsonDir);
 			bufferedWriter = new BufferedWriter(new FileWriter(file));
@@ -380,31 +316,28 @@ public class JobAnalysisService{
 	 *             the exception
 	 */
 	public JumbuneRequest saveUserResources(FormDataMultiPart form) throws Exception {
-		EnterpriseJobConfig enterpriseJobConfig = getEnterpriseJobConfig(form);
-		if (enterpriseJobConfig == null) {
+		JobConfig jobConfig = getJobConfig(form);
+		if (jobConfig == null) {
 			throw new Exception("Error while parsing JSON");
 		}
-		LOGGER.debug("Decorated EnterpriseJobConfig instance: " + enterpriseJobConfig);
+		LOGGER.debug("Decorated JobConfig instance: " + jobConfig);
 
-		// JobConfigUtil.checkIfJumbuneHomeEndsWithSlash(enterpriseJobConfig);
+		// JobConfigUtil.checkIfJumbuneHomeEndsWithSlash(jobConfig);
 
 		String jsonTempLoc = TEMP_DIR + Constants.FORWARD_SLASH + System.currentTimeMillis();
-		File tempDir = new File(EnterpriseJobConfig.getJumbuneHome() + jsonTempLoc);
+		File tempDir = new File(JumbuneInfo.getHome() + jsonTempLoc);
 		WebUtil.makeDirectories(tempDir);
 
-		Cluster cluster = JobRequestUtil
-				.getClusterByName(enterpriseJobConfig.getOperatingCluster());
-		boolean isProfilingEnabled = enterpriseJobConfig.getHadoopJobProfile().getEnumValue();
+		Cluster cluster = JobRequestUtil.getClusterByName(jobConfig.getOperatingCluster());
+		boolean isProfilingEnabled = jobConfig.getHadoopJobProfile().getEnumValue();
 		String hadoopType = FileUtil.getClusterInfoDetail(ExtendedConstants.HADOOP_TYPE);
 		boolean isYarnEnable = hadoopType.equalsIgnoreCase(ExtendedConstants.YARN);
 		checkAvailableNodes(cluster, isProfilingEnabled, isYarnEnable);
+		writeUploadedFileToFileItem(jobConfig, form);
 
 		JumbuneRequest jumbuneRequest = new JumbuneRequest();
-		jumbuneRequest.setConfig(enterpriseJobConfig);
+		jumbuneRequest.setConfig(jobConfig);
 		jumbuneRequest.setCluster(cluster);
-		JobConfigUtil.createJumbuneDirectories(jumbuneRequest);
-
-		writeUploadedFileToFileItem(enterpriseJobConfig, form);
 
 		WebUtil.deleteTempFiles(tempDir);
 
@@ -414,70 +347,86 @@ public class JobAnalysisService{
 	/**
 	 * Write uploaded file to file item.
 	 *
-	 * @param enterpriseJobConfig
+	 * @param jobConfig
 	 *            the enterprise job config
 	 * @param form
 	 *            the form
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	private void writeUploadedFileToFileItem(EnterpriseJobConfig enterpriseJobConfig,
-			FormDataMultiPart form) throws IOException {
+	private void writeUploadedFileToFileItem(JobConfig jobConfig, FormDataMultiPart form) throws IOException {
 		// Skip adding jar file in case of Data Quality and Data Profiling
-		if (enterpriseJobConfig.getEnableDataValidation().getEnumValue() == true
-				|| enterpriseJobConfig.getEnableDataProfiling().getEnumValue() == true
-				|| enterpriseJobConfig.getEnableDataQualityTimeline().getEnumValue() == true) {
+		if ((jobConfig.getEnableDataValidation().getEnumValue() == true)
+				|| (jobConfig.getEnableDataProfiling().getEnumValue() == true)
+				|| (jobConfig.getEnableDataQualityTimeline().getEnumValue() == true)) {
 			return;
 		}
-		String inputFile = enterpriseJobConfig.getInputFile();
+		String inputFile = jobConfig.getInputFile();
 		try {
-			if (inputFile != null && !inputFile.isEmpty()) {
-				String fileName = inputFile
-						.substring(inputFile.lastIndexOf(Constants.FORWARD_SLASH) + 1);
-				String newJarFileLoc = enterpriseJobConfig.getJobJarLoc()
-						+ enterpriseJobConfig.getFormattedJumbuneJobName() + fileName;
-				Files.copy(Paths.get(inputFile), Paths.get(newJarFileLoc),
-						StandardCopyOption.REPLACE_EXISTING);
+			if ((inputFile != null) && (!inputFile.isEmpty())) {
+				if (jobConfig.getDebugAnalysis().getEnumValue() == true) {
+					File logLocation = new File(jobConfig.getMasterConsolidatedLogLocation());
+					WebUtil.makeDirectories(logLocation);
+					File instrumentedFileLoc = new File(jobConfig.getJobJarLoc()
+							+ jobConfig.getFormattedJumbuneJobName() + Constants.INSTRUMENTED_JAR_LOC);
+					WebUtil.makeDirectories(instrumentedFileLoc);
+				}
+				String fileName = inputFile.substring(inputFile.lastIndexOf(Constants.FORWARD_SLASH) + 1);
+
+				String newJarFileLoc = jobConfig.getJobJarLoc()
+						+ jobConfig.getFormattedJumbuneJobName() + fileName;
+				File f = new File(JumbuneInfo.getHome() + Constants.JOB_JARS_LOC
+						+ jobConfig.getFormattedJumbuneJobName());
+				WebUtil.makeDirectories(f);
+				Files.copy(Paths.get(inputFile), Paths.get(newJarFileLoc), StandardCopyOption.REPLACE_EXISTING);
+				jobConfig.setInputFile(newJarFileLoc);
 			} else {
+				if (jobConfig.getDebugAnalysis().getEnumValue() == true) {
+					File logLocation = new File(jobConfig.getMasterConsolidatedLogLocation());
+					WebUtil.makeDirectories(logLocation);
+					File instrumentedFileLoc = new File(jobConfig.getJobJarLoc()
+							+ jobConfig.getFormattedJumbuneJobName() + Constants.INSTRUMENTED_JAR_LOC);
+					WebUtil.makeDirectories(instrumentedFileLoc);
+				}
 				FormDataBodyPart jarFile = form.getField("inputFile");
-				if(jarFile == null){
+				if (jarFile == null) {
 					return;
 				}
 				String fileName = jarFile.getContentDisposition().getFileName();
 				if (fileName == null) {
 					return;
 				}
-				InputStream fileInputStream = jarFile.getValueAs(InputStream.class);
-				String newJarFileLoc = enterpriseJobConfig.getJobJarLoc()
-						+ enterpriseJobConfig.getFormattedJumbuneJobName() + fileName;
-				Files.copy(fileInputStream, Paths.get(newJarFileLoc),
-						StandardCopyOption.REPLACE_EXISTING);
+				InputStream fileInputStream = (InputStream) jarFile.getValueAs(InputStream.class);
 
+				String newJarFileLoc = jobConfig.getJobJarLoc()
+						+ jobConfig.getFormattedJumbuneJobName() + fileName;
+				File f = new File(JumbuneInfo.getHome() + Constants.JOB_JARS_LOC
+						+ jobConfig.getFormattedJumbuneJobName());
+				WebUtil.makeDirectories(f);
+				Files.copy(fileInputStream, Paths.get(newJarFileLoc), StandardCopyOption.REPLACE_EXISTING);
 				// TODO to verify inputFile with older execution model.
 				LOGGER.debug("newJarFileLoc: " + newJarFileLoc);
-				enterpriseJobConfig.setInputFile(newJarFileLoc);
-				enterpriseJobConfig.setIsLocalSystemJar(Enable.TRUE);
+				jobConfig.setInputFile(newJarFileLoc);
+				jobConfig.setIsLocalSystemJar(Enable.TRUE);
 			}
 		} catch (IOException e) {
 			throw new IOException("Unable to write uploaded jar ", e);
-
 		}
-
 	}
 
 	/**
-	 * Gets the enterprise job config.
+	 * Gets the job config.
 	 *
 	 * @param form
 	 *            the form
-	 * @return the enterprise job config
+	 * @return the job config
 	 */
-	public EnterpriseJobConfig getEnterpriseJobConfig(FormDataMultiPart form) {
-		String enterpriseJobConfigJSON = form.getField("jsonData").getValue();
+	public JobConfig getJobConfig(FormDataMultiPart form) {
+		String jobConfigJSON = form.getField("jsonData").getValue();
 		Gson gson = new Gson();
-		EnterpriseJobConfig enterpriseJobConfig = gson.fromJson(enterpriseJobConfigJSON,
-				EnterpriseJobConfig.class);
-		return enterpriseJobConfig;
+		JobConfig jobConfig = gson.fromJson(jobConfigJSON,
+				JobConfig.class);
+		return jobConfig;
 	}
 
 	/**
@@ -634,7 +583,7 @@ public class JobAnalysisService{
 	private boolean removeDQTJob(final String jobName) throws JumbuneException {
 		DataQualityTaskScheduler dqts = new DataQualityTaskScheduler();
 		StringBuilder sb = new StringBuilder();
-		String directoryPath = sb.append(JobConfig.getJumbuneHome()).append(File.separator)
+		String directoryPath = sb.append(JumbuneInfo.getHome())
 				.append("ScheduledJobs").append(File.separator).append("IncrementalDQJobs")
 				.append(File.separator).append(jobName).append(File.separator).toString();
 		dqts.deleteCurrentJobEntryFromCron(jobName);

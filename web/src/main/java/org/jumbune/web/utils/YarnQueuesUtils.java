@@ -20,27 +20,23 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
-import javax.security.auth.Subject;
-
 import org.apache.commons.lang.StringUtils;
-import org.apache.hadoop.yarn.api.records.ApplicationReport;
-import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.clusterprofiling.SchedulerService;
 import org.jumbune.clusterprofiling.beans.JobQueueBean;
 import org.jumbune.clusterprofiling.beans.QueueStats;
+import org.jumbune.clusterprofiling.yarn.ClusterAnalysisMetrics;
+import org.jumbune.clusterprofiling.yarn.beans.CapacitySchedulerQueueInfo;
+import org.jumbune.clusterprofiling.yarn.beans.ClusterMetrics;
 import org.jumbune.clusterprofiling.yarn.beans.FairSchedulerQueueInfo;
+import org.jumbune.clusterprofiling.yarn.beans.Scheduler;
+import org.jumbune.common.beans.JobDetails;
 import org.jumbune.common.beans.cluster.Cluster;
-import org.jumbune.utils.conf.AdminConfigurationUtil;
-import org.jumbune.utils.conf.beans.ChargeBackConf;
-import org.jumbune.utils.conf.beans.ChargeBackConfigurations;
-import org.jumbune.utils.conf.beans.InfluxDBConf;
-import org.jumbune.utils.yarn.communicators.RMCommunicator;
 import org.jumbune.common.influxdb.InfluxDBUtil;
 import org.jumbune.common.influxdb.InfluxDataReader;
 import org.jumbune.common.influxdb.InfluxDataWriter;
@@ -49,22 +45,12 @@ import org.jumbune.common.influxdb.beans.Query;
 import org.jumbune.common.influxdb.beans.ResultSet;
 import org.jumbune.common.influxdb.beans.ResultSet.Result;
 import org.jumbune.common.influxdb.beans.ResultSet.Result.Series;
-import org.jumbune.clusterprofiling.yarn.ClusterAnalysisMetrics;
+import org.jumbune.common.utils.JobHistoryServerService;
+import org.jumbune.utils.conf.AdminConfigurationUtil;
+import org.jumbune.utils.conf.beans.InfluxDBConf;
+import org.jumbune.utils.yarn.communicators.RMCommunicator;
 import org.jumbune.web.beans.Graph;
 import org.jumbune.web.services.ClusterAnalysisService;
-
-import org.jumbune.clusterprofiling.yarn.beans.CapacitySchedulerQueueInfo;
-import org.jumbune.clusterprofiling.yarn.beans.Scheduler;
-import org.jumbune.web.utils.WebConstants;
-
-import org.jumbune.clusterprofiling.SchedulerService;
-import org.jumbune.common.beans.JobDetails;
-import org.jumbune.common.utils.Constants;
-import org.jumbune.common.utils.JobHistoryServerService;
-import org.jumbune.common.utils.RemotingUtil;
-import org.jumbune.web.utils.YarnQueuesUtils;
-
-import org.jumbune.clusterprofiling.yarn.beans.ClusterMetrics;
 
 /**
  * Utility functions related to Yarn Queues
@@ -436,9 +422,6 @@ public class YarnQueuesUtils {
 		if (!InfluxDBUtil.isInfluxdbLive(configuration)) {
 			throw new Exception("Influxdb is down");
 		}
-		String impersonationCheckUser = StringUtils.EMPTY ;
-			//get the impersonated user
-		 impersonationCheckUser = RemotingUtil.getHiveKerberosPrincipal(cluster);
 		Query query = new Query();
 		query.setTableName(WebConstants.USER_QUEUE_UTILIZATION);
 		query.addColumn(stat);
@@ -446,7 +429,7 @@ public class YarnQueuesUtils {
 				queueName.replaceAll(WebConstants.SPACE_REGEX, InfluxDBConstants.EMPTY_STRING));
 		query.setAggregateFunction(MEAN);
 		query.setDoNotAddGroupByTime(true);
-		query.addInequalities(WebConstants.USER_NAME, impersonationCheckUser);
+		query.addInequalities(WebConstants.USER_NAME, "");
 		query.addGroupByColumn(WebConstants.USER_NAME);
 		query.addGroupByColumn(WebConstants.JOB_ID);
 		query.setDuration(duration);
@@ -600,163 +583,6 @@ public class YarnQueuesUtils {
 		 * "relativePercentUsage" : 40.0}]
 		 */
 		return finalOutput;
-	}
-
-	/**
-	 * Gets the charge back data.
-	 *
-	 * @param clusterName
-	 *            the cluster name
-	 * @return the charge back data
-	 * @throws Exception
-	 *             the exception
-	 */
-	public List<Map<String, Object>> getchargeBackData(String clusterName, String month, String rangeFrom,
-			String rangeTo) throws Exception {
-
-		InfluxDBConf configuration = AdminConfigurationUtil.getInfluxdbConfiguration(clusterName);
-		if (!InfluxDBUtil.isInfluxdbLive(configuration)) {
-			throw new Exception("Influxdb is down");
-		}
-		Set<String> executionEngines = new HashSet<>(2);
-		ChargeBackConfigurations chargeBackConfigurations = AdminConfigurationUtil
-				.getChargeBackConfiguration(clusterName);
-
-		if (chargeBackConfigurations.getChargeBackConfList().isEmpty()) {
-			executionEngines.add(WebConstants.MAPREDUCE);
-			executionEngines.add(WebConstants.SPARK);
-		} else {
-			for (ChargeBackConf conf : chargeBackConfigurations.getChargeBackConfList()) {
-
-				if (conf.getExecutionEngine().equalsIgnoreCase(ALL)) {
-					executionEngines.add(WebConstants.MAPREDUCE);
-					executionEngines.add(WebConstants.SPARK);
-				} else {
-					executionEngines.add(conf.getExecutionEngine());
-				}
-
-			}
-		}
-		List<Map<String, Object>> chargeBackList = new ArrayList<Map<String, Object>>();
-		List<String> queueList = extractQueueName(configuration);
-		for (String executionEngine : executionEngines) {
-			for (String queueName : queueList) {
-				Query query = new Query();
-				query.setTableName(WebConstants.USER_QUEUE_UTILIZATION);
-				query.addColumn(WebConstants.USED_CORES);
-				query.addColumn(WebConstants.USED_MEMORY);
-				query.addTag(WebConstants.QUEUE_NAME,
-						queueName.replaceAll(WebConstants.SPACE_REGEX, InfluxDBConstants.EMPTY_STRING));
-				query.addTag(WebConstants.EXECUTION_ENGINE, executionEngine);
-				query.addGroupByColumn(WebConstants.USER_NAME);
-				query.addGroupByColumn(WebConstants.JOB_ID);
-				DateFormat df = new SimpleDateFormat(WebConstants.YYYY_MM_DD_HH_MM);
-				Calendar calobj = Calendar.getInstance();
-				if (month.equalsIgnoreCase(WebConstants.CURRENT_MONTH)) {
-					calobj.set(Calendar.DAY_OF_MONTH, calobj.getActualMinimum(Calendar.DAY_OF_MONTH));
-					calobj.set(Calendar.HOUR_OF_DAY, 0);
-					calobj.set(Calendar.MINUTE, 0);
-					query.setRangeFrom(df.format(calobj.getTime()));
-				} else if (month.equalsIgnoreCase(WebConstants.PREVIOUS_MONTH)) {
-					calobj.add(Calendar.MONTH, -1);
-					calobj.set(Calendar.DATE, 1);
-					calobj.set(Calendar.HOUR_OF_DAY, 0);
-					calobj.set(Calendar.MINUTE, 0);
-					Date firstDateOfPreviousMonth = calobj.getTime();
-					calobj.set(Calendar.DATE, calobj.getActualMaximum(Calendar.DATE));
-					calobj.set(Calendar.HOUR_OF_DAY, 24);
-					calobj.set(Calendar.MINUTE, 0);
-					Date lastDateOfPreviousMonth = calobj.getTime();
-					query.setRange(df.format(firstDateOfPreviousMonth), df.format(lastDateOfPreviousMonth));
-				} else {
-					query.setRange(rangeFrom, rangeTo);
-				}
-
-				InfluxDataReader reader = new InfluxDataReader(query, configuration);
-
-				ResultSet resultSet = reader.getResult();
-				/*
-				 * Result set will be like this
-				 * ResultSet{"results":[{"series":[{"name":
-				 * "userQueueUtilization","tags":{"jobId":
-				 * "job_1487671879452_0003","userName":"impadmin"},
-				 * "columns":["time","usedCores","usedMemory"],"values":[[
-				 * "2017-02-21T13:09:20Z",1,3072],["2017-02-21T13:09:30Z",1,3072
-				 * ],["2017-02-21T13:09:45Z",1,3072]
-				 * ,["2017-02-21T13:10:05Z",6,5120],["2017-02-21T13:10:15Z",6,
-				 * 5120],["2017-02-21T13:10:39Z",6,5120],["2017-02-21T13:10:49Z"
-				 * ,6,5120],
-				 * ["2017-02-21T13:11:05Z",6,5120],["2017-02-21T13:11:19Z",6,
-				 * 5120],["2017-02-21T13:11:35Z",6,5120],["2017-02-21T13:11:51Z"
-				 * ,6,5120]]}, {"name":"userQueueUtilization","tags":{"jobId":
-				 * "job_1487830488079_0018","userName":"impadmin"},"columns":[
-				 * "time","usedCores","usedMemory"]
-				 * ,"values":[["2017-03-03T07:59:15Z",7,8192],[
-				 * "2017-03-03T07:59:30Z",7,8192],["2017-03-03T07:59:45Z",2,3072
-				 * ]]},{"name":"userQueueUtilization",
-				 * "tags":{"jobId":"job_1488535948794_0001","userName":
-				 * "impadmin"},"columns":["time","usedCores","usedMemory"],
-				 * "values":[["2017-03-06T10:36:42Z",7,8192],[
-				 * "2017-03-06T10:36:57Z",7,8192],["2017-03-06T10:37:12Z",5,6144
-				 * ]]}
-				 */
-				if (resultSet.getError() != null) {
-					throw new Exception(resultSet.getError());
-				}
-
-				List<Series> seriesList = resultSet.getResults().get(0).getSeries();
-				if (seriesList == null) {
-					continue;
-				}
-				ChargeBackConf conf = getConf(queueName, chargeBackConfigurations,executionEngine);
-				if (conf != null) {
-					parseDataForChargeBackQueueUtilization(seriesList,
-							conf.getMemory(), conf.getvCore(), queueName, conf.getExecutionEngine(), chargeBackList);
-				} else {
-					parseDataForChargeBackQueueUtilization(seriesList, 0, 0,
-							queueName, executionEngine, chargeBackList);
-				}
-
-			}
-		}
-		return chargeBackList;
-
-	}
-
-	/**
-	 * Gets the charge back configuration based on the queueName.
-	 *
-	 * @param queueName
-	 *            the queue name
-	 * @param chargeBackConfigurations
-	 *            the charge back configurations
-	 * @param executionEngine 
-	 * @return the conf
-	 */
-	public ChargeBackConf getConf(String queueName, ChargeBackConfigurations chargeBackConfigurations, String executionEngine) {
-		for (ChargeBackConf conf : chargeBackConfigurations.getChargeBackConfList()) {
-			List<String> executionList = new ArrayList<>(2);
-			if (conf.getExecutionEngine().equalsIgnoreCase(ALL)) {
-				executionList.add(WebConstants.MAPREDUCE);
-				executionList.add(WebConstants.SPARK);
-			}
-			if(!executionList.isEmpty()){
-				for (String executionEng : executionList) {
-					if (conf.getQueueName().equals(queueName) && executionEng.equals(executionEngine)) {
-						ChargeBackConf chargeBackConf = new ChargeBackConf();
-						chargeBackConf.setQueueName(queueName);
-						chargeBackConf.setExecutionEngine(executionEng);
-						chargeBackConf.setMemory(conf.getMemory());
-						chargeBackConf.setvCore(conf.getvCore());
-						return chargeBackConf;
-				}
-				}
-				
-			}else if (conf.getQueueName().equals(queueName) && conf.getExecutionEngine().equals(executionEngine)) {
-				return conf;
-			}
-		}
-		return null;
 	}
 
 	/**
@@ -934,336 +760,6 @@ public class YarnQueuesUtils {
 		
 		return finalOutput;
 	}
-	
-	/**
-	 * Gets the detailed charge back data.
-	 *
-	 * @param clusterName
-	 *            the cluster name
-	 * @return the charge back data
-	 * @throws Exception
-	 *             the exception
-	 */
-	public List<Map<String, Object>> getDetailedChargeBackData(Cluster cluster, String month, String rangeFrom,
-			String rangeTo,RMCommunicator rmCommunicator) throws Exception {
-		
-		InfluxDBConf configuration = AdminConfigurationUtil.getInfluxdbConfiguration(cluster.getClusterName());
-		if (!InfluxDBUtil.isInfluxdbLive(configuration)) {
-			throw new Exception("Influxdb is down");
-		}
-		Set<String> executionEngines = new HashSet<>(3);
-		ChargeBackConfigurations chargeBackConfigurations = AdminConfigurationUtil
-				.getChargeBackConfiguration(cluster.getClusterName());
-
-		if (chargeBackConfigurations.getChargeBackConfList().isEmpty()) {
-			executionEngines.add(WebConstants.MAPREDUCE);
-			executionEngines.add(WebConstants.SPARK);
-			executionEngines.add(WebConstants.TEZ);
-		} else {
-			for (ChargeBackConf conf : chargeBackConfigurations.getChargeBackConfList()) {
-
-				if (conf.getExecutionEngine().equalsIgnoreCase(ALL)) {
-					executionEngines.add(WebConstants.MAPREDUCE);
-					executionEngines.add(WebConstants.SPARK);
-					executionEngines.add(WebConstants.TEZ);
-				} else {
-					executionEngines.add(conf.getExecutionEngine());
-				}
-
-			}
-		}
-		
-		String impersonationCheckUser = StringUtils.EMPTY ;
-			//get the impersonated user
-	//	 impersonationCheckUser = RemotingUtil.getHiveKerberosPrincipal(cluster);
-		List<Map<String, Object>> chargeBackList = new ArrayList<Map<String, Object>>();
-		List<String> queueList = extractQueueName(configuration);
-		for (String executionEngine : executionEngines) {
-			for (String queueName : queueList) {
-				Query query = new Query();
-				query.setTableName(WebConstants.USER_QUEUE_UTILIZATION);
-				query.addColumn(WebConstants.USED_CORES);
-				query.addColumn(WebConstants.USED_MEMORY);
-				query.addTag(WebConstants.QUEUE_NAME,
-						queueName.replaceAll(WebConstants.SPACE_REGEX, InfluxDBConstants.EMPTY_STRING));
-				query.addTag(WebConstants.EXECUTION_ENGINE, executionEngine);
-				query.addInequalities(WebConstants.USER_NAME, impersonationCheckUser);
-				query.addGroupByColumn(WebConstants.USER_NAME);
-				query.addGroupByColumn(WebConstants.JOB_NAME_1);
-				query.addGroupByColumn(WebConstants.JOB_ID);
-				DateFormat df = new SimpleDateFormat(WebConstants.YYYY_MM_DD_HH_MM);
-				Calendar calobj = Calendar.getInstance();
-				if (month.equalsIgnoreCase(WebConstants.CURRENT_MONTH)) {
-					calobj.set(Calendar.DAY_OF_MONTH, calobj.getActualMinimum(Calendar.DAY_OF_MONTH));
-					calobj.set(Calendar.HOUR_OF_DAY, 0);
-					calobj.set(Calendar.MINUTE, 0);
-					query.setRangeFrom(df.format(calobj.getTime()));
-				} else if (month.equalsIgnoreCase(WebConstants.PREVIOUS_MONTH)) {
-					calobj.add(Calendar.MONTH, -1);
-					calobj.set(Calendar.DATE, 1);
-					calobj.set(Calendar.HOUR_OF_DAY, 0);
-					calobj.set(Calendar.MINUTE, 0);
-					Date firstDateOfPreviousMonth = calobj.getTime();
-					calobj.set(Calendar.DATE, calobj.getActualMaximum(Calendar.DATE));
-					calobj.set(Calendar.HOUR_OF_DAY, 24);
-					calobj.set(Calendar.MINUTE, 0);
-					Date lastDateOfPreviousMonth = calobj.getTime();
-					query.setRange(df.format(firstDateOfPreviousMonth), df.format(lastDateOfPreviousMonth));
-				} else {
-					query.setRange(rangeFrom, rangeTo);
-				}
-				LOGGER.debug("Detailed Charge back Query: " + query);
-				InfluxDataReader reader = new InfluxDataReader(query, configuration);
-
-				ResultSet resultSet = reader.getResult();
-				/*
-				 * Result set will be like this
-				 * ResultSet{"results":[{"series":[{"name":"userQueueUtilization","tags":{"jobId":"job_1500984547459_0003","userName":"arpan"},
-				 * "columns":["time","usedCores","usedMemory"],"values":[["2017-07-25T15:09:24Z",4,5120]]},{"name":"userQueueUtilization",
-				 * "tags":{"jobId":"job_1500984547459_0004","userName":"arpan"},"columns":["time","usedCores","usedMemory"],
-				 * "values":[["2017-07-25T15:25:01Z",2,3072]]},{"name":"userQueueUtilization","tags":{"jobId":"job_1500984547459_0005","userName":"arpan"}
-				 * ,"columns":["time","usedCores","usedMemory"],"values":[["2017-07-25T15:30:31Z",4,5120]]}
-				 * ,{"name":"userQueueUtilization","tags":{"jobId":"job_1500984547459_0006","userName":"arpan"},"columns":["time","usedCores","usedMemory"]
-				 * ,"values":[["2017-07-26T09:14:05Z",7,8192],["2017-07-26T09:14:50Z",7,8192],["2017-07-26T09:15:00Z",7,8192]]},
-				 * {"name":"userQueueUtilization","tags":{"jobId":"job_1500984547459_0007","userName":"arpan"},"columns":["time","usedCores","usedMemory"],
-				 * "values":[["2017-07-26T09:17:30Z",1,2048],["2017-07-26T09:17:45Z",7,8192],["2017-07-26T09:18:00Z",7,8192],["2017-07-26T09:18:15Z",7,8192]
-				 * ,["2017-07-26T09:18:30Z",7,8192],["2017-07-26T09:18:45Z",2,3072]]},{"name":"userQueueUtilization","tags":{"jobId":"job_1500984547459_0008","userName":"arpan"}
-				 * ,"columns":["time","usedCores","usedMemory"],"values":[["2017-07-26T09:20:30Z",1,2048],["2017-07-26T09:20:46Z",7,8192],
-				 * ["2017-07-26T09:21:00Z",7,8192],["2017-07-26T09:21:15Z",7,8192],["2017-07-26T09:21:30Z",7,8192],["2017-07-26T09:21:45Z",3,4096]]},{
-				 * "name":"userQueueUtilization","tags":{"jobId":"job_1500984547459_0009","userName":"arpan"},"columns":["time","usedCores","usedMemory"]
-				 *  */
-				if (resultSet.getError() != null) {
-					throw new Exception(resultSet.getError());
-				}
-
-				List<Series> seriesList = resultSet.getResults().get(0).getSeries();
-				if (seriesList == null) {
-					continue;
-				}
-				ChargeBackConf conf = getConf(queueName, chargeBackConfigurations,executionEngine);
-				if (conf != null) {
-					parseDataForDetailedChargeBackQueueUtilization(seriesList,
-							conf.getMemory(), conf.getvCore(), queueName, conf.getExecutionEngine(), chargeBackList);
-				} else {
-					parseDataForDetailedChargeBackQueueUtilization(seriesList, 0, 0,
-							queueName, executionEngine, chargeBackList);
-				}
-
-			}
-		}
-		return chargeBackList;
-
-	}
-	
-	
-	/**
-	 * Gets the charge back data.
-	 *
-	 * @param clusterName
-	 *            the cluster name
-	 * @return the charge back data
-	 * @throws Exception
-	 *             the exception
-	 */
-	public List<Map<String, Object>> getchargeBackData(Cluster cluster, String month, String rangeFrom,
-			String rangeTo,RMCommunicator rmCommunicator) throws Exception {
-		
-		InfluxDBConf configuration = AdminConfigurationUtil.getInfluxdbConfiguration(cluster.getClusterName());
-		if (!InfluxDBUtil.isInfluxdbLive(configuration)) {
-			throw new Exception("Influxdb is down");
-		}
-		Set<String> executionEngines = new HashSet<String>(3);
-		ChargeBackConfigurations chargeBackConfigurations = AdminConfigurationUtil
-				.getChargeBackConfiguration(cluster.getClusterName());
-
-		if (chargeBackConfigurations.getChargeBackConfList().isEmpty()) {
-			executionEngines.add(WebConstants.MAPREDUCE);
-			executionEngines.add(WebConstants.SPARK);
-			executionEngines.add(WebConstants.TEZ);
-		} else {
-			for (ChargeBackConf conf : chargeBackConfigurations.getChargeBackConfList()) {
-
-				if (conf.getExecutionEngine().equalsIgnoreCase(ALL)) {
-					executionEngines.add(WebConstants.MAPREDUCE);
-					executionEngines.add(WebConstants.SPARK);
-					executionEngines.add(WebConstants.TEZ);
-				} else {
-					executionEngines.add(conf.getExecutionEngine());
-				}
-
-			}
-		}
-		
-		String impersonationCheckUser = StringUtils.EMPTY ;
-//		 impersonationCheckUser = RemotingUtil.getHiveKerberosPrincipal(cluster);
-		List<Map<String, Object>> chargeBackList = new ArrayList<Map<String, Object>>();
-		List<String> queueList = extractQueueName(configuration);
-		for (String executionEngine : executionEngines) {
-			for (String queueName : queueList) {
-				Query query = new Query();
-				query.setTableName(WebConstants.USER_QUEUE_UTILIZATION);
-				query.addColumn(WebConstants.USED_CORES);
-				query.addColumn(WebConstants.USED_MEMORY);
-				query.addTag(WebConstants.QUEUE_NAME,
-						queueName.replaceAll(WebConstants.SPACE_REGEX, InfluxDBConstants.EMPTY_STRING));
-				query.addTag(WebConstants.EXECUTION_ENGINE, executionEngine);
-				query.addInequalities(WebConstants.USER_NAME, impersonationCheckUser);
-				query.addGroupByColumn(WebConstants.USER_NAME);
-				query.addGroupByColumn(WebConstants.JOB_ID);
-				DateFormat df = new SimpleDateFormat(WebConstants.YYYY_MM_DD_HH_MM);
-				Calendar calobj = Calendar.getInstance();
-				if (month.equalsIgnoreCase(WebConstants.CURRENT_MONTH)) {
-					calobj.set(Calendar.DAY_OF_MONTH, calobj.getActualMinimum(Calendar.DAY_OF_MONTH));
-					calobj.set(Calendar.HOUR_OF_DAY, 0);
-					calobj.set(Calendar.MINUTE, 0);
-					query.setRangeFrom(df.format(calobj.getTime()));
-				} else if (month.equalsIgnoreCase(WebConstants.PREVIOUS_MONTH)) {
-					calobj.add(Calendar.MONTH, -1);
-					calobj.set(Calendar.DATE, 1);
-					calobj.set(Calendar.HOUR_OF_DAY, 0);
-					calobj.set(Calendar.MINUTE, 0);
-					Date firstDateOfPreviousMonth = calobj.getTime();
-					calobj.set(Calendar.DATE, calobj.getActualMaximum(Calendar.DATE));
-					calobj.set(Calendar.HOUR_OF_DAY, 24);
-					calobj.set(Calendar.MINUTE, 0);
-					Date lastDateOfPreviousMonth = calobj.getTime();
-					query.setRange(df.format(firstDateOfPreviousMonth), df.format(lastDateOfPreviousMonth));
-				} else {
-					query.setRange(rangeFrom, rangeTo);
-				}
-				LOGGER.debug("Charge back Query: " + query);
-				InfluxDataReader reader = new InfluxDataReader(query, configuration);
-
-				ResultSet resultSet = reader.getResult();
-				/*
-				 * Result set will be like this
-				 * ResultSet{"results":[{"series":[{"name":
-				 * "userQueueUtilization","tags":{"jobId":
-				 * "job_1487671879452_0003","userName":"impadmin"},
-				 * "columns":["time","usedCores","usedMemory"],"values":[[
-				 * "2017-02-21T13:09:20Z",1,3072],["2017-02-21T13:09:30Z",1,3072
-				 * ],["2017-02-21T13:09:45Z",1,3072]
-				 * ,["2017-02-21T13:10:05Z",6,5120],["2017-02-21T13:10:15Z",6,
-				 * 5120],["2017-02-21T13:10:39Z",6,5120],["2017-02-21T13:10:49Z"
-				 * ,6,5120],
-				 * ["2017-02-21T13:11:05Z",6,5120],["2017-02-21T13:11:19Z",6,
-				 * 5120],["2017-02-21T13:11:35Z",6,5120],["2017-02-21T13:11:51Z"
-				 * ,6,5120]]}, {"name":"userQueueUtilization","tags":{"jobId":
-				 * "job_1487830488079_0018","userName":"impadmin"},"columns":[
-				 * "time","usedCores","usedMemory"]
-				 * ,"values":[["2017-03-03T07:59:15Z",7,8192],[
-				 * "2017-03-03T07:59:30Z",7,8192],["2017-03-03T07:59:45Z",2,3072
-				 * ]]},{"name":"userQueueUtilization",
-				 * "tags":{"jobId":"job_1488535948794_0001","userName":
-				 * "impadmin"},"columns":["time","usedCores","usedMemory"],
-				 * "values":[["2017-03-06T10:36:42Z",7,8192],[
-				 * "2017-03-06T10:36:57Z",7,8192],["2017-03-06T10:37:12Z",5,6144
-				 * ]]}
-				 */
-				if (resultSet.getError() != null) {
-					throw new Exception(resultSet.getError());
-				}
-
-				List<Series> seriesList = resultSet.getResults().get(0).getSeries();
-				if (seriesList == null) {
-					continue;
-				}
-				ChargeBackConf conf = getConf(queueName, chargeBackConfigurations,executionEngine);
-				if (conf != null) {
-					parseDataForChargeBackQueueUtilization(seriesList,
-							conf.getMemory(), conf.getvCore(), queueName, conf.getExecutionEngine(), chargeBackList);
-				} else {
-					parseDataForChargeBackQueueUtilization(seriesList, 0, 0,
-							queueName, executionEngine, chargeBackList);
-				}
-
-			}
-		}
-		return chargeBackList;
-
-	}
-	
-	
-	public void updateInfluxForHiveImpersonisation(Cluster cluster, RMCommunicator rmCommunicator) throws YarnException, IOException, Exception {
-		
-		InfluxDBConf configuration = AdminConfigurationUtil.getInfluxdbConfiguration(cluster.getClusterName());
-		if (!InfluxDBUtil.isInfluxdbLive(configuration)) {
-			throw new Exception("Influxdb is down");
-		}
-		
-		// checkif security is enabled
-		// Hive impersonation case
-		// check for the impersonation enabled	
-		String impersonationCheckUser = RemotingUtil.getHiveKerberosPrincipal(cluster);
-		String jobId, actualUser;
-		for (ApplicationReport applicationReport : rmCommunicator.getApplications()) {
-		
-			if (applicationReport.getUser().equalsIgnoreCase(impersonationCheckUser)) {
-				if (applicationReport.getProgress() == 1.0f
-						&& applicationReport.getFinalApplicationStatus().equals(FinalApplicationStatus.SUCCEEDED)) {
-					jobId = rmCommunicator.getJobId(applicationReport).toString();
-					actualUser = RemotingUtil.getHiveSubmissionUser(cluster, jobId, Constants.HIVE_ACCESS_SUBJECT_NAME);
-					if (actualUser == null) {
-						continue;
-					}
-					Query query = new Query();
-					query.setTableName(WebConstants.USER_QUEUE_UTILIZATION);
-					query.addColumn(WebConstants.EXECUTION_ENGINE);
-					query.addColumn(WebConstants.JOB_ID);
-					query.addColumn(WebConstants.JOB_NAME_1);
-					query.addColumn(WebConstants.QUEUE_NAME);
-					query.addColumn(WebConstants.USED_CORES);
-					query.addColumn(WebConstants.USED_MEMORY);
-					query.addColumn(WebConstants.USER_NAME);
-					query.addTag(WebConstants.JOB_ID, jobId);
-					InfluxDataReader reader = new InfluxDataReader(query, configuration);
-					ResultSet resultSet = reader.getResult();
-					if (resultSet.getError() != null) {
-						throw new Exception(resultSet.getError());
-					}
-					List<Series> seriesList = resultSet.getResults().get(0).getSeries();
-					if (seriesList == null) {
-						continue;
-					}
-					InfluxDataWriter writer = new InfluxDataWriter(configuration);
-					writer.setTableName(WebConstants.USER_QUEUE_UTILIZATION);
-					writer.setTimeUnit(TimeUnit.SECONDS);
-					for (Series series : seriesList) {
-
-						for (List<String> valuesList : series.getValues()) {
-							try {
-							writer.setTime(getFormattedDate(valuesList.get(0)));
-							if (valuesList.get(1) != null) {
-								writer.addTag(WebConstants.EXECUTION_ENGINE,valuesList.get(1));
-							}
-							writer.addTag(WebConstants.JOB_ID, valuesList.get(2));
-							if (valuesList.get(3) != null) {
-								writer.addTag(WebConstants.JOB_NAME_1,valuesList.get(3));
-							}
-							writer.addTag(WebConstants.QUEUE_NAME, valuesList.get(4));
-							writer.addColumn(WebConstants.USED_CORES, valuesList.get(5));
-							writer.addColumn(WebConstants.USED_MEMORY, valuesList.get(6));
-							// write actual username
-							writer.addTag(WebConstants.USER_NAME, actualUser);
-							if (!actualUser.equalsIgnoreCase(valuesList.get(7))) {
-								writer.writeData();
-							}
-							}catch(ParseException pe) {
-								LOGGER.error("Unable to parse date ["+valuesList.get(0)+"] fetched from Influx Database", pe.getCause());
-							}
-						}
-					}
-					// remove the impersonised user details
-					query.setCustomQuery(String.format(
-							"DROP SERIES FROM userQueueUtilization where userName='%s' and jobId='%s'",
-							applicationReport.getUser(), rmCommunicator.getJobId(applicationReport).toString()));
-					reader.setQuery(query);
-					reader.getResult();
-				}
-			}
-		}
-	}
-	
 
 	/**
 	 * @param cluster

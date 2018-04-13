@@ -1,9 +1,9 @@
     'use strict';
-        
+
     var serviceModule = angular.module('commmonService', []);
-    
-    serviceModule.service('common', ['$window', '$location', '$timeout', '$compile',
-        function($window, $location,  $timeout, $compile) {
+
+    serviceModule.service('common', ['$window', '$location', '$timeout', '$compile', '$http',
+        function($window, $location,  $timeout, $compile,$http) {
 
         var self = this;
             this.jobs = new Map();
@@ -18,7 +18,6 @@
                 currCluster : ""
             };
             var dashboardMode = "";
-            var dataQualityGroup = [];
             var dataProfilingGroup = [];
             var currTab = '';
             this.dataAnalysis = false;
@@ -45,29 +44,25 @@
             this.dataValidationJsonData = '';
             this.debuggerJsonData = '';
             this.jobProfilingJsonData = '';
-            this.tuningJsonData = '';
             this.selectedJobName = '';
             this.savedJobJson = '';
             this.enableDataQualityTimeline = false;
             this.clusterConfigDtl = {};
-            
+
             this.jobMode = 'add';
             this.widgetData = angular.copy({});
             this.jobDetails = {};
             this.defineJobInfoObj = {};
             this.jobConfigMethods = [
                                         {"name":"Debugger", "visible": false},
-                                        {"name":"Job Profiling", "visible": false},
-                                        {"name":"Tuning", "visible": false}
+                                        {"name":"Job Profiling", "visible": false}
                                     ];
 
             this.jobPreviewObj = {};
             this.regexJson = [];
             this.regexUdvJson = [];
-            this.defaultJobConfigMethods = [{"name":"Debugger", "visible": false},{"name":"Job Profiling", "visible": false},{"name":"Tuning", "visible": false}];
-           /* this.jobConfigMethods = [{"name":"Tuning", "visible": false}, {"name":"Debugger", "visible": false}, {"name":"What If", "visible": false}, {"name":"Job Profiling", "visible": false}];
-            this.defaultJobConfigMethods = [{"name":"Tuning", "visible": false}, {"name":"Debugger", "visible": false}, {"name":"What If", "visible": false}, {"name":"Job Profiling", "visible": false}];*/
-            
+            this.defaultJobConfigMethods = [{"name":"Debugger", "visible": false},{"name":"Job Profiling", "visible": false}];
+
             //reset job info data while creating new job
             this.setJobMode = function(mode) {
                 self.jobMode = mode;
@@ -94,7 +89,7 @@
             this.getRegexJson = function() {
                 return this.regexJson;
             };
-            
+
             this.setUdvRegexJson = function(obj) {
                 this.regexUdvJson = angular.copy(obj);
             };
@@ -102,7 +97,7 @@
             this.getUdvRegexJson = function() {
                 return this.regexUdvJson;
             };
-            
+
 
 
 
@@ -110,9 +105,7 @@
                   this.selectedClusterForRun = name;
             }
             this.getSelectedClusterNameForRun = function(){
-                  return  this.selectedClusterForRun;                  
-                  //return self.selectedClusterForRun;
-
+                  return  this.selectedClusterForRun;
             };
 
             this.setSelectedJobName = function(name){
@@ -120,14 +113,12 @@
             }
             this.getSelectedJobName= function(){
                   return self.selectedJobName;
-                  //return this.selectedClusterForRun ;
             };
 
             this.setClusterName = function(name) {
-                
+
                 if((this.clusterNameArr.indexOf(name) > -1) && (clusterDetail.clusterMode !== 'edit')) {
                     return false;
-               // } else if((typeof clusterDetail.currCluster != 'undefined') && (name !== clusterDetail.currCluster) && (clusterDetail.clusterMode !== 'add')) {
                  } else if( (name !== clusterDetail.currCluster) && (typeof clusterDetail.currCluster != 'undefined') && (this.clusterNameArr.indexOf(name) > -1) ) {
                      return false;
                 }
@@ -137,9 +128,6 @@
                     this.clusterNameArr.splice(oldClusterIndex,1,name)
                 } else {
                     this.clusterNameArr.push(name);
-                    /*this.clusterNameObj = {};
-                    this.clusterNameObj.name = name;
-                    this.clusterNameArr.push(this.clusterNameObj);*/
                 }
                 return true;
 
@@ -174,7 +162,7 @@
                 }
                 return true;
             };
-            
+
             this.updateObject = function(name,obj,suitName) {
                 if(this.editingName == name)
                 {
@@ -214,7 +202,6 @@
                                     this.dataQualityNameArr[i].fieldType[j] = obj.fieldType[j];
                                     this.dataQualityNameArr[i].isEnableRow[j] = obj.isEnableRow[j];
                                 }
-                                console.log(this.dataQualityNameArr[i]);
                             }
                         }
                     }
@@ -226,16 +213,16 @@
             this.setEditing = function(flagVal){
                 this.editing = flagVal;
             };
-            
+
             this.getEditing = function(){
                 return this.editing;
             };
-            
+
             this.editingName = '';
             this.setEditingName = function(dataName){
                 this.editingName = dataName;
             };
-            
+
             this.getEditingName = function(){
                 return this.editingName;
             };
@@ -252,26 +239,22 @@
                 sharedData[key] = value;
             };
         this.saveScheduleData = {};
-        
+
         this.setScheduleJobData = function(scheduleData){
         self.saveScheduleData = scheduleData;
         };
         this.getScheduleJobData = function(){
             return self.saveScheduleData;
         };
-        
+
         this.setClusterMode = function(mode,name) {
             clusterDetail.clusterMode = mode;
             clusterDetail.currCluster = name;
         };
-            
+
         this.getClusterMode = function() {
             return clusterDetail;
         };
-            
-            //this.jobConfigMethods = [{"name":"Tuning", "visible": false}, {"name":"Debugger", "visible": false}, {"name":"What If", "visible": false}, {"name":"Aggressive Job Allocation", "visible": false}, {"name":"Job Profiling", "visible": false}];
-            
-            
             this.setJobConfigMethod = function(index, checked) {
                 var jobLen = this.jobConfigMethods.length;
                 for (var i=0; i<jobLen; i++) {
@@ -312,7 +295,7 @@
                 return self.dataProfilers;
             };
 
-            
+
             this.setJobAnalysis = function (val) {
                 this.jobAnalysis = val;
             };
@@ -324,16 +307,15 @@
             };
             this.getDataAnalysis = function () {
                 return self.jobDetails.data;
-                return this.dataAnalysis;
             };
-            
+
             this.setDataConfigDtl = function(selectedDataFields){
                 self.saveEnabledFields = selectedDataFields;
             }
             this.getDataConfigDtl = function(){
                 return self.saveEnabledFields;
             }
-            
+
             this.setDDV = function (val) {
                 this.dataValidation = val;
             };
@@ -398,19 +380,9 @@
             this.getLocalDQ = function(){
                 return localDQ;
             };
-        
+
         this.chkPrevFormIsValid = function(prevForm, $scope){
                 switch(prevForm) {
-                    case 'Tuning':{
-                        if($scope.tuningTab.tuningForm.$valid){
-                            this.prevSuccessDiv('method-tuning');
-                            this.tuningCompleted = true;
-                        }else{
-                            this.prevDiv('method-tuning');
-                            this.tuningCompleted = false;
-                        }
-                        break;
-                    }
                     case 'Debugger':{
                         if($scope.debuggerTab.debuggerForm.$valid){
                             this.prevSuccessDiv('method-debugger');
@@ -419,7 +391,6 @@
                             this.prevDiv('method-debugger');
                             this.debuggerCompleted = false;
                         }
-                        //$scope.debuggerTab.handleErrorMessages();
                         break;
                     }
                     case 'WhatIf':{
@@ -427,7 +398,7 @@
                             this.prevSuccessDiv('method-WhatIf');
                             this.whatIfCompleted = true;
                         }else{
-                            this.prevDiv('method-WhatIf');  
+                            this.prevDiv('method-WhatIf');
                             this.whatIfCompleted = false;
                         }
                         $scope.whatIfTab.handleErrorMessages();
@@ -438,32 +409,21 @@
                             this.prevSuccessDiv('method-job-profiling');
                             this.jobProfilingCompleted = true;
                         }else{
-                            this.prevDiv('method-job-profiling');   
+                            this.prevDiv('method-job-profiling');
                             this.jobProfilingCompleted = false;
                         }
                         $scope.jobProfilingTab.handleErrorMessages();
                         break;
                     }
                     case 'DataValidation':{
-                        /* if($scope.dataValidationTab.$valid){
-                            this.prevSuccessDiv('method-data-validation');
-                            this.dataValidationCompleted = true;
-                        }else{
-                            this.prevDiv('method-data-validation'); 
-                            this.dataValidationCompleted = false;
-                        } */
                         $scope.dataValidationTab.handleErrorMessages();
                         break;
                     }
                 }
             }
-            
+
             this.activeForm = function(activeDivId){
                 switch(activeDivId) {
-                    case 'Tuning':{
-                        this.activeDiv(activeDivId,'method-tuning');
-                        break;
-                    }
                     case 'Debugger':{
                         this.activeDiv(activeDivId,'method-debugger');
                         break;
@@ -482,15 +442,15 @@
                     }
                 }
             }
-            
+
             this.activeDiv = function(id,className){
                 angular.element("#"+id+"").addClass('active');
             }
-            
+
             this.prevDiv = function(className){
-                angular.element("."+className).addClass('incomplete');  
+                angular.element("."+className).addClass('incomplete');
             }
-            
+
             this.prevSuccessDiv = function(className){
                 if(angular.element("."+className).hasClass('incomplete')){
                     angular.element("."+className).removeClass('incomplete');
@@ -503,15 +463,13 @@
                 var selectedTabs = self.getJobConfigMethod();
                 angular.forEach(selectedTabs, function(element){
                     if(element.visible){
-                        if(element.name==='Tuning'){
-                            self.isCurrentFormValid = true;
-                        } else if(element.name==='Debugger'){
+                        if(element.name==='Debugger'){
                             self.isCurrentFormValid = true;
                         } else if(element.name==='What If'){
                             self.isCurrentFormValid = true;
                         } else if(element.name==='Job Profiling'){
                             self.isCurrentFormValid = true;
-                        }                       
+                        }
                     }
                 });
                 return self.isCurrentFormValid
@@ -521,20 +479,15 @@
                 var selectedTabs = self.getJobConfigMethod();
                 angular.forEach(selectedTabs, function(element){
                     if(element.visible){
-                        if(element.name==='Tuning'){
-                            isCurrentFormValid = isCurrentFormValid && self.tuningCompleted;
-                        } else if(element.name==='Debugger'){
+                        if(element.name==='Debugger'){
                             isCurrentFormValid = isCurrentFormValid && self.debuggerCompleted;
                         } else if(element.name==='What If'){
                             isCurrentFormValid = isCurrentFormValid && self.whatIfCompleted;
                         } else if(element.name==='Job Profiling'){
                             isCurrentFormValid = isCurrentFormValid && self.jobProfilingCompleted;
-                        }                       
-                    }                   
+                        }
+                    }
                 });
-                /* if(self.getDDV()){
-                    isCurrentFormValid = isCurrentFormValid && self.dataValidationCompleted;
-                } */
                 if(isCurrentFormValid){
                     self.isFormsValid = true;
                 }else{
@@ -542,9 +495,6 @@
                 }
                 return self.isFormsValid;
             };
-            
-            //self.dataValidationCompleted = false;
-
             this.messageObj = {
                 displayBlock: false,
                 blockMessage: "",
@@ -563,17 +513,14 @@
 
             this.appendToElement = function(ele, html) {
                 angular.element(ele).append(html);
-            };            
-            
-            
-            this.saveDefineJobInfo = function(obj){
-                if(obj){
-                   self.defineJobInfoObj = angular.copy(obj);       
-                }
             };
 
-            //this.newService('setWidgetInfo',['saveDefineJobInfo', function(saveDefineJobInfo) {}]);
-            
+
+            this.saveDefineJobInfo = function(obj){
+                if(obj){
+                   self.defineJobInfoObj = angular.copy(obj);
+                }
+            };
             this.getDefineJobInfo = function(){
                 return self.defineJobInfoObj;
             };
@@ -595,7 +542,7 @@
                         jobName : varJobName,
                         JobDetails:varJobDetails,
                         jobConfigMethods: varJobConfigMethods,
-                        getDefineJobInfo : vargetDefineJobInfo,                        
+                        getDefineJobInfo : vargetDefineJobInfo,
                         JobWidget : varJobWidget
                 };
                 this.jobs.put(varJobName,this.savedJobJson);
@@ -610,7 +557,7 @@
                 self.setSelectedJobName(varjobName);
                 self.setJobDetails(varJobDetails);
                 self.saveDefineJobInfo(vargetDefineJobInfo);
-                self.widgetData=varJobWidget;           
+                self.widgetData=varJobWidget;
             };
 
             self.openJobByNameFromMap = function(jobName){
@@ -644,11 +591,11 @@
                     return angular.element('#addjarText').val();
                 }
             };
-            
+
             this.setWidgetInfo = function(tabName, obj){
                 self.widgetData[tabName] = angular.copy(obj);
             };
-            
+
             this.getWidgetInfo = function() {
                 return self.widgetData;
             };
@@ -657,21 +604,21 @@
             self.setWidgetObject = function(){
                         var varJobWidget = self.getWidgetInfo();
                         var varJobName = self.getSelectedJobName();
-                if(varJobWidget.tuningDtl != undefined) {                         
+                if(varJobWidget.tuningDtl != undefined) {
                 if(varJobWidget.tuningDtl.schedule){
                     self.savedScheduleJobJson = {
-                                    jobName : varJobName,                       
+                                    jobName : varJobName,
                                     JobWidget : varJobWidget
                     };
                 }
                 }
                 self.widgetInfoArr.push(self.savedScheduleJobJson);
             }
-            
+
             self.getWidgetArray = function(){
                 return self.widgetInfoArr;
             }
-            
+
 
             //setter-getter for reports
 
@@ -725,20 +672,13 @@
                 return this.jobProfilingJsonData;
             };
 
-            this.setTuningJsonData = function(data){
-                this.tuningJsonData = data;
-            };
-            this.getTuningJsonData = function(){
-                return this.tuningJsonData;
-            };
-            
         this.setEnableDataQualityTimeline = function(dataQualityTimeline){
         self.enableDataQualityTimeline = dataQualityTimeline;
         };
         this.getEnableDataQualityTimeline = function(){
             return self.enableDataQualityTimeline;
         };
-            
+
         this.setClusterConfig = function(clusterObj){
             self.clusterConfigDtl = clusterObj;
         };
@@ -762,35 +702,12 @@
                     "name": "Debugger",
                     "visible": false
                 },
-                /*{
-                    "name": "What If",
-                    "visible": false
-                },*/
                 {
                     "name": "Job Profiling",
                     "visible": false
-                },
-                {
-                    "name": "Tuning",
-                    "visible": false
                 }
-                
+
             ];
-
-            var tuningObj = {};
-            tuningObj.enbTuningChk = json.selfTuning;
-            if(json.selfTuning) {
-                finalConvertedObj.JobDetails.job = true;
-                finalConvertedObj.jobConfigMethods[2].visible = true;
-
-                tuningObj.resourceShareRadios = json.clusterTuning.isFairSchedulerEnabled?"fairScheduler":"manual";
-                tuningObj.mapReduceJarRadios = json.clusterTuning.useStandardWordCountJar?"standardWordCount":"userSuppliedJar";
-                tuningObj.jobTypeOpn = json.hadoopPerformance;
-                tuningObj.mapSlotsText = json.availableMapTasks;
-                tuningObj.reduceSlotsText = json.availableReduceTasks;
-                tuningObj.jobDataPathText = json.jobInputPath;
-                tuningObj.outputFileText = json.outputFolder;
-            }
 
             var debuggerObj = {}, regexValidations=[], userValidations=[];
             var tempDebugOb = {};
@@ -814,7 +731,7 @@
                         debuggerObj.useRegex.push(tempDebugOb);
                     }
                 }
-                
+
 
                 userValidations = json.userValidations;
                 if(userValidations) {
@@ -825,27 +742,15 @@
                         tempDebugOb.value = userValidations[i].value;
                         debuggerObj.udv.push(tempDebugOb);
                     }
-                }  
+                }
 
-                
+
             }
-            
-
-            /*var whatIfObj = {};
-            whatIfObj.enableWhatIf = json.enableWhatIf;
-            if(json.enableWhatIf){
-                finalConvertedObj.JobDetails.job = true;
-                finalConvertedObj.jobConfigMethods[2].visible = true;
-                whatIfObj.selectBoxWhatIf = json.selectWhatIf;
-                whatIfObj.toField = json.toField;
-            }*/
-
             var jobProfilingObj = {};
             jobProfilingObj.enableprofilingCheck = json.enableJobProfiling;
             if(json.hadoopJobProfile === 'TRUE'){
                 finalConvertedObj.JobDetails.job = true;
                 finalConvertedObj.jobConfigMethods[1].visible = true;
-                //jobProfilingObj.runFromJumbune = json.runJobFromJumbune;
                 jobProfilingObj.runFromJumbune = json.enableStaticJobProfiling==='TRUE'?true:false;
             }
 
@@ -872,15 +777,14 @@
                     }
                 }
             }
-            
+
             var jobsObj = json.jobs;
             var defineJobObj = {};
             defineJobObj = {};
             defineJobObj.fieldArray = [];
             defineJobObj.allJobInfo = [];
             defineJobObj.noOfJobs = jobsObj.length;
-            //defineJobObj.operatingUser = jobsObj.operatingUser;
-                        
+
             if(json.isLocalSystemJar === 'TRUE') {
                 defineJobObj.systemType = "local";
                 defineJobObj.filePathLocal = json.inputFile;
@@ -905,9 +809,8 @@
             if(json.includeClassJar==='TRUE') {
                 defineJobObj.jarManifest = true;
             }
-            
+
             finalConvertedObj.JobWidget = {
-                "tuningDtl" : tuningObj,
                 "debuggerDtl" : debuggerObj,
                 "whatIfDtl" : whatIfObj,
                 "jobProfilingDtl" : jobProfilingObj,
@@ -918,8 +821,6 @@
             return finalConvertedObj;
 
         };
-
-        // 1= DQ, 2=DP, 3=DQ, DP and DV, 4= DQ and DP, 5= tuning
         this.dataAnalysisChart = '';
 
 
@@ -927,20 +828,12 @@
         this.dataAnalysisDetails = '';
         self.jobJarFile = {};
         self.setJobJarFile = function(file, form) {
-            console.log("In set jar file:",file,form)
             self.jobJarFile.file = file;
             self.jobJarFile.formid = form;
         };
         self.getJobJarFile = function() {
             return self.jobJarFile.file;
         };
-        this.optimizeJob = {};
-        self.setNewJobDetail = function(obj) {
-            this.optimizeJob = angular.copy(obj)
-        }
-        self.getNewJobDetail = function() {
-            return this.optimizeJob;
-        }
         this.analyzeData = {};
         self.setAnalyzeDataDetail = function(obj) {
             this.analyzeData = angular.copy(obj)
@@ -949,12 +842,12 @@
             return this.analyzeData;
         }
 
-        this.optimizeJobName = '';
-        self.setOptimizeJobName = function(name) {
-            this.optimizeJobName = name;
+        this.commonJobName = '';
+        self.setJobName = function(name) {
+            this.commonJobName = name;
         }
-        self.getOptimizeJobName = function() {
-            return this.optimizeJobName;
+        self.getJobName = function() {
+            return this.commonJobName;
         }
         this.fieldNumberData = {};
         self.setfieldNumberDetail = function(obj) {
@@ -1039,7 +932,7 @@
         }
         self.getClustrName = function() {
             return this.setClusterNme;
-        } 
+        }
         this.setaddThrdDta = {};
         self.setaddThrdData = function(obj) {
              this.setaddThrdDta   = angular.copy(obj)
@@ -1081,7 +974,7 @@
         }
         self.getdataValidationXMLData = function() {
             return this.setXMLData;
-        }   
+        }
         this.setXMLAnalyzeData = {}
         self.setAnalyzeDataDetailXML = function(obj){
             this.setXMLAnalyzeData = angular.copy(obj)
@@ -1102,13 +995,6 @@
         }
         self.getConfigurationData = function() {
             return this.setconfData;
-        } 
-        this.dlcConfiguration = {}
-        self.setdlcConfiguration = function(obj){
-            this.dlcConfiguration = angular.copy(obj)
-        }
-        self.getdlcConfiguration = function() {
-            return this.dlcConfiguration;
         }
         this.setClusterSize = {}
         self.setNodeSize = function(obj){
@@ -1146,12 +1032,30 @@
         self.getChargeBackConf = function() {
             return this.setChargeBack;
         }
-		this.setAcTab = null;
+        this.setAcTab = null;
         self.setAcTabDetail = function(obj) {
             this.setAcTab = angular.copy(obj);
         }
         self.getAcTabDetail = function() {
             return this.setAcTab;
+        }
+        this.setRealmdata = null;
+        self.setRealmData = function(obj) {
+            this.setRealmdata = angular.copy(obj);
+        }
+        self.getRealmData = function() {
+            return this.setRealmdata;
+        }
+        this.setHideManageCluster = null;
+        self.setHideManageClusterButtons = function(obj) {
+            this.setHideManageCluster = angular.copy(obj);
+            localStorage.setItem('hideManageCluster', self.setHideManageCluster);
+        }
+        self.getHideManageClusterButtons = function() {
+             if ( self.setHideManageCluster == null ) {
+                 self.setHideManageCluster = localStorage.getItem('hideManageCluster');
+             }
+            return this.setHideManageCluster;
         }
     }]);
 

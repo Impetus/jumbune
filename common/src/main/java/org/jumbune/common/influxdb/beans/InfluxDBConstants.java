@@ -19,6 +19,10 @@ public interface InfluxDBConstants {
 
 	String Z = "Z";
 	String AND = "and";
+	String REGEX1 = "\\\\ ";
+	String REGEX2 = "\\\\,";
+	String REGEX3 = "\\\\=";
+	String REGEX4 = "=";
 	String TIME = "time";
 	String HTTP = "http://";
 	String WHERE = "where";

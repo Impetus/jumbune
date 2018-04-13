@@ -1,9 +1,9 @@
-/* Dashboard controller */
+/* Analyze data JSON controller */
 'use strict';
 angular.module('analyzeDataJson.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagination'])
 	.controller('AnalyzeDataJson', ['$scope', 'common', '$http', '$location', '$timeout', 'uiGridConstants', 'getTableDataFactory', 'getXmlTableDataFactory', 'getJsonTableDataFactory', function($scope, common, $http, $location, $timeout, uiGridConstants, getTableDataFactory, getXmlTableDataFactory, getJsonTableDataFactory) {
 			//Voilation detail grid
-			var jobName = common.getOptimizeJobName();
+			var jobName = common.getJobName();
 			$scope.showJobName = jobName
 			$scope.violationTable = {};
 			$scope.violationJSONTable = {};
@@ -18,8 +18,6 @@ angular.module('analyzeDataJson.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
 			$scope.hideTopFieldCounter = false;
 			$scope.hideTopTypeViolationMessage = false;
 			$scope.webSocketErrorFlag = false;
-			$scope.licenseExpireTrue = false;
-        	$scope.licenseExpireDays = false;
 			var finaljson;
 			var graphJson = [{
 				"key": "clean Tuples",
@@ -45,7 +43,6 @@ angular.module('analyzeDataJson.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
 
 			$scope.init = function() {
 				$('[data-toggle="tooltip"]').tooltip();
-            	licenseExpireMessage();
 				$scope.selectedGraphPoint = {};
 				$scope.gridOptionsTest = {};
 				$scope.gridOptionsTestJson = {};
@@ -58,15 +55,19 @@ angular.module('analyzeDataJson.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
 				var host = window.location.hostname;
 				var port = window.location.port;
 
-				var jobName = common.getOptimizeJobName();
+				var jobName = common.getJobName();
 
-				$scope.finalJobName = jobName;   
+				$scope.finalJobName = jobName;
 				if ( $scope.finalJobName == null || $scope.finalJobName == undefined || $scope.finalJobName == "") {
-				 	$location.path('/');
-				} else {
-					var url = "ws://" + host + ":" + port + "/results/jobanalysis?jobName=" + $scope.finalJobName;
-					
-				
+				 	$location.path('/index');
+				} else {
+					if (document.location.protocol === 'https:') {
+                        var url = "wss://" + host + ":" + port + "/results/jobanalysis?jobName=" + $scope.finalJobName;;
+                    } else {
+                        var url = "ws://" + host + ":" + port + "/results/jobanalysis?jobName=" + $scope.finalJobName;;
+                    }
+
+
 				$scope.showJobName = $scope.finalJobName;
 				var webSocket = new WebSocket(url);
 
@@ -79,7 +80,6 @@ angular.module('analyzeDataJson.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
 					$('.ring-loader').remove();
 					$scope.webSocketErrorFlag = true;
 					var serverData = angular.copy(event.data);
-					console.log("webSocket data", serverData);
 					var localData = JSON.parse(JSON.parse(serverData).DATA_VALIDATION);
 					var doErrorsExist = $scope.containErrors(localData);
 						if (doErrorsExist) {
@@ -87,12 +87,11 @@ angular.module('analyzeDataJson.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
 						}
 					var KeyData = (Object.keys(localData)[0]);
                     var dataKey = localData[KeyData].jsonReport
-                    var dvData = JSON.parse(dataKey);                    
-                    var dvSummary = dvData['DVSUMMARY'].dirtyTuples;                    
+                    var dvData = JSON.parse(dataKey);
+                    var dvSummary = dvData['DVSUMMARY'].dirtyTuples;
                     if ( dvSummary == 0 || dvSummary == undefined) {
                     	$scope.safeApply($scope.noJsonDataViolatnFlag = true);
                     }
-                    //$scope.jsonData = JSON.parse(dataKey)
 					for (var key in localData) {
 						var jsonObj = JSON.parse(localData[key].jsonReport);
 						finaljson = jsonObj;
@@ -112,41 +111,12 @@ angular.module('analyzeDataJson.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
 				};
 
 				}
-				//$scope.dataProfiling();
+				
 			}
-			function licenseExpireMessage ()  { 
-	            //licenseValidateFactory.submitLicense({},function(data) {
-	                    var data = common.getNodeSize();
-	                    var currentDate = data.currentTime;
-	                    if (data['Valid Until']) {
-	                        var expiryDate = data['Valid Until'];
-	                        var temp = new Date(data['Valid From']).toString();
-	                        data['Valid From'] = temp.substring(4, 16) + temp.substring(25);
-	                        temp = new Date(data['Valid Until']).toString();
-	                        data['Valid Until'] = temp.substring(4, 16) + temp.substring(25); 
-	                        var milliseconds = (expiryDate - currentDate);
-	                        var daysDiff = milliseconds/86400000;
-	                        if ( daysDiff <= 3) {
-	                            if ( daysDiff >= 1) {
-	                                $scope.daysDiffShow = Math.round(daysDiff);
-	                                $scope.licenseExpireDays = true;
-	                                $scope.licenseExpireTrue = false;
-	                            } else {
-	                                $scope.licenseExpireTrue = true;
-	                                $scope.licenseExpireDays = false;
-	                            }
-	                        } 
-	                    }
-	                //},
-	            //function(e) {
-	                //console.log(e);
-	            //}); 
-	        }
 			$scope.JsonDataValidation = function(json) {
 				var sunburstJson = $scope.getSunburstJsonForJsonValidation(json);
 				printGraphJSON('#jsonGraphViolations', sunburstJson, json);
-				setJsonValidationCounter(json)
-
+				setJsonValidationCounter(json);
 			}
 
 
@@ -157,6 +127,7 @@ angular.module('analyzeDataJson.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
 					totalViolations = json[violationName].totalViolation;
 					break;
 				}
+
 				if (totalViolations != undefined && totalViolations != 0) {
 					new CountUp('totalViolationsId', 0, totalViolations, 0, 2).start();
 				}
@@ -269,7 +240,7 @@ angular.module('analyzeDataJson.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                         } else if (d.name == "Dirty Tuples") {
                             if (jsonC["Dirty Tuples"] == undefined) {
                                 return d.name;
-                            } 
+                            }
                         }
 					})
 					.attr("d", arc)
@@ -279,7 +250,6 @@ angular.module('analyzeDataJson.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
 							return c;
 						}
 						return color((d.children ? d : d.parent).name);
-						//return colorMap[d.name];
 					})
 					.on("click", click)
 					.style('stroke', '#fff')
@@ -287,36 +257,6 @@ angular.module('analyzeDataJson.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
 					.text(function(d) {
 						return d.name + "\n" + formatNumber(d.value);
 					});
-				//var legendArr = ["Clean Tuple", "Violated Tuple"]
-				/*var legendArr = d3.scale.ordinal()
-					.domain(["Clean Tuple", "Violated Tuple"])
-					.range(["#66BB6A", "#eF5350"]);
-				var legend = svg.selectAll(".legend")
-					.data(legendArr.domain())
-					.enter().append("g")
-					.attr("class", "legend")
-					.attr("transform", function(d, i) {
-						return "translate(" + width / 3 + "," + (i * 20) + ")";
-					});
-
-				legend.append("text")
-					.attr("x", 35)
-					.attr("y", 9)
-					.attr("dy", ".35em")
-					.style("text-anchor", "start")
-					.text(function(d) {
-						return d;
-					});
-				var color1 = d3.scale.category20c();
-				legend.append("rect")
-					.attr("x", 10)
-					.attr("width", 18)
-					.attr("height", 18)
-					.attr("class", "dot_legend")
-					.style("fill", legendArr)
-					.on("mouseout", function() {
-
-					});*/
 					var legend = svg.append("g")
                     .attr("class", "legend")
                     .attr("transform", "translate(200,30)")
@@ -382,7 +322,7 @@ angular.module('analyzeDataJson.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
 					.range([0, 2 * Math.PI]);
 				var y = d3.scale.sqrt()
 					.range([0, radius]);
-				//var color = d3.scale.category20c();
+				
 				var partition = d3.layout.partition()
 					.value(function(d) {
 						return d.size;
@@ -443,7 +383,6 @@ angular.module('analyzeDataJson.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                             }
 
                         } else if (d.name == "NullKey") {
-                            //return d+" "+json["Number of Fields"];
                             if (json["NullKey"] == undefined) {
                                 return d.name;
                             } else {
@@ -452,7 +391,6 @@ angular.module('analyzeDataJson.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                             }
 
                         } else if (d.name == "MissingKey") {
-                            //return d+" "+json["Number of Fields"];
                             if (json["MissingKey"] == undefined) {
                                 return d.name;
                             } else {
@@ -472,91 +410,7 @@ angular.module('analyzeDataJson.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
 						return d.name + "\n" + formatNumber(d.value);
 					});
 
-			/*	var legendArr = d3.scale.ordinal()
-					.domain(["NullKey", "DataKey", "JsonSchemaKey", "MissingKey", "RegexKey"])
-					.range(["#72B3D8", "#3184B3", "#3690c4", "#53a2d0", "#73b3d9"]);
-				var legend = svg.selectAll(".legend")
-					.data(legendArr.domain())
-					.enter().append("g")
-					.attr("class", "legend")
-					.style("cursor", "pointer")
-					.on("click", function(legendData) {
-						$scope.generateTableForViolations(legendData)
-						
-					})*/
-					/*.attr("transform", function(legendArr, i) {
-
-						return "translate(" + width / 2 + "," + (i * 20) + ")";
-						if(d == "Data Type" && i == 1){
-								return "translate(" + width / 4 + "," + (i * 20) + ")";
-							} else if(d == "Null Check" && i == 0){
-								return "translate(" + width / 4 + "," + (i * 20) + ")";
-							} else if(d == "Regex" && i == 2){
-								return "translate(" + width / 4 + "," + (i * 20) + ")";
-							} else if(d == "Number of Fields" && i == 3){
-							   return "translate(" + width / 4 + "," + (i * 20) + ")";
-							}
-
-					});*/
-
-				/*legend.append("text")
-					.attr("x", 35)
-					.attr("y", 9)
-					.attr("dy", ".35em")
-					.style("text-anchor", "start")
-					.text(function(d) {
-						if (d == "DataKey") {
-							if (json["DataKey"] == undefined) {
-								return d + " " + 0;
-							} else {
-								return d + " " + json["DataKey"].totalKeyViolation;
-
-							}
-						} else if (d == "NullKey") {
-							if (json["NullKey"] == undefined) {
-								return d + " " + 0;
-							} else {
-								return d + " " + json["NullKey"].totalKeyViolation;
-
-							}
-
-						} else if (d == "RegexKey") {
-							if (json["RegexKey"] == undefined) {
-								return d + " " + 0;
-							} else {
-								return d + " " + json["RegexKey"].totalKeyViolation;
-
-							}
-
-						} else if (d == "JsonSchemaKey") {
-							if (json["JsonSchemaKey"] == undefined) {
-								return d + " " + 0;
-							} else {
-								return d + " " + json["JsonSchemaKey"].totalKeyViolation;
-
-							}
-
-						} else if (d == "MissingKey") {
-							if (json["MissingKey"] == undefined) {
-								return d + " " + 0;
-							} else {
-								return d + " " + json["MissingKey"].totalKeyViolation;
-
-							}
-
-						}
-					});
-				var color1 = d3.scale.category20c();
-				legend.append("rect")
-					.attr("x", 10)
-					.attr("width", 18)
-					.attr("height", 18)
-					.attr("class", "dot_legend")
-					.style("fill", legendArr)
-					.on("mouseout", function() {
-
-					});
-*/				var legend = svg.append("g")
+					var legend = svg.append("g")
                     .attr("class", "legend")
                     .attr("transform", "translate(200,30)")
                     .style("font-size", "12px")
@@ -589,7 +443,6 @@ angular.module('analyzeDataJson.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
 
 				var dqtGraph = common.getDQTFlag();
 				if (dqtGraph) {
-					//localData = JSON.parse(localData);
 					isJson(localData);
 				}
 				var errorMessageToDisplay = "Something went wrong, Please contact 'help@jumbune.com'.";
@@ -623,8 +476,8 @@ angular.module('analyzeDataJson.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
                 try {
                     JSON.parse(str);
                 } catch (e) {
-                    return false;
-                    console.log("Invalid json")
+                    console.log("Invalid json received from server", e);
+					return false;
                 }
                 return true;
             }
@@ -653,7 +506,7 @@ angular.module('analyzeDataJson.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
 				$scope.init();
 			}
 			$scope.clickedHomeIcon = function() {
-				$location.path("/");
+				$location.path("/dashboard");
 			}
 			$scope.applyFun = function() {
 				if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest') {
@@ -663,21 +516,18 @@ angular.module('analyzeDataJson.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
 			$scope.tableJSON = function(legendData) {
 				$scope.tableJSONHideFlag = true;
 				$scope.violationJSONTable.label = legendData;
-				//$scope.violationTable.value = legendData.value;
 				$scope.applyFun()
 
 			}
 			$scope.table = function(legendData) {
 				$scope.tableHideFlag = true;
 				$scope.violationTable.label = legendData;
-				//$scope.violationTable.value = legendData.value;
 				$scope.applyFun()
 
 			}
 			$scope.tableChart = function(legendData) {
 				$scope.tableHideFlag = true;
 				$scope.violationTable.label = legendData.data.nodeData.age;
-				//$scope.violationTable.value = legendData.value;
 				$scope.applyFun()
 
 			}
@@ -708,12 +558,6 @@ angular.module('analyzeDataJson.ctrl', ["ui.grid", 'ui.bootstrap', 'ui.grid.pagi
 			}
 
 			$scope.sampledetails = function(data) {
-				/* var paginationOptions = {
-					pageNumber: 1,
-					pageSize: 5,
-					sort: null
-				  };*/
-				//$scope.getCall(fileName)
 				$scope.gridOptionsTest = {
 					paginationPageSizes: [10, 50, 100],
 					paginationPageSize: 10,

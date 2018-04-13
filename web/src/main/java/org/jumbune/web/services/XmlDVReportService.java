@@ -6,7 +6,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,7 +19,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.GenericEntity;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -30,21 +28,20 @@ import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.XmlElementBean;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.datavalidation.xml.XmlDataValidationConstants;
 import org.jumbune.datavalidation.xml.helper.SchemaGenerator;
 import org.jumbune.utils.JobUtil;
-import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
-
-import com.google.gson.Gson;
-import org.jumbune.common.job.EnterpriseJobConfig;
 import org.jumbune.web.beans.XmlDVFileReport;
 import org.jumbune.web.beans.XmlDVReport;
 import org.jumbune.web.utils.WebConstants;
 import org.jumbune.web.utils.WebUtil;
+
+import com.google.gson.Gson;
 
 
 /**
@@ -82,18 +79,17 @@ public class XmlDVReportService{
 	public Response inferSchema(FormDataMultiPart form) throws IOException{
 		LOGGER.debug("Start to infer Schema");
 		boolean response = false;
-		Gson gson = new Gson();
 		String schemaDef;
 		try {
 			FormDataBodyPart jarFile = form.getField("inputFile");
 			String fileName = jarFile.getContentDisposition().getFileName();
-			EnterpriseJobConfig enterpriseJobConfig = getEnterpriseJobConfig(form);
+			JobConfig jobConfig = getJobConfig(form);
 			if (fileName == null) {
 				return null;
 			}
 			File fileObject = jarFile.getValueAs(File.class);
 			schemaDef = generateSchema(fileObject, fileName);
-			response = saveDataAndCreateDirectories(enterpriseJobConfig.getJumbuneJobName(), schemaDef);
+			response = saveDataAndCreateDirectories(jobConfig.getJumbuneJobName(), schemaDef);
 			if (response) {
 				return Response.ok(response).build();
 			} else {
@@ -115,15 +111,15 @@ public class XmlDVReportService{
 		LOGGER.debug("Start to update Schema");
 		boolean schemaResponse = false;
 		try {
-			EnterpriseJobConfig enterpriseJobConfig = getEnterpriseJobConfig(form);
+			JobConfig jobConfig = getJobConfig(form);
 			StringBuilder stringBuilder = new StringBuilder();
-			stringBuilder.append(EnterpriseJobConfig.getJumbuneHome()).append(JOB_JAR_LOCATION)
-					.append(enterpriseJobConfig.getJumbuneJobName()).append(File.separator)
+			stringBuilder.append(JumbuneInfo.getHome()).append(JOB_JAR_LOCATION)
+					.append(jobConfig.getJumbuneJobName()).append(File.separator)
 					.append(XML_DV_FOLDER_LOCATION).append(SCHEMA_LOCATION);
 
 			String schemaDirPath = JobUtil.getAndReplaceHolders(stringBuilder.toString());
 			SchemaGenerator schemaGenerator = new SchemaGenerator();
-			List<XmlElementBean> xmlElementBeanList = enterpriseJobConfig.getXmlElementBeanList();
+			List<XmlElementBean> xmlElementBeanList = jobConfig.getXmlElementBeanList();
 			if (!xmlElementBeanList.isEmpty()) {
 				Map<String, XmlElementBean> elementsMap = new HashMap<String, XmlElementBean>();
 				for (XmlElementBean xmlElementBean : xmlElementBeanList) {
@@ -165,7 +161,7 @@ public class XmlDVReportService{
 			throws Exception {
 		
 		StringBuilder stringBuilder = new StringBuilder();
-		stringBuilder.append(EnterpriseJobConfig.getJumbuneHome())
+		stringBuilder.append(JumbuneInfo.getHome())
 		.append(JOB_JAR_LOCATION)
 		.append(jumbuneJobName).append(File.separator)
 		.append(XML_DV_FOLDER_LOCATION)
@@ -241,7 +237,7 @@ public class XmlDVReportService{
 			rows = Integer.parseInt(noOfRows);
 		}
 		StringBuilder stringBuilder = new StringBuilder();
-		stringBuilder.append(EnterpriseJobConfig.getJumbuneHome())
+		stringBuilder.append(JumbuneInfo.getHome())
 					.append(JOB_JAR_LOCATION)
 					.append(jobName).append(File.separator)
 					.append(XML_DV_FOLDER_LOCATION);
@@ -311,18 +307,18 @@ public class XmlDVReportService{
 	}
 	
 	/**
-	 * Gets the enterprise job config.
+	 * Gets the job config.
 	 *
 	 * @param form
 	 *            the form
-	 * @return the enterprise job config
+	 * @return the job config
 	 */
-	public EnterpriseJobConfig getEnterpriseJobConfig(FormDataMultiPart form) {
-		String enterpriseJobConfigJSON = form.getField("jsonData").getValue();
+	public JobConfig getJobConfig(FormDataMultiPart form) {
+		String jobConfigJSON = form.getField("jsonData").getValue();
 		Gson gson = new Gson();
-		EnterpriseJobConfig enterpriseJobConfig = gson.fromJson(enterpriseJobConfigJSON,
-				EnterpriseJobConfig.class);
-		return enterpriseJobConfig;
+		JobConfig jobConfig = gson.fromJson(jobConfigJSON,
+				JobConfig.class);
+		return jobConfig;
 	}
 
 }

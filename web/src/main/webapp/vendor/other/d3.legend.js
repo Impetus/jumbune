@@ -36,7 +36,7 @@ d3.legend = function(g) {
         //.attr("y",function(d,i) { console.log(i);return i+"em"})
         //.attr("x","1em")
         .attr("x", 35)
-        .attr("y",function(d,i) { console.log(i);return (i*20)+9})
+        .attr("y",function(d,i) { return (i*20)+9})
                     .attr("dy", ".35em")
                     .style("text-anchor", "start")
         .text(function(d) { ;return d.key})
@@ -59,11 +59,11 @@ d3.legend = function(g) {
           return "translate(" + width / 2 + "," + (i * 20) + ")";
         })*/
         //.attr("y", function(d,i) { console.log("rect",i); return i+"em"})
-        .attr("y",function(d,i) { console.log(i);return (i*21)+2})
+        .attr("y",function(d,i) { ;return (i*21)+2})
         .attr("x", 10)
                     .attr("width", 18)
                     .attr("height", 18)
-        .style("fill",function(d) { console.log(d.value.color);return d.value.color})
+        .style("fill",function(d) { return d.value.color})
     
     // Reposition and resize the box
     var lbbox = li[0][0].getBBox()  

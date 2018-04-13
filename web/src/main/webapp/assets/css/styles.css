@@ -1141,7 +1141,6 @@ s{
 	/*top:82px;*/
 	top:79px;
 }
-
 #scheduledJobsDropdown {
 	/*top:164px;*/
 	top:160px;
@@ -1150,13 +1149,12 @@ s{
 	/*top:250px;*/
 	top:243px;
 }
-#licenseDropdown {
-	/*top:335px;*/
-	top:323px;
-}
 #aboutUsDropdown {
-	/*top:335px;*/
-	top:404px;
+	top:322px;
+}
+
+#acThreadsDropdown {
+	top: 485px;
 }
 
 .dropdown {
@@ -1844,56 +1842,6 @@ s{
 }
 .orangeBg {
 	background: #FF9800;
-}
-
-/****** Tuning *******/
-.widgetRow .tuningDetails, .violationDetails {
-	padding: 15px;
-}
-
-.widgetRow .tuningDetails h3, .violationDetails h3, .debuggerDetails h3 {
-	background: #f8f8f8;
-	color: #000;
-	font-size: 14px;
-	margin: 0;
-	padding: 8px 15px;
-}
-
-.widgetRow .tuningDetails h3 .pull-right {
-	color: #329144;
-	font-size: 13px;	
-}
-
-.widgetRow .tuningDetails h3 .pull-right i {
-	margin: 0 6px 0 15px;
-}
-
-.widgetRow .tuningDetails h3 .pull-right span {
-	cursor: pointer;
-}
-
-.tuningDetails .content dl {
-	font-size: 13px;
-	margin: 0;
-	padding: 0;
-}
-
-.tuningDetails .content dl dt, .tuningDetails .content dl dd {
-	float: left;
-	margin: 15px 0 0 0;
-}
-
-.tuningDetails .content dl dt {
-	color: #8e8e8e;
-	font-weight:normal;
-	/*padding:0 0 0 22%;*/
-	padding:0 0 0 10%;
-	width: 60%;
-}
-
-.tuningDetails .content dl dd {
-	color: #333;
-	width: 40%;
 }
 
 /****** Analyze data *******/
@@ -2598,12 +2546,6 @@ th.hideRightBorder {
 	text-align: center;
 	z-index : 9999;
 }
-
-@media screen and (max-width: 1400px) {
-	.tuningDetails .content dl dd {
-		padding-left : 18%;
-	}
-}
 .resultWrapper {
 	padding: 10px;
 }
@@ -2628,12 +2570,18 @@ th.hideRightBorder {
 	h1.majorCountersH1 {
 		font-size: 30px;
 	} 
+	.longRunningApps {
+		height: 70px;
+	}
 }
 
 @media only screen and (max-width: 1240px) {
 	h1.majorCountersH1 {
 		font-size: 22px;
 	} 
+	.longRunningApps {
+		height: 70px;
+	}
 }
 .dropdown-multiselect .queueName path {
 	fill: none;
@@ -2748,6 +2696,12 @@ ul.countersList li {
 	.countersList li {
 		font-size: 16px;
 	}
+	.countersList div h1 span {
+		font-size: 36px;
+	}
+	.countersList div {
+		font-size: 16px;
+	}
 }
 
 @media only screen and (max-width: 1500px) {
@@ -2755,6 +2709,12 @@ ul.countersList li {
 		font-size: 32px;
 	}
 	.countersList li {
+		font-size: 16px;
+	}
+	.countersList div h1 span {
+		font-size: 32px;
+	}
+	.countersList div {
 		font-size: 16px;
 	}
 }
@@ -2766,6 +2726,15 @@ ul.countersList li {
 	.countersList li {
 		font-size: 12px;
 	}
+	.countersList div h1 span {
+		font-size: 22px;
+	}
+	.countersList div {
+		font-size: 12px;
+	}
+	.longrunningApps {
+		height: 70px;
+	}
 }
 
 @media only screen and (max-width: 1100px) {
@@ -2773,6 +2742,12 @@ ul.countersList li {
 		font-size: 18px;
 	}
 	.countersList li {
+		font-size: 12px;
+	}
+	.countersList div h1 span {
+		font-size: 18px;
+	}
+	.countersList div {
 		font-size: 12px;
 	}
 }

@@ -16,7 +16,7 @@ import java.util.Scanner;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import org.jumbune.common.job.EnterpriseJobConfig;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.execution.beans.Parameters;
 import org.jumbune.execution.processor.Processor;
 import org.jumbune.execution.utils.ExecutionUtil;
@@ -25,6 +25,7 @@ import com.google.gson.Gson;
 
 import org.jumbune.common.beans.ClasspathElement;
 import org.jumbune.common.beans.Enable;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.ReportsBean;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.job.Config;
@@ -149,7 +150,7 @@ public class ShellExecutorService extends CoreExecutorService {
 	private Config run(InputStream inputStream, ReportsBean reports) throws JumbuneException,IOException, JSchException, InterruptedException {
 
 		JumbuneRequest jumbuneRequest = JobConfigUtil.jumbuneRequest(inputStream);
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) jumbuneRequest.getConfig();
+		JobConfig jobConfig = (JobConfig) jumbuneRequest.getConfig();
 		Cluster cluster = jumbuneRequest.getCluster();
 
 		/***
@@ -158,28 +159,27 @@ public class ShellExecutorService extends CoreExecutorService {
 		 * ConsoleLogUtil.CONSOLELOGGER.debug(validatedData); throw new HTFException(ErrorCodesAndMessages.INVALID_YAML); }
 		 */
 		loadInitialSetup(jumbuneRequest);
-		disableModules(enterpriseJobConfig);
-		JobConfigUtil.createJumbuneDirectories(jumbuneRequest);
+		disableModules(jobConfig);
 		createJobJarFolderOnAgent(jumbuneRequest);
-		String scheduleJobTiming = enterpriseJobConfig.getJumbuneScheduleTaskTiming();
+		String scheduleJobTiming = jobConfig.getJumbuneScheduleTaskTiming();
 
 		// If the job is to be scheduled, then just schedule the job and return
 		// from here.
 		if (!CollectionUtil.isNullOrEmpty(scheduleJobTiming)) {
 			LOGGER.debug("Its a request to schedule job scheduleJobTiming " + scheduleJobTiming);
-			scheduleTask(enterpriseJobConfig, false);
-			return enterpriseJobConfig;
+			scheduleTask(jobConfig, false);
+			return jobConfig;
 		}
 		boolean isStartExecution = checkProfilingState();
-		saveJsonToJsonRepository(enterpriseJobConfig);
+		saveJsonToJsonRepository(jobConfig);
 		if (isStartExecution) {
 			startExecution(reports, jumbuneRequest);
 		} else {
 			String answer = isQueueTask();
 			if (!NO.equalsIgnoreCase(answer)) {
 				// Schedule this job
-				enterpriseJobConfig.setJumbuneScheduleTaskTiming(REATTEMPT_TASK_SCHEDULING_TIME);
-				scheduleTask(enterpriseJobConfig, true);
+				jobConfig.setJumbuneScheduleTaskTiming(REATTEMPT_TASK_SCHEDULING_TIME);
+				scheduleTask(jobConfig, true);
 			}
 		}
 		try {
@@ -191,20 +191,20 @@ public class ShellExecutorService extends CoreExecutorService {
 			 LOGGER.error(JumbuneRuntimeException.throwException(e.getStackTrace()));
 		}
 		 ConsoleLogUtil.CONSOLELOGGER.debug("clean up done");
-		return enterpriseJobConfig;
+		return jobConfig;
 	}
 	
 	
-	private void saveJsonToJsonRepository(EnterpriseJobConfig enterpriseJobConfig) throws IOException {
-		String jsonRepoLocation = EnterpriseJobConfig.getJumbuneHome()+"/jsonrepo"+File.separator+enterpriseJobConfig.getJumbuneJobName()+".json";
-		ConfigurationUtil.writeToFile(jsonRepoLocation,enterpriseJobConfig);
+	private void saveJsonToJsonRepository(JobConfig jobConfig) throws IOException {
+		String jsonRepoLocation = JumbuneInfo.getHome() + "jsonrepo" + File.separator + jobConfig.getJumbuneJobName()+".json";
+		ConfigurationUtil.writeToFile(jsonRepoLocation,jobConfig);
 	}
      
 	private void startExecution(ReportsBean reports, JumbuneRequest jumbuneRequest) throws IOException, FileNotFoundException, JumbuneException {
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) jumbuneRequest.getConfig();
-		String reportFolderPath = new StringBuilder().append(enterpriseJobConfig.getShellUserReportLocation()).append(Constants.DIR_SEPARATOR)
-				.append(enterpriseJobConfig.getJumbuneJobName().split(FORWARD_SLASH)[0]).append(Constants.JUMBUNE_REPORT_EXTENTION).toString();
-		List<Processor> processors = getProcessorChain(enterpriseJobConfig, CONSOLE_BASED);
+		JobConfig jobConfig = (JobConfig) jumbuneRequest.getConfig();
+		String reportFolderPath = new StringBuilder().append(jobConfig.getShellUserReportLocation()).append(Constants.DIR_SEPARATOR)
+				.append(jobConfig.getJumbuneJobName().split(FORWARD_SLASH)[0]).append(Constants.JUMBUNE_REPORT_EXTENTION).toString();
+		List<Processor> processors = getProcessorChain(jobConfig, CONSOLE_BASED);
 		int index = 0;
 		for (Processor p : processors) {
 			Map<Parameters, String> params = new HashMap<Parameters, String>();
@@ -228,9 +228,9 @@ public class ShellExecutorService extends CoreExecutorService {
 	}
 
 	private void disableModules(Config config) {
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig)config;
-		enterpriseJobConfig.setEnableStaticJobProfiling(Enable.FALSE);
-		enterpriseJobConfig.setHadoopJobProfile(Enable.FALSE);
+		JobConfig jobConfig = (JobConfig)config;
+		jobConfig.setEnableStaticJobProfiling(Enable.FALSE);
+		jobConfig.setHadoopJobProfile(Enable.FALSE);
 
 	}
 
@@ -245,8 +245,8 @@ public class ShellExecutorService extends CoreExecutorService {
 		String agentHome = RemotingUtil.getAgentHome(cluster);
 		ClasspathElement cse = ConfigurationUtil.loadJumbuneSuppliedJarList();
 		processClassPathElement(cse, agentHome);
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) jumbuneRequest.getConfig();
-		enterpriseJobConfig.getClasspath().setJumbuneSupplied(cse);
+		JobConfig jobConfig = (JobConfig) jumbuneRequest.getConfig();
+		jobConfig.getClasspath().setJumbuneSupplied(cse);
 		if (!org.jumbune.common.utils.JobConfigUtil.isJumbuneSuppliedJarPresent(cluster)){
 			org.jumbune.common.utils.JobConfigUtil.sendJumbuneSuppliedJarOnAgent(cluster, cse, agentHome);
 		}
@@ -275,9 +275,9 @@ public class ShellExecutorService extends CoreExecutorService {
 		Map<String, String> map = reports.getAllReports();
 		@SuppressWarnings("unchecked")
 		Map<String, String> reportsJson = (Map<String, String>) ((HashMap<String, String>) reports.getAllReports()).clone();
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig)config;
+		JobConfig jobConfig = (JobConfig)config;
 		if (map.containsKey(Constants.DATA_VALIDATION) && config != null) {
-			map.put(Constants.DATA_VALIDATION, enterpriseJobConfig.getJumbuneJobLoc());
+			map.put(Constants.DATA_VALIDATION, jobConfig.getJumbuneJobLoc());
 		}
 		ReportGenerator.writesToExcelFile(map, reportFolderPath, reportsJson);
 	}

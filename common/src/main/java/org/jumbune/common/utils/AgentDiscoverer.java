@@ -1,4 +1,4 @@
-package com.impetus.jumbune.common.utils;
+package org.jumbune.common.utils;
 
 public class AgentDiscoverer {
 

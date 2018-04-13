@@ -1,8 +1,10 @@
 package org.jumbune.remoting.server.invocations;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -22,6 +24,8 @@ import org.jumbune.remoting.common.command.CommandWritable;
 import org.jumbune.remoting.common.command.CommandWritable.Command;
 import org.jumbune.remoting.common.command.CommandWritable.Command.SwitchedIdentity;
 import org.jumbune.remoting.server.HadoopConfigurationPropertyLoader;
+import org.jumbune.remoting.server.JumbuneAgent;
+import org.jumbune.remoting.server.jsch.ChannelReaderResponse;
 
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
@@ -295,40 +299,44 @@ public class CommandAsObjectResponserMethods {
 	}
 	
 	/**
-	 * Called from class:HadoopLogParser(method:checkAndgetCurrentLogFilePathForYarn)
+	 * This method will be called to execute DV,OJ jobs
 	 * @param command
 	 * @throws JSchException
 	 * @throws IOException
 	 */
-	public void executeRemoteCommandAsSudo(Command command) throws JSchException, IOException
+	public String executeRemoteCommandAsSudo(Command command) throws JSchException, IOException
 	{
 	    Session session = null;
 	    Channel channel = null;
+	    String response = null;
 	    String host = RemotingConstants.LOCALHOST;
 	    SwitchedIdentity switchedIdentity = command.getSwitchedIdentity();
 		CommandType commandType = command.getCommandType();
+		 ChannelReaderResponse channelReaderResponse = new ChannelReaderResponse();
+		 BufferedReader br = null;
+		  
 	    try {
 			session = createSession(switchedIdentity, host, commandType);
 	        channel = session.openChannel("exec");
-	        String sudoCommand = "sudo su - " + switchedIdentity.getWorkingUser();
-	        ((ChannelExec) channel).setCommand(sudoCommand);
+	        ((ChannelExec) channel).setCommand(command.getCommandString());
 	        ((ChannelExec) channel).setPty(true);
+	        br = new BufferedReader(new InputStreamReader(channel.getInputStream()));
 	        channel.connect();
-	        InputStream inputStream = channel.getInputStream();
 	        OutputStream out = channel.getOutputStream();
-	        ((ChannelExec) channel).setErrStream(System.err);
-	        out.write((StringUtil.getPlain(switchedIdentity.getPasswd()) + "\n").getBytes());
+	        ((ChannelExec)channel).setErrStream(System.err);
+	        if ((switchedIdentity.getPrivatePath() == null) || (switchedIdentity.getPrivatePath().isEmpty())) {
+	          out.write((StringUtil.getPlain(switchedIdentity.getPasswd()) + "\n").getBytes());
+	        }
 	        out.flush();
-	        Thread.sleep(100);
-			LOGGER.debug("Now Sending Command ["+command.getCommandString()+"]");
-	        out.write((command.getCommandString() + "\n").getBytes());
+	        Thread.sleep(100L);
+	        channelReaderResponse.setChannel(channel);
+	        channelReaderResponse.setReader(br);
+	        response = getStringFromReader((BufferedReader)channelReaderResponse.getReader());
+	        out.write("logout\n".getBytes());
 	        out.flush();
-	        Thread.sleep(100 * 100);
-	        out.write(("logout" + "\n").getBytes());
-	        out.flush();
-	        Thread.sleep(100);
-	        logJsch(channel, inputStream);
-	        out.write(("exit" + "\n").getBytes());
+	        Thread.sleep(100L);
+	        logJsch(channel, channel.getInputStream());
+	        out.write("exit\n".getBytes());
 	        out.flush();
 	        out.close();
 	    } catch (Exception ex) {
@@ -340,9 +348,26 @@ public class CommandAsObjectResponserMethods {
 	    	if(channel!=null){
 	    		channel.disconnect();
 	    	}
+	    	if(br != null) {
+	    		br.close();
+	    	}
 	    }
+	    return response;
 	}
 	
+	private String getStringFromReader(BufferedReader reader) {
+		String line = null;
+		StringBuilder stringBuilder = new StringBuilder();
+		try {
+			while ((line = reader.readLine()) != null) {
+				stringBuilder.append(line + System.lineSeparator());
+			}
+		}catch (IOException e) {
+			LOGGER.error(e);
+		}
+		return stringBuilder.toString();
+	}
+
 	private static void logJsch(Channel channel, InputStream in) 
 	{
 	    try {

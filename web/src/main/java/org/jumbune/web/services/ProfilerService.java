@@ -42,7 +42,7 @@ import org.jumbune.profiling.yarn.beans.YarnNodeConfig;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import org.jumbune.common.job.EnterpriseJobConfig;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.ExtendedConstants;
 import org.jumbune.web.utils.WebConstants;
 
@@ -150,7 +150,7 @@ public class ProfilerService {
 		String viewName = request.getParameter("VIEW_NAME");
 		viewName = setDefaultView(viewName);
 		Gson gson = new Gson();
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) jumbuneRequest.getConfig();
+		JobConfig jobConfig = (JobConfig) jumbuneRequest.getConfig();
 		String hadoopType = FileUtil.getClusterInfoDetail(ExtendedConstants.HADOOP_TYPE);
 		
 		if(hadoopType.equalsIgnoreCase(ExtendedConstants.YARN)){
@@ -197,7 +197,7 @@ public class ProfilerService {
 						LOGGER.error(e);
 					}
 				} else {
-					json = setDataDistributionView(viewName, gson, enterpriseJobConfig,
+					json = setDataDistributionView(viewName, gson, jobConfig,
 							profilingViewService, dataPath);
 				}
 
@@ -244,8 +244,8 @@ public class ProfilerService {
 	private String setDataDistributionView(String viewName, Gson gson,
 			Config config, ProfilingViewService profilingViewService,
 			String dataPath) throws HTFProfilingException {
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig)config;
-		enterpriseJobConfig.setDistributedHDFSPath(dataPath);
+		JobConfig jobConfig = (JobConfig)config;
+		jobConfig.setDistributedHDFSPath(dataPath);
 		return createDataloadAndDistributionViewJson(viewName, gson,
 				profilingViewService);
 		

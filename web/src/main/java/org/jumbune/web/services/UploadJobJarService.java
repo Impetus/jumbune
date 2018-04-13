@@ -18,8 +18,8 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
 import org.jumbune.utils.exception.JumbuneException;
-
-import org.jumbune.common.job.EnterpriseJobConfig;
+import org.jumbune.common.beans.JumbuneInfo;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.web.utils.WebConstants;
 import org.jumbune.web.utils.WebUtil;
 
@@ -73,7 +73,7 @@ public class UploadJobJarService {
 		try{
 		String jobName = (String)request.getParameter("jobName");
 		String resourceFolder = System.getenv("JUMBUNE_HOME") +File.separator+Constants.JOB_JARS_LOC+jobName+ Constants.MR_RESOURCES;
-		String filePath = EnterpriseJobConfig.getJumbuneHome() +File.separator+Constants.JOB_JARS_LOC+ jobName+ Constants.MR_RESOURCES;
+		String filePath = JumbuneInfo.getHome() + Constants.JOB_JARS_LOC+ jobName+ Constants.MR_RESOURCES;
 		File resourceDir = new File(resourceFolder);
 		if (!resourceDir.exists()) {
 			resourceDir.mkdirs();

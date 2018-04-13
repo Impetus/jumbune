@@ -1,4 +1,35 @@
-<div jumbune-header="" ng-init="init()" show-alert-bell="show">
+<header id="header" class="clearfix">
+	<div class="clearfix">
+		<strong class="logo"><a href="#/dashboard"><img src="assets/images/logo.png" alt="image"></a></strong>
+		<div class="navbar-header">
+			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+            </button>
+		</div>
+		<div class="widgetWrapper clearfix" ng-show="isShowBell">
+			<table class="pull-right" style="width:calc(100% - 205px);margin-top:4px;table-layout: fixed">
+				<tr>
+					<td id="instantAlertMessageTD" height="56">
+					<!-- Message -->
+					<div class="newAlert alert alert-danger" role="alert" id="instantAlertMessage" ng-show="IsVisible" ng-show="IsVisible" ng-click="showAlertData();" style="cursor: pointer;">Alert! {{instantAlertMessage}}</div>
+					</td>
+					<!-- Alert Bell -->
+					<td style="width:120px">
+					<span class="alertInfo" style="float: right;margin: 10px 20px 0 0;">
+					<i class="fa fa-bell-o" ng-if="allAlerts.length == 0" title="No problem in cluster"></i>
+					<i class="fa fa-bell-o" ng-if="allAlerts.length > 0" title="There are problems in cluster"></i>
+					<span ng-if="alertCounter == 0" title="Alerts" class="alertCountGreen yellowBg alertBox" ng-click="showAlertData();">{{alertCounter}}</span>
+					<span ng-if="alertCounter > 0" title="Alerts" class="alertCountRed alertBox" ng-click="showAlertData();">{{alertCounter > 99 ? '99+' : (alertCounter)}}</span>
+					</span>
+					</td>
+				</tr>
+			</table>
+
+		</div>
+
+	</div>
+</header>
+<div ng-init="init()" show-alert-bell="show">
 </div>
 
 <div class="resultWrapper">
@@ -7,249 +38,389 @@
 			<h2>
 				<span class="tracking">Cluster&nbsp;&nbsp;-&nbsp;&nbsp;{{clusterName}}</span>
 				<div class="widgets-setting">
-					<i ng-show="licenseExpireTrue" class="fa fa-key rotateClass tip" data-toggle="tooltip" title="License will expire soon." data-placement="right" style="color:#F44336"></i>
-					<i ng-show="licenseExpired" class="fa fa-key rotateClass tip" data-toggle="tooltip" title="License expired." data-placement="right" style="color:#F44336"></i>
-					<i ng-show="licenseExpireDays" class="fa fa-key rotateClass tip" data-toggle="tooltip" title="License will expire in {{daysDiffShow}} day." data-placement="right" style="color:#F44336"></i>
-					<a class="dropdown-toggle" title="Export as excel" ng-click="openExportForm()">
-						<i class="fa fa-file-excel-o" style="margin-right:2px;"></i>
-						<span style="margin-right:10px;">Export</span>
-					</a>
-					<a class="dropdown-toggle" ng-click="openRIOptions()">
-						<i class="fa fa-cog" style="margin-right:2px;"></i>
-						<span style="margin-right:10px;">Refresh Intervals</span>
-					</a>
-					<ul class="dropdown-menu	pull-right dropdown-menu-form mquMenu" ng-style="{display: openPopupRI ? 'block' : 'none'}" style="display: block;width: 330px;padding-right:0px;top:25px">
-						<div style="max-height:330px;overflow-y: auto;padding-right:10px;">
-							<!-- Alerts -->
-							<li class="dropdown-linechart row">
-								<div class="mquLabel"><span style="left:10px;position:relative;">Alerts</span></div>
-								<div class="mquValue" style="width:120px">
-									<select ng-model="refreshIntervalsTemp.alerts" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
-									</select>
-								</div>
-							</li>
-							<li class="divider"></li>
-							<!-- Capacity Utilization -->
-							<li class="dropdown-linechart row">
-								<div class="mquLabel" style="white-space: pre-line;width: 150px;"><span style="left:10px;position:relative;">Capacity Utilization</span></div>
-								<div class="mquValue" style="width:120px">
-									<select ng-model="refreshIntervalsTemp.capacityUtilization" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
-									</select>
-								</div>
-							</li>
-							<li class="divider"></li>
-							<!-- CLDB FS Counters / Resource Manager -->
-							<li class="dropdown-linechart row" style="height: 55px;" ng-show="isMapr">
-								<div class="mquLabel" style="white-space: pre-line;width: 150px;"><span style="left:10px;width:155px;position:relative;">CLDB FS Counters / Resource Manager</span></div>
-								<div class="mquValue" style="width:120px">
-									<select ng-model="refreshIntervalsTemp.cldbFsCounters" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
-									</select>
-								</div>
-							</li>
-							<li class="divider" ng-show="isMapr"></li>
-							<!-- Containers -->
-							<li class="dropdown-linechart row">
-								<div class="mquLabel" style="white-space: pre-line;width: 150px;"><span style="left:10px;position:relative;">Containers</span></div>
-								<div class="mquValue" style="width:120px">
-									<select ng-model="refreshIntervalsTemp.containers" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
-									</select>
-								</div>
-							</li>
-							<li class="divider"></li>
-							<!-- Data Center -->
-							<li class="dropdown-linechart row">
-								<div class="mquLabel" style="white-space: pre-line;width: 150px;"><span style="left:10px;position:relative;">Data Center</span></div>
-								<div class="mquValue" style="width:120px">
-									<select ng-model="refreshIntervalsTemp.dataCenter" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
-									</select>
-								</div>
-							</li>
-							<li class="divider"></li>
-							<!-- Data load distribution -->
-							<li class="dropdown-linechart row">
-								<div class="mquLabel" style="white-space: pre-line;width: 150px;"><span style="left:10px;position:relative;">Data load distribution</span></div>
-								<div class="mquValue" style="width:120px">
-									<select ng-model="refreshIntervalsTemp.dataLoadDistribution" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
-									</select>
-								</div>
-							</li>
-							<li class="divider"></li>
-							<!-- Hadoop Daemons and System Metrics -->
-							<!--<li class="dropdown-linechart row">
-								<div class="mquLabel" style="white-space: pre-line;width: 150px;padding-top:0px;"><span style="left:10px;position:relative;">Hadoop Daemons and System Metrics</span></div>
-								<div class="mquValue" style="width:120px">
-									<select ng-model="refreshIntervalsTemp.hadoopDaemonsAndSystemMetrics" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
-									</select>
-								</div>
-							</li>
-							<li class="divider"></li>-->
-							<!-- High Resource Usage Applications -->
-							<li class="dropdown-linechart row">
-								<div class="mquLabel" style="white-space: pre-line;width: 150px;padding-top:0px;"><span style="left:10px;position:relative;">High Resource Usage Applications</span></div>
-								<div class="mquValue" style="width:120px">
-									<select ng-model="refreshIntervalsTemp.hrua" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
-									</select>
-								</div>
-							</li>
-							<li class="divider"></li>
-							<!-- Instantaneous Queue Utilization -->
-							<li class="dropdown-linechart row">
-								<div class="mquLabel" style="white-space: pre-line;width: 150px;padding-top:0px;"><span style="left:10px;position:relative;">Instantaneous Queue Utilization</span></div>
-								<div class="mquValue" style="width:120px">
-									<select ng-model="refreshIntervalsTemp.instantaneousQueueUtilization" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
-									</select>
-								</div>
-							</li>
-							<li class="divider"></li>
-							<!-- Long Running Applications -->
-							<li class="dropdown-linechart row">
-								<div class="mquLabel" style="white-space: pre-line;width: 150px;padding-top:0px;"><span style="left:10px;position:relative;">Long Running Applications</span></div>
-								<div class="mquValue" style="width:120px">
-									<select ng-model="refreshIntervalsTemp.lra" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
-									</select>
-								</div>
-							</li>
-							<li class="divider"></li>
-							<!-- Metadata Information / Heap Usage / Namenode RPC -->
-							<li class="dropdown-linechart row" style="height: 75px;" ng-show="!isMapr">
-								<div class="mquLabel" style="white-space: pre-line;width: 150px;"><span style="left:10px;width:155px;position:relative;">Metadata Information / Heap Usage / Namenode RPC</span></div>
-								<div class="mquValue" style="width:120px">
-									<select ng-model="refreshIntervalsTemp.metadataInformation" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
-									</select>
-								</div>
-							</li>
-							<li ng-show="!isMapr" class="divider"></li>
-							<!-- Metered Queue Usage -->
-							<li class="dropdown-linechart row">
-								<div class="mquLabel" style="white-space: pre-line;width: 150px;"><span style="left:10px;position:relative;">Metered Queue Usage</span></div>
-								<div class="mquValue" style="width:120px">
-									<select ng-model="refreshIntervalsTemp.meteredQueueUsage" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
-									</select>
-								</div>
-							</li>
-							<li class="divider"></li>
-							<!-- Queue Utilization Summary -->
-							<li class="dropdown-linechart row">
-								<div class="mquLabel" style="white-space: pre-line;width: 150px;"><span style="left:10px;position:relative;">Queue Utilization Summary</span></div>
-								<div class="mquValue" style="width:120px">
-									<select ng-model="refreshIntervalsTemp.queueUtilizationSummary" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
-									</select>
-								</div>
-							</li>
-							<li class="divider"></li>
-							<!-- Rack Local Jobs -->
-							<li class="dropdown-linechart row">
-								<div class="mquLabel" style="white-space: pre-line;width: 150px;"><span style="left:10px;position:relative;">Rack Local Jobs</span></div>
-								<div class="mquValue" style="width:120px">
-									<select ng-model="refreshIntervalsTemp.rackLocalJobs" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
-									</select>
-								</div>
-							</li>
-							<li class="divider"></li>
-							<!-- Recommendations -->
-							<li class="dropdown-linechart row">
-								<div class="mquLabel"><span style="left:10px;position:relative;">Recommendations</span></div>
-								<div class="mquValue" style="width:120px">
-									<select ng-model="refreshIntervalsTemp.recommendations" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
-									</select>
-								</div>
-							</li>
-							<li class="divider"></li>
-							<!-- Resource Utilization Metering Application -->
-							<li class="dropdown-linechart row">
-								<div class="mquLabel" style="white-space: pre-line;width: 150px;"><span style="left:10px;position:relative;">Resource Utilization Metering</span></div>
-								<div class="mquValue" style="width:120px">
-									<select ng-model="refreshIntervalsTemp.chargeBackModel" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
-									</select>
-								</div>
-							</li>
-						</div>
-						<li class="dropdown-linechart row">
-							<div style="margin-top:5px;margin-left:10px;">
-								<div style="float:left">
-									<button ng-click="saveRIOptions()" class="btn btn-default">Save</button>
-									<button ng-click="openPopupRI = false" class="btn btn-default">Cancel</button>
-								</div>
-								<div style="float:right">
-									<button ng-click="resetRIOptions()" ng-disabled="isRIResetButtonDisabled" style="margin-right: 20px;" class="btn btn-default">Reset</button>
-								</div>
+					<span>
+						<a class="dropdown-toggle" ng-click="openRIOptions()" style="padding: 12px;">
+							<i class="fa fa-refresh" style="margin-right:2px;"></i>
+							<span style="margin-right:10px;">Refresh Intervals</span>
+						</a>
+						<ul class="dropdown-menu	pull-right dropdown-menu-form mquMenu" ng-style="{display: openPopupRI ? 'block' : 'none'}" style="display: block;width: 330px;padding-right:0px;top:25px">
+							<div style="padding-right:10px;">
+								<div ng-click="openPopupRI = false" style="float: right;color: #333;font-size: 18px;margin-bottom: 5px;cursor: pointer;"><i class="fa fa-times" aria-hidden="true" ></i></div>
+								<!-- Alerts -->
+								<li class="dropdown-linechart row">
+									<div class="mquLabel"><span style="left:10px;position:relative;">Alerts</span></div>
+									<div class="mquValue" style="width:120px">
+										<select ng-model="refreshIntervalsTemp.alerts" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
+										</select>
+									</div>
+								</li>
+								<li class="divider"></li>
+								<!-- Capacity Utilization -->
+								<li class="dropdown-linechart row">
+									<div class="mquLabel" style="white-space: pre-line;width: 150px;"><span style="left:10px;position:relative;">Capacity Utilization</span></div>
+									<div class="mquValue" style="width:120px">
+										<select ng-model="refreshIntervalsTemp.capacityUtilization" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
+										</select>
+									</div>
+								</li>
+								<li class="divider"></li>
+								<!-- CLDB FS Counters / Resource Manager -->
+								<li class="dropdown-linechart row" style="height: 55px;" ng-show="isMapr">
+									<div class="mquLabel" style="white-space: pre-line;width: 150px;"><span style="left:10px;width:155px;position:relative;">CLDB FS Counters / Resource Manager</span></div>
+									<div class="mquValue" style="width:120px">
+										<select ng-model="refreshIntervalsTemp.cldbFsCounters" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
+										</select>
+									</div>
+								</li>
+								<li class="divider" ng-show="isMapr"></li>
+								<!-- Containers -->
+								<li class="dropdown-linechart row">
+									<div class="mquLabel" style="white-space: pre-line;width: 150px;"><span style="left:10px;position:relative;">Containers</span></div>
+									<div class="mquValue" style="width:120px">
+										<select ng-model="refreshIntervalsTemp.containers" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
+										</select>
+									</div>
+								</li>
+								<li class="divider"></li>
+								<!-- Data Center -->
+								<li class="dropdown-linechart row">
+									<div class="mquLabel" style="white-space: pre-line;width: 150px;"><span style="left:10px;position:relative;">Data Center</span></div>
+									<div class="mquValue" style="width:120px">
+										<select ng-model="refreshIntervalsTemp.dataCenter" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
+										</select>
+									</div>
+								</li>
+								<li class="divider"></li>
+								<!-- Data load distribution -->
+								<li class="dropdown-linechart row">
+									<div class="mquLabel" style="white-space: pre-line;width: 150px;"><span style="left:10px;position:relative;">Data load distribution</span></div>
+									<div class="mquValue" style="width:120px">
+										<select ng-model="refreshIntervalsTemp.dataLoadDistribution" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
+										</select>
+									</div>
+								</li>
+								<li class="divider"></li>
+								<!-- High Resource Usage Applications -->
+								<li class="dropdown-linechart row">
+									<div class="mquLabel" style="white-space: pre-line;width: 150px;padding-top:0px;"><span style="left:10px;position:relative;">High Resource Usage Applications</span></div>
+									<div class="mquValue" style="width:120px">
+										<select ng-model="refreshIntervalsTemp.hrua" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
+										</select>
+									</div>
+								</li>
+								<li class="divider"></li>
+								<!-- Instantaneous Queue Utilization -->
+								<li class="dropdown-linechart row">
+									<div class="mquLabel" style="white-space: pre-line;width: 150px;padding-top:0px;"><span style="left:10px;position:relative;">Instantaneous Queue Utilization</span></div>
+									<div class="mquValue" style="width:120px">
+										<select ng-model="refreshIntervalsTemp.instantaneousQueueUtilization" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
+										</select>
+									</div>
+								</li>
+								<li class="divider"></li>
+								<!-- Long Running Applications -->
+								<li class="dropdown-linechart row">
+									<div class="mquLabel" style="white-space: pre-line;width: 150px;padding-top:0px;"><span style="left:10px;position:relative;">Long Running Applications</span></div>
+									<div class="mquValue" style="width:120px">
+										<select ng-model="refreshIntervalsTemp.lra" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
+										</select>
+									</div>
+								</li>
+								<li class="divider"></li>
+								<!-- Metadata Information / Heap Usage / Namenode RPC -->
+								<li class="dropdown-linechart row" style="height: 75px;" ng-show="!isMapr">
+									<div class="mquLabel" style="white-space: pre-line;width: 150px;"><span style="left:10px;width:155px;position:relative;">Metadata Information / Heap Usage / Namenode RPC</span></div>
+									<div class="mquValue" style="width:120px">
+										<select ng-model="refreshIntervalsTemp.metadataInformation" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
+										</select>
+									</div>
+								</li>
+								<li ng-show="!isMapr" class="divider"></li>
+								<!-- Metered Queue Usage -->
+								<li class="dropdown-linechart row">
+									<div class="mquLabel" style="white-space: pre-line;width: 150px;"><span style="left:10px;position:relative;">Metered Queue Usage</span></div>
+									<div class="mquValue" style="width:120px">
+										<select ng-model="refreshIntervalsTemp.meteredQueueUsage" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
+										</select>
+									</div>
+								</li>
+								<li class="divider"></li>
+								<!-- Queue Utilization Summary -->
+								<li class="dropdown-linechart row">
+									<div class="mquLabel" style="white-space: pre-line;width: 150px;"><span style="left:10px;position:relative;">Queue Utilization Summary</span></div>
+									<div class="mquValue" style="width:120px">
+										<select ng-model="refreshIntervalsTemp.queueUtilizationSummary" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
+										</select>
+									</div>
+								</li>
+								<li class="divider"></li>
+								<!-- Rack Local Jobs -->
+								<li class="dropdown-linechart row">
+									<div class="mquLabel" style="white-space: pre-line;width: 150px;"><span style="left:10px;position:relative;">Rack Local Jobs</span></div>
+									<div class="mquValue" style="width:120px">
+										<select ng-model="refreshIntervalsTemp.rackLocalJobs" ng-options="obj.value as obj.text for obj in refreshIntervalOptions">
+										</select>
+									</div>
+								</li>
+								<li class="divider"></li>
 							</div>
-						</li>
-					</ul>
-					<a class="dropdown-toggle" ng-click="openPopup = !openPopup"><i class="fa fa-cog" style="margin-right:2px;"></i>
-						<span>Sections</span>
-					</a>
-					<ul class="dropdown-menu customDropdown" ng-style="{display: openPopup ? 'block' : 'none'}">
-						<li>
-							<div class="row">
-								<span>Alerts</span>
-								<input ng-model="isUpdateAlertsEnabled" ng-change="saveToLocalStorage('isUpdateAlertsEnabled')" id="cmn-toggle-UpdateAlertsEnabled" class="cmn-toggle cmn-toggle-round" type="checkbox">
-								<label for="cmn-toggle-UpdateAlertsEnabled"></label>
-							</div>
-						</li>
-						<li class="divider"></li>
-						<li>
-							<div class="row">
-								<span>Recommendations</span>
-								<input ng-model="isUpdateRecommendationsEnabled" ng-change="saveToLocalStorage('isUpdateRecommendationsEnabled')" id="cmn-toggle-UpdateRecommendationsEnabled" class="cmn-toggle cmn-toggle-round" type="checkbox">
-								<label for="cmn-toggle-UpdateRecommendationsEnabled"></label>
-							</div>
-						</li>
-						<li class="divider"></li>
-						<li>
-							<div class="row">
-								<span ng-show="isMapr == undefined || !isMapr">HDFS</span>
-								<span ng-show="isMapr == true">Mapr FS</span>
-								<input ng-model="isHdfsSectionEnabled" ng-change="saveToLocalStorage('isHdfsSectionEnabled');updateDataload();" id="cmn-toggle-HdfsSection" class="cmn-toggle cmn-toggle-round" type="checkbox">
-								<label for="cmn-toggle-HdfsSection"></label>
-							</div>
-						</li>
-						<li class="divider"></li>
-						<li>
-							<div class="row">
-								<span>Cluster</span>
-								<input ng-model="isClusterSectionEnabled" ng-change="saveToLocalStorage('isClusterSectionEnabled')" id="cmn-toggle-ClusterSection" class="cmn-toggle cmn-toggle-round" type="checkbox">
-								<label for="cmn-toggle-ClusterSection"></label>
-							</div>
-						</li>
-						<li class="divider"></li>
-						<li>
-							<div class="row">
-								<span>Yarn Queues</span>
-								<input ng-model="isYarnQueuesSectionEnabled" ng-change="saveToLocalStorage('isYarnQueuesSectionEnabled')" id="cmn-toggle-YarnQueuesSection" class="cmn-toggle cmn-toggle-round" type="checkbox">
-								<label for="cmn-toggle-YarnQueuesSection"></label>
-							</div>
-						</li>
-						<li class="divider"></li>
-						<li>
-							<div class="row">
-								<span>Yarn Containers</span>
-								<input ng-model="isYarnContainersSectionEnabled" ng-change="saveToLocalStorage('isYarnContainersSectionEnabled')" id="cmn-toggle-YarnContainers" class="cmn-toggle cmn-toggle-round" type="checkbox">
-								<label for="cmn-toggle-YarnContainers"></label>
-							</div>
-						</li>
-						<li class="divider"></li>
-						<li>
-							<div class="row">
-								<span>Usage Metering</span>
-								<input ng-model="isUserMeteringSectionEnabled" ng-change="saveToLocalStorage('isUserMeteringSectionEnabled')" id="cmn-toggle-UserMetering" class="cmn-toggle cmn-toggle-round" type="checkbox">
-								<label for="cmn-toggle-UserMetering"></label>
-							</div>
-						</li>
-						<li class="divider"></li>
-						<li>
-							<div class="row">
-								<span>Charts</span>
-								<input ng-model="isChartsEnabled" ng-change="saveToLocalStorage('isChartsEnabled')" id="cmn-toggle-isChartsEnabled" class="cmn-toggle cmn-toggle-round" type="checkbox">
-								<label for="cmn-toggle-isChartsEnabled"></label>
-							</div>
-						</li>
-						<li class="divider"></li>
-						<button ng-click="openPopup = false" class="btn btn-default">Close</button>
-					</ul>
+							<li class="dropdown-linechart row">
+								<div style="margin-top:5px;margin-left:10px;">
+									<div style="float:left">
+										<button ng-click="saveRIOptions()" class="btn btn-default">Apply</button>
+									</div>
+									<div style="float:right">
+										<button ng-click="resetRIOptions()" ng-disabled="isRIResetButtonDisabled" style="margin-right: 20px;" class="btn btn-default">Reset</button>
+									</div>
+								</div>
+							</li>
+						</ul>
+					</span>
+					<span>
+						<a class="dropdown-toggle" ng-click="resetWidgetSettings()" title="Reset all sections and widget settings">
+						<span><img src="../../assets/images/ic_restore_black_24dp_1x.png" alt="image"></span>
+							<span>Reset Layout</span>
+						</a>
+					</span>
+					<span>
+						<a ng-click="openSections()" style="padding: 12px;" class="dropdown-toggle"><i class="fa fa-cog" style="margin-right:2px;"></i>
+							<span>Sections</span>
+						</a>
+						<ul class="dropdown-menu customDropdown" ng-style="{display: openPopup ? 'block' : 'none'}">
+							<div ng-click="openPopup = false" style="float: right;color: #333;font-size: 18px;margin-bottom: 5px;cursor: pointer;"><i class="fa fa-times" aria-hidden="true" ></i></div>
+							<li>
+								<div class="dropdown-linechart row" style="padding: 0px;">
+									<span>Alerts</span>
+									<input ng-model="isUpdateAlertsEnabled" ng-change="saveToLocalStorage('isUpdateAlertsEnabled')" id="cmn-toggle-UpdateAlertsEnabled" class="cmn-toggle cmn-toggle-round" type="checkbox">
+									<label for="cmn-toggle-UpdateAlertsEnabled"></label>
+								</div>
+							</li>
+							<li class="divider"></li>
+							<li>
+								<div class="row">
+									<a ng-click="scrollTo('clusterSection')" style="cursor: pointer"><span>Cluster</span></a>
+									<input ng-model="isClusterSectionEnabled" ng-change="saveToLocalStorage('isClusterSectionEnabled')" id="cmn-toggle-ClusterSection" class="cmn-toggle cmn-toggle-round" type="checkbox">
+									<label for="cmn-toggle-ClusterSection"></label>
+								</div>
+							</li>
+							<li class="divider"></li>
+							<li>
+								<div class="row">
+									<span ng-show="isMapr == undefined || !isMapr">HDFS</span>
+									<span ng-show="isMapr == true">Mapr FS</span>
+									<input ng-model="isHdfsSectionEnabled" ng-change="saveToLocalStorage('isHdfsSectionEnabled');updateDataload();" id="cmn-toggle-HdfsSection" class="cmn-toggle cmn-toggle-round" type="checkbox">
+									<label for="cmn-toggle-HdfsSection"></label>
+								</div>
+							</li>
+							<li class="divider"></li>
+							<li>
+								<div class="row">
+									<a ng-click="scrollTo('yarnQueuesSection')" style="cursor: pointer"><span>Yarn Queues</span></a>
+									<input ng-model="isYarnQueuesSectionEnabled" ng-change="saveToLocalStorage('isYarnQueuesSectionEnabled')" id="cmn-toggle-YarnQueuesSection" class="cmn-toggle cmn-toggle-round" type="checkbox">
+									<label for="cmn-toggle-YarnQueuesSection"></label>
+								</div>
+							</li>
+							<li class="divider"></li>
+							<li>
+								<div class="row">
+									<a ng-click="scrollTo('yarnContainersSection')" style="cursor: pointer"><span>Yarn Containers</span></a>
+									<input ng-model="isYarnContainersSectionEnabled" ng-change="saveToLocalStorage('isYarnContainersSectionEnabled')" id="cmn-toggle-YarnContainers" class="cmn-toggle cmn-toggle-round" type="checkbox">
+									<label for="cmn-toggle-YarnContainers"></label>
+								</div>
+							</li>
+							<li class="divider"></li>
+							<li>
+								<div class="row">
+									<a ng-click="scrollTo('userMeteringSection')" style="cursor: pointer"><span>Usage Metering</span></a>
+									<input ng-model="isUserMeteringSectionEnabled" ng-change="saveToLocalStorage('isUserMeteringSectionEnabled')" id="cmn-toggle-UserMetering" class="cmn-toggle cmn-toggle-round" type="checkbox">
+									<label for="cmn-toggle-UserMetering"></label>
+								</div>
+							</li>
+						</ul>
+					</span>
 
 				</div>
 			</h2>
+		</div>
+	</div>
+</div>
+<div class="resultWrapper" ng-show="isClusterSectionEnabled" id="clusterSection">
+	<div class="widgetRow">
+		<div class="widgetWrapper" style="overflow:hidden;min-height:255px;">
+			<h2>Cluster
+				<div class="widgets-setting">
+					<a class="dropdown-toggle" ng-click="openPopup4 = !openPopup4;clusterSectionOptionsY = $event.pageY;clusterSectionOptionsX = $event.pageX;"><i class="fa fa-cog"></i>
+						<span>Widgets</span>
+					</a>
+
+				</div>
+			</h2>
+
+			<!-- Running Apps 1-->
+			<div class="col-md-2 col-lg-1 widgetRow turnOffPadding" ng-show="isRunningAppsEnabled && !isMapr">
+				<div class="widgetWrapper minHeight250">
+					<!-- <h2>Live Container Stats</h2> -->
+					<h2 class='my-tool-tip'>Running Apps</h2>
+					<div>
+						<ul ng-show="!liveContainersLoader && !liveContainerStatsErrorMessage" class="countersList" style="text-align:center;">
+							<li>
+								<h1 class="majorCountersH1" style="margin-top:50px">
+									<span class="tool-tip" data-toggle="tooltip" title="{{runningJobsTitle}}" ng-show="totalRunningApplication != 0" class="lightBlueText">{{totalRunningApplications}}</span>
+									<span ng-show="totalRunningApplication == 0" class="lightBlueText">0</span>
+								</h1>
+							</li>
+						</ul>
+						<div class="ring-loader"
+							style="top:55px;text-align:center;position:relative;width:20px;height:20px;" ng-show="liveContainersLoader && !liveContainerStatsErrorMessage">
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- Running Apps 1-->
+			<div class="col-md-4 col-lg-1 widgetRow turnOffPadding" ng-show="isRunningAppsEnabled && isMapr">
+				<div class="widgetWrapper minHeight250">
+					<!-- <h2>Live Container Stats</h2> -->
+					<h2 class='my-tool-tip'>Running Apps</h2>
+					<div>
+						<ul class="countersList" style="text-align:center;">
+							<li>
+								<h1 class="majorCountersH1" style="margin-top:50px">
+									<span title="{{runningJobsTitle}}" ng-show="totalRunningApplication != 0" class="lightBlueText">{{totalRunningApplications}}</span>
+									<span ng-show="totalRunningApplication == 0" class="lightBlueText">0</span>
+								</h1>
+							</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+			<!-- Conatiners -->
+			<div class="col-md-5 col-lg-2 widgetRow turnOffPadding" ng-show="isRPCOpenConnectionEnabled && !isMapr">
+				<div class="widgetWrapper minHeight250">
+					<!-- <h2>Live Container Stats</h2> -->
+					<h2 class='my-tool-tip'>Containers<i data-toggle="tooltip" title="Instantaneous view of containers in cluster as per configured capacity & utilization." class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i></h2>
+					<div>
+						<div class="countersList" ng-show="!liveContainerStatsErrorMessage && !liveContainersLoader">
+							<div style="width: 50%;float: left;position: relative;top: 20px;text-align: center;">
+								<h1>
+									<span class="darkGreenText" count-up end-val="launchableContainersCounter">0</span>
+								</h1>
+								<span class="col-lg-12" style="text-align:center;margin-bottom:10px;">Launchable</span>
+								<span class="col-lg-12 tool-tip" title="{{launchableContainersMessage}}" style="text-align:center;font-size:12px;padding-left: 0px;padding-right: 0px;    word-wrap: break-word;width: 150px;display: inline-block;">{{ launchableContainersMessage }}</span>
+							</div>
+							<div style="width: 50%;float: left;position: relative;top: 20px;text-align: center;">
+								<h1>
+									<span class="lightBlueText" count-up end-val="runningContainersCounter">0</span>
+								</h1><span class="col-lg-12" style="text-align:center">Running</span>
+							</div>
+						</div>
+						<div class="ring-loader"
+							style="top:90px;text-align:center;position:relative;width:20px;height:20px;" ng-show="liveContainersLoader && !liveContainerStatsErrorMessage">
+						</div>
+						<div style="text-align:center;font-weight:bold;position:relative;color:#e23744;top:90px;" ng-show="liveContainerStatsErrorMessage">Problem while receiving data from Server</div>
+					</div>
+				</div>
+			</div>
+			<!-- Data Center -->
+			<div class="widgetRow turnOffPadding" ng-show="isDataCenterEnabled" ng-class="['col-md-12', isMapr ? 'col-lg-9' : 'col-lg-7']">
+				<div class="widgetWrapper minHeight250">
+					<h2 class='my-tool-tip'>Data Center<i data-toggle="tooltip" title="Health of the Hadoop nodes in the defined cluster." class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i>
+						<div style="position:relative;float:right"><a class="dropdown-toggle" ng-click="openPopupDC = !openPopupDC;dcY = $event.pageY;dcX = $event.pageX;"><i class="fa fa-cog"></i>
+					</a></div>
+					</h2>
+					<div ng-show="!dataCenterErrorMessage" style="max-height:189px;overflow-y:auto">
+						<div class="dataCenterDetail">
+							<span class="greenBg">{{dataCenterCounters.good}}</span>
+							<span class="yellowBg">{{dataCenterCounters.average}}</span>
+							<span class="redBg">{{dataCenterCounters.bad}}</span>
+							<span class="greyBg">{{dataCenterCounters.unavailable}}</span>
+						</div>
+						<div class="ring-loader" style="width:30px;height:30px;left:44%;top:50%;position: absolute" ng-show="dataCenterLoader"></div>
+						<div class="dataCenterContent" ng-repeat="datacenter in dataCenters">
+							<span class="heading">
+								<span class="datacenter-clusterid">{{datacenter.clusterId}}</span>
+							<span class="subHeading" ng-repeat="racks in datacenter.racks">
+									<span class="datacenter-rackid">Rack ID : {{racks.rackId}}</span>
+							<span class="clearfix">
+										<span class="nodesIcon" ng-repeat="node in racks.nodes">
+											<img ng-if="node.performance == 'Good'" src="assets/images/Good.png" title="Node : {{node.nodeIp}}&#xA;Performance : Good" />
+											<img ng-if="node.performance == 'Bad'" src="assets/images/badData.png" title="Node : {{node.nodeIp}}&#xA;Performance : Bad&#xA;{{node.message}}" />
+											<img ng-if="node.performance == 'Average' && node.message" src="assets/images/Average.png" title="Node : {{node.nodeIp}}&#xA;Performance : Average&#xA;{{node.message}}" />
+											<img ng-if="node.performance == 'Average' && !node.message" src="assets/images/Average.png" title="Node : {{node.nodeIp}}" />
+											<img ng-if="node.performance == 'Unavailable'" src="assets/images/Unavailable.png" title="Node : {{node.nodeIp}}&#xA;Status: Node Unavailable" />
+										</span>
+							</span>
+							</span>
+							</span>
+						</div>
+					</div>
+					<div style="text-align:center;font-weight:bold;position:relative;color:#e23744;top:65px;" ng-show="dataCenterErrorMessage">Problem while receiving data from Server</div>
+				</div>
+			</div>
+			<!-- Heap Usage 2-->
+			<div class="col-md-5 col-lg-2 widgetRow turnOffPadding" ng-show="isHeapUsageEnabled && !isMapr">
+				<div class="widgetWrapper minHeight250">
+					<h2>Heap Usage</h2>
+					<div>
+						<div class="ring-loader" style="width:30px;height:30px;left:44%;top:50%;position: absolute" ng-show="majorCountersLoader"></div>
+
+						<div class="countersList" ng-show="!majorCountersLoader && !metadataInformationErrorMessage">
+							<div style="width: 50%;float: left;position: relative;top: 15px;text-align: center;">
+								<h1>
+									<span style="color:#06dccd;" class="lightGreenText" count-up end-val="nameNodeHeapUsage">0</span>
+									<span style="font-size: 11px;" class="smallText col-lg-12">MB</span>
+								</h1>Namenode
+							</div>
+							<div style="width: 50%;float: left;position: relative;top: 15px;text-align: center;">
+								<h1>
+									<span style="color: #6289c4" class="lightBlueText" count-up end-val="resourceManagerHeapUsageCounter">0</span>
+									<span style="font-size: 11px;" class="smallText col-lg-12">MB</span>
+								</h1>Resource Manager
+							</div>
+						</div>
+						<div style="text-align:center;font-weight:bold;position:relative;color:#e23744;top:65px;" ng-show="metadataInformationErrorMessage">Problem while receiving data from Server</div>
+					</div>
+				</div>
+			</div>
+			<!-- Resource Manager 2 -->
+			<div class="col-md-8 col-lg-2 widgetRow turnOffPadding" ng-show="isMaprResourceManagerEnabled && isMapr">
+				<div class="widgetWrapper minHeight250">
+					<h2>Resource Manager</h2>
+					<div>
+						<div class="ring-loader" style="width:30px;height:30px;left:44%;top:50%;position: absolute" ng-show="maprCldbMetricsLoader"></div>
+						<ul class="countersList" ng-show="!maprCldbMetricsLoader" style="margin: 0px; padding: 0px 10px 10px 10px;">
+							<li style="width:48%">
+								<h1 class="majorCountersH1">
+									<span class="orangeText" count-up end-val="resourceManagerHeapUsageCounter2">0</span>
+									<span class="smallText">MB</span>
+								</h1>Heap Usage
+							</li>
+							<li style="width:48%">
+								<h1 class="majorCountersH1">
+									<span class="lightBlueText" count-up end-val="resourceManagerRpcCounter">0</span>
+								</h1>RPC Open Connections
+							</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+			<!-- Cluster-wide rack/node local jobs -->
+			<div class="col-md-12 col-lg-3 widgetRow turnOffPadding" ng-show="isRackAwareEnabled">
+				<div class="widgetWrapper minHeight250">
+					<h2>Cluster -Wide Rack/Node Local Jobs</h2>
+					<ul ng-show="!rackAwareStatsErrorMessage" id="rackNodeWrapper" class="clearfix">
+						<li>
+							<h1 class="greenText" count-up end-val="rackNodeWrapperdataLocalJob" options="countupOptions"></h1> Data Local
+						</li>
+						<li>
+							<h1 class="amberText" count-up end-val="rackNodeWrapperrackLocalJob" options="countupOptions"></h1> Rack Local
+						</li>
+						<li>
+							<h1 class="orangeText" count-up end-val="rackNodeWrapperotherLocalJob" options="countupOptions"></h1> Other Rack
+						</li>
+					</ul>
+					<div style="text-align:center;font-weight:bold;position:relative;color:#e23744;top:65px;" ng-show="rackAwareStatsErrorMessage">Problem while receiving data from Server</div>
+				</div>
+			</div>
 		</div>
 	</div>
 </div>
@@ -298,14 +469,14 @@
 						<ul class="countersList" ng-show="!majorCountersLoader" style="margin: 0px; padding: 20px 10px 10px 10px;">
 							<li>
 								<h1 class="majorCountersH1">
-									<span class="firoziText">{{dfsRemaining}}</span>
-									<span class="smallText">GB</span>
+									<span class="firoziText">{{dfsRemaining.value}}</span>
+									<span class="smallText">{{dfsRemaining.unit}}</span>
 								</h1>DFS Remaining
 							</li>
 							<li>
 								<h1 class="majorCountersH1">
-									<span class="lightBlueText">{{dfsUsed}}</span>
-									<span class="smallText">GB</span>
+									<span class="lightBlueText">{{dfsUsed.value}}</span>
+									<span class="smallText">{{dfsUsed.unit}}</span>
 								</h1>DFS Used
 							</li>
 							<li>
@@ -320,7 +491,7 @@
 							</li>
 							<li>
 								<h1 class="majorCountersH1">
-									<span class="lightGreenText">{{underReplicatedBlocks}}</span>
+									<span class="orangeText">{{underReplicatedBlocks}}</span>
 								</h1>Under Replicated Blocks
 							</li>
 							<li>
@@ -342,14 +513,14 @@
 						<ul class="countersList" ng-show="!maprCldbMetricsLoader" style="margin: 0px; padding: 20px 10px 10px 10px;">
 							<li>
 								<h1 class="majorCountersH1">
-									<span class="firoziText" count-up end-val="clusterDiskSpaceAvailableGBCounter">0</span>
-									<span class="smallText">GB</span>
+									<span class="firoziText">{{clusterDiskSpaceAvailableGBCounter.value}}</span>
+									<span class="smallText">{{clusterDiskSpaceAvailableGBCounter.unit}}</span>
 								</h1>Disk Space Available
 							</li>
 							<li>
 								<h1 class="majorCountersH1">
-									<span class="lightBlueText" count-up end-val="clusterDiskSpaceUsedGBCounter">0</span>
-									<span class="smallText">GB</span>
+									<span class="lightBlueText">{{clusterDiskSpaceUsedGBCounter.value}}</span>
+									<span class="smallText">{{clusterDiskSpaceUsedGBCounter.unit}}</span>
 								</h1>Disk Space Used
 							</li>
 							<li>
@@ -390,7 +561,7 @@
 							</ul>
 						</div>
 					</h2>
-					<div ng-show="!dataLoadDistributionErrorMessage" class="dataLoadDetails" ng-style="{overflow: dataLoadDetailView ? 'auto' : 'none'}" style="height:159px">
+					<div ng-show="!dataLoadDistributionErrorMessage && !hdfsEmpty" class="dataLoadDetails" ng-style="{overflow: dataLoadDetailView ? 'auto' : 'none'}" style="height:159px">
 						<div class="ring-loader" style="width:30px;height:30px;left:44%;top:50%;position: absolute" ng-show="dataLoadLoader"></div>
 						<div id="visualisation" ng-show="!dataLoadDetailView"></div>
 						<div ng-show="!dataLoadDetailView && !dataLoadLoader" class="dataCenterDetail" style="width: 64px;float: left;border: 0 !important;bottom: 0;position: absolute;right: 0;">
@@ -418,179 +589,18 @@
 						</div>
 					</div>
 					<div style="text-align:center;font-weight:bold;position:relative;color:#e23744;top:65px;" ng-show="dataLoadDistributionErrorMessage">Problem while receiving data from Server</div>
-				</div>
-			</div>
-		</div>
-	</div>
-</div>
-<div class="resultWrapper" ng-show="isClusterSectionEnabled">
-	<div class="widgetRow">
-		<div class="widgetWrapper" style="overflow:hidden;min-height:255px;">
-			<h2>Cluster
-				<div class="widgets-setting">
-					<a class="dropdown-toggle" ng-click="openPopup4 = !openPopup4;clusterSectionOptionsY = $event.pageY;clusterSectionOptionsX = $event.pageX;"><i class="fa fa-cog"></i>
-						<span>Widgets</span>
-					</a>
-
-				</div>
-			</h2>
-			<!-- Data Center -->
-			<div class="widgetRow turnOffPadding" ng-show="isDataCenterEnabled"
-				ng-class="[isMapr ? 'col-md-12' : 'col-md-9', isMapr ? 'col-lg-7' : 'col-lg-5']">
-				<div class="widgetWrapper minHeight200">
-					<h2 class='my-tool-tip'>Data Center<i data-toggle="tooltip" title="Health of the Hadoop nodes in the defined cluster." class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i><div style="position:relative;float:right"><a class="dropdown-toggle" ng-click="openPopupDC = !openPopupDC;dcY = $event.pageY;dcX = $event.pageX;"><i class="fa fa-cog"></i>
-					</a></div></h2>
-					<div ng-show="!dataCenterErrorMessage" style="max-height:139px;overflow-y:auto">
-						<div class="dataCenterDetail">
-							<span class="greenBg">{{dataCenterCounters.good}}</span>
-							<span class="yellowBg">{{dataCenterCounters.average}}</span>
-							<span class="redBg">{{dataCenterCounters.bad}}</span>
-							<span class="greyBg">{{dataCenterCounters.unavailable}}</span>
-						</div>
-						<div class="ring-loader" style="width:30px;height:30px;left:44%;top:50%;position: absolute" ng-show="dataCenterLoader"></div>
-						<div class="dataCenterContent" ng-repeat="datacenter in dataCenters">
-							<span class="heading">
-								<span class="datacenter-clusterid">{{datacenter.clusterId}}</span>
-								<span class="subHeading" ng-repeat="racks in datacenter.racks">
-									<span class="datacenter-rackid">Rack ID : {{racks.rackId}}</span>
-									<span class="clearfix">
-										<span class="nodesIcon" ng-repeat="node in racks.nodes">
-											<img ng-if="node.performance == 'Good'" src="assets/images/Good.png" title="Node : {{node.nodeIp}}&#xA;Performance : Good" />
-											<img ng-if="node.performance == 'Bad'" src="assets/images/Bad.png" title="Node : {{node.nodeIp}}&#xA;Performance : Bad&#xA;{{node.message}}" />
-											<img ng-if="node.performance == 'Average' && node.message" src="assets/images/Average.png" title="Node : {{node.nodeIp}}&#xA;Performance : Bad&#xA;{{node.message}}" />
-											<img ng-if="node.performance == 'Average' && !node.message" src="assets/images/Average.png" title="Node : {{node.nodeIp}}" />
-											<img ng-if="node.performance == 'Unavailable'" src="assets/images/Unavailable.png" title="Node : {{node.nodeIp}}&#xA;Status: Node Unavailable" />
-										</span>
-									</span>
-								</span>
-							</span>
-						</div>
-					</div>
-					<div style="text-align:center;font-weight:bold;position:relative;color:#e23744;top:65px;" ng-show="dataCenterErrorMessage">Problem while receiving data from Server</div>
-				</div>
-			</div>
-			<!-- Running Apps 1-->
-			<div class="col-md-3 col-lg-2 widgetRow turnOffPadding" ng-show="isRunningAppsEnabled && !isMapr">
-				<div class="widgetWrapper minHeight200">
-					<!-- <h2>Live Container Stats</h2> -->
-					<h2 class='my-tool-tip'>Running Apps</h2>
-					<div>
-						<ul class="countersList" style="text-align:center;">
-							<li>
-								<h1 class="majorCountersH1" style="margin-top:50px">
-									<span title="{{runningJobsTitle}}" ng-show="totalRunningApplication != 0" class="lightBlueText">{{totalRunningApplications}}</span>
-									<span ng-show="totalRunningApplication == 0" class="lightBlueText">0</span>
-								</h1>
-							</li>
-						</ul>
-					</div>
-				</div>
-			</div>
-			<!-- Running Apps 1-->
-			<div class="col-md-4 col-lg-2 widgetRow turnOffPadding" ng-show="isRunningAppsEnabled && isMapr">
-				<div class="widgetWrapper minHeight200">
-					<!-- <h2>Live Container Stats</h2> -->
-					<h2 class='my-tool-tip'>Running Apps</h2>
-					<div>
-						<ul class="countersList" style="text-align:center;">
-							<li>
-								<h1 class="majorCountersH1" style="margin-top:50px">
-									<span title="{{runningJobsTitle}}" ng-show="totalRunningApplication != 0" class="lightBlueText">{{totalRunningApplications}}</span>
-									<span ng-show="totalRunningApplication == 0" class="lightBlueText">0</span>
-								</h1>
-							</li>
-						</ul>
-					</div>
-				</div>
-			</div>
-			<!-- Heap Usage 2-->
-			<div class="col-md-6 col-lg-3 widgetRow turnOffPadding" ng-show="isHeapUsageEnabled && !isMapr">
-				<div class="widgetWrapper minHeight200">
-					<h2>Heap Usage</h2>
-					<div>
-						<div class="ring-loader" style="width:30px;height:30px;left:44%;top:50%;position: absolute" ng-show="majorCountersLoader"></div>
-						<ul class="countersList" ng-show="!majorCountersLoader && !metadataInformationErrorMessage" style="margin: 0px; padding: 0px 10px 10px 10px;">
-							<li style="width:48%;">
-								<h1 class="majorCountersH1">
-									<span class="orangeText" count-up end-val="nameNodeHeapUsage">0</span>
-									<span class="smallText">MB</span>
-								</h1>Namenode
-							</li>
-							<li style="width:48%;">
-								<h1 class="majorCountersH1">
-									<span class="lightBlueText" count-up end-val="resourceManagerHeapUsageCounter">0</span>
-									<span class="smallText">MB</span>
-								</h1>Resource Manager
-							</li>
-						</ul>
-						<div style="text-align:center;font-weight:bold;position:relative;color:#e23744;top:65px;" ng-show="metadataInformationErrorMessage">Problem while receiving data from Server</div>
-					</div>
-				</div>
-			</div>
-			<!-- Namenode RPC 2-->
-			<div class="col-md-6 col-lg-2 widgetRow turnOffPadding" ng-show="isRPCOpenConnectionEnabled && !isMapr">
-				<div class="widgetWrapper minHeight200">
-					<h2 class='my-tool-tip'>Namenode RPC<i data-toggle="tooltip" title="Current number of RPC Operations in Namenode." class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i></h2>
-					<div>
-						<div class="ring-loader" style="width:30px;height:30px;left:44%;top:50%;position: absolute" ng-show="majorCountersLoader"></div>
-						<ul class="countersList" ng-show="!majorCountersLoader" style="margin: 0px; padding: 20px 10px 10px 10px;text-align:center">
-							<li>
-								<h1 class="majorCountersH1">
-									<span class="lightBlueText" count-up end-val="nameNodeRpcActivityNumOpenConnections">0</span>
-								</h1>
-							</li>
-						</ul>
-					</div>
-				</div>
-			</div>
-			<!-- Resource Manager 2 -->
-			<div class="col-md-8 col-lg-3 widgetRow turnOffPadding" ng-show="isMaprResourceManagerEnabled && isMapr">
-				<div class="widgetWrapper minHeight200">
-					<h2>Resource Manager</h2>
-					<div>
-						<div class="ring-loader" style="width:30px;height:30px;left:44%;top:50%;position: absolute" ng-show="maprCldbMetricsLoader"></div>
-						<ul class="countersList" ng-show="!maprCldbMetricsLoader" style="margin: 0px; padding: 0px 10px 10px 10px;">
-							<li style="width:48%">
-								<h1 class="majorCountersH1">
-									<span class="orangeText" count-up end-val="resourceManagerHeapUsageCounter2">0</span>
-									<span class="smallText">MB</span>
-								</h1>Heap Usage
-							</li>
-							<li style="width:48%">
-								<h1 class="majorCountersH1">
-									<span class="lightBlueText" count-up end-val="resourceManagerRpcCounter">0</span>
-								</h1>RPC Open Connections
-							</li>
-						</ul>
-					</div>
-				</div>
-			</div>
-			<!-- Cluster-wide rack/node local jobs -->
-			<div class="col-md-12 col-lg-3 widgetRow turnOffPadding" ng-show="isRackAwareEnabled">
-				<div class="widgetWrapper minHeight200">
-					<h2>Cluster -Wide Rack/Node Local Jobs</h2>
-					<ul ng-show="!rackAwareStatsErrorMessage" id="rackNodeWrapper" class="clearfix">
-						<li>
-							<h1 class="greenText" count-up end-val="rackNodeWrapperdataLocalJob" options="countupOptions"></h1> Data Local
-						</li>
-						<li>
-							<h1 class="amberText" count-up end-val="rackNodeWrapperrackLocalJob" options="countupOptions"></h1> Rack Local
-						</li>
-						<li>
-							<h1 class="orangeText" count-up end-val="rackNodeWrapperotherLocalJob" options="countupOptions"></h1> Other Rack
-						</li>
-					</ul>
-					<div style="text-align:center;font-weight:bold;position:relative;color:#e23744;top:65px;" ng-show="rackAwareStatsErrorMessage">Problem while receiving data from Server</div>
+					<div style="text-align:center;font-weight:bold;position:relative;color:#222;top:65px;"
+						ng-show="hdfsEmpty">No Data on HDFS</div>
 				</div>
 			</div>
 		</div>
 	</div>
 </div>
 
-<div class="resultWrapper" ng-show="isYarnQueuesSectionEnabled">
+<div class="resultWrapper" ng-show="isYarnQueuesSectionEnabled" id="yarnQueuesSection">
 	<div class="widgetRow">
 		<div class="widgetWrapper" style="overflow:hidden;min-height:206px;">
-			<h2>Yarn Queues
+			<h2 style="min-height:42.8px"><span  style="float:left">Yarn Queues</span><span style="font-size: 14.5px;float:left;position: relative;left:20px;top:4px;">[ Scheduler Type - {{getSchedulerType()}} ]</span>
 				<div class="widgets-setting">
 					<a class="dropdown-toggle" ng-click="openPopup5 = !openPopup5;yarnQueuesSectionOptionsY = $event.pageY;yarnQueuesSectionOptionsX = $event.pageX;"><i class="fa fa-cog"></i>
 						<span>Widgets</span>
@@ -603,65 +613,70 @@
 					<h2 class='my-tool-tip'>Instantaneous Queue Utilization<i data-toggle="tooltip" title="Real Time Queue Utilization within the queue and average waiting time for all defined queues." class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i></h2>
 					<div class="slider-left-arrow"><i class="fa fa-caret-left"></i></div>
 					<div class="slider-right-arrow"><i class="fa fa-caret-right"></i></div>
-					<div class="ring-loader" style="width:30px;height:30px;left:44%;top:180%;position: absolute" ng-show="queueDataLoader"></div>
-					<ul ng-show="!instantaneousQueueErrorMessage" id="queueUtilizationWrapper" class="clearfix">
-						<li class="clearfix" ng-repeat="queue in queuesArr" style="max-height:110px;">
+					<div class="ring-loader" style="width:30px;height:30px;left:0;top:40px" ng-show="queueDataLoader"></div>
+					<ul ng-show="!instantaneousQueueErrorMessage && !queueDataLoader" id="queueUtilizationWrapper" class="clearfix">
+						<li class="clearfix" ng-repeat="(queueName, queue) in instaneousQueues" style="max-height:110px;">
 							<span class="pull-left">
 								<h3><a title="View relative queue utilization by users" style="cursor:pointer;color:#2a6496" ng-click="openQueueUserGraph(queue.queueName)">{{queue.queueName}}</a></h3>Avg. Waiting Time:
-								<span class="highlightGreen">{{queue.averageWaitingTime}} s</span>
+								<span class="highlightGreen">{{getAverageWaitingTime(queue.queueName)}} s</span>
 							</span>
-							<span ng-if="isFairScheduler==undefined || isFairScheduler == false" class="easyPieChart pull-right" easypiechart percent="queue.percentage" options="options1">
-								<span class="percent">{{queue.currentCapacity | number:2}} </span>
+							<span title="0%" ng-if="(isFairScheduler == undefined || isFairScheduler == false) && queue.percentage == 0" class="easyPieChart pull-right" easypiechart percent="queue.percentage" options="options1">
+								<span class="percent">0</span>
 							</span>
-							<span ng-if="isFairScheduler==true" class="easyPieChart pull-right" easypiechart percent="queue.percentUsedMemory" options="options1">
-								<span class="percent">{{queue.percentUsedMemory | number:2}} </span>
+							<span title="{{queue.percentage | number:2}} %" ng-if="(isFairScheduler == undefined || isFairScheduler == false) && queue.percentage > 0" class="easyPieChart pull-right" easypiechart percent="queue.percentage" options="options1">
+								<span class="percent">{{queue.percentage > 100 ? '100+' : (queue.percentage | number:2)}} </span>
+							</span>
+							<span title="0%" ng-if="isFairScheduler==true && queue.percentUsedMemory == 0" class="easyPieChart pull-right" easypiechart percent="queue.percentUsedMemory" options="options1">
+								<span class="percent">0</span>
+							</span>
+							<span title="{{queue.percentUsedMemory | number:2}} %" ng-if="isFairScheduler==true && queue.percentUsedMemory > 0" class="easyPieChart pull-right" easypiechart percent="queue.percentUsedMemory" options="options1">
+								<span class="percent">{{queue.percentUsedMemory > 100 ? '100+' : (queue.percentUsedMemory | number:2)}} </span>
 							</span>
 						</li>
 					</ul>
 					<div style="text-align:center;font-weight:bold;position:relative;color:#e23744;top:45px;" ng-show="instantaneousQueueErrorMessage">Problem while receiving data from Server</div>
 				</div>
 			</div>
-			<div class="col-md-12 col-lg-6 widgetRow turnOffPadding" ng-show="isMeteredQueueEnabled == true && isInfluxdbLive">
+			<div class="col-md-12 col-lg-12 widgetRow turnOffPadding" ng-show="isMeteredQueueEnabled == true">
 				<div class="widgetWrapper minHeight250">
-					<h2 class="my-tool-tip" style="text-align:center;min-height:42.8px"><span style="float:left">Metered Queue Usage<i data-toggle="tooltip" title="Display queue usage over the period of time." class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i></span> <span style="font-size: 14.5px;">[ {{mquOptionsValueLabel[mquOptions.stat]}} ]</span>
+					<h2 class="my-tool-tip" style="text-align:center;min-height:42.8px">
+						<span style="float:left">Metered Queue Usage<i data-toggle="tooltip" title="Display queue usage over the period of time." class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i></span>
+						<span ng-hide="mquOptions.stat == undefined || mquOptions.stat == ''" style="font-size: 14.5px;float:left;position: relative;left:20px;top:4px;">[ {{mquOptionsValueLabel[mquOptions.stat]}} ]</span>
 						<div style="position:relative;float:right">
-							<a class="dropdown-toggle" style="cursor:pointer" ng-click="persistMquDataIntoTemp();openPopupMQU = !openPopupMQU;mquY = $event.pageY;mquX = $event.pageX;"><i class="fa fa-cog" style="color:#333"></i></a>
+							<a class="dropdown-toggle" style="cursor:pointer;color:#333" ng-click="persistMquDataIntoTemp();openPopupMQU = !openPopupMQU;mquY = $event.pageY;mquX = $event.pageX;"><span style="font-weight:300">{{mquSettingsLabel}}</span><i class="fa fa-cog" style="margin-left:5px"></i></a>
+						</div>
+						<span style="float: right;margin-right: 10px;"><select style="padding: 0px;" ng-change="changeMquData()" ng-model="mquFilterQuery">
+							<option value="">All Queues</option>
+							<option ng-repeat="queueName in sortedQueueNames">{{queueName}}</option>
+							</select>
+						</span>
+					</h2>
+					<div class="ring-loader" style="width:30px;height:30px;left:50%;top:50%;position: absolute" ng-show="mquLoader == true"></div>
+					<div style="height:200px;" id="mquId" ng-category-line-chart option-data="mquDataTemp" category="mquOptions.stat" selected-nodes="queueNames" metere-queue="true" ng-show="!meteredQueueUsageErrorMessage" filter-query="mquFilterQuery"></div>
+					<div style="text-align:center;font-weight:bold;position:relative;color:#e23744;top:65px;" ng-show="meteredQueueUsageErrorMessage">Problem while receiving data from Server</div>
+				</div>
+			</div>
+			<div class="col-md-12 col-lg-12 widgetRow turnOffPadding" ng-show="isQuSummaryEnabled == true">
+				<div class="widgetWrapper minHeight250">
+					<h2 class="my-tool-tip" style="min-height:42.8px">
+						<span style="float:left">Queue Utilization Summary<i data-toggle="tooltip" title="Displays average queue utilization of last 30 Days" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i>
+						</span>
+						<span ng-hide="mquOptions.stat == undefined || mquOptions.stat == ''" style="font-size: 14.5px;float:left;position: relative;left:20px;top:4px;">[ {{qusOptions.graphType}} ]</span>
+						<div style="position:relative;float:right">
+							<a class="dropdown-toggle" style="cursor:pointer;color:#333" ng-click="persistQusDataIntoTemp();openPopupQUS = !openPopupQUS;qusY = $event.pageY;qusX = $event.pageX;">
+								<i class="fa fa-cog" style="margin-left:5px"></i>
+							</a>
 						</div>
 					</h2>
-					<div class="ring-loader" style="width:30px;height:30px;left:50%;top:50%;position: absolute" ng-show="mquLoader == true"></div>
-					<div style="height:200px;" id="mquId" ng-category-line-chart option-data="chartQueueData"	category="mquOptions.stat" selected-nodes="queueNames" metere-queue="true" ng-show="!meteredQueueUsageErrorMessageisInfluxdbLive"></div>
-					<div style="text-align:center;font-weight:bold;position:relative;color:#e23744;top:65px;" ng-show="meteredQueueUsageErrorMessageisInfluxdbLive">Problem while receiving data from Server</div>
-				</div>
-			</div>
-			<div class="col-md-12 col-lg-6 widgetRow turnOffPadding" ng-show="isMeteredQueueEnabled == true && !isInfluxdbLive">
-				<div class="widgetWrapper minHeight250">
-					<h2 class="my-tool-tip">Metered Queue Usage<i data-toggle="tooltip" title="Display average queue usage for last 24 hours." class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i>
-					</h2>
-					<div class="ring-loader" style="width:30px;height:30px;left:50%;top:50%;position: absolute" ng-show="mquLoader == true"></div>
-					<div ng-show="!meteredQueueUsageErrorMessageisInfluxdbLive" style="overflow: auto" id="queueTimeLineDiv" style="height:209px;">
-						<svg id="queueTimeLine" style="height:209px;"></svg>
-						<div id="queueToolTip"></div>
-					</div>
-					<div style="text-align:center;font-weight:bold;position:relative;color:#e23744;top:65px;" ng-show="meteredQueueUsageErrorMessageisInfluxdbLive">Problem while receiving data from Server</div>
-				</div>
-			</div>
-			<div class="col-md-12 col-lg-6 widgetRow turnOffPadding" ng-show="isQuSummaryEnabled == true">
-				<div class="widgetWrapper minHeight250">
-					<h2 class="my-tool-tip">Queue Utilization Summary<i data-toggle="tooltip" title="Displays average queue utilization of last 30 Days" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i>
-					</h2>
 					<div style="height:209px;">
-						<queue-horizontal-bar-graph
-							is-fair-scheduler="isFairScheduler"
-							redraw-function="queueUtilizationSummary.redraw"
-							has-error="queueUtilizationSummary.hasError"
-							loader="queueUtilizationSummary.loader"></queue-horizontal-bar-graph>
+						<queue-horizontal-bar-graph is-fair-scheduler="isFairScheduler" redraw-function="queueUtilizationSummary.redraw" has-error="queueUtilizationSummary.hasError" loader="queueUtilizationSummary.loader" graph-options="qusOptions"></queue-horizontal-bar-graph>
 					</div>
 				</div>
 			</div>
 		</div>
 	</div>
 </div>
-<div class="resultWrapper" ng-show="isYarnContainersSectionEnabled">
+<div class="resultWrapper" ng-show="isYarnContainersSectionEnabled" id="yarnContainersSection">
 	<div class="widgetRow">
 		<div class="widgetWrapper" style="overflow:hidden;min-height:305px;">
 			<h2>Yarn Containers
@@ -670,14 +685,6 @@
 						<span>Widgets</span>
 					</a>
 					<ul class="dropdown-menu customDropdown" ng-style="{display: openPopup9 ? 'block' : 'none'}">
-						<li>
-							<div class="row">
-								<span>Container</span>
-								<input ng-model="isLiveContainerEnabled" ng-change="saveToLocalStorage('isLiveContainerEnabled')" id="cmn-toggle-6" class="cmn-toggle cmn-toggle-round" type="checkbox">
-								<label for="cmn-toggle-6"></label>
-							</div>
-						</li>
-						<li class="divider"></li>
 						<li>
 							<div class="row">
 								<span>Capacity Utilization</span>
@@ -690,37 +697,13 @@
 					</ul>
 				</div>
 			</h2>
-			<div class="col-md-12 col-lg-3 widgetRow turnOffPadding" ng-show="isLiveContainerEnabled == true">
-				<div class="widgetWrapper minHeight250">
-					<!-- <h2>Live Container Stats</h2> -->
-					<h2 class='my-tool-tip'>Containers<i data-toggle="tooltip" title="Instantaneous view of containers in cluster as per configured capacity & utilization." class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i></h2>
-					<div>
-						<ul ng-show="!liveContainerStatsErrorMessage" class="countersList" style="margin: 0px; padding: 0px;">
-							<li style="width:50%;float:left">
-								<h1>
-									<span class="lightBlueText" count-up end-val="launchableContainersCounter">0</span>
-								</h1>
-								<span class="col-lg-12" style="text-align:center;margin-bottom:10px;">Launchable</span>
-								<span class="col-lg-12" style="text-align:center;font-size:12px">{{ launchableContainersMessage }}</span>
-							</li>
-							<li style="width:50%;float:right">
-								<h1>
-									<span class="maroonText" count-up end-val="runningContainersCounter">0</span>
-								</h1>
-								<span class="col-lg-12" style="text-align:center">Running</span>
-							</li>
-						</ul>
-						<div style="text-align:center;font-weight:bold;position:relative;color:#e23744;top:90px;" ng-show="liveContainerStatsErrorMessage">Problem while receiving data from Server</div>
-					</div>
-				</div>
-			</div>
 			<!-- Capacity utilization -->
-			<div class="col-md-12 col-lg-9 widgetRow turnOffPadding" ng-show="isEffCapUtilizationEnabled == true">
+			<div class="col-md-12 col-lg-12 widgetRow turnOffPadding" ng-show="isEffCapUtilizationEnabled == true">
 				<div class="widgetWrapper minHeight250 ">
 					<h2 class='my-tool-tip'>Capacity Utilization<i data-toggle="tooltip" title="The memory utilizations statistics for the different phases of execution along with profiling results." class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i></h2>
 					<div class="ring-loader" style="width:30px;height:30px;left:50%;top:50%;position: absolute" ng-show="capacityLoadLoader"></div>
-					<div ng-show="!capacityUtilizationErrorMessage" style="max-height:210px;overflow-y:auto">
-						<table class="table" style="border:1px solid #ddd">
+					<div ng-show="!capacityUtilizationErrorMessage && !capacityLoadLoader" style="max-height:210px;overflow-y:auto">
+						<table class="table" style="border:1px solid #ddd;border-bottom: none;">
 							<thead>
 								<tr style="color: #555">
 									<th>Job ID</th>
@@ -731,11 +714,10 @@
 									<th>Job Name</th>
 									<th>Job Profile</th>
 									<th></th>
-									<th></th>
 								</tr>
 							</thead>
 							<tbody>
-								<tr class="effRowHighlight" ng-repeat="jobDetail in effCapacityUtilizationDetails | orderBy:'jobId':true">
+								<tr class="effRowHighlight" ng-repeat="jobDetail in effCapacityUtilizationDetails | orderBy:'jobFinishTime':true">
 									<td>{{jobDetail.jobId}}</td>
 									<td>{{jobDetail.usedMaxMapMemory}}</td>
 									<td>{{jobDetail.usedMaxReduceMemory}}</td>
@@ -743,11 +725,17 @@
 									<td>{{jobDetail.usedVCores}}</td>
 									<td><a title="View Job History" style="cursor:pointer;color:#2a6496" ng-click="openJobhistoryGraph(jobDetail.jobName)">{{jobDetail.jobName}}</a></td>
 									<td><i ng-click="openProfilerGraph(jobDetail.jobId)" style="color:#0c9a51;cursor:pointer" class="fa fa-line-chart ng-scope" title="View Profile Job"></i></td>
-									<td style="padding: 5px;"><img style="height: 26px;cursor:pointer" ng-click="displayQuickTuningModal(jobDetail.jobId)" alt="Optimize Job" title="Quick Tuning" src="../../assets/images/ojLogo.png"></td>
 									<td><i class="fa fa-exclamation-triangle" title="{{jobDetail.errorMessage}}" ng-show="jobDetail.hasError == true" style="color: #e23744;font-size: 18px;"></i></td>
 								</tr>
 							</tbody>
 						</table>
+						<div style="width:100%;position: relative;text-align:center" ng-show="cpDisplayLoadMoreOption">
+			            	<div class="ring-loader"
+								style="width:20px;height:20px;" ng-show="isCapacityUtilizationOldJobsPending">
+							</div>
+							<a ng-show="!isCapacityUtilizationOldJobsPending" ng-click="loadMoreJobsCapacityUtilization()"
+								style="cursor: pointer;color: #23b4c0 ;">LOAD MORE</a>
+			            </div>
 					</div>
 					<div style="text-align:center;font-weight:bold;position:relative;color:#e23744;top:90px;" ng-show="capacityUtilizationErrorMessage">Problem while receiving data from Server</div>
 				</div>
@@ -755,7 +743,7 @@
 		</div>
 	</div>
 </div>
-<div class="resultWrapper" ng-show="isUserMeteringSectionEnabled">
+<div class="resultWrapper" ng-show="isUserMeteringSectionEnabled" id="userMeteringSection">
 	<div class="widgetRow">
 		<div class="widgetWrapper" style="overflow:hidden;min-height:305px;">
 			<h2>Usage Metering
@@ -763,15 +751,7 @@
 					<a class="dropdown-toggle" ng-click="openPopup6 = !openPopup6"><i class="fa fa-cog"></i>
 						<span>Widgets</span>
 					</a>
-					<ul class="dropdown-menu customDropdown" ng-style="{display: openPopup6 ? 'block' : 'none'}">						
-						<li>
-							<div class="row">
-								<span>Long Duration Applications</span>
-								<input ng-model="isLraEnabled" ng-change="saveToLocalStorage('isLraEnabled')" id="cmn-toggle-7" class="cmn-toggle cmn-toggle-round" type="checkbox">
-								<label for="cmn-toggle-7"></label>
-							</div>
-						</li>
-						<li class="divider"></li>
+					<ul class="dropdown-menu customDropdown" ng-style="{display: openPopup6 ? 'block' : 'none'}">
 						<li>
 							<div class="row">
 								<span>High Resource Usage Apps</span>
@@ -782,71 +762,27 @@
 						<li class="divider"></li>
 						<li>
 							<div class="row">
-								<span>Resource Utilization Metering</span>
-								<input ng-model="isChargeBackEnabled" ng-change="saveToLocalStorage('isChargeBackEnabled')" id="cmn-toggle-chargeBack" class="cmn-toggle cmn-toggle-round" type="checkbox">
-								<label for="cmn-toggle-chargeBack"></label>
+								<span>Long Running Applications</span>
+								<input ng-model="isLraEnabled" ng-change="saveToLocalStorage('isLraEnabled')" id="cmn-toggle-7" class="cmn-toggle cmn-toggle-round" type="checkbox">
+								<label for="cmn-toggle-7"></label>
 							</div>
 						</li>
 						<li class="divider"></li>
 						<button ng-click="openPopup6 = false" class="btn btn-default">Close</button>
 					</ul>
 				</div>
-			</h2>		
-			<!-- Long Running Applications -->
-			<div class="col-md-12 col-lg-12 widgetRow turnOffPadding" ng-show="isLraEnabled == true">
-				<div class="widgetWrapper minHeight250 ">
-					<h2 class='my-tool-tip'>
-						Long Duration Applications<i data-toggle="tooltip" title="Long Duration applications based on the threshold defined in minutes" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i>
-						<div style="position:relative;float:right">
-							<a class="dropdown-toggle" style="cursor:pointer" ng-click="openPopup8 = !openPopup8;changeLraThresholdMinutes()"><i class="fa fa-cog" style="color:#333"></i></a>
-							<ul class="dropdown-menu customDropdown" ng-style="{display: openPopup8 ? 'block' : 'none'}">
-								<li>
-									<div class="row" style="margin:5px">
-										<span>Threshold in Minutes</span>
-										<input placeholder="in Minutes" jumbune-only-digits type="text" ng-model="thresholdMinutesCopied">
-									</div>
-								</li>
-								<li class="divider"></li>
-								<button style="margin-top: 0" ng-click="openPopup8 = false;changeLraThresholdMinutes()" class="btn btn-default">Close</button>
-							</ul>
-						</div>
-					</h2>
-					<div class="ring-loader" style="width:30px;height:30px;left:50%;top:50%;position: absolute" ng-show="showLraLoader"></div>
-					<div ng-show="!longDurationErrorMessage && !showLraLoader" style="max-height:210px;overflow-y:auto">
-						<table class="table" style="border:1px solid #ddd">
-							<thead>
-								<tr style="color: #555">
-									<th>Application ID</th>
-									<th>Duration</th>
-									<th>User</th>
-									<th>Application Type</th>
-									<th>Status</th>
-									<th></th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr class="effRowHighlight" ng-repeat="appDetail in lraList | orderBy:'-durationMillis' | limitTo : 10">
-									<td>{{appDetail.applicationID}}</td>
-									<td>{{appDetail.durationMillis | dateStringFormat}}</td>
-									<td>{{appDetail.user}}</td>
-									<td>{{appDetail.appType}}</td>
-									<td>{{appDetail.appStatus}}</td>
-									<th><i ng-if="appDetail.errorMessage" class="fa fa-exclamation-triangle" title="{{appDetail.errorMessage}}" style="color: #e23744;font-size: 18px;"></i></th>
-								</tr>
-							</tbody>
-						</table>
-					</div>
-					<div style="text-align:center;font-weight:bold;position:relative;color:#e23744;top:65px;" ng-show="longDurationErrorMessage">Problem while receiving data from Server</div>
-				</div>
-			</div>
-			
-			<!-- High Resource Usage Applications -->	
-			<div class="col-md-12 col-lg-8 widgetRow turnOffPadding" ng-show="isHruaEnabled == true">
+			</h2>
+
+			<!-- High Resource Usage Applications -->
+			<div class="col-md-12 col-lg-12 widgetRow turnOffPadding" ng-show="isHruaEnabled == true">
 				<div class="widgetWrapper minHeight250 ">
 					<h2 class='my-tool-tip'>
 						High Resource Usage Applications<i data-toggle="tooltip" title="High resource usage applications based on total memory or vcores present in cluster" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i>
 						<div style="position:relative;float:right">
+							<span style="font-size: 13px;color: #555;"> Filter Threshold (Mem >= {{hruaOptions.memorythresholdMB}} MB, Vcores > {{hruaOptions.vcoresThreshold}})&nbsp;&nbsp;</span>&nbsp;
 							<a class="dropdown-toggle" style="cursor:pointer" ng-click="persistHruaOptionsIntoTemp();openPopup7 = !openPopup7;"><i class="fa fa-cog" style="color:#333"></i></a>
+							<span ng-show="showHRUSearch"><input type="text" ng-model="hruaSearch" placeholder="Search for app id "></span>
+							<i ng-click="showHRUSearchBox();" style="color: #333" class="fa fa-search" aria-hidden="true"></i>
 							<ul class="dropdown-menu customDropdown" ng-style="{display: openPopup7 ? 'block' : 'none'}">
 								<li>
 									<div class="row" style="margin:5px">
@@ -862,19 +798,20 @@
 									</div>
 								</li>
 								<li class="divider"></li>
-								<button style="margin-top: 0" ng-click="openPopup7 = false;saveHruaOptions()" class="btn btn-default">Save</button>
+								<button style="margin-top: 0" ng-click="openPopup7 = false;saveHruaOptions()" class="btn btn-default">Apply</button>
 								<button style="margin-top: 0" ng-click="openPopup7 = false" class="btn btn-default">Cancel</button>
 							</ul>
 						</div>
 					</h2>
 					<div class="ring-loader" style="width:30px;height:30px;left:50%;top:50%;position: absolute" ng-show="showHruaLoader"></div>
-					<div ng-show="!highResourceErrorMessage && !showHruaLoader" style="max-height:210px;overflow-y:auto">
-						<table class="table" style="border:1px solid #ddd">
+					<div ng-show="!highResourceErrorMessage && !showHruaLoader" style="max-height:210px;overflow-y:auto;min-width: 100%">
+						<table id="myTable" class="table" style="border:1px solid #ddd">
 							<thead>
 								<tr style="color: #555">
 									<th>Application ID</th>
 									<th>Used Vcores</th>
 									<th>Used Memory (MB)</th>
+									<th>Queue</th>
 									<th>User</th>
 									<th>Application Type</th>
 								</tr>
@@ -884,6 +821,7 @@
 									<td>{{appDetail.applicationID}}</td>
 									<td ng-style="{'font-weight' : (appDetail.usedVcores > hruaOptions.vcoresThreshold ? 'bold' : 'normal')}">{{appDetail.usedVcores}}</td>
 									<td ng-style="{'font-weight' : (appDetail.usedMemory > hruaOptions.memorythresholdMB ? 'bold' : 'normal')}">{{appDetail.usedMemory}}</td>
+									<td>{{appDetail.queue}}</td>
 									<td>{{appDetail.user}}</td>
 									<td>{{appDetail.appType}}</td>
 								</tr>
@@ -891,43 +829,66 @@
 						</table>
 					</div>
 					<div style="text-align:center;font-weight:bold;position:relative;color:#e23744;top:65px;" ng-show="highResourceErrorMessage">Problem while receiving data from Server</div>
+					<div style="text-align:center;position:relative;top:65px;color:#ccc" ng-show="showNoDataAvailable">Applications which exceeds filtered threshold will be displayed.</div>
 				</div>
 			</div>
-			<!-- ChargeBack Application -->
-			<div class="col-md-12 col-lg-4 widgetRow turnOffPadding" ng-show="isChargeBackEnabled == true">
+			<!-- Long Running Applications -->
+			<div class="col-md-12 col-lg-12 widgetRow turnOffPadding" ng-show="isLraEnabled == true">
 				<div class="widgetWrapper minHeight250 ">
-					<h2 class='my-tool-tip'>
-						Resource Utilization Metering<i data-toggle="tooltip" title="Provides the facility of charging back the user based on the Vcore and Memory utilized." class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i>
+					<h2 class='my-tool-tip longRunningApps'>
+						Long Running Applications<i data-toggle="tooltip" title="Long Running applications based on the threshold defined in minutes" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i>
 						<div style="position:relative;float:right">
-							<span style="cursor: pointer;font-size:15px;font-weight:bold;" ng-click="openDetailResourseCost()">Details</span>
-							<i style="cursor: pointer;color:#333;position: relative;" class="fa fa-wrench" aria-hidden="true" ng-click="manageCluster(chargeBackClusName)" title="Configure"></i>
-							<a class="dropdown-toggle" style="cursor:pointer" ng-click="openPopup10 = !openPopup10;persistChargeBackDataIntoTemp();mquY = $event.pageY;mquX = $event.pageX;"><i class="fa fa-cog" style="color:#333"></i></a>
+							<span style="font-size: 13px;color: #555;">Execution time (more than {{thresholdMinutesCopied}} minutes)&nbsp;</span> &nbsp;&nbsp;
+							<a class="dropdown-toggle" style="cursor:pointer" ng-click="openPopup8 = !openPopup8"><i class="fa fa-cog" style="color:#333"></i></a>
+							<span ng-show="showLRASearch"><input type="text" ng-model="lraSearch" placeholder="Search for app id "></span>
+							<i ng-click="showLRASearchBox();" style="color: #333" class="fa fa-search" aria-hidden="true"></i>
+							<ul class="dropdown-menu customDropdown" ng-style="{display: openPopup8 ? 'block' : 'none'}">
+								<li>
+									<div class="row" style="margin:5px">
+										<span>Threshold in Minutes</span>
+										<input placeholder="in Minutes" jumbune-only-digits type="text" ng-model="thresholdMinutesCopied">
+									</div>
+								</li>
+								<li class="divider"></li>
+								<button style="margin-top: 0" ng-click="openPopup8 = false;changeLraThresholdMinutes()" class="btn btn-default">Apply</button>
+								<button style="margin-top: 0" ng-click="openPopup8 = false" class="btn btn-default">Cancel</button>
+							</ul>
 						</div>
 					</h2>
-					<div class="ring-loader" style="width:30px;height:30px;left:50%;top:50%;position: absolute" ng-show="showChargeBackLoader"></div>
-					<div ng-show="!chargeBackErrorMessage && !showChargeBackLoader" style="max-height:210px;overflow-y:auto">
-						<table class="table" style="border:1px solid #ddd">
+					<div class="ring-loader" style="width:30px;height:30px;left:50%;top:50%;position: absolute" ng-show="showLraLoader"></div>
+					<div ng-show="!longDurationErrorMessage && !showLraLoader" style="max-height:210px;overflow-y:auto">
+						<table id="myTable" class="table" style="border:1px solid #ddd">
 							<thead>
 								<tr style="color: #555">
+									<th>Application ID</th>
+									<th>Duration</th>
+									<th>Queue</th>
 									<th>User</th>
-									<th>Total Cost ($)</th>
+									<th>Application Type</th>
+									<th></th>
 								</tr>
 							</thead>
 							<tbody>
-								<tr class="effRowHighlight" ng-repeat="(user, userObj) in chargeBackData">
-									<td>{{user}}</td>
-									<td>{{userObj.userCost != 0 ? userObj.userCost : ' - '}}</td>
+								<tr class="effRowHighlight" ng-repeat="appDetail in lraList | filter: lraFilter | orderBy:'-durationMillis' | limitTo : 10">
+									<td>{{appDetail.applicationID}}</td>
+									<td>{{appDetail.durationMillis | dateStringFormat}}</td>
+									<td>{{appDetail.queue}}</td>
+									<td>{{appDetail.user}}</td>
+									<td>{{appDetail.appType}}</td>
+									<th><i ng-if="appDetail.errorMessage" class="fa fa-exclamation-triangle" title="{{appDetail.errorMessage}}" style="color: #e23744;font-size: 18px;"></i></th>
 								</tr>
 							</tbody>
 						</table>
 					</div>
-					<div style="text-align:center;font-weight:bold;position:relative;color:#e23744;top:65px;" ng-show="chargeBackErrorMessage">Problem while receiving data from Server</div>
+					<div style="text-align:center;font-weight:bold;position:relative;color:#e23744;top:65px;" ng-show="longDurationErrorMessage">Problem while receiving data from Server</div>
+					<div style="text-align:center;position:relative;top:65px;color:#ccc" ng-show="showOnlyRunMessage">Applications which exceeds threshold limit will be displayed here</div>
 				</div>
 			</div>
+
 		</div>
 	</div>
 </div>
-<div class="resultWrapper" ng-show="isChartsEnabled == true">
+<div class="resultWrapper" ng-show="isChartsEnabled == true" id="chartsSection">
 	<div class="col-md-12 col-lg-12 widgetRow turnOffPadding">
 		<div class="widgetWrapper minHeight250">
 			<!-- <h2>Charts</h2> -->
@@ -973,9 +934,9 @@
 	<li class="divider" ng-show="!isMapr"></li>
 	<li ng-show="!isMapr">
 		<div class="row">
-			<span>RPC Open Connection</span>
-			<input ng-model="isRPCOpenConnectionEnabled" ng-change="saveToLocalStorage('isRPCOpenConnectionEnabled')" id="cmn-toggle-13" class="cmn-toggle cmn-toggle-round" type="checkbox">
-			<label for="cmn-toggle-13"></label>
+			<span>Container</span>
+			<input ng-model="isRPCOpenConnectionEnabled" ng-change="saveToLocalStorage('isRPCOpenConnectionEnabled')" id="cmn-toggle-6" class="cmn-toggle cmn-toggle-round" type="checkbox">
+			<label for="cmn-toggle-6"></label>
 		</div>
 	</li>
 	<li class="divider" ng-show="!isMapr"></li>
@@ -1030,139 +991,176 @@
 <!-- YarnQueuesSection : Metered Queue Usage Widget Option dropdown -->
 <ul class="dropdown-menu	pull-right dropdown-menu-form mquMenu" style="position:absolute" ng-style="{display: openPopupMQU ? 'block' : 'none', top: mquY + 15 + 'px', left : mquX - 390 + 'px'}">
 	<li class="dropdown-linechart row">
-
 		<div class="mquLabel"><span>Stat</span></div>
 		<div class="mquValue">
 			<select ng-model="mquOptionsTemp.stat">
-				<option ng-if="isFairScheduler == undefined || isFairScheduler == false" value="currentCapacity">Current Capacity</option>
-				<option ng-if="isFairScheduler == undefined || isFairScheduler == false" value="maximumCapacity">Maximum Capacity</option>
-
-				<option ng-if="isFairScheduler != undefined && isFairScheduler == true" value="usedResourcesMemoryPercent">(%) Used Memory of Steady Fair Share</option>
-				<option ng-if="isFairScheduler != undefined && isFairScheduler == true" value="usedResourcesMemory">Used Memory</option>
-
-				<option ng-if="isFairScheduler != undefined && isFairScheduler == true && isDrf != undefined && isDrf == true" value="usedResourcesVCoresPercent">(%) Used Vcores of Steady Fair Share</option>
-				<option ng-if="isFairScheduler != undefined && isFairScheduler == true && isDrf != undefined && isDrf == true" value="usedResourcesVCores">Used Vcores</option>
-
-				<option value="averageWaitingTime">Average Waiting Time</option>
-
+				<option value="usedResourcesMemoryPercent" ng-show="isFairScheduler">(%) Used Memory of Steady Fair Share</option>
+				<option value="usedResourcesMemoryPercentC" ng-show="!isFairScheduler">(%) Used Memory of Defined Queue Capacity</option>
+				<option value="usedResourcesMemory">Used Memory</option>
+				<option ng-show="isFairScheduler && isDrf" value="usedResourcesVCoresPercent">(%) Used Vcores of Steady Fair Share</option>
+				<option ng-show="isFairScheduler && isDrf" value="usedResourcesVCores">Used Vcores</option>
 			</select>
 		</div>
 	</li>
-	<li class="divider"></li>
+	<li ng-show="isFairScheduler == true" class="divider"></li>
 	<li class="dropdown-linechart row">
 		<div class="mquLabel">
-			<input type="radio" ng-model="mquOptionsTemp.intervalMode" style="margin-top: 0px;" value="Duration">
 			<span>Duration</span>
 		</div>
 		<div class="mquValue">
-			<input type="text" ng-disabled="mquOptionsTemp.intervalMode != 'Duration'" jumbune-only-digits style="width:30%;height: 31px;" ng-model="mquOptionsTemp.durationTextValue">
-			<select	style="width:68%" ng-disabled="mquOptionsTemp.intervalMode != 'Duration'" ng-model="mquOptionsTemp.durationUnit">
-				<option value="m">Minutes</option>
-				<option value="h">Hours</option>
-				<option value="d">Days</option>
+			<select style="width:98%" ng-model="mquOptionsTemp.duration">
+				<option value="6h">Last 6 Hours</option>
+				<option value="1d">Last 24 Hours</option>
+				<option value="7d">Last 7 Days</option>
+				<option value="30d">Last 30 Days</option>
+				<option value="custom">Custom</option>
 			</select>
 		</div>
 	</li>
-	<li class="divider"></li>
-	<li class="dropdown-linechart row">
+	<li class="divider" ng-show="mquOptionsTemp.duration == 'custom'"></li>
+	<li class="dropdown-linechart row" ng-show="mquOptionsTemp.duration == 'custom'">
 		<div class="mquLabel">
-			<input type="radio" ng-model="mquOptionsTemp.intervalMode" style="margin-top: 0px;" value="Range"><span>Date From</span>
+			<span>Date From</span>
 		</div>
 		<div class="mquValue">
-			<input ng-model="mquOptionsTemp.rangeFrom" style="width: 100%" type="text" jumbune-datepicker ng-disabled="mquOptionsTemp.intervalMode != 'Range'">
+			<input ng-model="mquOptionsTemp.rangeFrom" style="width: 100%" type="text" jumbune-datepicker>
 		</div>
 	</li>
-	<li class="divider"></li>
-	<li class="dropdown-linechart row">
+	<li class="divider" ng-show="mquOptionsTemp.duration == 'custom'"></li>
+	<li class="dropdown-linechart row" ng-show="mquOptionsTemp.duration == 'custom'">
 		<div class="mquLabel">
 			<span>Date To</span>
 		</div>
 		<div class="mquValue">
-			<input type="text" ng-model="mquOptionsTemp.rangeTo" style="width: 100%" jumbune-datepicker ng-disabled="mquOptionsTemp.intervalMode != 'Range'">
+			<input type="text" ng-model="mquOptionsTemp.rangeTo" style="width: 100%" jumbune-datepicker>
 			</span>
 		</div>
 	</li>
 	<li class="divider"></li>
 	<li class="dropdown-linechart row">
-		<div class="mquLabel" ng-disabled="mquOptionsTemp.intervalMode == 'Range' && mquOptionsTemp.rangeFrom==''">
-			<span>Aggregate Function</span>
-		</div>
-		<div class="mquValue">
-			<select ng-model="mquOptionsTemp.aggregateFunction" ng-disabled="mquOptionsTemp.intervalMode == 'Range' && mquOptionsTemp.rangeFrom==''">
-				<option value="min">Min</option>
-				<option value="max">Max</option>
-				<option value="mean">Mean</option>
-				<option value="">None</option>
-			</select>
-		</div>
-	</li>
-	<li class="divider"></li>
-	<li class="dropdown-linechart row">
-		<div class="mquLabel">
-			<span>Group By</span>
-		</div>
-		<div class="mquValue">
-			<input type="text" ng-model="mquOptionsTemp.groupByValue" jumbune-only-digits style="width:30%;height: 31px;" ng-disabled="isMquGroupByDisabled()">
-			<select	style="width:68%" ng-model="mquOptionsTemp.groupByUnit" ng-disabled="isMquGroupByDisabled()">
-				<option value="s">Seconds</option>
-				<option value="m">Minutes</option>
-				<option value="h">Hours</option>
-				<option value="d">Days</option>
-			</select>
-		</div>
-	</li>
-	<li class="divider"></li>
-	<li class="dropdown-linechart row">
 		<div style="margin-top:5px;margin-left:25px;">
-			<button ng-click="openPopupMQU = false;saveMquOptions()" class="btn btn-default">Save</button>
+			<button ng-click="openPopupMQU = false;saveMquOptions()" class="btn btn-default">Apply</button>
 			<button ng-click="openPopupMQU = false" class="btn btn-default">Cancel</button>
 		</div>
 	</li>
 </ul>
 
- <!-- Charge Back model options dropdown -->
- <ul class="dropdown-menu  pull-right dropdown-menu-form mquMenu" 	style="position:absolute" ng-style="{display: openPopup10 ? 'block' : 'none', top: mquY + 15 + 'px', left : mquX - 390 + 'px'}">
-								<li class="dropdown-linechart row">
-									<div class="mquLabel"><input type="radio" ng-model="chargeBackOptionsTemp.month" style="margin-top: 0px;" value="current">
-										<span>Current Month</span></div>
-								</li>
-								<li class="divider"></li>
-								<li class="dropdown-linechart row">
-									<div class="mquLabel">
-										<input type="radio" ng-model="chargeBackOptionsTemp.month" style="margin-top: 0px;" value="previous">
-										<span>Previous Month</span>
-									</div>
-								</li>
-								<li class="divider"></li>
-								<li class="dropdown-linechart row">
-									<div class="mquLabel">
-										<input type="radio" ng-model="chargeBackOptionsTemp.month" style="margin-top: 0px;" value="custom"><span>Date From</span>
-									</div>
-									<div class="mquValue">
-										<input ng-model="chargeBackOptionsTemp.rangeFrom" style="width: 100%" type="text" jumbune-datepicker ng-disabled="chargeBackOptionsTemp.month != 'custom'">
-									</div>
-								</li>
-								<li class="divider"></li>
-								<li class="dropdown-linechart row">
-									<div class="mquLabel">
-										<span>Date To</span>
-									</div>
-									<div class="mquValue">
-										<input type="text" ng-model="chargeBackOptionsTemp.rangeTo" style="width: 100%" jumbune-datepicker ng-disabled="chargeBackOptionsTemp.month != 'custom'">
-										</span>
-									</div>
-								</li>
-								<li class="divider"></li>
-								<li class="dropdown-linechart row">
-									<div style="margin-top:5px;margin-left:25px;">
-										<button ng-click="openPopup10 = false;saveChargeBackOptions()" class="btn btn-default">Save</button>
-										<button ng-click="openPopup10 = false" class="btn btn-default">Cancel</button>
-									</div>
-								</li>
-							</ul>
+
+<!-- YarnQueuesSection : Queue Utilization Summary Widget Option dropdown -->
+<ul class="dropdown-menu	pull-right dropdown-menu-form mquMenu" style="position:absolute;width:400px" ng-style="{display: openPopupQUS ? 'block' : 'none', top: qusY + 15 + 'px', left : qusX - 390 + 'px'}">
+	<li class="dropdown-linechart row">
+		<div class="mquLabel">
+			<input type="radio" ng-model="qusOptionsTemp.graphType" style="margin-top: 0px;" value="Absolute">
+			<span>Absolute (Utilization w.r.t Total Cluster Capacity)</span></div>
+	</li>
+	<li class="divider"></li>
+	<li class="dropdown-linechart row">
+		<div class="mquLabel">
+			<input type="radio" ng-model="qusOptionsTemp.graphType" style="margin-top: 0px;" value="Relative">
+			<span>Relative (Utilization w.r.t Defined Queue Capacity)</span>
+		</div>
+	</li>
+	<li class="dropdown-linechart row">
+		<div style="margin-top:5px;margin-left:25px;">
+			<button ng-click="openPopupQUS = false;saveQusOptions()" class="btn btn-default">Apply</button>
+			<button ng-click="openPopupQUS = false" class="btn btn-default">Cancel</button>
+		</div>
+	</li>
+</ul>
 
 <!-- Cluster Section : Data Center Widget Option dropdown -->
-<ng-data-center-config service-data="requestDataForDC" open-popup="openPopupDC" dc-x="dcX" dc-y="dcY"></ng-data-center-config>
+<ul class="dropdown-menu  pull-right dropdown-menu-form" style="position:absolute;width:272px;" ng-style="{display: openPopupDC ? 'block' : 'none', top: dcY + 10 + 'px', left: dcX - 270 + 'px'}">
+	<li class="dropdown-linechart">
+		<div>
+			<strong>Cpu Usage</strong>
+		</div>
+	</li>
+	<li class="dropdown-linechart">
+		<div>
+			<span style="background-color: red;padding: 2px;height:12px;width: 12px;display: inline-block"></span>
+			<span style="display: inline-block;margin-left:5px ">Bad</span>
+			<span style="display: inline-block;margin-left:13px ">
+				<select  ng-model="dc.cpuOperatorBad" style="width: 66px;">
+					<option value="GREATER_THAN_OP" selected="selected">&gt;</option>
+					<option value="LESS_THAN_EQUALTO_OP">&lt;=</option>
+					<option value="EQUALT0_OP">=</option>
+					<option value="LESS_THAN_OP">&lt;</option>
+					<option value="GREATER_THAN_EQUALTO_OP">&gt;=</option>
+				</select>
+			</span>
+			<span style="display: inline-block;margin-left:5px ">
+				<input ng-model="dc.cpuValueBad" type="text" style="width: 66px;" value="25"> </span>
+			<span style="display: inline-block;margin-left:5px ">%</span>
+		</div>
+	</li>
+	<li class="dropdown-linechart">
+		<div>
+			<span style="background-color: green;padding: 2px;height:12px;width: 12px;display: inline-block"></span>
+			<span style="display: inline-block;margin-left:5px ">Good</span>
+			<span style="display: inline-block;margin-left:5px ">
+				<select ng-model="dc.cpuOperatorGood" style="width: 66px;">
+					<option value="LESS_THAN_OP">&lt;</option>
+					<option value="LESS_THAN_EQUALTO_OP">&lt;=</option>
+					<option value="EQUALT0_OP">=</option>
+					<option value="GREATER_THAN_OP" selected="selected">&gt;</option>
+					<option value="GREATER_THAN_EQUALTO_OP">&gt;=</option>
+				</select>
+			</span>
+			<span style="display: inline-block;margin-left:5px ">
+				<input ng-model="dc.cpuValueGood" type="text" style="width: 66px;" value="75"> </span>
+			<span style="display: inline-block;margin-left:5px ">%</span>
+		</div>
+	</li>
+	<li class="divider"></li>
+	<li class="dropdown-linechart">
+		<div>
+			<strong>Memory Usage</strong>
+		</div>
+	</li>
+	<li class="dropdown-linechart">
+		<div>
+			<span style="background-color: red;padding: 2px;height:12px;width: 12px;display: inline-block"></span>
+			<span style="display: inline-block;margin-left:5px ">Bad</span>
+			<span style="display: inline-block;margin-left:13px ">
+				<select ng-model="dc.memOperatorBad" style="width: 66px;">
+					<option value="GREATER_THAN_OP" selected="selected">&gt;</option>
+					<option value="LESS_THAN_EQUALTO_OP">&lt;=</option>
+					<option value="EQUALT0_OP">=</option>
+					<option value="LESS_THAN_OP">&lt;</option>
+					<option value="GREATER_THAN_EQUALTO_OP">&gt;=</option>
+				</select>
+			</span>
+			<span style="display: inline-block;margin-left:5px ">
+				<input ng-model="dc.memValueBad" type="text" style="width: 66px;" value="25"> </span>
+			<span style="display: inline-block;margin-left:5px ">%</span>
+		</div>
+	</li>
+	<li class="dropdown-linechart">
+		<div>
+			<span style="background-color: green;padding: 2px;height:12px;width: 12px;display: inline-block"></span>
+			<span style="display: inline-block;margin-left:5px ">Good</span>
+			<span style="display: inline-block;margin-left:5px ">
+				<select ng-model="dc.memOperatorGood" style="width: 66px;">
+					<option value="LESS_THAN_OP">&lt;</option>
+					<option value="LESS_THAN_EQUALTO_OP">&lt;=</option>
+					<option value="EQUALT0_OP">=</option>
+					<option value="GREATER_THAN_OP" selected="selected">&gt;</option>
+					<option value="GREATER_THAN_EQUALTO_OP">&gt;=</option>
+				</select>
+			</span>
+			<span style="display: inline-block;margin-left:5px ">
+				<input ng-model="dc.memValueGood" type="text" style="width: 66px;"> </span>
+			<span style="display: inline-block;margin-left:5px ">%</span>
+		</div>
+	</li>
+	<li class="divider"></li>
+	<li class="dropdown-linechart">
+		<div>&nbsp;
+			<button style="margin-top: 0" class="btn btn-default" ng-click="setValue() ">Save</button>
+			&nbsp;<button style="margin-top: 0" class="btn btn-default" ng-click="openPopupDC = false;">Cancel</button>
+		</div>
+	</li>
+</ul>
 
 <!-- Select node dialog -->
 <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
@@ -1238,41 +1236,6 @@
 	</div>
 </div>
 
-<!-- Select Recommendation dialog -->
-
-<div class="modal fade" id="recommendationModal" tabindex="-1" role="dialog" aria-labelledby="profilerGrpahModalLabel" data-target=".bs-example-modal-lg">
-	<div class="modal-dialog modal-lg" role="document">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
-				<h4 class="modal-title" id="profilerGrpahModalLabel">Recommendation Details</h4>
-			</div>
-			<div class="modal-body">
-				<div style="height: 400px !important;overflow-y: auto;">
-					<table class="scroll alertTable">
-						<thead class="thead-default">
-							<tr>
-								<th style="margin:0 auto; text-align:center;background-color:#fff;color:#555;">Node(s)</th>
-								<th style="margin:0 auto; text-align:center;background-color:#fff;color:#555;">Recommendation</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr ng-repeat="recommendation in allRecommendations | reverseAlertArr">
-								<td style="text-align:center;padding-left:5px;padding-right:5px">{{recommendation.hostName}}</td>
-								<td style="padding-left:5px">{{recommendation.recommendation}}</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-			</div>
-		</div>
-	</div>
-</div>
 <!-- CapacityUtilizationGraph dialog -->
 <div class="modal fade" id="CapacityUtilizationGraph" tabindex="-1" role="dialog" aria-labelledby="profilerGrpahModalLabel" data-target=".bs-example-modal-lg">
 	<div class="modal-dialog modal-lg" role="document">
@@ -1284,9 +1247,10 @@
 				<h4 class="modal-title" id="profilerGrpahModalLabel">Job Profiling</h4>
 			</div>
 			<div class="modal-body">
-				<div id="capacityUtilizationSpinner" style="position: absolute;top: 40%;left: 50%;">
-					<div class="spinner-loader">
-						Loading…
+				<div id="capacityUtilizationSpinner" style="position: absolute;top: 25%;left: 50%;">
+					<span style="position: absolute;top: 40px;color: #aaa;">Loading…</span>
+					<div class="ring-loader" style="width:30px;height:30px;">
+						<!--Loading…-->
 					</div>
 				</div>
 				<div id="profilerGraphWrapper">
@@ -1307,7 +1271,7 @@
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 				</button>
-				<h4 class="modal-title" id="profilerGrpahModalLabel">Job history	[ Job : <span style="color:#23b4c0">{{jhJobName}}</span> ]</h4>
+				<h4 class="modal-title" id="profilerGrpahModalLabel">Job history [ Job : <span style="color:#23b4c0">{{jhJobName}}</span> ]</h4>
 			</div>
 			<div class="modal-body" style="padding-bottom: 0px;">
 				<div ng-show="jobHistoryLoader" style="position: absolute;top: 40%;left: 50%;">
@@ -1319,7 +1283,7 @@
 					<div style="height: 40px;">
 						<div style="position:relative;float:left"><span id="circle">Map Memory</span><span id="circleReduce">Reduce Memory</span></div>
 						<div style="position:relative;float:right">
-							<a class="dropdown-toggle" style="cursor:pointer" ng-click="persistJHDataIntoTemp();openPopupJH = !openPopupJH"><i class="fa fa-cog" style="color:#333;position: absolute;margin-left: -30px;"></i></a>
+							<a class="dropdown-toggle" style="cursor:pointer" ng-click="persistJHDataIntoTemp();openPopupJH = !openPopupJH"><span style="font-weight:300;margin-right: 15px;">{{JobHistorySettingsLabel}}</span><i class="fa fa-cog" style="color:#333;"></i></a>
 							<ul class="dropdown-menu	pull-right dropdown-menu-form mquMenu" ng-style="{display: openPopupJH ? 'block' : 'none'}" style="right: 35px;top: 15px;display: block;width: 337px;">
 								<li class="dropdown-linechart row">
 									<div class="mquLabel" style="width:100px;">
@@ -1328,7 +1292,7 @@
 									</div>
 									<div class="mquValue">
 										<input type="text" ng-disabled="jhOptionsTemp.intervalMode != 'Duration'" jumbune-only-digits style="width:30%;height: 31px;" ng-model="jhOptionsTemp.durationTextValue">
-										<select	style="width:68%" ng-disabled="jhOptionsTemp.intervalMode != 'Duration'" ng-model="jhOptionsTemp.durationUnit">
+										<select style="width:68%" ng-disabled="jhOptionsTemp.intervalMode != 'Duration'" ng-model="jhOptionsTemp.durationUnit">
 											<option value="m">Minutes</option>
 											<option value="h">Hours</option>
 											<option value="d">Days</option>
@@ -1357,7 +1321,7 @@
 								<li class="divider"></li>
 								<li class="dropdown-linechart row">
 									<div style="margin-top:5px;margin-left:25px;">
-										<button ng-click="openPopupJH = false;saveJHOptions()" class="btn btn-default">Save</button>
+										<button ng-click="openPopupJH = false;saveJHOptions()" class="btn btn-default">Apply</button>
 										<button ng-click="openPopupJH = false" class="btn btn-default">Cancel</button>
 									</div>
 								</li>
@@ -1376,77 +1340,7 @@
 		</div>
 	</div>
 </div>
-<!-- configure dialog -->
-<div class="modal fade" id="resourceCostModel" tabindex="-1" role="dialog" aria-labelledby="resourceCostModelLabel" data-target=".bs-example-modal-lg">
-	<div class="modal-dialog modal-lg" role="document">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
-				<h4 class="modal-title" id="resourceCostModelLabel">Detailed Resource Utilization</h4>
-			</div>
-			<div class="modal-body" style="padding-bottom: 0px;">
-				<div id="resourceCostWrapper" style="min-height:300px;margin:0 auto;width:100%;text-align:center;">
-					 <accordion close-others="oneAtATime">
-						 <div style="width: 100%;text-align: left;font-size: 16px;font-weight: bold;color: #23b4c0;float: left;padding-left: 5px;margin-bottom: 10px;"><span style="float:left;text-align:left;font-size: 18px;">User</span><span style="float:right;text-align:right;font-size: 18px;">Cost</span></div>
-						<accordion-group ng-repeat="(user, userObj) in chargeBackData" is-open="status.open">
-							<accordion-heading>
-							<i class= "fa" ng-class="{'fa-caret-down': status.open, 'fa-caret-right': !status.open}"><span style="padding: 10px;font-family: Helvetica Neue, Helvetica, Arial, sans-serif;font-size: 18px;">{{user}}</span></i>
-								<span style="float:right">${{userObj.userCost}}</span>
-							</accordion-heading>
-							<accordion close-others="oneAtATime">
-								<span style="float: left;margin-left: 20px;margin-bottom: 10px;width: 100%;text-align: left;font-size: 16px;font-weight: bold;color: #23b4c0;">Queue </span>
-								<accordion-group ng-repeat="(queueName, queueObj) in userObj.queuesDetails" is-open="queue.open">
-									<accordion-heading>
-										<i class= "fa" ng-class="{'fa-caret-down': queue.open, 'fa-caret-right': !queue.open}">   <span style="padding: 10px;font-family: Helvetica Neue, Helvetica, Arial, sans-serif;font-size: 16px;">{{queueName}}</span></i>
-										<span style="float:right">${{queueObj.queueCost}}</span>
-									</accordion-heading>
-									<accordion close-others="oneAtATime">
-										<span style="float: left;margin-left: 20px;margin-bottom: 10px;width: 100%;text-align: left;font-size: 14px;font-weight: bold;color: #23b4c0;">Execution Engine </span>
-										<accordion-group ng-repeat="(costDetail,executionDetail) in queueObj.executionEngineDetails" is-open="cost.open">
-											<accordion-heading>
-												<i class= "fa" ng-class="{'fa-caret-down': cost.open, 'fa-caret-right': !cost.open}">   <span style="padding: 10px;font-family: Helvetica Neue, Helvetica, Arial, sans-serif;font-size: 14px;">{{costDetail}}</span></i>
-												<span style="float:right">${{executionDetail.totalCost}}</span>
-											</accordion-heading>						
-											<div style="max-height:210px;overflow-y:auto">
-												<table class="table" style="border:1px solid #ddd">
-													<thead>
-														<tr style="color: #555">
-															<th>Vcore Hours Used</th>
-															<th>Configured Vcore Cost</th>
-															<th>Memory(GB) Hours Used</th>
-															<th>Configured Memory Cost</th>
-															<th>Total Cost ($)</th>
-															<th></th>
-														</tr>
-													</thead>
-													<tbody>
-														<tr class="effRowHighlight">
-															<td>{{executionDetail.vCoreHoursUsed != 0 ? executionDetail.vCoreHoursUsed : ' - '}}</td>
-															<td>{{executionDetail.configuredVcoreCost != 0 ? executionDetail.configuredVcoreCost : ' - '}}</td>
-															<td>{{executionDetail.memoryGbHoursUsed != 0 ? executionDetail.memoryGbHoursUsed : ' - '}}</td>
-															<td>{{executionDetail.configuredMemoryCost != 0 ? executionDetail.configuredMemoryCost : ' - '}}</td>
-															<td>{{executionDetail.totalCost != 0 ? executionDetail.totalCost : ' - '}}</td>
-														</tr>
-													</tbody>
-												</table>
-											</div>
-										</accordion-group>
-									</accordion>
-								</accordion-group>
-							</accordion>
-						</accordion-group>
-                	</accordion>
-				</div>
-			</div>
-			
-			<div class="modal-footer" style="margin-top:0px;padding-top:0px;">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-			</div>
-		</div>
-	</div>
-</div>
+
 <!-- QueueUserGraph dialog -->
 <div class="modal fade" id="QueueUserGraph" tabindex="-1" role="dialog" aria-labelledby="profilerGrpahModalLabel" data-target=".bs-example-modal-lg">
 	<div class="modal-dialog modal-lg" role="document">
@@ -1458,7 +1352,7 @@
 				<h4 class="modal-title" id="profilerGrpahModalLabel">[ Queue : <span style="color:#23b4c0">{{quName}}</span> ] Relative Utilization by Users</h4>
 			</div>
 			<div class="modal-body" style="padding-bottom: 0px;">
-				 <div ng-show="queueUserLoader" style="position: absolute;top: 40%;left: 50%;">
+				<div ng-show="queueUserLoader" style="position: absolute;top: 40%;left: 50%;">
 					<div class="spinner-loader">
 						Loading…
 					</div>
@@ -1468,7 +1362,8 @@
 						<span><input style="position:relative;top:-3px;left:5px;" type="radio" ng-model="quOptions.stat" value="usedMemory" ng-change="updateQUGraph()">Used Memory</span>
 						<span style="margin-left:15px;"><input style="position:relative;top:-3px;left:4px;" type="radio" ng-model="quOptions.stat" value="usedCores" ng-change="updateQUGraph()">Used Cores</span>
 					</div>
-					<a class="dropdown-toggle" style="cursor:pointer;float:right" ng-click="persistQUDataIntoTemp();openPopupQU = !openPopupQU">
+
+					<a class="dropdown-toggle" style="cursor:pointer;float:right" ng-click="persistQUDataIntoTemp();openPopupQU = !openPopupQU"><span style="font-weight:300">{{relativeQueueSettingsLabel}}</span>
 						<i class="fa fa-cog" style="color:#333;"></i>
 					</a>
 					<ul class="dropdown-menu	pull-right dropdown-menu-form mquMenu" ng-style="{display: openPopupQU ? 'block' : 'none'}" style="right: 35px;top: 15px;display: block;width:310px">
@@ -1489,7 +1384,7 @@
 							</div>
 							<div class="mquValue">
 								<input type="text" ng-disabled="quOptionsTemp.intervalMode != 'Duration'" jumbune-only-digits style="width:30%;height: 31px;" ng-model="quOptionsTemp.durationTextValue">
-								<select	style="width:68%" ng-disabled="quOptionsTemp.intervalMode != 'Duration'" ng-model="quOptionsTemp.durationUnit">
+								<select style="width:68%" ng-disabled="quOptionsTemp.intervalMode != 'Duration'" ng-model="quOptionsTemp.durationUnit">
 									<option value="m">Minutes</option>
 									<option value="h">Hours</option>
 									<option value="d">Days</option>
@@ -1519,7 +1414,7 @@
 						<li class="divider"></li>
 						<li class="dropdown-linechart row">
 							<div style="margin-top:5px;margin-left:25px;">
-								<button ng-click="openPopupQU = false;saveQUOptions()" class="btn btn-default">Save</button>
+								<button ng-click="openPopupQU = false;saveQUOptions()" class="btn btn-default">Apply</button>
 								<button ng-click="openPopupQU = false" class="btn btn-default">Cancel</button>
 							</div>
 						</li>
@@ -1540,64 +1435,7 @@
 		</div>
 	</div>
 </div>
-<!-- Excel Export Model -->
-<div class="modal fade" id="excelExportModel" tabindex="-1" role="dialog" aria-labelledby="excelExportModelLabel" data-target=".bs-example-modal-lg">
-	<div class="modal-dialog modal-lg" role="document">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
-				<h4 class="modal-title" id="excelExportModelLabel">Export As Excel</h4>
-			</div>
-			<div class="modal-body">
 
-				<div class="form-horizontal" ng-show="showExportForm">
-					<fieldset>
-
-					<!-- Multiple Checkboxes -->
-					<div class="form-group">
-						<label class="col-md-4 control-label" for="exportWidgetsGroup">Select Widgets</label>
-						<div class="col-md-4">
-						<div class="checkbox">
-							<label for="exportWidgetsGroup-0">
-								<input type="checkbox" ng-model="exportOptionQUS" value="Queue Utilization Summary">
-								Queue Utilization Summary
-							</label>
-						</div>
-						<div class="checkbox">
-							<label for="exportWidgetsGroup-1">
-								<input type="checkbox" ng-model="exportOptionLRA" value="Long Duration Applications">
-								Long Duration Applications
-							</label>
-						</div>
-						<div class="checkbox">
-							<label for="exportWidgetsGroup-2">
-								<input type="checkbox" ng-model="exportOptionsRUM" value="Resource Utilization Metering">
-								Resource Utilization Metering
-							</label>
-						</div>
-						</div>
-					</div>
-
-					<!-- Button -->
-					<div class="form-group">
-						<label class="col-md-4 control-label" for="exportExcel"></label>
-						<div class="col-md-4">
-							<button id="exportExcelButton" ng-click="exportAsExcel()" class="btn btn-info">Export</button>
-						</div>
-					</div>
-
-					</fieldset>
-					</div>
-					<div ng-show="!showExportForm" style="text-align: center">{{exportMessage}}</div>
-			</div>
-			<div class="modal-footer" style="margin-top: 0px;padding-top: 10px;padding-bottom: 10px;border-top-width: 1px;">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-			</div>
-		</div>
-	</div>
-</div>
 <div class="tooltip" style="display:none;" id="chartsTooltip"></div>
 <div id="myModal11" class="modal fade" tabindex="-1" role="dialog">
 	<div class="modal-dialog">
@@ -1611,65 +1449,6 @@
 			</div>
 			<div class="modal-footer">
 				<button class="btn" data-dismiss="modal">Close</button>
-			</div>
-		</div>
-	</div>
-</div>
-<div class="modal fade" id="quickTuningModal" tabindex="-1" role="dialog" aria-labelledby="profilerGrpahModalLabel" data-target=".bs-example-modal-lg">
-	<div class="modal-dialog modal-lg" role="document">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
-				<h4 class="modal-title" id="profilerGrpahModalLabel">Quick Tuning - Job [ {{quickTuningJobID}} ]</h4>
-			</div>
-			<div class="modal-body">
-				<div style="text-align: center;margin-bottom: 20px;">
-					<select ng-model="tuningProfile" ng-change="displayQuickTuningResult()" style="width: 290px;">
-						<option value="" disabled>Select Job Profile</option>
-						<option value="READ_INTENSIVE">Job is analyzing huge data set</option>
-						<option value="EXECUTION_INTENSIVE">Job is computation intensive</option>
-						<option value="WRITE_INTENSIVE">Job intended to produce huge data set</option>
-						<option value="READ_WRITE_INTENSIVE">Job is read-write intensive</option>
-						<option value="VARYING_SIZED_FILE_READ_INTENSIVE">Data set contains varying sized files</option>
-						<option value="SMALL_FILES_READ_INTENSIVE">Data set contains small sized files</option>
-						<option value="CANT_BE_CLASSIFIED_IN_ABOVE">Can not be classified in above</option>
-					</select>
-				</div>
-				<div id="quickTuningSpinner" style="height: 400px;">
-					<div class="spinner-loader" style="position: relative;top: 40%;left: 50%;">
-						Loading…
-					</div>
-				</div>
-				<div id="quickTuningResult" ng-show="showTuningResult == true" style="height: 400px;overflow-y: scroll;overflow-x:hidden;">
-					<div style="margin:0 20px 40px 0;color:#329144">
-						<span class="show-pointer pull-left" ng-hide="showQuickTuningCmdLineParameters == true" ng-click="showQuickTuningCmdLineParameters = true;setQuickTuningCmdLineParam()" style="padding: 3px;cursor: pointer;">
-							<i class="fa fa-files-o"></i> Copy Command Line Parameters
-						</span>
-						<input type="text" ng-show="showQuickTuningCmdLineParameters == true" onfocus="this.select();" onmouseup="return false;" spellcheck="false" class="pull-left" value="{{commandLineArguments}}" style="width:600px">
-						<span class="pull-right show-pointer" ng-click="downloadQuickTuningPropertiesFile()" title="Export the below parameters in xml format" style="padding: 3px;cursor: pointer;">
-							Export as XML Properties
-						</span>
-					</div>
-					<table class="table table-striped table-hover " style="border:1px solid #ddd;max-width: 98%">
-						<thead>
-							<tr>
-								<th style="padding-left: 50px;width:60%">key</th>
-								<th style="width:38%">value</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr ng-repeat="(key, value) in quickTuningParameters">
-								<td style="padding-left: 50px;width:60%">{{key}}</td>
-								<td style="width:38%">{{value}}</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-			</div>
-			<div class="modal-footer" style="padding-top: 0px;margin-top: 0px">
-				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
 			</div>
 		</div>
 	</div>
@@ -1908,7 +1687,6 @@ i.fa-cog {
 	    text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
-    margin-right: 10px;
     padding-top: 7px;
     padding-bottom: 7px;
     margin-top: 5px;
@@ -1920,17 +1698,18 @@ i.fa-cog {
 .innerheight {
 	height: 150px;
 }
-#resourceCostWrapper .panel-group {
-	padding: 10px 0px 0px 20px;
-}
-
-#resourceCostWrapper a {
-	display: inline-block;
-	width : 100%;
+/*Change the size of tooltip here*/
+.ui-tooltip-content {
+    word-wrap: break-word;
 }
 </style>
 <script type="text/javascript">
 $('#CapacityUtilizationGraph').on('hidden.bs.modal', function(e) {
 	$('.tooltip').css('opacity', 0);
 });
+history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+        history.go(1);
+    };
+
 </script>

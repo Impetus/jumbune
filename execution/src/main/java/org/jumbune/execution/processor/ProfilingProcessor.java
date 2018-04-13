@@ -20,6 +20,7 @@ import com.google.gson.GsonBuilder;
 
 import org.jumbune.common.beans.Module;
 import org.jumbune.common.beans.Enable;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.beans.cluster.Workers;
 import org.jumbune.common.beans.profiling.JobOutput;
@@ -33,7 +34,7 @@ import org.jumbune.common.utils.ResourceUsageCollector;
 import org.jumbune.debugger.instrumentation.instrumenter.Instrumenter;
 import org.jumbune.debugger.instrumentation.instrumenter.PureJarInstrumenter;
 
-import org.jumbune.common.job.EnterpriseJobConfig;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.ExtendedConstants;
 import org.jumbune.execution.beans.Parameters;
 import org.jumbune.execution.traverse.JarTraversal;
@@ -77,13 +78,15 @@ public class ProfilingProcessor extends BaseProcessor {
 		// if main class is not defined in jar manifest, then only traverse the
 		// jar for main classes
 		JumbuneRequest jumbuneRequest = super.getJumbuneRequest();
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) jumbuneRequest.getConfig();
-		if (!enterpriseJobConfig.isMainClassDefinedInJobJar()) {
+		JobConfig jobConfig = jumbuneRequest.getJobConfig();
+		if (!jobConfig.isMainClassDefinedInJobJar()) {
 			try {
-				jarJobList = tra.getAlljobs(enterpriseJobConfig.getInputFile());
+				jarJobList = tra.getAlljobs(jobConfig.getInputFile());
 			} catch (IOException ioe) {
 				LOGGER.error("Not able to get jobs list from jar.", ioe);
 				return false;
+			} finally {
+				scanner.close();
 			}
 		}
 
@@ -93,11 +96,11 @@ public class ProfilingProcessor extends BaseProcessor {
 		// classes with main classes in jar
 		checkJobClassesInJar(jarJobList);
 
-		String pureJarPath = enterpriseJobConfig.getInputFile();
+		String pureJarPath = jobConfig.getInputFile();
 		String hadoopType = FileUtil.getClusterInfoDetail(ExtendedConstants.HADOOP_TYPE);
 		
 
-		Enable runFromJumbune = enterpriseJobConfig.getRunJobFromJumbune();
+		Enable runFromJumbune = jobConfig.getRunJobFromJumbune();
 		ResourceUsageCollector collector = new ResourceUsageCollector(jumbuneRequest);
 		LOGGER.debug("Pure MapReduce jar path :" + pureJarPath);
 		JobOutput jobOutput = null;
@@ -123,7 +126,7 @@ public class ProfilingProcessor extends BaseProcessor {
 					calcStatsFromLogConsolidationInfo(jobOutput, collector);
 					LOGGER.debug("Profiling final JSON [" + jobOutput + "]");
 				} else {
-					jobID = enterpriseJobConfig.getExistingJobName();
+					jobID = jobConfig.getExistingJobName();
 					// rumen processing
 					jobOutput = getJobOutput(jobID.trim());
 					collector.addPhaseResourceUsageForHistoricalJob(jobOutput, jobID);
@@ -144,7 +147,7 @@ public class ProfilingProcessor extends BaseProcessor {
 					calcStatsFromLogConsolidationInfo(jobOutput, collector);
 					LOGGER.debug("Profiling final JSON [" + jobOutput + "]");
 				} else {
-					jobID = enterpriseJobConfig.getExistingJobName();
+					jobID = jobConfig.getExistingJobName();
 					jobOutput = getJobOutput(jobID.trim());
 				}
 			}
@@ -159,7 +162,7 @@ public class ProfilingProcessor extends BaseProcessor {
 			LOGGER.info("Pure Job Execution Completed");
 		}
 
-		if (enterpriseJobConfig.isHadoopJobProfileEnabled()) {
+		if (jobConfig.isHadoopJobProfileEnabled()) {
 			populateProfilingAnalysisReport(jobOutput);
 		}
 		LOGGER.info("Exited from [Profiling] processor...");
@@ -170,9 +173,6 @@ public class ProfilingProcessor extends BaseProcessor {
 			ResourceUsageCollector collector) throws JumbuneException, IOException,
 			InterruptedException { 
 		Cluster cluster = super.getJumbuneRequest().getCluster();
-		cluster.getNameNodes().setRelativeWorkingDirectory(EnterpriseJobConfig.getJumbuneHome() + Constants.SYSTEM_STATS_DIR);
-		Workers workers = cluster.getWorkers();
-		workers.setRelativeWorkingDirectory(workers.getWorkDirectory());
 		copyRemoteStats(jobOutput, collector, cluster);
 	}
 
@@ -201,8 +201,8 @@ public class ProfilingProcessor extends BaseProcessor {
 
 	private void checkJobClassesInJar(List<String> jarJobList)
 			throws JumbuneException {
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) super.getJumbuneRequest().getConfig();
-		if (!enterpriseJobConfig.isMainClassDefinedInJobJar() && (jarJobList != null && !processHelper.validateJobs(enterpriseJobConfig.getJobs(), jarJobList))) {
+		JobConfig jobConfig = (JobConfig) super.getJumbuneRequest().getConfig();
+		if (!jobConfig.isMainClassDefinedInJobJar() && (jarJobList != null && !processHelper.validateJobs(jobConfig.getJobs(), jarJobList))) {
 		
 				throw new JumbuneException(ErrorCodesAndMessages.MESSAGE_JOBS_NOT_MATCH);
 		
@@ -212,8 +212,8 @@ public class ProfilingProcessor extends BaseProcessor {
 	private void executeForCommandBased(Scanner scanner) throws JumbuneException {
 		if (super.isCommandBased()) {
 			Config config = super.getJumbuneRequest().getConfig();
-			EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) config;
-			ExecutionUtil.showDefinedJobs(enterpriseJobConfig.getJobs());
+			JobConfig jobConfig = (JobConfig) config;
+			ExecutionUtil.showDefinedJobs(jobConfig.getJobs());
 			boolean jsonModification = ExecutionUtil.askYesNoInfo(scanner, MESSAGES.get(MESSAGE_VALID_INPUT),
 
 			MESSAGES.get(MESSAGE_EXECUTION_YAML_COMMAND));
@@ -249,8 +249,8 @@ public class ProfilingProcessor extends BaseProcessor {
 
 	@Override
 	protected Module getModuleName() {
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) super.getJumbuneRequest().getConfig();
-		if (enterpriseJobConfig.isHadoopJobProfileEnabled()){
+		JobConfig jobConfig = (JobConfig) super.getJumbuneRequest().getConfig();
+		if (jobConfig.isHadoopJobProfileEnabled()){
 			return CommunityModule.PROFILING;
 		}
 		return null;
@@ -284,7 +284,7 @@ public class ProfilingProcessor extends BaseProcessor {
 	 * This method deletes the token file generated in start of servicing any request. So that any other request can be served
 	 */
 	private void deleteTokenFile() {
-		String tokenFilePath = EnterpriseJobConfig.getJumbuneHome() + TEMP_DIR + TOKEN_FILE;
+		String tokenFilePath = JumbuneInfo.getHome() + TEMP_DIR + TOKEN_FILE;
 		LOGGER.debug("Since all the process are complete so deleting the token file kept at " + tokenFilePath);
 		File fToken = new File(tokenFilePath);
 

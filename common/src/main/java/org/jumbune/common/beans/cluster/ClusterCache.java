@@ -15,7 +15,7 @@ import org.jumbune.common.utils.JobRequestUtil;
  * to be used time and again.
  */
 @SuppressWarnings("serial")
-public class ClusterCache extends LRUCache<String, EnterpriseCluster> {
+public class ClusterCache extends LRUCache<String, Cluster> {
 	
 	/** The Constant LOGGER. */
 	private static final Logger LOGGER = LogManager.getLogger(ClusterCache.class);
@@ -33,7 +33,7 @@ public class ClusterCache extends LRUCache<String, EnterpriseCluster> {
 	 * @see org.jumbune.utils.LRUCache#removeEldestEntry(java.util.Map.Entry)
 	 */
 	@Override
-	protected boolean removeEldestEntry(java.util.Map.Entry<String, EnterpriseCluster> eldest) {
+	protected boolean removeEldestEntry(java.util.Map.Entry<String, Cluster> eldest) {
 		if (size() > super.getCapacity()) {
 			remove(eldest.getKey());
 			return true;
@@ -42,7 +42,7 @@ public class ClusterCache extends LRUCache<String, EnterpriseCluster> {
 	}
 	
 	@Override
-    public EnterpriseClusterDefinition get(Object key) {
+    public ClusterDefinition get(Object key) {
 		try {
 			return getCluster((String) key);
 		} catch (IOException e) {
@@ -58,8 +58,8 @@ public class ClusterCache extends LRUCache<String, EnterpriseCluster> {
 	 * @return the cluster
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public synchronized EnterpriseClusterDefinition getCluster(final String clusterName) throws IOException {
-		EnterpriseClusterDefinition cluster = (EnterpriseClusterDefinition) super.get(clusterName);
+	public synchronized ClusterDefinition getCluster(final String clusterName) throws IOException {
+		ClusterDefinition cluster = (ClusterDefinition) super.get(clusterName);
 		if (cluster == null) {
 			cluster = JobRequestUtil.getClusterByName(clusterName);
 			super.put(clusterName, cluster);

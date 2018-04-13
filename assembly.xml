@@ -9,11 +9,12 @@
 	<includeBaseDirectory>false</includeBaseDirectory>
 	<dependencySets>
 		<dependencySet>
-			<outputDirectory>examples/example-distribution</outputDirectory>
+			<outputDirectory>examples/distribution</outputDirectory>
 			<useTransitiveDependencies>false</useTransitiveDependencies>
 			<unpack>false</unpack>
 			<includes>
-			<include>${project.groupId}:examples-wordcount</include>
+				<include>${project.groupId}:examples-regexprofiling</include>
+				<include>${project.groupId}:examples-defaulterdebugging</include>
 			</includes>
 		</dependencySet>
 		<dependencySet>
@@ -40,6 +41,7 @@
 			<useTransitiveDependencies>false</useTransitiveDependencies>
 			<includes>
 				<include>${project.groupId}:jumbune-deploy</include>
+				<include>com.google.code.gson:gson:jar:2.2.4</include>
 				<include>com.jcraft:jsch:jar:0.1.51</include>
 				<include>org.apache.logging.log4j:log4j-api:jar:2.1</include>
 				<include>org.apache.logging.log4j:log4j-core:jar:2.1</include>
@@ -60,7 +62,7 @@
 			</includes>
 
 		</dependencySet>
-		
+
 		<dependencySet>
 			<outputDirectory>lib</outputDirectory>
 			<unpack>false</unpack>
@@ -83,8 +85,8 @@
 				<include>${project.groupId}:jumbune-common</include>
 				<include>${project.groupId}:jumbune-utils</include>
 				<include>${project.groupId}:jumbune-remoting:jar:${project.version}::</include>
-				<include>${project.groupId}:remoting-common:${project.version}::</include>
-				<include>${project.groupId}:remoting-jsch:${project.version}::</include>
+				<include>${project.groupId}:remoting-common:jar:${project.version}::</include>
+				<include>${project.groupId}:remoting-jsch:jar:${project.version}::</include>
 				<include>${project.groupId}:jumbune-rumen</include>
 				<include>io.netty:netty-handler:jar:4.0.20.Final</include>
 				<include>io.netty:netty-buffer:jar:4.0.20.Final</include>
@@ -105,7 +107,7 @@
 			</includes>
 
 		</dependencySet>
-		
+
 
 
 	</dependencySets>
@@ -131,15 +133,21 @@
 			<fileMode>0777</fileMode>
 			<directoryMode>0777</directoryMode>
 			<directory>${project.basedir}/../web/src/main/resources</directory>
-		</fileSet>		
+		</fileSet>
 		<fileSet>
 			<directory>${project.basedir}/../examples/src/main/resources/source</directory>
-			<outputDirectory>examples/src/</outputDirectory>				
+			<outputDirectory>examples/src/</outputDirectory>
 		</fileSet>
 		<fileSet>
             <directory>${project.basedir}/../examples/src/main/resources/inputresources</directory>
-            <outputDirectory>examples/resources/</outputDirectory>               
+            <outputDirectory>examples/resources/</outputDirectory>
         </fileSet>
+		<fileSet>
+			<outputDirectory>agent-distribution/bin</outputDirectory>
+			<fileMode>0777</fileMode>
+			<directoryMode>0777</directoryMode>
+			<directory>${project.basedir}/../bin/agent</directory>
+	</fileSet>
 	</fileSets>
 	<files>
 		<file>
@@ -153,6 +161,10 @@
 		 <file>
 		      <source>${project.basedir}/../NOTICE.txt</source>
 		      <outputDirectory>/META-INF/</outputDirectory>
+		</file>
+		<file>
+			<outputDirectory>/</outputDirectory>
+			<source>${project.basedir}/../common/src/main/resources/jumbune.version</source>
 		</file>
 	</files>
 </assembly>

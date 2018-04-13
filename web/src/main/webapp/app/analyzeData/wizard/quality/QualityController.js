@@ -174,6 +174,7 @@ angular.module('quality.ctrl', [])
 				"operatingUser": clusList.jobSubUser,
 				"enableDataQualityTimeline": "TRUE",
 				"hdfsInputPath": clusList.hdfsInputPath,
+				"tempDirectory" : angular.copy(clusList.tempDirectory),
                 "parameters"  : angular.copy(clusList.parameters),
 				"jumbuneJobName": clusList.jobName
 			}
@@ -208,7 +209,7 @@ angular.module('quality.ctrl', [])
 					};
 
 					$http(req).then(function(data) {
-						common.setOptimizeJobName(data.data.JOB_NAME);
+						common.setJobName(data.data.JOB_NAME);
 						$location.path('/analyze-data-quality');
 
 					}, function(error) {
@@ -267,7 +268,7 @@ angular.module('quality.ctrl', [])
 		};
 
 		$scope.cancel = function() {
-			$location.path('/index');
+			$location.path('/dashboard');
 		};
 		$scope.back = function() {
 			common.setJobDetailsFlagRes(true)
@@ -285,6 +286,11 @@ angular.module('quality.ctrl', [])
 			}
 			return $scope.fieldValidationRules;
 		};*/
+		$scope.checkAll = function() {
+            $scope.fields.forEach(function(field) {
+               field.enable = $scope.selectAll.checkboxes;
+            });
+        };  
 		function getDefaultField(i) {
             this.enable;
             this.nullCheck = '';

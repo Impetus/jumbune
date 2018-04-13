@@ -1,51 +1,61 @@
 /* Dashboard controller */
 'use strict';
 angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resizeColumns', 'ui.bootstrap', 'countUpModule'])
-	.controller('AnalyzeCluster', ['$scope', '$http', '$timeout', '$interval', '$compile', 'uiGridConstants', 'ClusterResultFactory', 'profilerGraph', 'common', 'ClusterResultFactoryNew', 'licenseValidateFactory', 'getIsMaprDistributionFactory', '$location',
-		function($scope, $http, $timeout, $interval, $compile, uiGridConstants, ClusterResultFactory, profilerGraph, common, ClusterResultFactoryNew, licenseValidateFactory, getIsMaprDistributionFactory, $location) {
+	.controller('AnalyzeCluster', ['$scope', '$http', '$timeout', '$interval', '$compile', 'uiGridConstants', 'ClusterResultFactory', 'profilerGraph', 'common', 'ClusterResultFactoryNew', 'getIsMaprDistributionFactory', '$location', '$anchorScroll',
+		function($scope, $http, $timeout, $interval, $compile, uiGridConstants, ClusterResultFactory, profilerGraph, common, ClusterResultFactoryNew, getIsMaprDistributionFactory, $location,$anchorScroll) {
 
+			$scope.acTab                             = false;
 			$scope.alertCounter                      = 0;
 			$scope.alertsUpdateInterval              = 20;
 			$scope.allAlerts                         = [];
 			$scope.allCategories                     = {};
 			$scope.allNodes                          = [];
-			$scope.allRecommendations                = [];
 			$scope.callBackEventForCategorySelection = { onItemSelect: onItemSelect };
 			$scope.capacityUtilizationDetails        = {};
 			$scope.chartData                         = {};
 			$scope.clusterName                       = null;
 			$scope.clusterwideMajorCounters          = {};
+			/** Variable used for fetching Capacity Utilization latest jobs */
+		     $scope.cpLastCheckpoint                  = 0;
+
+		    /** Variables used for fetching Capacity Utilization Old jobs */
+		    $scope.cpStartTime                       = 0;
+		    $scope.cpEndTime                         = 0;
+			$scope.cpDisplayLoadMoreOption           = true;
 			$scope.dataCenterCounters                = {"good" : 0, "average" : 0, "bad" : 0, "unavailable" : 0};
 			$scope.dataLoadCounter                   = {"good" : 0, "warn" : 0, "bad" : 0, "unavailable" : 0};
 			$scope.dataLoadDetails;
 			$scope.dataLoadDetailView                = false;
+			$scope.dfsRemaining                      = { 'value': 0, 'unit': 'GB' };
+			$scope.dfsUsed                           = { 'value': 0, 'unit': 'GB' };
 			$scope.effCapacityUtilizationDetails     = [];
-			$scope.exportOptionQUS                   = true;
-			$scope.exportOptionLRA                   = true;
-			$scope.exportOptionsRUM                  = true;
 			$scope.filteredCategories                = {};
 			$scope.getNodeSpecificValue              = {};
 			$scope.getValue                          = {};
+			$scope.hdfsEmpty                         = false;
 			$scope.hmss                              = {};  // hadoop metrics and system stats
 			$scope.hruaList                          = [];
 			$scope.hruaMap                           = {};
+			$scope.hruaSearch                        = "";
 			$scope.instantAlertMessage               = "";
+			$scope.instaneousQueues                  = {};
+			$scope.isCapacityUtilizationOldJobsPending = false;
 			$scope.isDrf;
 			$scope.isFairScheduler;
-			$scope.isInfluxdbLive;
 			$scope.isMapr;
 			$scope.oneAtATime = true;
 			$scope.isShowBell                        = true;
 			$scope.IsVisible                         = false;
 			$scope.lraList                           = [];
+			$scope.lraSearch                         = "";
 			$scope.maprCldbMetrics                   = {};
+			$scope.mquDataTemp                       = {};
+			$scope.mquFilterQuery                    = "";
+			$scope.mquSettingsLabel                  = 'Last 24 Hours';
 			$scope.oldMetricsPersistedStats          = {};
 			$scope.queueUtilizationSummary           = { data : undefined, redraw : undefined, hasError : false, loader: true};
-			$scope.quickTuningJobID                  = '';
-			$scope.quickTuningParameters             = '';
 			$scope.readWriteNodeServiceData          = {};
 			$scope.readWriteServiceData              = {};
-			$scope.recommendationCounter             = 0;
 			$scope.requestDataForDC                  = {};
 			$scope.runningJobsTitle                  = "";
 			$scope.scrollBarView                     = false;
@@ -54,18 +64,15 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 			$scope.selectedCategoryForSingleNode     = {};
 			$scope.selectedNodes                     = [];
 			$scope.selectedNodesForIndividualTabs    = {};
-			$scope.showExportForm                    = true;
-			$scope.showTuningResult                  = false;
+			$scope.showOnlyRunMessage = true;
+			$scope.showNoDataAvailable = false;
+			$scope.showHRUSearch = false;
+			$scope.showLRASearch = false;
 			//$scope.tabs = [{ "title": "All Nodes", "content": "All Nodes", "template": "app/analyzeCluster/result/clusterwide.html", "active": true }];
 			$scope.tabs                              = [];
-			$scope.thresholdMinutes                  = 1;
-			$scope.thresholdMinutesCopied            = 1;
-			$scope.tuningProfile 					 = '';
-			$scope.licenseExpireTrue 				 = false;
-			$scope.licenseExpired 					 = false;
-			$scope.licenseExpireDays 				 = false;
-			$scope.acTab 				 = false;
-			$scope.chargeBackClusName = common.getSelectedClusterNameForRun();
+			$scope.thresholdMinutes                  = 30;
+			$scope.thresholdMinutesCopied            = 30;
+			$scope.localDataID = "tempJum123";
 
 			/* Counters */
 			$scope.rackNodeWrapperdataLocalJob;
@@ -79,8 +86,8 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 			$scope.resourceManagerHeapUsageCounter;
 
 			// Mapr cldb counter
-			$scope.clusterDiskSpaceAvailableGBCounter;
-			$scope.clusterDiskSpaceUsedGBCounter;
+			$scope.clusterDiskSpaceAvailableGBCounter = { 'value': 0, 'unit': 'GB' };
+			$scope.clusterDiskSpaceUsedGBCounter = { 'value': 0, 'unit': 'GB' };
 			$scope.containersWithoutAtleaseOneReplicaCounter;
 			$scope.noOfContainersCounter;
 			$scope.noOfStoragePoolsOfflineCounter;
@@ -95,10 +102,10 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 			$scope.capacityLoadLoader    = true;
 			$scope.dataCenterLoader      = true;
 			$scope.dataLoadLoader        = true;
+			$scope.liveContainersLoader  = true;
 			$scope.queueDataLoader       = true;
 			$scope.showHruaLoader        = true;
 			$scope.showLraLoader         = true;
-			$scope.showChargeBackLoader  = true;
 			$scope.majorCountersLoader   = true;
 			$scope.maprCldbMetricsLoader = true;
 			$scope.mquLoader             = true;
@@ -113,8 +120,7 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 			$scope.capacityUtilizationErrorMessage             = false;
 			$scope.highResourceErrorMessage                    = false;
 			$scope.longDurationErrorMessage                    = false;
-			$scope.chargeBackErrorMessage    				   = false;
-			$scope.meteredQueueUsageErrorMessageisInfluxdbLive = false;
+			$scope.meteredQueueUsageErrorMessage               = false;
 			$scope.liveContainerStatsErrorMessage              = false;
 			$scope.metadataInformationErrorMessage             = false;
 
@@ -133,7 +139,6 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 			$scope.isHruaEnabled;
 			$scope.isLiveContainerEnabled;
 			$scope.isLraEnabled;
-			$scope.isChargeBackEnabled;
 			$scope.isMaprCldbMetricsEnabled;
 			$scope.isMaprResourceManagerEnabled;
 			$scope.isMeteredQueueEnabled;
@@ -143,20 +148,18 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 			$scope.isRPCOpenConnectionEnabled;
 			$scope.isRunningAppsEnabled;
 			$scope.isUpdateAlertsEnabled;
-			$scope.isUpdateRecommendationsEnabled;
 
 			var clusterwideisMajorCountersPending = false;
 			var isCopyHistoryFilePending          = false;
 			var isDataCenterPending               = false;
 			var isDataLoadDetailsPending          = false;
 			var isDataLoadPending                 = false;
-			var isEffCapUtilizationPending        = false;
+			var isCapacityUtilizationLatestJobsPending = false;
 			var ishmssStatsUpdatePending          = false; // hadoop metrics and system stats - > stats (ie. opened tabs and graphs)
 			var ishmssStatsDataUpdatePending      = false; // hadoop metrics and system stats - > stats data (data to display graph)
 			var isHruaPending                     = false;
 			var isLiveContainerPending            = false;
 			var isLraPending                      = false;
-			var isChargeBackDataPending           = false;
 			var isSlaPending                      = false;
 			var isMajorCountersPending            = false;
 			var isMaprCldbMetricsPending          = false;
@@ -165,8 +168,8 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 			var isQuSummaryPending                = false;
 			var isRackAwarePending                = false;
 			var isUpdateAlertsPending             = false;
-			var isUpdateRecommendationsPending    = false;
 			var isWriteClusterChartDataPending    = false;
+			var isUserQueueUtilizationPending     = false;
 
 			$scope.openPopup    = false;
 			$scope.openPopup1   = false;
@@ -178,7 +181,6 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 			$scope.openPopup7   = false;
 			$scope.openPopup8   = false;
 			$scope.openPopup9   = false;
-			$scope.openPopup10  = false;
 			$scope.openPopupDC  = false; // Data Center
 			$scope.openPopupMQU = false; // metered queue usage
 			$scope.openPopupJH  = false; // job history
@@ -194,24 +196,20 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 
 			/* Metered Queue Usage Options */
 			$scope.mquOptions = {
-				intervalMode      : 'Duration',
-				durationTextValue : '24',
-				durationUnit      : 'h',
-				aggregateFunction : 'mean',
-				groupByValue      : '1',
-				groupByUnit       : 'h',
+				duration          : '1d',
 				rangeFrom         : '',
 				rangeTo           : ''
 			};
 			$scope.mquOptionsValueLabel = {
-				currentCapacity            : 'Current Capacity',
-				maximumCapacity            : 'Maximum Capacity',
-				capacity                   : 'Capacity',
 				usedResourcesMemoryPercent : '(%) Used Memory of Steady Fair Share',
-				usedResourcesMemory        : 'Used Memory',
-				usedResourcesVCoresPercent : '(%) Used Vcores of Steady Fair Share',
-				usedResourcesVCores        : 'Used Vcores',
-				averageWaitingTime         : 'Average Waiting Time'
+				usedResourcesMemoryPercentC : '(%) Used Memory of Defined Queue Capacity',
+				usedResourcesMemory         : 'Used Memory',
+				usedResourcesVCoresPercent  : '(%) Used Vcores of Steady Fair Share',
+				usedResourcesVCores         : 'Used Vcores'
+			};
+			/* Queue Utilization Summary */
+			$scope.qusOptions = {
+				graphType : 'Relative'
 			};
 			/* Job History Options */
 			$scope.jhOptions = {
@@ -240,11 +238,6 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 				prefix     : '',
 				suffix     : '%'
 			};
-			$scope.chargeBackOptions = {
-				month      		  : 'current',
-				rangeFrom         : '',
-				rangeTo           : ''
-			};
 
 			var backgroundProcesses = {
 				'SYSTEM_METRICS'        : false,
@@ -254,6 +247,8 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 			/* cluster wide major counters (Metadata Information) error first time */
 			var cwmcErrorFirstTime = false;
 
+			var alertsLastCheckpoint = 0;
+
 			/* hadoop system metrices background process first time */
 			var hsmbpFirstTime = false;
 
@@ -261,57 +256,18 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 
 			$scope.colorCodeClasses = ["firoziText", "lightBlueText", "orangeText", "darkBlueText", "lightGreenText", "darkGreenText", "maroonText"]
 
-			var hdfsSite   = ["dfs.namenode.handler.count", "dfs.datanode.handler.count", "dfs.blocksize"];
+			/*  Data center options variables */
+			$scope.dc = {};
+			$scope.dc.cpuOperatorBad = "GREATER_THAN_OP";
+			$scope.dc.cpuValueBad = 75;
+			$scope.dc.cpuOperatorGood = "LESS_THAN_OP";
+			$scope.dc.cpuValueGood = 25;
+			$scope.dc.memOperatorBad = "GREATER_THAN_OP";
+			$scope.dc.memValueBad = 80;
+			$scope.dc.memOperatorGood = "LESS_THAN_OP";
+			$scope.dc.memValueGood = 50;
 
-			var coreSite   = ["io.file.buffer.size", "io.seqfile.compression.type"];
-
-			var mapredSite = [
-				"io.sort.factor",
-				"io.sort.mb",
-				"io.sort.record.percent",
-				"io.sort.spill.percent",
-				"mapred.child.java.opts",
-				"mapred.compress.map.output",
-				"mapred.job.reduce.input.buffer.percent",
-				"mapred.job.reduce.input.buffer.percent",
-				"mapred.job.reuse.jvm.num.tasks",
-				"mapred.job.shuffle.input.buffer.percent",
-				"mapred.job.shuffle.merge.percent",
-				"mapred.map.child.java.opts",
-				"mapred.max.split.size",
-				"mapred.min.split.size",
-				"mapred.output.compress",
-				"mapred.output.compression.codec",
-				"mapred.output.compression.type",
-				"mapred.reduce.child.java.opts",
-				"mapred.reduce.parallel.copies",
-				"mapred.reduce.tasks",
-				"mapred.tasktracker.map.tasks.maximum",
-				"mapred.tasktracker.reduce.tasks.maximum",
-				"mapreduce.input.fileinputformat.split.maxsize",
-				"mapreduce.input.fileinputformat.split.minsize",
-				"mapreduce.job.jvm.numtasks",
-				"mapreduce.job.reduces",
-				"mapreduce.map.java.opts",
-				"mapreduce.map.memory.mb",
-				"mapreduce.map.output.compress",
-				"mapreduce.map.output.compress.codec",
-				"mapreduce.map.sort.spill.percent",
-				"mapreduce.output.fileoutputformat.compress",
-				"mapreduce.output.fileoutputformat.compress.type",
-				"mapreduce.reduce.input.buffer.percent",
-				"mapreduce.reduce.java.optsdfs.block.size",
-				"mapreduce.reduce.memory.mb",
-				"mapreduce.reduce.shuffle.input.buffer.percent",
-				"mapreduce.reduce.shuffle.merge.percent",
-				"mapreduce.reduce.shuffle.parallelcopies",
-				"mapreduce.task.io.sort.factor",
-				"mapreduce.task.io.sort.mb",
-				"mapreduce.tasktracker.http.threads",
-				"mapreduce.tasktracker.map.tasks.maximum",
-				"mapreduce.tasktracker.reduce.tasks.maximum",
-				"tasktracker.http.threads"
-			];
+			$scope.requestDataForDC = { "color": [{ "bad": { "operator": $scope.dc.cpuOperatorBad, "val": $scope.dc.cpuValueBad }, "good": { "operator": $scope.dc.cpuOperatorGood, "val": $scope.dc.cpuValueGood }, "category": "systemStats.cpu", "stat": "CpuUsage" }, { "bad": { "operator": $scope.dc.memOperatorBad, "val": $scope.dc.memValueBad }, "good": { "operator": $scope.dc.memOperatorGood, "val": $scope.dc.memValueGood }, "category": "systemStats.memory", "stat": "UsedMemory" }] };
 
 			//  live containers = running apps
 			// metadataInformation = Heap usage = namenoderpc
@@ -320,22 +276,20 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 			// in seconds
 
 			var defaultRefreshIntervals = {
-				'alerts'                       :   20000,
-				'capacityUtilization'          :   30000,
-				'cldbFsCounters'               :   15000,  // isMapr
+				'alerts'                       :   30000,
+				'capacityUtilization'          :   60000,
+				'cldbFsCounters'               :   60000,  // isMapr
 				'containers'                   :   15000,
 				'dataCenter'                   :   60000,
 				'dataLoadDistribution'         : 1800000,
-				'hadoopDaemonsAndSystemMetrics':   20000,
-				'hrua'                         :   15000,
+				'hadoopDaemonsAndSystemMetrics':   60000,
+				'hrua'                         :   30000,
 				'instantaneousQueueUtilization':   15000,
 				'lra'                          :   60000,
-				'metadataInformation'          :   15000,  // !isMapr
+				'metadataInformation'          :   60000,  // !isMapr
 				'meteredQueueUsage'            :  300000,
 				'queueUtilizationSummary'      : 1800000,
-				'rackLocalJobs'                :  300000,
-				'recommendations'              :  300000,
-				'chargeBackModel'              : 3600000,
+				'rackLocalJobs'                :  300000
 			};
 
 			$scope.refreshIntervals = angular.copy(defaultRefreshIntervals);
@@ -349,16 +303,12 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 					}
 				}
 			}
-
+			var interval1,interval2,intervalUpdateQueue,intervalLicnese,intervalGetAvgWaitingTimeData;
 			function setIntervals() {
 
 				intervals['alerts'] = $interval(function() {
 					updateAlerts();
 				}, $scope.refreshIntervals['alerts'], false);
-
-				intervals['recommendations'] = $interval(function() {
-					updateRecommendations();
-				}, $scope.refreshIntervals['recommendations'], false);
 
 				intervals['metadataInformation'] = $interval(function() {
 					updateClusterwideMajorCounters();
@@ -384,10 +334,6 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 				intervals['instantaneousQueueUtilization'] = $interval(function() {
 					getQueueData();
 				}, $scope.refreshIntervals['instantaneousQueueUtilization'], false);
-
-				intervals['chargeBackModel'] = $interval(function() {
-					getChargeBackModelData();
-				}, $scope.refreshIntervals['chargeBackModel'], false);
 
 				intervals['meteredQueueUsage'] = $interval(function() {
 					getMeteredQueueData();
@@ -415,46 +361,36 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 
 				intervals['hadoopDaemonsAndSystemMetrics'] = $interval(function() {
 					// fetch data for both background or non background process
-					updateHadoopMetricsSystemStatsGraphData();
+				//	updateHadoopMetricsSystemStatsGraphData();
 				}, $scope.refreshIntervals['hadoopDaemonsAndSystemMetrics'], false);
-
-				var req = {
-					method : 'POST',
-					url    : '/apis/clusteranalysis/update-hadoop-metrics-refresh-interval',
-					headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-					isArray: false,
-					data   : 'interval='+$scope.refreshIntervals['hadoopDaemonsAndSystemMetrics'],
-					timeout: 210000
-				};
-
-				$http(req).then(function(data) {
-
-				}, function(error) {
-					console.log("Error while updating hadoop metrics and system stats refresh interval in server", error)
-				});
 			}
 
-			var interval1 = $interval(function() {
+			function setOtherIntervals() {
+					interval1 = $interval(function() {
 				// In case background process
-				getHadoopMetricsOpenedStatNamesFromServer();
-				// In case not a background process
-				sendHadoopMetricesOpenedStatsNamesToServer();
+				//	getHadoopMetricsOpenedStatNamesFromServer();
+					// In case not a background process
+				//	sendHadoopMetricesOpenedStatsNamesToServer();
 
-				writeQueueUserDataIntoDataBase();
-			}, 15000, false);
+					writeQueueUserDataIntoDataBase();
+				}, 15000, false);
 
-			var interval2 = $interval(function() {
-				copyHistoryFile();
-			}, 60000, false);
+				interval2 = $interval(function() {
+					//copyHistoryFile();
+				}, 60000, false);
 
-			var intervalLicnese = $interval(function () {
-				licenseExpireMessage();
-			}, 86400000, false);
+				intervalGetAvgWaitingTimeData = $interval(function () {
+					getAvgWaitingTimeData();
+				}, 300000, false);
+			}
+
+
 
 			$scope.$on('$destroy', function() {
 				$interval.cancel(interval1);
 				$interval.cancel(interval2);
 				$interval.cancel(intervalLicnese);
+				$interval.cancel(intervalGetAvgWaitingTimeData);
 				clearIntervals();
 			});
 
@@ -493,20 +429,43 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 				}
 			];
 
+			/**
+			 * Data center settings option methods
+			 *
+			 */
+			$scope.closeDropdown = function() {
+				$scope.openPopupDC = false;
+			}
+
+			$scope.setValue = function() {
+				$scope.requestDataForDC = { "color": [{ "bad": { "operator": $scope.dc.cpuOperatorBad, "val": $scope.dc.cpuValueBad }, "good": { "operator": $scope.dc.cpuOperatorGood, "val": $scope.dc.cpuValueGood }, "category": "systemStats.cpu", "stat": "CpuUsage" }, { "bad": { "operator": $scope.dc.memOperatorBad, "val": $scope.dc.memValueBad }, "good": { "operator": $scope.dc.memOperatorGood, "val": $scope.dc.memValueGood }, "category": "systemStats.memory", "stat": "UsedMemory" }] }
+				var browserConf = JSON.parse(localStorage.getItem($scope.localDataID));
+				browserConf[$scope.clusterName]["dataCenterOptions"] = $scope.requestDataForDC;
+				localStorage.setItem($scope.localDataID, JSON.stringify(browserConf));
+				$scope.closeDropdown();
+			}
+
 			$scope.openRIOptions = function() {
 				$scope.isRIResetButtonDisabled = false;
 				$scope.refreshIntervalsTemp = angular.copy($scope.refreshIntervals);
 				$scope.openPopupRI = !$scope.openPopupRI;
+				$scope.openPopup = false;
+			}
+			$scope.openSections = function() {
+				$scope.openPopup = !$scope.openPopup;
+				$scope.openPopupRI = false;
 			}
 
 			$scope.saveRIOptions = function() {
 				$scope.openPopupRI = false;
 				$scope.refreshIntervals = angular.copy($scope.refreshIntervalsTemp);
+				var browserConf = JSON.parse(localStorage.getItem($scope.localDataID));
+				browserConf[$scope.clusterName]["refreshIntervalsTemp"] = $scope.refreshIntervals;
+				localStorage.setItem($scope.localDataID, JSON.stringify(browserConf));
 				clearIntervals();
 				setIntervals();
 
 				updateAlerts();
-				updateRecommendations();
 				updateClusterwideMajorCounters();
 				getDataLoadData();
 				getDataLoadDataDetails();
@@ -520,7 +479,6 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 				getEffCapUtilizationData();
 				updateHighResourceUsageApps();
 				updateLongRunningApps();
-				getChargeBackModelData();
 			}
 
 			$scope.resetRIOptions = function() {
@@ -532,40 +490,6 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 			$scope.clickedHomeIcon = function() {
 				$location.path("/");
 			}
-			function licenseExpireMessage() {
-				licenseValidateFactory.submitLicense({},
-					function(data) {
-						var currentDate = data.currentTime;
-						if (data['Valid Until']) {
-						    var expiryDate = data['Valid Until'];
-						    var temp = new Date(data['Valid From']).toString();
-						    data['Valid From'] = temp.substring(4, 16) + temp.substring(25);
-						    temp = new Date(data['Valid Until']).toString();
-						    data['Valid Until'] = temp.substring(4, 16) + temp.substring(25);
-							var milliseconds = (expiryDate - currentDate);
-							var daysDiff = milliseconds/86400000;
-							/*if ( daysDiff <= 0 ) {
-								$scope.licenseExpired = true;
-								$scope.licenseExpireTrue = false;
-								$scope.licenseExpireDays = false;
-							} else*/ if ( daysDiff <= 3) {
-								if ( daysDiff >= 1) {
-									$scope.daysDiffShow = Math.round(daysDiff);
-									$scope.licenseExpireDays = true;
-									$scope.licenseExpired = false;
-									$scope.licenseExpireTrue = false;
-								} else {
-									$scope.licenseExpireTrue = true;
-									$scope.licenseExpireDays = false;
-									$scope.licenseExpired = false;
-								}
-							}
-						}
-					},
-					function(e) {
-						console.log(e);
-					});
-			}
 			/**  */
 			$scope.createAlertGrid = function(data) {}
 
@@ -574,8 +498,13 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 			/** init function */
 			$scope.init = function() {
 				$("h2.my-tool-tip").tooltip();
+				$("span.tool-tip").tooltip();
 				$('#draggablePanelList').sortable({});
-				licenseExpireMessage();
+				var userWidth = $("#userNameId").width();
+				$('#userNameIdTD').width(userWidth);
+				$scope.bothWidth = (userWidth + 140);
+				$('#instantAlertMessage').css({ 'max-width': '100%'});
+				$('#instantAlertMessageTD').css({ 'max-width': 'calc(100% - ' + $scope.bothWidth + 'px)' });
 				if (common.getIsMapr() != null) {
 					$scope.isMapr = common.getIsMapr();
 				} else {
@@ -586,86 +515,107 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 							$scope.isMapr = isMapr;
 						},
 						function(e) {
-							console.log(e);
+							console.log("Error while checking if mapr distribution or not", e);
 						});
 				}
 				var clusterName = common.getSelectedClusterNameForRun();
 				if (clusterName == null) {
 					clusterName = localStorage.getItem('clusterName');
-					updateSectionsAndWidgetsValues();
 				} else {
-					localStorage.clear();
-					localStorage.setItem('clusterName', clusterName);
-					$scope.isClusterSectionEnabled        = true;
-					$scope.isHdfsSectionEnabled           = true;
-					$scope.isUserMeteringSectionEnabled   = true;
-					$scope.isYarnContainersSectionEnabled = true;
-					$scope.isYarnQueuesSectionEnabled     = true;
-
-					$scope.isChartsEnabled                = true;
-					$scope.isCopyHistoryFileEnabled       = true;
-					$scope.isDataCenterEnabled            = true;
-					$scope.isDataLoadEnabled              = true;
-					$scope.isEffCapUtilizationEnabled     = true;
-
-					$scope.isHruaEnabled                  = true;
-					$scope.isLiveContainerEnabled         = true;
-					$scope.isLraEnabled                   = true;
-					$scope.isChargeBackEnabled 			  = true;
-
-					$scope.isMeteredQueueEnabled          = true;
-					$scope.isQueueDataEnabled             = true;
-					$scope.isQuSummaryEnabled             = true;
-					$scope.isRackAwareEnabled             = false;
-					$scope.isRunningAppsEnabled           = true;
-					$scope.isUpdateAlertsEnabled          = true;
-					$scope.isUpdateRecommendationsEnabled = true;
-
-					$scope.isHeapUsageEnabled             = true;
-					$scope.isRPCOpenConnectionEnabled     = true;
-					$scope.isMajorCountersEnabled         = true;
-					$scope.isMaprCldbMetricsEnabled       = true;
-					$scope.isMaprResourceManagerEnabled   = true;
+					 localStorage.setItem('clusterName', clusterName);
 				}
 
 				$scope.clusterName = clusterName;
+				var browserConf = JSON.parse(localStorage.getItem($scope.localDataID));
+				var isClusterSettingsExists = true;
+				if ( browserConf == null || browserConf == undefined ) {
+					browserConf = {};
+					browserConf[$scope.clusterName] = getDefaultLocalStorageJson();
+					localStorage.setItem($scope.localDataID, JSON.stringify(browserConf));
+					isClusterSettingsExists = false;
+				} else if ( browserConf!= null && (browserConf[$scope.clusterName] == null)) {
+					browserConf[$scope.clusterName] = getDefaultLocalStorageJson();
+					localStorage.setItem($scope.localDataID, JSON.stringify(browserConf));
+					isClusterSettingsExists = false;
+				}
 
-				ClusterResultFactoryNew
-					.isInfluxdbLive
-					.get({ "clusterName": $scope.clusterName })
-					.$promise
-					.then(function(result) {
-						$scope.isInfluxdbLive = result.isAlive;
-					},
-					function(e) {
-						console.log('Unable to check whether influxdb is alive or not', e);
-					});
+				extractWidgetSettingsFromLocalhost();
 
 				ClusterResultFactoryNew
 					.initClusterFac
 					.post({ "clusterName": $scope.clusterName })
 					.$promise
 					.then(function(result) {
-						copyHistoryFile();
-						getDataCentersDataPreview();
-						getQueueData();
-						getRackAwareData();
-						getLiveContainerData();
-						getEffCapUtilizationData();
-						updateHighResourceUsageApps();
-						getDataLoadData();
-						getDataLoadDataDetails();
-						getCategoryData();
+						setTimeout(function() {
+						updateAlerts();
+						setTimeout(function() {
+						setTimeout(function() {
 						updateClusterwideMajorCounters();
 						updateMaprCldbMetrics();
-						updateAlerts();
-						updateRecommendations();
-						updateHighResourceUsageApps();
+						setTimeout(function() {
+						getDataLoadData();
+						getDataLoadDataDetails();
+						setTimeout(function() {
+						getDataCentersDataPreview();
+						setTimeout(function() {
+						getQueueData();
+						setTimeout(function(){
+						detectSchedulerType(isClusterSettingsExists);
+						setTimeout(function() {
+						getAvgWaitingTimeData();
+						setTimeout(function() {
+						getLiveContainerData();
+						setTimeout(function() {
+						getEffCapUtilizationData();
+						$scope.loadMoreJobsCapacityUtilization();
+						setTimeout(function() {
 						updateLongRunningApps();
-						getChargeBackModelData();
-					});
+						setTimeout(function() {
+						updateHighResourceUsageApps();
+						setTimeout(function() {
+						setTimeout(function() {
+						getCategoryData();
+						setTimeout(function() {
+						setIntervals();
+						setOtherIntervals();
+						}, 2000);
+						}, 2000);
+						}, 2000);
+						}, 2000);
+						}, 2000);
+						}, 2000);
+						}, 2000);
+						}, 2000);
+						}, 2000);
+						}, 2000);
+						}, 2000);
+						}, 2000);
+						}, 2000);
+						}, 2000);
+						}, 2000);
 
+					//	copyHistoryFile();
+
+					});
+			//	$scope.addTab('All Nodes');
+
+				ClusterResultFactoryNew
+					.backgroundProcesses
+					.get({ "clusterName": $scope.clusterName })
+					.$promise
+					.then(function(data) {
+						backgroundProcesses.SYSTEM_METRICS         = data.SYSTEM_METRICS;
+						backgroundProcesses.QUEUE_UTILIZATION = data.QUEUE_UTILIZATION;
+					}, function(error) {
+						console.log('Unable to get background processes details of cluster', error);
+					}).finally(function() {
+
+					});
+			};
+
+			function detectSchedulerType(isClusterSettingsExists) {
 				/* For Metered Queue Usage */
+				var isClusterSettingsExists = isClusterSettingsExists;
 				ClusterResultFactoryNew
 					.schedulerType
 					.get({ "clusterName": $scope.clusterName })
@@ -674,55 +624,309 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 
 						$scope.isFairScheduler = response.isFairScheduler;
 						$scope.isDrf = response.isDrf;
+						var browserConf = JSON.parse(localStorage.getItem($scope.localDataID));
+						var clusterSettings = browserConf[$scope.clusterName];
 
-						if ($scope.isFairScheduler) {
-							$scope.mquOptions.stat = "usedResourcesMemoryPercent";
+						if (!isClusterSettingsExists) {
+							if ($scope.isFairScheduler) {
+								$scope.mquOptions.stat = "usedResourcesMemoryPercent";
+							} else {
+								$scope.mquOptions.stat = "usedResourcesMemoryPercentC";
+							}
+							clusterSettings['mquOptions']['stat'] = $scope.mquOptions.stat;
+							localStorage.setItem($scope.localDataID, JSON.stringify(browserConf));
 						} else {
-							$scope.mquOptions.stat = "currentCapacity";
+							$scope.mquOptions.stat = clusterSettings['mquOptions']['stat'];
 						}
+
 
 					}, function(error) {
 						console.log("Error while getting scheduler type, assuming capacity scheduler");
 						$scope.isFairScheduler = false;
 						$scope.isDrf = false;
-						$scope.mquOptions.stat = "currentCapacity";
+						$scope.mquOptions.stat = "usedResourcesMemory";
 					}).finally(function() {
 						getMeteredQueueData();
 						updateQueueUtilizationSummaryData();
 					});
+			}
 
-				$scope.addTab('All Nodes');
+			function getDefaultLocalStorageJson () {
+				var clusterSettings = {};
+				clusterSettings["sections"] = {
+					"isClusterSectionEnabled":true,
+					"isHdfsSectionEnabled":true,
+					"isUserMeteringSectionEnabled":true,
+					"isYarnContainersSectionEnabled":true,
+					"isYarnQueuesSectionEnabled" :true,
 
-				ClusterResultFactoryNew
-					.backgroundProcesses
-					.get({ "clusterName": $scope.clusterName })
-					.$promise
-					.then(function(data) {
-						backgroundProcesses.SYSTEM_METRICS         = data.SYSTEM_METRICS;
-						backgroundProcesses.QUEUE_UTILIZATION      = data.QUEUE_UTILIZATION;
-						if (backgroundProcesses.SYSTEM_METRICS) {
-							hsmbpFirstTime = true;
-							$scope.addTab('All Nodes', false);
-							getHadoopMetricsOpenedStatNamesFromServer();
-						} else {
-							addStatToTab('All Nodes', 'systemStats', 'cpu', 'CpuUsage');
-						}
-					}, function(error) {
-						console.log('Unable to get background processes details of cluster', e);
-					}).finally(function() {
+					"isChartsEnabled":false,
+					"isCopyHistoryFileEnabled":true,
+					"isDataCenterEnabled":true,
+					"isDataLoadEnabled":true,
+					"isEffCapUtilizationEnabled":true,
 
-					});
+					"isHruaEnabled":true,
+					"isLiveContainerEnabled":true,
+					"isLraEnabled" :true,
 
-				setIntervals();
+					"isMeteredQueueEnabled" :true,
+					"isQueueDataEnabled" :true,
+					"isQuSummaryEnabled" :true,
+					"isRackAwareEnabled":false,
+					"isRunningAppsEnabled":true,
+					"isUpdateAlertsEnabled" :true,
 
-			};
-			
-			$scope.manageCluster = function (clus) {
-			   var obj = {"clusterName":clus,"tabName":"acTab"};
-			   $scope.acTab = true;
-			   common.setChargeBackConf(obj);
-			   common.setAcTabDetail($scope.acTab)
-			   $location.path('/manage-cluster');
+					"isHeapUsageEnabled" :true,
+					"isRPCOpenConnectionEnabled":true,
+					"isMajorCountersEnabled":true,
+					"isMaprCldbMetricsEnabled":true,
+					"isMaprResourceManagerEnabled":true
+				};
+				clusterSettings["hrua"] = {
+					"memorythresholdMB" : 2000,
+					"vcoresThreshold"   : 4
+				};
+				clusterSettings["utilizationMetering"] = {
+					"month"     		  : 'current',
+					"rangeFrom"         : '',
+					"rangeTo"           : ''
+				};
+				clusterSettings["mquOptions"] = {
+					"duration"          : '1d',
+					"rangeFrom"         : '',
+					"rangeTo"           : ''
+				};
+				clusterSettings["qusOptions"] = {
+					graphType : 'Relative'
+				};
+				/* Job History Options */
+				clusterSettings["jhOptions"] = {
+					"intervalMode"      : 'Duration',
+					"durationTextValue" : '24',
+					"durationUnit"      : 'd',
+					"rangeFrom"         : '',
+					"rangeTo"           : ''
+				};
+				/* Relative Queue Utilization by Users Options */
+				clusterSettings["quOptions"] = {
+					"intervalMode"      : 'Duration',
+					"durationTextValue" : '30',
+					"durationUnit"      : 'd',
+					"rangeFrom"         : '',
+					"stat"              : 'usedMemory',
+					"rangeTo"           : ''
+				};
+				clusterSettings["thresholdMinutes"] = 30;
+				clusterSettings["refreshIntervalsTemp"] = defaultRefreshIntervals;
+
+				$scope.dc = {};
+				$scope.dc.cpuOperatorBad = "GREATER_THAN_OP";
+				$scope.dc.cpuValueBad = 75;
+				$scope.dc.cpuOperatorGood = "LESS_THAN_OP";
+				$scope.dc.cpuValueGood = 25;
+				$scope.dc.memOperatorBad = "GREATER_THAN_OP";
+				$scope.dc.memValueBad = 80;
+				$scope.dc.memOperatorGood = "LESS_THAN_OP";
+				$scope.dc.memValueGood = 50;
+
+				$scope.requestDataForDC = { "color": [{ "bad": { "operator": $scope.dc.cpuOperatorBad, "val": $scope.dc.cpuValueBad }, "good": { "operator": $scope.dc.cpuOperatorGood, "val": $scope.dc.cpuValueGood }, "category": "systemStats.cpu", "stat": "CpuUsage" }, { "bad": { "operator": $scope.dc.memOperatorBad, "val": $scope.dc.memValueBad }, "good": { "operator": $scope.dc.memOperatorGood, "val": $scope.dc.memValueGood }, "category": "systemStats.memory", "stat": "UsedMemory" }] };
+				clusterSettings["dataCenterOptions"] = $scope.requestDataForDC;
+
+					return clusterSettings;
+			}
+
+			function extractWidgetSettingsFromLocalhost () {
+				var clusterSettings = JSON.parse(localStorage.getItem($scope.localDataID))[$scope.clusterName];
+				$scope.hruaOptions = clusterSettings['hrua'];
+				$scope.thresholdMinutesCopied = clusterSettings["thresholdMinutes"];
+				var sections = clusterSettings['sections'];
+				$scope.isClusterSectionEnabled        = sections['isClusterSectionEnabled'];
+				$scope.isHdfsSectionEnabled           = sections['isHdfsSectionEnabled'];
+				$scope.isUserMeteringSectionEnabled   = sections['isUserMeteringSectionEnabled'];
+				$scope.isYarnContainersSectionEnabled = sections['isYarnContainersSectionEnabled'];
+				$scope.isYarnQueuesSectionEnabled     = sections['isYarnQueuesSectionEnabled'];
+
+				$scope.isChartsEnabled                = sections['isChartsEnabled'];
+				$scope.isCopyHistoryFileEnabled       = sections['isCopyHistoryFileEnabled'];
+				$scope.isDataCenterEnabled            = sections['isDataCenterEnabled'];
+				$scope.isDataLoadEnabled              = sections['isDataLoadEnabled'];
+				$scope.isEffCapUtilizationEnabled     = sections['isEffCapUtilizationEnabled'];
+
+				$scope.isHruaEnabled                  = sections['isHruaEnabled'];
+				$scope.isLiveContainerEnabled         = sections['isLiveContainerEnabled'];
+				$scope.isLraEnabled                   = sections['isLraEnabled'];
+
+				$scope.isMeteredQueueEnabled          = sections['isMeteredQueueEnabled'];
+				$scope.isQueueDataEnabled             = sections['isQueueDataEnabled'];
+				$scope.isQuSummaryEnabled             = sections['isQuSummaryEnabled'];
+				$scope.isRackAwareEnabled             = sections['isRackAwareEnabled'];
+				$scope.isRunningAppsEnabled           = sections['isRunningAppsEnabled'];
+				$scope.isUpdateAlertsEnabled          = sections['isUpdateAlertsEnabled'];
+
+				$scope.isHeapUsageEnabled             = sections['isHeapUsageEnabled'];
+				$scope.isRPCOpenConnectionEnabled     = sections['isRPCOpenConnectionEnabled'];
+				$scope.isMajorCountersEnabled         = sections['isMajorCountersEnabled'];
+				$scope.isMaprCldbMetricsEnabled       = sections['isMaprCldbMetricsEnabled'];
+				$scope.isMaprResourceManagerEnabled   = sections['isMaprResourceManagerEnabled'];
+				$scope.mquOptions = clusterSettings['mquOptions'];
+				$scope.jhOptions = clusterSettings['jhOptions'];
+				$scope.quOptions = clusterSettings['quOptions'];
+				$scope.qusOptions = clusterSettings['qusOptions'];
+				$scope.refreshIntervalsTemp = clusterSettings['refreshIntervalsTemp'];
+				$scope.refreshIntervals = angular.copy($scope.refreshIntervalsTemp);
+
+				$scope.dc.cpuOperatorBad = clusterSettings['dataCenterOptions'].color[0]['bad']['operator'];
+				$scope.dc.cpuValueBad = clusterSettings['dataCenterOptions'].color[0]['bad']['val'];
+				$scope.dc.cpuOperatorGood = clusterSettings['dataCenterOptions'].color[0]['good']['operator'];
+				$scope.dc.cpuValueGood = clusterSettings['dataCenterOptions'].color[0]['good']['val'];
+				$scope.dc.memOperatorBad = clusterSettings['dataCenterOptions'].color[1]['bad']['operator'];
+				$scope.dc.memValueBad =clusterSettings['dataCenterOptions'].color[1]['bad']['val'];
+				$scope.dc.memOperatorGood = clusterSettings['dataCenterOptions'].color[1]['good']['operator'];
+				$scope.dc.memValueGood = clusterSettings['dataCenterOptions'].color[1]['good']['val'];
+
+				$scope.requestDataForDC = { "color": [{ "bad": { "operator": $scope.dc.cpuOperatorBad, "val": $scope.dc.cpuValueBad }, "good": { "operator": $scope.dc.cpuOperatorGood, "val": $scope.dc.cpuValueGood }, "category": "systemStats.cpu", "stat": "CpuUsage" }, { "bad": { "operator": $scope.dc.memOperatorBad, "val": $scope.dc.memValueBad }, "good": { "operator": $scope.dc.memOperatorGood, "val": $scope.dc.memValueGood }, "category": "systemStats.memory", "stat": "UsedMemory" }] };
+				updateMquSettingsLabel();
+				updateJobHistorySettingsLabel();
+				updateRelativeQueueSettingsLabel();
+				$scope.thresholdMinutes = $scope.thresholdMinutesCopied;
+			}
+			$scope.showHRUSearchBox = function () {
+				$scope.showHRUSearch = true;
+			}
+			$scope.showLRASearchBox = function () {
+				$scope.showLRASearch = true;
+			}
+			$scope.resetWidgetSettings = function () {
+				var browserConf = JSON.parse(localStorage.getItem($scope.localDataID));
+				browserConf[$scope.clusterName] = getDefaultLocalStorageJson();
+				if ($scope.isFairScheduler) {
+					browserConf[$scope.clusterName]['mquOptions']['stat'] = "usedResourcesMemoryPercent";
+				} else {
+					browserConf[$scope.clusterName]['mquOptions']['stat'] = "usedResourcesMemoryPercentC";
+				}
+				localStorage.setItem($scope.localDataID, JSON.stringify(browserConf));
+				extractWidgetSettingsFromLocalhost();
+			}
+			$scope.DurationUnit = {"6h":"6 Hours", "1d":"24 Hours","7d":"7 Days","30d":"30 Days"};
+
+			$scope.formatDate = function (date) {
+				var d = new Date(date),
+					month = d.getMonth(),
+					day = '' + d.getDate(),
+					year = d.getFullYear();
+					var monthNames = [
+						"Jan", "Feb", "Mar",
+						"Apr", "May", "Jun", "Jul",
+						"Aug", "Sep", "Oct",
+						"Nov", "Dec"
+					];
+				if (month.length < 2) month = '0' + month;
+				if (day.length < 2) day = '0' + day;
+				return day + ' ' + monthNames[month] + ' ' + year;
+			}
+
+			function getCurrentDateInCalenderFormat() {
+				var today = new Date();
+				var dd = today.getDate();
+				var mm = today.getMonth()+1; //January is 0!
+
+				var yyyy = today.getFullYear();
+				if(dd<10){
+					dd='0'+dd;
+				}
+				if(mm<10){
+					mm='0'+mm;
+				}
+				var today = yyyy+'/'+mm+'/'+dd + ' ' + today.getHours() + ':' + today.getMinutes();
+				return today;
+			}
+
+			function updateMquSettingsLabel() {
+				if ($scope.mquOptions.duration != 'custom') {
+					$scope.mquSettingsLabel = 'Last ' + $scope.DurationUnit[$scope.mquOptions.duration];
+				} else {
+					var temp;
+					if (!$scope.mquOptions.rangeTo) {
+						$scope.mquOptions.rangeTo = getCurrentDateInCalenderFormat();
+					}
+					temp = $scope.formatDate($scope.mquOptions.rangeTo);
+					$scope.mquSettingsLabel = $scope.formatDate($scope.mquOptions.rangeFrom) + ' - ' + temp;
+				}
+			}
+			$scope.scrollTo = function(id) {
+				$location.hash(id);
+				$anchorScroll();
+			}
+			$scope.getCurrentMonth = function (date) {
+				var monthNames = ['January', 'February', 'March',
+               'April', 'May', 'June', 'July',
+               'August', 'September', 'October', 'November', 'December'];
+					var d = new Date(),year = d.getFullYear();
+					if ( date == 'current') {
+						var month = d.getMonth();
+					} else if ( date == 'previous') {
+						var month = d.getMonth() - 1;
+					}
+				return monthNames[month] + ' ' + year;
+			}
+			$scope.durationUnit = {"d":"Days","m":"Minutes","h":"Hours"};
+			$scope.relativeQueueSettingsLabel = 'Last ' + $scope.quOptions.durationTextValue + ' ' + $scope.durationUnit[$scope.quOptions.durationUnit];
+			function updateRelativeQueueSettingsLabel() {
+				if ($scope.quOptions.intervalMode == 'Duration') {
+					$scope.relativeQueueSettingsLabel = 'Last ' + $scope.quOptions.durationTextValue + ' ' + $scope.durationUnit[$scope.quOptions.durationUnit];
+				} else {
+					if (!$scope.quOptions.rangeTo) {
+						$scope.quOptions.rangeTo = getCurrentDateInCalenderFormat();
+					}
+					$scope.relativeQueueSettingsLabel = $scope.formatDate($scope.quOptions.rangeFrom) + ' - ' + $scope.formatDate($scope.quOptions.rangeTo);
+				}
+			}
+
+			$scope.getSchedulerType = function() {
+				return $scope.isFairScheduler ? 'Fair Scheduler' : 'Capacity Scheduler';
+			}
+
+			$scope.JobHistorySettingsLabel = 'Last ' + $scope.jhOptions.durationTextValue + ' ' + $scope.durationUnit[$scope.jhOptions.durationUnit];
+			function updateJobHistorySettingsLabel() {
+				if ($scope.jhOptions.intervalMode == 'Duration') {
+					$scope.JobHistorySettingsLabel = 'Last ' + $scope.jhOptions.durationTextValue + ' ' + $scope.durationUnit[$scope.jhOptions.durationUnit];
+				} else {
+					if (!$scope.jhOptions.rangeTo) {
+						$scope.jhOptions.rangeTo = getCurrentDateInCalenderFormat();
+					}
+					$scope.JobHistorySettingsLabel = $scope.formatDate($scope.jhOptions.rangeFrom) + ' - ' + $scope.formatDate($scope.jhOptions.rangeTo);
+				}
+			}
+			function removeLocalStorageVariables() {
+				localStorage.removeItem('isClusterSectionEnabled');
+				localStorage.removeItem('isHdfsSectionEnabled');
+				localStorage.removeItem('isUserMeteringSectionEnabled');
+				localStorage.removeItem('isYarnContainersSectionEnabled');
+				localStorage.removeItem('isYarnQueuesSectionEnabled');
+
+				localStorage.removeItem('isChartsEnabled');
+				localStorage.removeItem('isCopyHistoryFileEnabled');
+				localStorage.removeItem('isDataCenterEnabled');
+				localStorage.removeItem('isDataLoadEnabled');
+				localStorage.removeItem('isEffCapUtilizationEnabled');
+
+				localStorage.removeItem('isHruaEnabled');
+				localStorage.removeItem('isLiveContainerEnabled');
+				localStorage.removeItem('isLraEnabled');
+
+				localStorage.removeItem('isMeteredQueueEnabled');
+				localStorage.removeItem('isQueueDataEnabled');
+				localStorage.removeItem('isQuSummaryEnabled');
+				localStorage.removeItem('isRackAwareEnabled');
+				localStorage.removeItem('isRunningAppsEnabled');
+				localStorage.removeItem('isUpdateAlertsEnabled');
+
+				localStorage.removeItem('isHeapUsageEnabled');
+				localStorage.removeItem('isRPCOpenConnectionEnabled');
+				localStorage.removeItem('isMajorCountersEnabled');
+				localStorage.removeItem('isMaprCldbMetricsEnabled');
+				localStorage.removeItem('isMaprResourceManagerEnabled');
 			}
 
 			function updateSectionsAndWidgetsValues() {
@@ -741,7 +945,6 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 				$scope.isHruaEnabled                  = getWidgetValue('isHruaEnabled');
 				$scope.isLiveContainerEnabled         = getWidgetValue('isLiveContainerEnabled');
 				$scope.isLraEnabled                   = getWidgetValue('isLraEnabled');
-				$scope.isChargeBackEnabled            = getWidgetValue('isChargeBackEnabled');
 
 				$scope.isMeteredQueueEnabled          = getWidgetValue('isMeteredQueueEnabled');
 				$scope.isQueueDataEnabled             = getWidgetValue('isQueueDataEnabled');
@@ -749,7 +952,6 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 				$scope.isRackAwareEnabled             = getWidgetValue1('isRackAwareEnabled');
 				$scope.isRunningAppsEnabled           = getWidgetValue('isRunningAppsEnabled');
 				$scope.isUpdateAlertsEnabled          = getWidgetValue('isUpdateAlertsEnabled');
-				$scope.isUpdateRecommendationsEnabled = getWidgetValue('isUpdateRecommendationsEnabled');
 
 				$scope.isHeapUsageEnabled             = getWidgetValue('isHeapUsageEnabled');
 				$scope.isRPCOpenConnectionEnabled     = getWidgetValue('isRPCOpenConnectionEnabled');
@@ -789,7 +991,11 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 			}
 
 			$scope.saveToLocalStorage = function(variableName) {
-				localStorage.setItem(variableName, $scope[variableName]);
+				var browserConf = JSON.parse(localStorage.getItem($scope.localDataID));
+				var sections = browserConf[$scope.clusterName]['sections'];
+			//	localStorage.setItem(variableName, $scope[variableName]);
+				sections[variableName] = $scope[variableName];
+				localStorage.setItem($scope.localDataID, JSON.stringify(browserConf));
 			}
 
 			/**  */
@@ -799,8 +1005,12 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 					return;
 				}
 				isUpdateAlertsPending = true;
-				ClusterResultFactoryNew.getAlerts.get({}, { clusterName: $scope.clusterName }).$promise.then(function(newAlerts) {
-
+				ClusterResultFactoryNew.getAlerts.get({
+					clusterName: $scope.clusterName,
+					lastCheckpoint: alertsLastCheckpoint
+				}).$promise.then(function (response) {
+					var newAlerts = response.alerts;
+					alertsLastCheckpoint = response.lastCheckpoint;
 					/* Parsing incoming json and setting isNew key to true */
 					for (var i = 0; i < newAlerts.length; i++) {
 						newAlerts[i]['isNew'] = true;
@@ -820,6 +1030,10 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 					 * Step 1 & Step 2 Combined
 					 */
 					for (i = existingAlerts.length - 1; i >= 0; i--) {
+
+						if (existingAlerts[i].skipOccuringSince) {
+							continue;
+						}
 
 						existingLevel = existingAlerts[i].level;
 						nodeIP = existingAlerts[i].nodeIP;
@@ -862,19 +1076,6 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 					if (newAlerts.length > 0) {
 						showInstantAlertMessage(newAlerts[0].message);
 					}
-
-					/*
-					var iBell = document.querySelector(".fa-bell-o");
-					if ($scope.allAlerts.length > 0) {
-						iBell.title = "There are some problems in cluster"
-						iBell.style.color = "#d9534f";
-					} else {
-						iBell.title = "No problem in cluster";
-						iBell.style.color = "";
-					}
-					*/
-
-
 					for (i = 0; i < $scope.allAlerts.length; i++) {
 						if ($scope.allAlerts[i].jobId != null) {
 							addErrorInEffCapacityUtilizationDetail($scope.allAlerts[i].jobId, $scope.allAlerts[i].message);
@@ -893,12 +1094,6 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 
 					$scope.alertCounter = alertCounterTemp;
 
-					//$scope.createAlertGrid($scope.allAlerts)
-				/*	if ($scope.$root.$$phase != '$apply' && $scope.$root.$$phase != '$digest') {
-						$scope.$apply();
-					}
-				*/	//End : create single array from all array
-
 				}).finally(function() {
 					isUpdateAlertsPending = false;
 
@@ -911,7 +1106,7 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 				$scope.IsVisible = true;
 				$timeout(function() {
 					$scope.IsVisible = false;
-				}, 5000);
+				}, 10000);
 			}
 
 			$scope.showAlertData = function() {
@@ -921,14 +1116,6 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 					$scope.allAlerts[i].isNew = false;
 				}
 				//$scope.showAlertTable = true;
-			};
-
-			$scope.showRecommendations = function() {
-				$("#recommendationModal").modal('show');
-				$scope.recommendationCounter = 0;
-				for (var i = 0; i < $scope.allRecommendations.length; i++) {
-					$scope.allRecommendations[i].isNew = false;
-				}
 			};
 
 			function writeQueueUserDataIntoDataBase() {
@@ -942,77 +1129,6 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 					.then(function(response) {
 					}).finally(function() {
 					});
-			}
-
-			function updateRecommendations() {
-				if (isUpdateRecommendationsPending || !$scope.isUpdateRecommendationsEnabled) {
-					return;
-				}
-				isUpdateRecommendationsPending = true;
-
-				ClusterResultFactoryNew
-				.getRecommendations
-				.get({}, { clusterName: $scope.clusterName })
-				.$promise
-				.then(function(newRecommendations) {
-
-					for (var j = 0; j < newRecommendations.length; j++) {
-						newRecommendations['isNew'] = true;
-					}
-
-					/* Algorithm to not repeat recommendations again and again :
-					 * Step 1 : Remove objects from existingRecommendations that are not in newRecommendations
-					 * Step 2 : Remove objects from newRecommendations that are in existingRecommendations
-					 * Step 3 : Append newRecommendations to existingRecommendations
-					 ie. take a union of all new and old(existing) recommendations.
-					 * Print existingRecommendations
-					 */
-					var existingRecommendations = angular.copy($scope.allRecommendations);
-
-					/*
-					 * Step 1 & Step 2 Combined
-					 */
-					for (var i = 0; i < existingRecommendations.length; i++) {
-						var rowFound = false;
-						for (var j = 0; j < newRecommendations.length; j++) {
-							if (areRecommendationsSame(newRecommendations[j], existingRecommendations[i])) {
-								newRecommendations.splice(j, 1);
-								rowFound = true;
-								break;
-							}
-						}
-						if (!rowFound) {
-							existingRecommendations.splice(i, 1);
-						}
-					}
-
-					/*
-					 * Step 3
-					 */
-					$scope.allRecommendations = existingRecommendations.concat(newRecommendations);
-
-					/*
-					 * To show the counter
-					 */
-					$scope.recommendationCounter = 0;
-					for (i = 0; i < $scope.allRecommendations.length; i++) {
-						if ($scope.allRecommendations[i].isNew == null || $scope.allRecommendations[i].isNew == true) {
-							$scope.recommendationCounter++;
-						}
-					}
-
-				}).finally(function() {
-					isUpdateRecommendationsPending = false;
-				});
-			}
-
-			function areRecommendationsSame(newR, oldR) {
-				if (newR['hostName'] == oldR['hostName']
-					&& newR['recommendation'] == oldR['recommendation']) {
-					return true;
-				} else {
-					return false;
-				}
 			}
 
 			$scope.persistHruaOptionsIntoTemp = function() {
@@ -1030,43 +1146,72 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 				}
 
 				$scope.hruaOptions = angular.copy($scope.hruaOptionsTemp);
+
+				var browserConf = JSON.parse(localStorage.getItem($scope.localDataID));
+				browserConf[$scope.clusterName]["hrua"] = $scope.hruaOptions;
+				localStorage.setItem($scope.localDataID, JSON.stringify(browserConf));
+
 				updateHighResourceUsageApps();
 			}
 			$scope.persistMquDataIntoTemp = function() {
 				$scope.mquOptionsTemp = angular.copy($scope.mquOptions);
 			}
 			$scope.saveMquOptions = function() {
+				$scope.mquLoader = true;
 				$scope.mquOptions = angular.copy($scope.mquOptionsTemp);
+				var browserConf = JSON.parse(localStorage.getItem($scope.localDataID));
+				browserConf[$scope.clusterName]["mquOptions"] = $scope.mquOptions;
+				localStorage.setItem($scope.localDataID, JSON.stringify(browserConf));
+				updateMquSettingsLabel();
 				getMeteredQueueData();
 			}
-			$scope.persistChargeBackDataIntoTemp = function() {
-				$scope.chargeBackOptionsTemp = angular.copy($scope.chargeBackOptions);
+			$scope.persistQusDataIntoTemp = function() {
+				$scope.qusOptionsTemp = angular.copy($scope.qusOptions);
 			}
-			$scope.saveChargeBackOptions = function() {
-				$scope.showChargeBackLoader  = true;
-				$scope.chargeBackOptions = angular.copy($scope.chargeBackOptionsTemp);
-				getChargeBackModelData();
+			$scope.saveQusOptions = function() {
+				$scope.queueUtilizationSummary.loader = true;
+				$scope.qusOptions = angular.copy($scope.qusOptionsTemp);
+				var browserConf = JSON.parse(localStorage.getItem($scope.localDataID));
+				browserConf[$scope.clusterName]["qusOptions"] = $scope.qusOptions;
+				localStorage.setItem($scope.localDataID, JSON.stringify(browserConf));
+				updateQueueUtilizationSummaryData();
 			}
+
 			$scope.persistJHDataIntoTemp = function() {
 				$scope.jhOptionsTemp = $scope.jhOptions;
 			}
 			$scope.saveJHOptions = function() {
 				$scope.jhOptions = $scope.jhOptionsTemp;
+				var browserConf = JSON.parse(localStorage.getItem($scope.localDataID));
+				browserConf[$scope.clusterName]["jhOptions"] = $scope.jhOptions;
+				localStorage.setItem($scope.localDataID, JSON.stringify(browserConf));
 				$scope.updateJobhistoryGraph();
+				updateJobHistorySettingsLabel();
 			}
 			$scope.persistQUDataIntoTemp = function() {
 				$scope.quOptionsTemp = $scope.quOptions;
 			}
 			$scope.saveQUOptions = function() {
 				$scope.quOptions = $scope.quOptionsTemp;
+				var browserConf = JSON.parse(localStorage.getItem($scope.localDataID));
+				browserConf[$scope.clusterName]["quOptions"] = $scope.quOptions;
+				localStorage.setItem($scope.localDataID, JSON.stringify(browserConf));
 				$scope.updateQUGraph();
+				updateRelativeQueueSettingsLabel();
 			}
 
 			$scope.hruaFilter = function(appDetail) {
-				if (appDetail.usedVcores > $scope.hruaOptions.vcoresThreshold) {
-				return true;
+				if (appDetail.usedVcores > $scope.hruaOptions.vcoresThreshold
+					|| appDetail.usedMemory > $scope.hruaOptions.memorythresholdMB) {
+						if ( appDetail.applicationID.includes($scope.hruaSearch) ) {
+							return true;
+						}
 				}
-				if (appDetail.usedMemory > $scope.hruaOptions.memorythresholdMB) {
+				return false;
+			}
+
+			$scope.lraFilter = function(appDetail) {
+				if ( appDetail.applicationID.includes($scope.lraSearch) ) {
 					return true;
 				}
 				return false;
@@ -1133,31 +1278,12 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 			$scope.textForFilterNodesButton = { buttonDefaultText: 'Filter Nodes' };
 			$scope.dropdownExtraSettings    = { dynamicTitle: false }
 
-			/** Function updates major counters of cluster */
-			function updateClusterwideMajorCounters() {
-
-				if ($scope.isMapr) {
-					return;
-				}
-				if (!$scope.isHdfsSectionEnabled && !$scope.isClusterSectionEnabled ) {
-					return;
-				}
-				if ((!$scope.isHdfsSectionEnabled || !$scope.isMajorCountersEnabled)
-					&& ( !$scope.isClusterSectionEnabled || (!$scope.isHeapUsageEnabled
-								&& !$scope.isRPCOpenConnectionEnabled))) {
-						return;
-					}
-
-				isMajorCountersPending = true;
-
-				ClusterResultFactoryNew
-					.clusterwideMajorCounters
-					.get({ "clusterName": $scope.clusterName })
-					.$promise.then(function(majorCounters) {
-						$scope.metadataInformationErrorMessage = false;
-						if ($scope.isHdfsSectionEnabled && $scope.isMajorCountersEnabled) {
-							$scope.dfsRemaining          = majorCounters.dfsRemaining;
-							$scope.dfsUsed               = majorCounters.dfsUsed;
+			/** After receiving the response [ for major counters]
+			 * from server it updates the variables related to major counters */
+			function updateCWMC(majorCounters) {
+				if ($scope.isHdfsSectionEnabled && $scope.isMajorCountersEnabled) {
+							$scope.dfsRemaining          = getParsedMajorCounterUnit(majorCounters.dfsRemaining);
+							$scope.dfsUsed               = getParsedMajorCounterUnit(majorCounters.dfsUsed);
 							$scope.underReplicatedBlocks = majorCounters.underReplicatedBlocks;
 							$scope.lastCheckpointTime    = majorCounters.lastCheckpointTime;
 							$scope.corruptedBlocks       = majorCounters.corruptedBlocks;
@@ -1177,13 +1303,111 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 								$scope.nameNodeRpcActivityNumOpenConnections = majorCounters.nameNodeRpcActivityNumOpenConnections;
 							}
 						}
-					}, function(error) {
-						if (!cwmcErrorFirstTime) {
-							cwmcErrorFirstTime = true;
-							$scope.metadataInformationErrorMessage = false;
-							updateClusterwideMajorCounters();
-						}
-						$scope.metadataInformationErrorMessage = true;
+			}
+
+			function getParsedMajorCounterUnit(sValueInGB) {
+				if (!sValueInGB) {
+					return { 'value': 0, 'unit': 'GB' };
+				}
+				if (sValueInGB.indexOf('.') == -1) {
+					sValueInGB = sValueInGB + '.0';
+				}
+
+				var totalGB = parseFloat(sValueInGB);
+
+				var output = '';
+				var unit;
+
+				if (totalGB > 1048576) {
+					output = (totalGB / 1048576).toFixed(2);
+					unit = 'PB';
+				} else if (totalGB > 1024) {
+					output = (totalGB / 1024).toFixed(2);
+					unit = 'TB';
+				} else {
+					output = totalGB.toFixed(2);
+					unit = 'GB';
+				}
+
+				var beforeDot = parseInt(output.substring(0, output.length - 3));
+				var afterDot = parseInt(output.substring(output.length - 2));
+
+				if (beforeDot >= 100) {
+					if (afterDot > 70) {
+						beforeDot++;
+					}
+					return { 'value': beforeDot, 'unit': unit };
+				} else if (beforeDot >= 10) {
+					if (afterDot % 10 > 7) {
+						afterDot += 10;
+					}
+					afterDot = afterDot / 10;
+
+					if (afterDot > 0) {
+						return { 'value': beforeDot + '.' + afterDot, 'unit': unit };
+					} else {
+						return { 'value': beforeDot, 'unit': unit };
+					}
+				} else {
+					if (afterDot == 0) {
+						output = output.substring(0, output.length - 3);
+					} else if (afterDot % 10 == 0) {
+						output = output.substring(0, output.length - 1);
+					}
+					return { 'value': output, 'unit': unit };
+				}
+			}
+
+			/** Function updates major counters of cluster */
+			function updateClusterwideMajorCounters() {
+
+				if ($scope.isMapr) {
+					return;
+				}
+				if (!$scope.isHdfsSectionEnabled && !$scope.isClusterSectionEnabled ) {
+					return;
+				}
+				if ((!$scope.isHdfsSectionEnabled || !$scope.isMajorCountersEnabled)
+					&& ( !$scope.isClusterSectionEnabled || (!$scope.isHeapUsageEnabled
+								&& !$scope.isRPCOpenConnectionEnabled))) {
+						return;
+					}
+
+				isMajorCountersPending = true;
+
+				// First attempt
+				ClusterResultFactoryNew
+					.clusterwideMajorCounters
+					.get({ "clusterName": $scope.clusterName })
+					.$promise.then(function(majorCounters) {
+						$scope.metadataInformationErrorMessage = false;
+						updateCWMC(majorCounters);
+					}, function (error) {
+
+						setTimeout(function () {
+							// Second Attempt
+							ClusterResultFactoryNew
+								.clusterwideMajorCounters
+								.get({ "clusterName": $scope.clusterName })
+								.$promise.then(function(majorCounters) {
+									$scope.metadataInformationErrorMessage = false;
+									updateCWMC(majorCounters);
+								}, function (error) {
+									setTimeout(function () {
+									// Third Attempt
+										ClusterResultFactoryNew
+											.clusterwideMajorCounters
+											.get({ "clusterName": $scope.clusterName })
+											.$promise.then(function(majorCounters) {
+												$scope.metadataInformationErrorMessage = false;
+												updateCWMC(majorCounters);
+											}, function(error) {
+												$scope.metadataInformationErrorMessage = true;
+											});
+									}, 7000);
+								});
+
+						}, 7000);
 					}).finally(function() {
 						isMajorCountersPending = false;
 						$scope.majorCountersLoader = false;
@@ -1201,8 +1425,8 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 					.get({ "clusterName": $scope.clusterName })
 					.$promise.then(function(counters) {
 						if ($scope.isMaprCldbMetricsEnabled && counters.cldbMetricsEnabled == "true") {
-							$scope.clusterDiskSpaceAvailableGBCounter        = counters.clusterDiskSpaceAvailableGB;
-							$scope.clusterDiskSpaceUsedGBCounter             = counters.clusterDiskSpaceUsedGB;
+							$scope.clusterDiskSpaceAvailableGBCounter        = getParsedMajorCounterUnit(counters.clusterDiskSpaceAvailableGB);
+							$scope.clusterDiskSpaceUsedGBCounter             = getParsedMajorCounterUnit(counters.clusterDiskSpaceUsedGB);
 							$scope.noOfContainersCounter                     = counters.noOfContainers;
 							$scope.containersWithoutAtleaseOneReplicaCounter = counters.containersWithoutAtleaseOneReplica;
 							$scope.noOfVolumesCounter                        = counters.noOfVolumes;
@@ -1240,7 +1464,7 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 				if (isCopyHistoryFilePending || !$scope.isCopyHistoryFileEnabled) {
 					return;
 				}
-				
+
 
 				isCopyHistoryFilePending = true;
 
@@ -1270,11 +1494,15 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 					.$promise
 					.then(function(queueData) {
 						$scope.instantaneousQueueErrorMessage = false;
-						$scope.queuesArr = queueData;
-						if ($scope.isFairScheduler != true) {
-							for (var i = 0; i < $scope.queuesArr.length; i++) {
-						  		$scope.queuesArr[i]["percentage"] = Number($scope.queuesArr[i].currentCapacity);
+
+						for (var i = 0; i < queueData.length; i++) {
+							var queue = queueData[i];
+							if ($scope.isFairScheduler != true) {
+								queue['percentage'] = Number(queue.usedCapacity);
+							} else {
+								queue['percentage'] = Number(queue.percentUsedMemory);
 							}
+							$scope.instaneousQueues[queue.queueName] = queue;
 						}
 					}, function(error) {
 						 $scope.instantaneousQueueErrorMessage = true;
@@ -1282,6 +1510,27 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 						isQueueDataPending = false;
 						$scope.queueDataLoader = false;
 					});
+			}
+
+			function getAvgWaitingTimeData () {
+				ClusterResultFactoryNew
+					.averageWaitingTime
+					.get({ "clusterName": $scope.clusterName })
+					.$promise
+					.then(function(avgWaitingTimeData) {
+					$scope.queueWaitingTimeData = avgWaitingTimeData;
+					}, function(error) {
+					}).finally(function() {
+					});
+			}
+			$scope.getAverageWaitingTime = function (queueName) {
+				for(var queue in $scope.queueWaitingTimeData) {
+					if ( queueName == queue) {
+						return $scope.queueWaitingTimeData[queue];
+					} else {
+					}
+
+				}
 			}
 
 			/** Function to get metered queue data */
@@ -1292,122 +1541,56 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 
 				isMeteredQueueDataPending = true;
 
-				if ($scope.isInfluxdbLive) {
-
-					if ($scope.mquOptions.stat == undefined) {
-						isMeteredQueueDataPending = false;
-						return;
-					}
-
-					var meteredQueueParams = 'clusterName=' + $scope.clusterName + '&stat=' + $scope.mquOptions.stat + '&aggregateFunction=' + $scope.mquOptions.aggregateFunction;
-
-					if ($scope.mquOptions.intervalMode == 'Duration') {
-						meteredQueueParams = meteredQueueParams + "&duration=" + $scope.mquOptions.durationTextValue + $scope.mquOptions.durationUnit;
-					} else {
-						meteredQueueParams = meteredQueueParams + "&rangeFrom=" + $scope.mquOptions.rangeFrom + "&rangeTo=" + $scope.mquOptions.rangeTo;
-					}
-					if ($scope.mquOptions.aggregateFunction != '') {
-						meteredQueueParams = meteredQueueParams + "&groupByTime=" + $scope.mquOptions.groupByValue + $scope.mquOptions.groupByUnit;
-					}
-
-					var req = {
-						method : 'POST',
-						url    : '/apis/clusteranalysis/clusterprofiling/metered-queue-usage-from-influxdb',
-						headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-						isArray: false,
-						data   : meteredQueueParams,
-						timeout: 210000
-					};
-
-					$http(req).then(function(data) {
-						$scope.mquLoader = false;
-						$scope.meteredQueueUsageErrorMessageisInfluxdbLive = false;
-						if (data.data) {
-							$scope.chartQueueData = changeJson(data.data);
-							$scope.queueNames = [];
-							for (var statName in $scope.chartQueueData) {
-								for (var key in $scope.chartQueueData[statName]) {
-									if (key != 'unit' && key != 'time') {
-										$scope.queueNames.push(key);
-									}
-								}
-							}
-						}
-
-						isMeteredQueueDataPending = false;
-					}, function(error) {
-						console.log("Error while receiving metered queue usage data from influxdb", error);
-
-						ClusterResultFactoryNew
-						.meteredQueueUsage
-						.get({ "clusterName": $scope.clusterName })
-						.$promise
-						.then(function(meteredQueueUsageData) {
-							$scope.meteredQueueUsageErrorMessageisInfluxdbLive = false;
-							createQueueGraphSimple(meteredQueueUsageData);
-						}, function(error){
-							$scope.meteredQueueUsageErrorMessageisInfluxdbLive = true;
-						}).finally(function() {
-							isMeteredQueueDataPending = false;
-						});
-					}).finally(function() {
-						$scope.mquLoader = false;
-						isMeteredQueueDataPending = false;
-					});
-
-				} else {
-					ClusterResultFactoryNew
-						.meteredQueueUsage
-						.get({ "clusterName": $scope.clusterName })
-						.$promise
-						.then(function(meteredQueueUsageData) {
-							$scope.meteredQueueUsageErrorMessageisInfluxdbLive = false;
-							$scope.mquLoader = false;
-							createQueueGraphSimple(meteredQueueUsageData);
-						},function(error){
-							$scope.meteredQueueUsageErrorMessageisInfluxdbLive = true;
-						}).finally(function() {
-							$scope.mquLoader = false;
-							isMeteredQueueDataPending = false;
-						});
-				}
-
-			}
-			/** Function to get charge back model data */
-			function getChargeBackModelData() {
-				if (isChargeBackDataPending || !$scope.isChargeBackEnabled || !$scope.isUserMeteringSectionEnabled) {
+				if ($scope.mquOptions.stat == undefined) {
+					isMeteredQueueDataPending = false;
 					return;
 				}
 
-				isChargeBackDataPending = true;
-				var chargeBackParams;
-					if ( $scope.chargeBackOptions.month != 'custom') {
-						chargeBackParams =  "month=" + $scope.chargeBackOptions.month;
-					} else {
-						chargeBackParams =  "rangeFrom=" + $scope.chargeBackOptions.rangeFrom + "&rangeTo=" + $scope.chargeBackOptions.rangeTo + "&month=" + $scope.chargeBackOptions.month;
+				var meteredQueueParams = 'clusterName=' + $scope.clusterName + '&stat=' + $scope.mquOptions.stat;
+
+				if ($scope.mquOptions.duration == 'custom') {
+					meteredQueueParams = meteredQueueParams + "&rangeFrom=" + $scope.mquOptions.rangeFrom + "&rangeTo=" + $scope.mquOptions.rangeTo;
+				} else {
+					meteredQueueParams = meteredQueueParams + "&duration=" + $scope.mquOptions.duration;
+				}
+
+				var req = {
+					method : 'POST',
+					url    : '/apis/clusteranalysis/clusterprofiling/metered-queue-usage',
+					headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+					isArray: false,
+					data   : meteredQueueParams,
+					timeout: 210000
+				};
+
+				$http(req).then(function(data) {
+					$scope.mquLoader = false;
+					$scope.meteredQueueUsageErrorMessage = false;
+					if (data.data) {
+						$scope.chartQueueData = changeJson(data.data);
+						$scope.queueNames = [];
+						for (var statName in $scope.chartQueueData) {
+							for (var key in $scope.chartQueueData[statName]) {
+								if (key != 'unit' && key != 'time') {
+									$scope.queueNames.push(key);
+								}
+							}
+						}
+						$scope.sortedQueueNames = $scope.queueNames;
+						$scope.sortedQueueNames.sort(function (a, b) {
+							return a.toLowerCase().localeCompare(b.toLowerCase());
+						});
 					}
-					var req = {
-						method : 'GET',
-						url    : '/apis/clusteranalysis/charge-back-utilization/' + $scope.clusterName + '?' + chargeBackParams,
-						headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-						isArray: false,
-						timeout: 210000
-					};
-
-					$http(req).then(function (data) {
-						$scope.chargeBackErrorMessage = false;
-						console.log(data.data)
-						$scope.chargeBackData = data.data;
-
-					}, function (error) {
-						$scope.chargeBackErrorMessage = true;
-						console.log("Error while receiving resource utilization data", error);
-
-						}).finally(function () {
-							isChargeBackDataPending = false;
-							$scope.showChargeBackLoader = false;
-					});
-
+					isMeteredQueueDataPending = false;
+					$scope.changeMquData();
+				}, function(error) {
+					console.log("Error while receiving metered queue usage data from influxdb", error);
+					$scope.meteredQueueUsageErrorMessage = true;
+					isMeteredQueueDataPending = false;
+				}).finally(function() {
+					$scope.mquLoader = false;
+					isMeteredQueueDataPending = false;
+				});
 
 			}
 
@@ -1435,33 +1618,6 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 					});
 
 			}
-
-			/** Function to display tuning modal */
-			$scope.displayQuickTuningModal = function(jobID) {
-				$scope.quickTuningJobID = jobID;
-				$('#quickTuningModal').modal('show');
-				$('#quickTuningSpinner').hide();
-				$('.card').hide();
-				$scope.showTuningResult = false;
-				$scope.tuningProfile = "";
-			}
-
-			$scope.isMquGroupByDisabled = function() {
-				if ($scope.mquOptionsTemp == null) {
-					return true;
-				}
-				if ($scope.mquOptionsTemp.aggregateFunction == '') {
-					return true;
-				}
-				if ($scope.mquOptionsTemp.intervalMode == 'Duration' &&  $scope.mquOptionsTemp.durationTextValue =='') {
-					return true;
-				}
-				if ($scope.mquOptionsTemp.intervalMode == 'Range' &&  $scope.mquOptionsTemp.rangeFrom =='') {
-					return true;
-				}
-				return false;
-			}
-
 			$scope.isQUGroupByDisabled = function() {
 				if ($scope.quOptionsTemp == null) {
 					return true;
@@ -1476,76 +1632,6 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 					return true;
 				}
 				return false;
-			}
-
-			/** Function to display quick tunning result */
-			$scope.displayQuickTuningResult = function() {
-				var profile = $scope.tuningProfile;
-				if (profile == null || profile == '') {
-					return;
-				}
-				$scope.showQuickTuningCmdLineParameters = false;
-				$scope.showTuningResult = false;
-				$('#quickTuningSpinner').show();
-				var jobID = $scope.quickTuningJobID;
-				var clusterName = $scope.clusterName;
-				var dataToSend = "clusterName=" + $scope.clusterName + "&jobID=" + $scope.quickTuningJobID + "&profile=" + profile;
-				var req = {                            
-					method : 'POST',
-					url    : '/apis/clusteranalysis/quicktuning',
-					headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-					isArray: false,
-					data   : dataToSend         
-				};
-
-				$http(req).then(function(result) {
-					$('#quickTuningSpinner').hide();
-					$scope.showTuningResult = true;
-					$scope.quickTuningParameters = result.data;                                                   
-				}, function(error) {                            
-					console.log("Error while receiving Quick Tuning Result", error);                     
-				}).finally(function() {
-					$('#quickTuningSpinner').hide();
-				});
-			}
-
-			/** sets quick tunning command line parameter */
-			$scope.setQuickTuningCmdLineParam = function() {
-
-				$scope.commandLineArguments = "";
-				angular.forEach($scope.quickTuningParameters, function(cVal, cKey) {
-					$scope.commandLineArguments = $scope.commandLineArguments + ' -D ' + cKey + '=' + cVal;
-				});
-			}
-
-			/** Download quicktunning properties file */
-			$scope.downloadQuickTuningPropertiesFile = function() {
-				var a = document.createElement('a');
-				var fileName = "Hadoop Configuration Parameters.txt";
-				a.setAttribute('href', 'data:application/octet-stream,' + encodeURIComponent($scope.getExportFileContent()));
-				a.setAttribute('download', fileName);
-				document.body.appendChild(a);
-				a.click();
-				document.body.removeChild(a);
-			}
-
-			/** get export file content */
-			$scope.getExportFileContent = function() {
-				$scope.coreParameters   = "";
-				$scope.hdfsParamteres   = "";
-				$scope.mapredParameters = "";
-
-				angular.forEach($scope.quickTuningParameters, function(cVal, cKey) {
-					if (coreSite.indexOf(cKey) != -1) {
-						$scope.coreParameters = $scope.coreParameters + '<property>\n\t<name>' + cKey + '</name>\n\t<value>' + cVal + '</value>\n</property>\n';
-					} else if (hdfsSite.indexOf(cKey) != -1) {
-						$scope.hdfsParamteres = $scope.hdfsParamteres + '<property>\n\t<name>' + cKey + '</name>\n\t<value>' + cVal + '</value>\n</property>\n';
-					} else {
-						$scope.mapredParameters = $scope.mapredParameters + '<property>\n\t<name>' + cKey + '</name>\n\t<value>' + cVal + '</value>\n</property>\n';
-					}
-				});
-				var fileContent = "Please configure the following properties in accordance with the file name\n\n" + "/***********************core-site.xml***********************/\n" + $scope.coreParameters + "\n\n" + "/***********************hdfs-site.xml***********************/\n" + $scope.hdfsParamteres + "\n\n" + "/**********************mapred-site.xml**********************/\n" + $scope.mapredParameters;
-				return fileContent;
 			}
 
 			/** Function for create queue graph */
@@ -1685,8 +1771,9 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 					.liveContainerStats
 					.get({ "clusterName": $scope.clusterName })
 					.$promise
-					.then(function(response) {
-						 $scope.liveContainerStatsErrorMessage = false;
+					.then(function (response) {
+						$scope.liveContainersLoader = false;
+						$scope.liveContainerStatsErrorMessage = false;
 						$scope.totalRunningApplications = response.runningApps;
 
 						$scope.launchableContainersMessage = response.launchableContainers.message;
@@ -1699,15 +1786,73 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 								$scope.runningJobsTitle = $scope.runningJobsTitle.substring(0, 100);
 								$scope.runningJobsTitle = $scope.runningJobsTitle + "..";
 							}
+						} else {
+							$scope.runningJobsTitle = "No jobs running";
 						}
 
 
-					}, function(error) {
-						 $scope.liveContainerStatsErrorMessage = true;
-					}).finally(function() {
+					}, function (error) {
+						$scope.liveContainersLoader = false;
+						$scope.liveContainerStatsErrorMessage = true;
+					}).finally(function () {
+						$scope.liveContainersLoader = false;
 						isLiveContainerPending = false;
 					});
 			}
+			/** Load more capacity utilization job list */
+		      $scope.loadMoreJobsCapacityUtilization = function () {
+				if ($scope.isCapacityUtilizationOldJobsPending) {
+					return;
+				}
+		        if ( $scope.cpStartTime != 0 && $scope.cpEndTime != 0 ) {
+		          $scope.cpEndTime = $scope.cpStartTime;
+		          $scope.cpStartTime = $scope.cpEndTime - 3600000;
+		        }
+		        fetchOldJobsCU(0, 0);
+		        
+		      }
+			 /** function to fetch old jobs for capacity utilization */
+		      function fetchOldJobsCU ( totalJobsFetched, iteration) {
+				$scope.isCapacityUtilizationOldJobsPending = true;
+		        ClusterResultFactoryNew
+		          .capacityUtilizationOldJobs
+		          .get({ "clusterName": $scope.clusterName , "startTime": $scope.cpStartTime , "endTime": $scope.cpEndTime })
+		          .$promise
+		          .then(function(response) {
+		            addCapacityUtilizationOldJobs(response.jobsList);
+					var length = response.jobsList.length;
+		            $scope.cpStartTime = response.startTime;
+		            $scope.cpEndTime = response.endTime;
+					$scope.capacityLoadLoader = false;
+		            if ( length == 0 ) {
+		              $scope.cpDisplayLoadMoreOption = false;
+		            } else if ( (length + totalJobsFetched) < 5 ) {
+					  $scope.capacityLoadLoader = false;
+		              var difference = $scope.cpEndTime - $scope.cpStartTime;
+		              $scope.cpEndTime = $scope.cpStartTime;
+		              $scope.cpStartTime = $scope.cpEndTime - difference;
+		              fetchOldJobsCU(length + totalJobsFetched , iteration + 1);
+		            }
+
+					if (length == 0 || (length + totalJobsFetched) >= 5) {
+						$scope.isCapacityUtilizationOldJobsPending = false;
+					}
+		          }, function(error) {
+		             $scope.capacityUtilizationErrorMessage = true;
+					 $scope.isCapacityUtilizationOldJobsPending = false;
+		          }).finally(function() {
+		            $scope.capacityLoadLoader = false;
+		          });
+		      }
+			/** Function to add capacity utilization details */
+		      function addCapacityUtilizationOldJobs(jobsList) {
+		        for (var i = 0; i < jobsList.length; i++) {
+		          var jobDetail = getEffCapacityDetail(jobsList[i].jobId);
+		          if (jobDetail == null) {
+		            $scope.effCapacityUtilizationDetails.unshift(createEffCapactiyUtilizationObject(jobsList[i]));
+		          }
+		        }
+		      }
 
 			/** Function to handle error in effective capacity utilization */
 			function addErrorInEffCapacityUtilizationDetail(jobId, message) {
@@ -1734,29 +1879,30 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 			/** Function to get effective capacity utilization data */
 			function getEffCapUtilizationData() {
 
-				if (isEffCapUtilizationPending || !$scope.isEffCapUtilizationEnabled || !$scope.isYarnContainersSectionEnabled) {
+				if (isCapacityUtilizationLatestJobsPending || $scope.isCapacityUtilizationOldJobsPending || !$scope.isEffCapUtilizationEnabled || !$scope.isYarnContainersSectionEnabled) {
 					return;
 				}
 
-				isEffCapUtilizationPending = true;
+				isCapacityUtilizationLatestJobsPending = true;
 
 				ClusterResultFactoryNew
-					.effCapUtilizationStats
-					.get({ "clusterName": $scope.clusterName })
+					.capacityUtilizationLatestJobs
+					.get({ "clusterName": $scope.clusterName , "lastCheckpoint": $scope.cpLastCheckpoint })
 					.$promise
 					.then(function(response) {
 						$scope.capacityUtilizationErrorMessage = false;
-						updateEffCapacityUtilizationDetails(response);
+						$scope.cpLastCheckpoint = response.lastCheckpoint;
+			            addCapacityUtilizationLatestJobs(response.jobsList);
 					}, function(error) {
 						 $scope.capacityUtilizationErrorMessage = true;
 					}).finally(function() {
-						isEffCapUtilizationPending = false;
+						isCapacityUtilizationLatestJobsPending = false;
 						$scope.capacityLoadLoader = false;
 					});
 			}
 
 			/** Function to updateeffective capacity utilization details */
-			function updateEffCapacityUtilizationDetails(response) {
+			function addCapacityUtilizationLatestJobs(response) {
 
 				for (var i = 0; i < response.length; i++) {
 					var jobDetail = getEffCapacityDetail(response[i].jobId);
@@ -1773,6 +1919,7 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 					'jobName'            : value.jobName,
 					'usedContainers'     : value.usedContainers,
 					'usedVCores'         : value.usedVCores,
+					'jobFinishTime'      : value.jobFinishTime,
 					'usedMaxMapMemory'   : value.usedMaxMapMemory + ' / ' + value.allocatedMapMemory,
 					'usedMaxReduceMemory': value.usedMaxReduceMemory + ' / ' + value.allocatedReduceMemory
 				};
@@ -1805,6 +1952,11 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 					.then(function(response) {
 						$scope.highResourceErrorMessage = false;
 						response = response.resourceOverUsage;
+						if ( angular.equals({}, response.resourceOverUsage) ) {
+							$scope.showNoDataAvailable = true;
+						} else {
+							$scope.showNoDataAvailable = false;
+						}
 						for (var appID in response) {
 							$scope.hruaMap[appID] = response[appID];
 						}
@@ -1815,11 +1967,13 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 								'usedMemory'   : $scope.hruaMap[appID].usedMemory,
 								'usedVcores'   : $scope.hruaMap[appID].usedVcores,
 								'user'         : $scope.hruaMap[appID].user,
-								'appType'      : $scope.hruaMap[appID].appType
+								'appType': $scope.hruaMap[appID].appType,
+								'queue' : $scope.hruaMap[appID].queue,
 							});
 						}
 					}, function(error) {
 						 $scope.highResourceErrorMessage = true;
+						 $scope.showNoDataAvailable = false;
 					}).finally(function() {
 						isHruaPending = false;
 						$scope.showHruaLoader = false;
@@ -1830,6 +1984,9 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 				$scope.showLraLoader = true;
 				if ($scope.openPopup8 == false) {
 					$scope.thresholdMinutes = $scope.thresholdMinutesCopied;
+					var browserConf = JSON.parse(localStorage.getItem($scope.localDataID));
+					browserConf[$scope.clusterName]["thresholdMinutes"] = $scope.thresholdMinutesCopied;
+					localStorage.setItem($scope.localDataID, JSON.stringify(browserConf));
 					$scope.lraList = [];
 					updateLongRunningApps();
 				}
@@ -1845,7 +2002,7 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 				isLraPending = true;
 
 				if ($scope.thresholdMinutes == undefined || $scope.thresholdMinutes == null) {
-					$scope.thresholdMinutes = 1;
+					$scope.thresholdMinutes = 30;
 				}
 				ClusterResultFactoryNew
 					.longRunningApps
@@ -1855,9 +2012,16 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 					})
 					.$promise
 					.then(function(response) {
+						if ( response.longRunningApps == [] || response.longRunningApps == null || response.longRunningApps == "") {
+							$scope.lraList = [];
+							$scope.showOnlyRunMessage = true;
+						} else {
+							$scope.showOnlyRunMessage = false;
+						}
 						updateLraAppsList(response.longRunningApps);
 						isLraPending = false;
 						updateSlaApps();
+
 					}).finally(function() {
 						$scope.showLraLoader = false;
 					});
@@ -1906,6 +2070,7 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 						}
 					}, function(error) {
 						 $scope.longDurationErrorMessage = true;
+						 $scope.showOnlyRunMessage = false;
 					}).finally(function() {
 						isSlaPending = false;
 					});
@@ -1920,10 +2085,9 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 
 				isDataCenterPending = true;
 
-				//var colorConfigJSON={"color": [{"bad": {"operator": "LESS_THAN_OP","val": "0"},"good": {"operator": "GREATER_THAN_EQUALTO_OP","val": "1"},"category": "systemStats.cpu","stat": "threadsPerCore"},{"bad": {"operator": "LESS_THAN_OP","val": "0"},"good": {"operator": "GREATER_THAN_EQUALTO_OP","val": "3"},"category": "systemStats.cpu","stat": "numberOfCores"},{"bad": {"operator": "GREATER_THAN_OP","val": "4"},"good": {"operator": "GREATER_THAN_OP","val": "0"},"category": "systemStats.cpu","stat": "cpuUsage"}]}
-
 				var params = "colorConfigJSON=" + JSON.stringify($scope.requestDataForDC) + "&clusterName=" + $scope.clusterName;
 
+				// First Attempt
 				ClusterResultFactoryNew
 					.dataCenter
 					.post(params)
@@ -1933,7 +2097,29 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 						$scope.dataCenters = result.dataCenters;
 						getDataCenterCounts($scope.dataCenters);
 					}, function(error) {
-						 $scope.dataCenterErrorMessage = true;
+						//Second Attempt
+						 ClusterResultFactoryNew
+						.dataCenter
+						.post(params)
+						.$promise
+						.then(function(result) {
+							$scope.dataCenterErrorMessage = false;
+							$scope.dataCenters = result.dataCenters;
+							getDataCenterCounts($scope.dataCenters);
+						}, function(error) {
+							// Third Attempt
+							ClusterResultFactoryNew
+							.dataCenter
+							.post(params)
+							.$promise
+							.then(function(result) {
+								$scope.dataCenterErrorMessage = false;
+								$scope.dataCenters = result.dataCenters;
+								getDataCenterCounts($scope.dataCenters);
+							}, function(error) {
+								$scope.dataCenterErrorMessage = true;
+							});
+						});
 					}).finally(function() {
 						isDataCenterPending = false;
 						$scope.dataCenterLoader = false;
@@ -1942,10 +2128,36 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 
 			/** Function to get data centers data data preview */
 			function getDataCentersDataPreview() {
-				ClusterResultFactoryNew.dataCenterPreview.get({ "clusterName": $scope.clusterName }).$promise.then(function(result) {
-					$scope.dataCenters = result.dataCenters;
-					getDataCenterCounts($scope.dataCenters);
-					getDataCentersData();
+				// First Attempt
+				ClusterResultFactoryNew
+					.dataCenterPreview
+					.get({ "clusterName": $scope.clusterName })
+					.$promise.then(function(result) {
+						$scope.dataCenters = result.dataCenters;
+						getDataCenterCounts($scope.dataCenters);
+						getDataCentersData();
+				}, function(error) {
+					// Second Attempt
+						ClusterResultFactoryNew
+							.dataCenterPreview
+							.get({ "clusterName": $scope.clusterName })
+							.$promise.then(function(result) {
+								$scope.dataCenters = result.dataCenters;
+									getDataCenterCounts($scope.dataCenters);
+									getDataCentersData();
+								}, function(error) {
+									// Third Attempt
+									ClusterResultFactoryNew
+									.dataCenterPreview
+									.get({ "clusterName": $scope.clusterName })
+									.$promise.then(function(result) {
+									$scope.dataCenters = result.dataCenters;
+										getDataCenterCounts($scope.dataCenters);
+										getDataCentersData();
+									}, function(error) {
+											$scope.dataCenterErrorMessage = true;
+									});
+							});
 				}).finally(function() {
 					$scope.dataCenterLoader = false;
 				});
@@ -1966,7 +2178,7 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 				}
 
 				isDataLoadPending = true;
-
+				// First Attempt
 				ClusterResultFactoryNew
 					.dataLoad
 					.get({ "clusterName": $scope.clusterName })
@@ -1976,9 +2188,39 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 						$scope.dataLoadDistributionErrorMessage = false;
 						drawDataLoad(result);
 						setDataLoadCounters(result);
-					}, function(error) {
-						 $scope.dataLoadDistributionErrorMessage = true;
-					}).finally(function() {
+					}, function (error) {
+
+						//Second Attempt
+						setTimeout(function () {
+							ClusterResultFactoryNew
+								.dataLoad
+								.get({ "clusterName": $scope.clusterName })
+								.$promise
+								.then(function(result) {
+									$scope.dataLoadLoader = false;
+									$scope.dataLoadDistributionErrorMessage = false;
+									drawDataLoad(result);
+									setDataLoadCounters(result);
+								}, function (error) {
+									setTimeout(function () {
+										//Third Attempt
+										ClusterResultFactoryNew
+											.dataLoad
+											.get({ "clusterName": $scope.clusterName })
+											.$promise
+											.then(function(result) {
+												$scope.dataLoadLoader = false;
+												$scope.dataLoadDistributionErrorMessage = false;
+												drawDataLoad(result);
+												setDataLoadCounters(result);
+											}, function(error) {
+												$scope.dataLoadDistributionErrorMessage = true;
+											});
+										}, 5000);
+								});
+						//second attempt ends
+						}, 5000);
+					}).finally(function () {
 						isDataLoadPending = false;
 						$scope.dataLoadLoader = false;
 					});
@@ -1993,37 +2235,64 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 				}
 
 				isDataLoadDetailsPending = true;
-
+				// First Attempt
 				ClusterResultFactoryNew
 					.dataLoadDetails
 					.get({ "clusterName": $scope.clusterName })
 					.$promise
 					.then(function(result) {
 						$scope.dataLoadLoader = false;
-						$scope.dataLoadDetails = result;
-
-						// finally takes time to execute
 						isDataLoadDetailsPending = false;
-						$scope.dataLoadLoader = false;
+						if (!checkIfHdfsEmpty(result)) {
+							$scope.dataLoadDetails = result;
+						}
+					}, function (error) {
+						//Second Attempt
+						ClusterResultFactoryNew
+							.dataLoadDetails
+							.get({ "clusterName": $scope.clusterName })
+							.$promise
+							.then(function(result) {
+								$scope.dataLoadLoader = false;
+								isDataLoadDetailsPending = false;
+								if (!checkIfHdfsEmpty(result)) {
+									$scope.dataLoadDetails = result;
+								}
+							}, function (error) {
+								//Third Attempt
+								ClusterResultFactoryNew
+									.dataLoadDetails
+									.get({ "clusterName": $scope.clusterName })
+									.$promise
+									.then(function(result) {
+										$scope.dataLoadLoader = false;
+										isDataLoadDetailsPending = false;
+										if (!checkIfHdfsEmpty(result)) {
+											$scope.dataLoadDetails = result;
+										}
+									}, function (error) {
+										$scope.dataLoadDistributionErrorMessage = true;
+									});
+							});
 					}).finally(function() {
 						isDataLoadDetailsPending = false;
 						$scope.dataLoadLoader = false;
 					});
 			}
 
+			function checkIfHdfsEmpty(data) {
+				var totalDfs = 0;
+				for (var i = 0; i < data.length; i++) {
+					totalDfs += Number(data[i].dataLoadStats);
+				}
+				if (totalDfs == 0) {
+					$scope.hdfsEmpty = true;
+					return true;
+				}
+			}
+
 			function setDataLoadCounters(result) {
 				$scope.dataLoadCounter = {"good" : 0, "warn" : 0, "bad" : 0, "unavailable" : 0};
-				/*for (var node of result) {
-					if ("Good" == node.performance) {
-						$scope.dataLoadCounter.good = node.totalNodes;
-					} else if ("Warn" == node.performance) {
-						$scope.dataLoadCounter.warn = node.totalNodes;
-					} else if ("Bad" == node.performance) {
-						$scope.dataLoadCounter.bad = node.totalNodes;
-					} else {
-						$scope.dataLoadCounter.unavailable = node.totalNodes;
-					}
-				}*/
 				for (var i = 0; i < result.length; i++) {
 					var node = result[i];
 					if ("Good" == node.performance) {
@@ -2042,16 +2311,6 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 				var nodesData = barData;
 				var max = null;
 
-				/*for (var node of nodesData) {
-					if (max == null) {
-						max = node.meanPercentage;
-						continue;
-					}
-					if (max < node.meanPercentage) {
-						max = node.meanPercentage;
-					}
-				}*/
-
 				for (var i = 0; i < nodesData.length; i++) {
 					var node = nodesData[i];
 					if (max == null) {
@@ -2061,6 +2320,13 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 					if (max < node.meanPercentage) {
 						max = node.meanPercentage;
 					}
+				}
+
+				if (max == 0) {
+					$scope.hdfsEmpty = true;
+					return;
+				} else {
+					$scope.hdfsEmpty = false;
 				}
 
 				var color        = d3.scale.ordinal().range(['#3c763d', '#D1BE0D', '#C5621F', '#a94442']);
@@ -2392,6 +2658,10 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 			};
 			// queue user
 			$scope.openQueueUserGraph = function(queueName) {
+				if ( isUserQueueUtilizationPending ) {
+					return;
+				}
+				isUserQueueUtilizationPending = true;
 				$scope.quName = queueName;
 				$("#QueueUserGraph").modal('show');
 				$scope.queueUserLoader = true;
@@ -2433,6 +2703,7 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 					$scope.queueUserGraphNoData = false;
 					console.log("Error while receiving jqueue user data", e)
 				}).finally(function() {
+					isUserQueueUtilizationPending = false;
 					$scope.queueUserLoader = false;
 				});
 			}
@@ -2446,8 +2717,6 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 					}
 					$("#profilerGraphWrapper").append('<div id="jvmGraphContainer" style="display: inline-block;" ></div>');
 
-
-					// var newJSONString = {"graphData":{"jobID":"job_1431409397808_0003","user":"impadmin","jobName":"JumbuneDemoReport","totalTime":16,"totalTimeInMilliSec":16217,"outcome":"SUCCEEDED","cpuUsage":{"2":0.5,"3":21.4,"5":37.0,"6":31.7,"7":37.45,"8":43.2,"11":53.45,"12":87.9,"13":66.35,"14":44.8,"15":30.849998,"16":16.9},"memUsage":{"2":70.26966,"3":70.918076,"5":72.1833,"6":72.80011,"7":73.548515,"8":74.29692,"11":78.10327,"12":80.60488,"13":77.68576,"14":74.76664,"15":75.06369,"16":75.36074},"phaseOutput":{"setupDetails":{"taskOutputDetails":[{"taskType":"SETUP","taskID":"Setup","startPoint":0,"endPoint":3,"location":"impetus-1344","dataFlowRate":0,"timeTaken":0,"shuffleStart":0,"shuffleEnd":0,"sortStart":0,"sortEnd":0,"reduceStart":0,"reduceEnd":0,"outputBytes":0,"outputRecords":0}],"avgDataFlowRate":0},"mapDetails":{"taskOutputDetails":[{"taskType":"MAP","taskStatus":"SUCCEEDED","taskID":"task_1431409397808_0003_m_000001","startPoint":5,"endPoint":8,"location":"impetus-1344","dataFlowRate":935238,"timeTaken":3,"shuffleStart":0,"shuffleEnd":0,"sortStart":0,"sortEnd":0,"reduceStart":0,"reduceEnd":0,"outputBytes":1246334,"outputRecords":18602,"resourceUsageMetrics":{"cumulativeCpuUsage":0.0,"virtualMemoryUsage":0.0,"physicalMemoryUsage":2.75193856E8,"heapUsage":0.0}},{"taskType":"MAP","taskStatus":"SUCCEEDED","taskID":"task_1431409397808_0003_m_000000","startPoint":5,"endPoint":8,"location":"impetus-1344","dataFlowRate":935238,"timeTaken":3,"shuffleStart":0,"shuffleEnd":0,"sortStart":0,"sortEnd":0,"reduceStart":0,"reduceEnd":0,"outputBytes":1246334,"outputRecords":18602,"resourceUsageMetrics":{"cumulativeCpuUsage":0.0,"virtualMemoryUsage":0.0,"physicalMemoryUsage":2.80653824E8,"heapUsage":0.0}}],"avgDataFlowRate":935},"reduceDetails":{"taskOutputDetails":[{"taskType":"REDUCE","taskStatus":"SUCCEEDED","taskID":"task_1431409397808_0003_r_000001","startPoint":12,"endPoint":16,"location":"impetus-1344","dataFlowRate":4616,"timeTaken":0,"shuffleStart":12,"shuffleEnd":14,"sortStart":14,"sortEnd":14,"reduceStart":14,"reduceEnd":16,"outputBytes":18464,"outputRecords":18465,"resourceUsageMetrics":{"cumulativeCpuUsage":0.0,"virtualMemoryUsage":0.0,"physicalMemoryUsage":1.75161344E8,"heapUsage":0.0}},{"taskType":"REDUCE","taskStatus":"SUCCEEDED","taskID":"task_1431409397808_0003_r_000000","startPoint":11,"endPoint":14,"location":"impetus-1344","dataFlowRate":6246,"timeTaken":0,"shuffleStart":11,"shuffleEnd":13,"sortStart":13,"sortEnd":13,"reduceStart":13,"reduceEnd":14,"outputBytes":18740,"outputRecords":18741,"resourceUsageMetrics":{"cumulativeCpuUsage":0.0,"virtualMemoryUsage":0.0,"physicalMemoryUsage":1.84139776E8,"heapUsage":0.0}}],"avgDataFlowRate":5},"cleanupDetails":{"taskOutputDetails":[{"taskType":"CLEANUP","taskID":"Cleanup","startPoint":16,"endPoint":16,"location":"impetus-1344","dataFlowRate":0,"timeTaken":0,"shuffleStart":0,"shuffleEnd":0,"sortStart":0,"sortEnd":0,"reduceStart":0,"reduceEnd":0,"outputBytes":0,"outputRecords":0}],"avgDataFlowRate":0}},"nodeStats":{"172.26.49.108":{"hostName":"172.26.49.108","totalMapIntervals":4,"totalReduceIntervals":5,"avgCpu":40.045456,"maxMem":80.60488,"mapPhaseMaxMem":74.29692,"reducePhaseMaxMem":80.60488,"mapPhaseAvgCpu":0.0,"reducePhaseAvgcpu":0.0,"totalMapPhaseCpu":149.8,"totalReducePhaseCpu":282.3,"cpuUsage":{"16":16.9,"2":0.5,"18":83.4,"4":42.3,"20":66.0,"6":31.7,"22":4.8,"8":43.2,"10":19.0,"12":87.9,"14":44.8},"memUsage":{"16":75.36074,"2":70.26966,"18":77.97978,"4":71.56648,"20":74.80341,"6":72.80011,"22":74.80187,"8":74.29692,"10":75.60167,"12":80.60488,"14":74.76664}}}}}
 					$("#CapacityUtilizationGraph").modal('show');
 					$("#capacityUtilizationSpinner").show();
 
@@ -2463,9 +2732,7 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 					});
 				}
 			}
-			$scope.openDetailResourseCost = function () {
-				$("#resourceCostModel").modal('show');
-			}
+
 			// Job history
 			$scope.openJobhistoryGraph = function(jobName) {
 				$scope.jhJobName = jobName;
@@ -2945,45 +3212,6 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 				}
 
 				return occuringSince.trim();
-			}
-
-			$scope.openExportForm = function() {
-				var model = document.getElementById('excelExportModel');
-				$(model).modal('show');
-				$scope.showExportForm = true;
-			}
-
-			$scope.exportAsExcel = function() {
-				$scope.showExportForm = false;
-				$scope.exportMessage = 'Your downloading will soon be started..';
-				var selectedWidgets = [];
-				var parameters = {};
-				if ($scope.exportOptionQUS) {
-					selectedWidgets.push('Queue Utilization Summary');
-				}
-				if ($scope.exportOptionLRA) {
-					selectedWidgets.push('Long Duration Applications');
-					parameters['thresholdMillis'] = $scope.thresholdMinutes * 60 * 1000;
-				}
-				if ($scope.exportOptionsRUM) {
-					selectedWidgets.push('Resource Utilization Metering');
-					parameters['month'] = $scope.chargeBackOptions.month;
-					if ( $scope.chargeBackOptions.month == 'custom') {
-						parameters['rangeFrom'] = $scope.chargeBackOptions.rangeFrom;
-						parameters['rangeTo'] = $scope.chargeBackOptions.rangeTo;
-					}
-				}
-				
-				var data = 'clusterName=' + $scope.clusterName + '&selectedWidgets=' + JSON.stringify(selectedWidgets) + '&parameters=' + JSON.stringify(parameters);
-
-				// Hiding the modal window automatically after 3 seconds
-				setTimeout(function(){
-					var model = document.getElementById('excelExportModel');
-					$(model).modal('hide');
-				}, 2000);
-				
-				window.location.href = '/apis/clusteranalysis/export-as-excel?'+data;
-				
 			}
 
 			function saveFile (name, type, data) {
@@ -3486,6 +3714,24 @@ angular.module('analyzeCluster.ctrl', ['easypiechart', "ui.grid", 'ui.grid.resiz
 
 			$scope.setActive = function(currentTab) {
 
+			}
+
+			$scope.changeMquData = function() {
+				var mquOptionStat;
+				mquOptionStat = $scope.mquOptions.stat;
+				var obj = {};
+				obj[mquOptionStat] = {};
+				if ( $scope.chartQueueData == undefined || $scope.chartQueueData == null ) {
+					return;
+				}
+				if ( $scope.mquFilterQuery == undefined || $scope.mquFilterQuery == null || $scope.mquFilterQuery == "" ) {
+					$scope.mquDataTemp =  $scope.chartQueueData;
+					return;
+				}
+				obj[mquOptionStat][$scope.mquFilterQuery] = $scope.chartQueueData[mquOptionStat][$scope.mquFilterQuery];
+				obj[mquOptionStat]["time"] = $scope.chartQueueData[mquOptionStat]["time"];
+				obj[mquOptionStat]["unit"] = $scope.chartQueueData[mquOptionStat]["unit"];
+				$scope.mquDataTemp = obj;
 			}
 
 			// It removes the tab in hadoop metrics and system stats

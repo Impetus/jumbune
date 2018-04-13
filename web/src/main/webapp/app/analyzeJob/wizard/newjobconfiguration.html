@@ -2,14 +2,12 @@
 	<div jumbune-header=""></div>
     <form name="myForm">
 	<div class="inner-container">
-		<!-- <h2>{{NewJobConfigController.jobFlag}} New Job</h2> -->
 		<h2>Analyze Job</h2>
 			<div class="col-md-12 main-container tab-container">
 				<table class="frm-tbl">
 					
 				    <tbody>
                         <tr>
-                            <!-- <td jumbune-mandatory-label="">Job Name</td> -->
                             <td style="left: 300px; position: relative;"><label class="fieldLabel">Job Name<s>*</s></label></td>
                             <td style="left: 300px; position: relative;">
                                 <input type="text" name="jobName" ng-model="NewJobConfigController.jobName" ng-pattern="/^[a-zA-Z0-9_]+$/" ng-maxlength=50 required>
@@ -21,7 +19,6 @@
                             </td>
                         </tr>
                         <tr>
-                            <!-- <td>Select Clusters</td> -->
                             <td style="left: 300px; position: relative;"><label class="fieldLabel">Select Cluster<s>*</s></label></td>
                             <td style="left: 300px; position: relative;">
                                 <select ng-disabled="NewJobConfigController.disableSelectCluster()" name="clusters" ng-model="NewJobConfigController.selectedCluster" id="selectedCluster" ng-options="clus as clus for clus in NewJobConfigController.clusterList">
@@ -34,18 +31,12 @@
                                 </span>
                             </td>
                         </tr>
-						
-
-						<!-- <tr ng-repeat="jcm in jobConfigMethods | filter: {name: '!Tuning'}">
-						<td  width="55%"><label class="fieldLabel"></label></td>
-							<td colspan="2">
-								<label class="deactiveLabel">
-									<input ng-click="NewJobConfigController.setJobConfigMethod($index, $event.target.checked)" type="checkbox" ng-model="jcm.visible"/>
-									<span>{{jcm.name}}</span>
-								</label>
-							</td>
-						</tr> -->
-
+						<tr>
+                            <td style="left: 300px; position: relative;"><label class="fieldLabel">Temp Directory<s>*</s></label></td>
+                            <td style="left: 300px; position: relative;">
+                                <input type="text" name="tempDirectory" onClick="this.select();"  ng-model="NewJobConfigController.tempDirectory">
+                            </td>
+                        </tr>
 					</tbody>
 				</table>
 				<div class="textCenter fixed-btn">
@@ -58,35 +49,3 @@
 	
     </form>
 </div>
-
-
-
-
-
-<!-- <div class="inner-container">
-	<h2>{{NewJobConfigController.jobFlag}} New Job</h2>
-			<div class="col-md-12 main-container inner-container">
-			<h2 style="font-size: inherit;font-weight: normal;margin-top: 0;">What would you like to work upon?</h2>
-				<table class="frm-tbl">
-					
-				    <tbody>
-                        <tr>
-                            <td jumbune-mandatory-label="">Job Name</td>
-                            <td>
-                                <input type="text" name="jobName" ng-model="NewJobConfigController.jobName" ng-pattern="/^[a-zA-Z0-9_]+$/" ng-maxlength=50 required>
-                                <p class="error" ng-show="myForm.jobName.$error.pattern">Only alphanumeric values and underscore is allowed</p>
-                                <p class="error" ng-show="myForm.jobName.$error.maxlength">Maximum allowed length is 50 characters</p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Select Clusters</td>
-                            <td>
-                                <select ng-disabled="NewJobConfigController.disableSelectCluster()" name="clusters" ng-model="NewJobConfigController.selectedCluster" ng-options="clus as clus for clus in NewJobConfigController.clusterList">
-                                    <option value="">Please Select</option>
-                                </select>
-                            </td>
-                        </tr>
-					</tbody>
-				</table>
-			</div>
-	</div> -->

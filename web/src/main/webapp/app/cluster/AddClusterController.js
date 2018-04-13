@@ -2,10 +2,10 @@
 'use strict';
 angular.module('addCluster.ctrl', [])
 
-.controller('AddClusterController', ['$scope', '$rootScope', '$routeParams', '$location', 'common', '$timeout', 'AddClusterFactory', 'updateClusterFactory', 'editClusterFactory', 'getClusterDataFactory', 'getTotalClusterNodeFactory', 'getIsMaprDistributionFactory', 
+.controller('AddClusterController', ['$scope', '$rootScope', '$routeParams', '$location', 'common', '$timeout', 'AddClusterFactory', 'updateClusterFactory', 'editClusterFactory', 'getClusterDataFactory', 'getIsMaprDistributionFactory',
 
 
-    function($scope, $rootScope, $routeParams, $location, common, $timeout, AddClusterFactory, updateClusterFactory, editClusterFactory, getClusterDataFactory,getTotalClusterNodeFactory, getIsMaprDistributionFactory) {
+    function($scope, $rootScope, $routeParams, $location, common, $timeout, AddClusterFactory, updateClusterFactory, editClusterFactory, getClusterDataFactory, getIsMaprDistributionFactory) {
 
         $scope.setProfilingObj = {};
         $scope.toBeDeleted = false;
@@ -13,7 +13,7 @@ angular.module('addCluster.ctrl', [])
         $scope.select = true;
         $scope.submitForm = false;
         $scope.disableClusterName = false;
-        $scope.dataQualityGroup = common.dataQualityGroup;
+        $scope.showLoader = false;
 
         angular.element('#clusterNameId').trigger('focus');
         $("div.my-tool-tip").tooltip();
@@ -28,6 +28,7 @@ angular.module('addCluster.ctrl', [])
         $scope.nameNodeHostArrCount = [1];
         $scope.agentHostPortCount = [1];
         $scope.isMapr = common.getIsMapr();
+        $scope.hideManageClusterButtons = common.getHideManageClusterButtons();
 
         getIsMaprDistributionFactory.isMaprDistribution({},
                 function(data) {
@@ -49,7 +50,7 @@ angular.module('addCluster.ctrl', [])
         $scope.removeWorkerNodeHost = function(index) {
             $scope.workerNodeHostArrCount.splice(index, 1);
 
-            if ($scope.workerHostArr[index]){                
+            if ($scope.workerHostArr[index]){
                 $scope.workerHostArr.splice(index, 1);
             }
         };
@@ -65,14 +66,12 @@ angular.module('addCluster.ctrl', [])
             $scope.setProfilingObj.hostMNArr.splice(index, 1);
             $scope.nodeHostArrCopy.splice(index, 1);
             if ($scope.nameNodeHostArr[index]) {
-                //$scope.nameNodeHostArr.splice(index,1);
             }
         };
         /** Function to generate port fields in jumbune agent  */
         $scope.addAgentHostPort = function() {
             $scope.agentHostPortCount.push($scope.agentHostPortCount.length + 1);
             for (var i = 0; i < $scope.agentHostPortCount.length; i++) {
-                //$scope.nodeHostArrCopy[i] = $scope.setProfilingObj.hostMNArr[0];
             }
         };
         /** Function to remove port fields in jumbune agent  */
@@ -82,26 +81,12 @@ angular.module('addCluster.ctrl', [])
             $scope.agentPortArr.splice(index, 1);
         };
 
-        /*   $scope.$watch('nameNodeHostArr',function(newVal,oldVal){
-               if($scope.currClusterDetail.clusterMode != 'edit') {
-                   if ((newVal !== undefined) && (newVal !== oldVal)) {
-                       angular.forEach(newVal, function(valueReal,keyReal) {
-                           if(valueReal != '') {
-                               $scope.nodeHostArrCopy[keyReal] = valueReal;
-                               $scope.typedFromReal = true;
-                           }
-                       }); 
-                   }
-               }
-           },true);*/
-
         $scope.$watch('setProfilingObj.enableHA', function(newVal, oldVal) {
             if (!newVal && oldVal) {
                 $scope.typedFromReal = false;
                 $scope.nameNodeHostArrCount = [1];
                 $scope.agentHostPortCount = [1];
                 $scope.nameNodeHostArr = [];
-                //$scope.nodeHostArrCopy = [];
                 $scope.agentPortArr = [];
                 var baseVal = angular.copy($scope.setProfilingObj.hostMNArr[0]);
                 $scope.setProfilingObj.hostMNArr = angular.copy([]);
@@ -123,7 +108,6 @@ angular.module('addCluster.ctrl', [])
         $scope.$watch('setProfilingObj.enableAgentHA', function(newVal, oldVal) {
             if (!newVal && oldVal) {
                 $scope.agentHostPortCount = angular.copy($scope.nameNodeHostArrCount);
-                //$scope.nodeHostArrCopy = angular.copy($scope.nameNodeHostArr);
                 $scope.agentPortArr = [];
 
             }
@@ -144,13 +128,6 @@ angular.module('addCluster.ctrl', [])
             $scope.selClusterObj.fileTaskTypeMN = '/home/' + user + '/.ssh/id_rsa';
         });
 
-        /*$scope.$watch('setProfilingObj.agentUserMN', function(newVal, oldVal) {
-            var user = 'user';
-            if (newVal !== oldVal)
-                user = newVal;
-            $scope.selClusterObj.fileAgentTypeMN = '/home/' + user + '/.ssh/id_rsa';
-        });*/
-        
         /** Add and remove zk host and port */
         $scope.zkHostPortObj = {
             "host": "",
@@ -182,7 +159,7 @@ angular.module('addCluster.ctrl', [])
             $location.path('/index');
         };
         /** Shows error message */
-        $scope.hasError = function(fieldName) {           
+        $scope.hasError = function(fieldName) {
             var error = ($scope.clusterForm[fieldName].$invalid && !$scope.clusterForm[fieldName].$pristine) || ($scope.clusterForm[fieldName].$invalid && $scope.submitForm)
             return error;
         };
@@ -198,47 +175,20 @@ angular.module('addCluster.ctrl', [])
             for (var i = 0; i < nodeArr.length; i++) {
                 tempNode = nodeArr[i];
                 breakInnerLoop = false;
-
-                /* user = tempNode.userDN;
-                 if(!user){
-                     errorFound = true;
-                     break;
-                 }*/
-
-                //host = tempNode.hostDN;
                 if (tempNode.selectedDN && (!tempNode.hostRangeFrom || !tempNode.hostRangeTo)) {
-                    /* errorFound = true;
-                     break;*/
+
                 }
-
-                /*if(!tempNode.selectedDN && !host.length){
-                    errorFound =  true;
-                    break;
-                }*/
-
-                /*if(!tempNode.selectedDN && host.length){
-                    for(var j=0; j<host.length; j++){
-                        if(!(host[j].host)) {
-                           errorFound = true;
-                           breakInnerLoop = true;
-                            break;
-                        }
-                    }
-
-                    if(breakInnerLoop) {
-                        break;
-                    }
-                }*/
             }
             return !errorFound;
         };
 
         /** Function saves cluster information and redirected to cluster configuration wizard  */
         $scope.saveClusConf = function() {
+             $scope.showLoader = true;
             var obj = $scope.getObjectForJSON();
             var convertJson = $scope.convertJson(angular.copy(obj));
             var isNodeInfoValid = $scope.validateNodeInfo();
-            if ($scope.clusterName && $scope.selClusterObj.workDirectoryDN && isNodeInfoValid) {
+            if ($scope.clusterName && isNodeInfoValid) {
                 if (common.setClusterName($scope.clusterName)) {
                     common.setFieldCaption($scope.clusterName, convertJson);
                     var object = common.getFieldCaption($scope.clusterName);
@@ -251,6 +201,7 @@ angular.module('addCluster.ctrl', [])
                         //Factory to add cluster
                         AddClusterFactory.submitClusterForm({}, object1,
                             function(data) {
+                                $scope.showLoader = false;
                                 common.setConfigurationData($scope.clusterName)
                                 $location.path('/manage-cluster');
                             },
@@ -261,6 +212,7 @@ angular.module('addCluster.ctrl', [])
                         //Factory to edit cluster
                         updateClusterFactory.updateCluster({}, object1,
                             function(data) {
+                                $scope.showLoader = false;
                                 common.setConfigurationData($scope.clusterName)
                                 $location.path('/manage-cluster');
                             },
@@ -278,10 +230,11 @@ angular.module('addCluster.ctrl', [])
 
         /** Function to save cluster information */
         $scope.save = function() {
+             $scope.showLoader = true;
             var obj = $scope.getObjectForJSON();
             var convertJson = $scope.convertJson(angular.copy(obj));
             var isNodeInfoValid = $scope.validateNodeInfo();
-            if ($scope.clusterName && $scope.selClusterObj.workDirectoryDN && isNodeInfoValid) {
+            if ($scope.clusterName && isNodeInfoValid) {
                 if (common.setClusterName($scope.clusterName)) {
                     common.setFieldCaption($scope.clusterName, convertJson);
                     var object = common.getFieldCaption($scope.clusterName);
@@ -294,6 +247,7 @@ angular.module('addCluster.ctrl', [])
                         //Factory to add cluster
                         AddClusterFactory.submitClusterForm({}, object1,
                             function(data) {
+                                $scope.showLoader = false;
                                 $scope.displaySaveMsgBox('Success', "Cluster saved successfully!!!");
                             },
                             function(e) {
@@ -303,6 +257,7 @@ angular.module('addCluster.ctrl', [])
                         //Factory to edit cluster
                         updateClusterFactory.updateCluster({}, object1,
                             function(data) {
+                                $scope.showLoader = false;
                                 $scope.displaySaveMsgBox('Success', "Cluster updated successfully!!!");
                             },
                             function(e) {
@@ -331,7 +286,7 @@ angular.module('addCluster.ctrl', [])
             var hasPasswordAgent = null;
             var hasFileTyeAent = null;
 
-            var jmxPluginEnabledRadio = null;
+            var jmxPluginEnabledRadio = false;
             var jmxPortMNOBJ = null;
             var jmxPortTaskMngrOBJ = null;
             var jmxPortDNOBJ = null;
@@ -399,7 +354,8 @@ angular.module('addCluster.ctrl', [])
                 "taskManagers": {
                     "taskManagerJmxPort": jmxPortTaskMngrOBJ,
                     "user": obj.userNameTaskMngr,
-                    "hosts": obj.taskHostArr
+                    "hosts": obj.taskHostArr,
+                    "rmHaEnabled": obj.enableRMHA
                 },
                 "workers": {
                     "hosts": obj.hostDN,
@@ -413,17 +369,9 @@ angular.module('addCluster.ctrl', [])
             return jsonForServer;
         }
 
-       /* function totalNodesFactory() {
-             
-        }*/
-
-
          /** Function to check duplicates ips in workernode host array */
         function checkDuplicateIps(arr) {
             var map = {};
-/*            for (var value of arr) {
-                map[value] = 1;
-            }*/
             for (var i = 0; i < arr.length; i++) {
                 map[arr[i]] = 1;
             }
@@ -435,9 +383,6 @@ angular.module('addCluster.ctrl', [])
         }
         $scope.IPDuplicateFlag = false;
         $scope.removeBlankFlag = false;
-        $scope.totalNodeFlag = false;
-        var getNodeSize = common.getNodeSize();
-
         /** Function to get object (modals) for json */
         $scope.getObjectForJSON = function() {
 
@@ -450,13 +395,6 @@ angular.module('addCluster.ctrl', [])
                     agentHostPort.push({ "host": value, "port": port })
                 }
             });
-            /*for (var indexVal =0 ; indexVal < $scope.workerHostArr.length ; indexVal++) {
-                if ( $scope.workerHostArr[indexVal] == null || $scope.workerHostArr[indexVal] == undefined) {
-                    $scope.removeBlankFlag = true;
-                    return;
-                }
-
-            }*/
             var duplicateIP = checkDuplicateIps($scope.workerHostArr);
             if (duplicateIP == true) {
                 $scope.IPDuplicateFlag = true;
@@ -464,24 +402,6 @@ angular.module('addCluster.ctrl', [])
             } else {
                 $scope.IPDuplicateFlag = false;
             }
-
-            getTotalClusterNodeFactory.getTotalNodesList(
-                     {},
-                    function(data) {
-                        var totalclustersaddedtill = data[0]
-                        var str = getNodeSize['Cluster Size'];
-                        var totalNodesAllowed = str.substring(0, str.lastIndexOf(" "));
-                        var totalCluster = Number(totalNodesAllowed) - Number(totalclustersaddedtill);
-                        //var totalNodesToBEallow = Number(totalclustersaddedtill) + Number(totalCluster+1);
-                        //if ( totalNodesToBEallow > totalNodesAllowed) {
-                        if ( totalNodesAllowed < $scope.workerNodeHostArrCount.length) {
-                            $scope.totalNodeFlag = true;
-                        } else {
-                            $scope.totalNodeFlag = false;
-                        }
-                    },
-                    function(e) {});
-            
             var getObject = {
                 "clusterName": $scope.clusterName,
                 "userMN": $scope.selClusterObj.userMN,
@@ -493,8 +413,8 @@ angular.module('addCluster.ctrl', [])
                 "fileTaskTypeMN": $scope.selClusterObj.fileTaskTypeMN,
                 "taskManagerPswd": $scope.selClusterObj.taskManagerPswd,
                 "taskHostArr": $scope.setProfilingObj.taskHostArr,
-                "userWN": $scope.selClusterObj.userWN,
                 "enableHA": $scope.setProfilingObj.enableHA,
+                "enableRMHA": $scope.setProfilingObj.enableRMHA,
                 "jmxPluginEnabled": $scope.setProfilingObj.jmxPluginEnabled,
                 "enableAgentHA": $scope.setProfilingObj.enableAgentHA,
                 "enableDataProfiling": $scope.setProfilingObj.enableDataProfiling,
@@ -510,7 +430,6 @@ angular.module('addCluster.ctrl', [])
                 "agentHostMN": $scope.selClusterObj.agentHostMN,
                 "jmxPortMN": $scope.selClusterObj.jmxPortMN,
                 "jobTrackerPortMN": $scope.selClusterObj.jobTrackerPortMN,
-                "workDirectoryDN": $scope.selClusterObj.workDirectoryDN,
  		        "spotInstances": $scope.spotInstances,
                 "jmxPortDN": $scope.selClusterObj.jmxPortDN,
                 "jmxPortTT_DN": $scope.selClusterObj.jmxPortTT_DN,
@@ -554,7 +473,6 @@ angular.module('addCluster.ctrl', [])
             if ($scope.currClusterDetail.clusterMode === 'edit') {
                 $scope.disableClusterName = true;
                 getClusterDataFactory.getClusterForm(
-                    //{requestType : 'DELETE'clusterName : 'key'}, 
                     { clusterName: $scope.currClusterDetail.currCluster }, {},
                     function(data) {
                         setEditData(angular.copy(data));
@@ -562,10 +480,25 @@ angular.module('addCluster.ctrl', [])
                     function(e) {});
             }
         };
+        $scope.resourceManagerArrCount = [1];
+
+        $scope.addRMHost = function() {
+            $scope.resourceManagerArrCount.push($scope.resourceManagerArrCount.length + 1);
+        };
+
+        $scope.removeRMHost = function(index) {
+            $scope.resourceManagerArrCount.splice(index, 1);
+            if ($scope.setProfilingObj.taskHostArr[index]){
+                $scope.setProfilingObj.taskHostArr.splice(index, 1);
+            }
+        };
         /** Edit cluster function  */
         function setEditData(clusterObject) {
             if (clusterObject.nameNodes.hasPasswordlessAccess !== undefined) {
                 $scope.setProfilingObj.enableDataProfiling = clusterObject.nameNodes.hasPasswordlessAccess;
+            }
+            if (clusterObject.taskManagers != undefined && clusterObject.taskManagers.rmHaEnabled != undefined) {
+            	$scope.setProfilingObj.enableRMHA = clusterObject.taskManagers.rmHaEnabled;
             }
             if (clusterObject.agents.hasPasswordlessAccess !== undefined) {
                 $scope.setProfilingObj.agentInfoPaswd = clusterObject.agents.hasPasswordlessAccess;
@@ -583,6 +516,7 @@ angular.module('addCluster.ctrl', [])
                 if (angular.isDefined(clusterObject.clusterName)) {
                     $scope.clusterName = clusterObject.clusterName;
                 }
+
                 if (angular.isDefined(clusterObject.zks)) {
                     $scope.zkHostPortArr = clusterObject.zks;
                 }
@@ -615,6 +549,9 @@ angular.module('addCluster.ctrl', [])
                 //Task Manager
                 if (angular.isDefined(clusterObject.taskManagers.hosts)) {
                     $scope.setProfilingObj.taskHostArr = clusterObject.taskManagers.hosts;
+                    for (var i = 2; i <= $scope.setProfilingObj.taskHostArr.length; i++) {
+                        $scope.resourceManagerArrCount.push(i);
+                    }
                 }
                 if (angular.isDefined(clusterObject.taskManagers.user)) {
                     $scope.selClusterObj.userNameTaskMngr = clusterObject.taskManagers.user;
@@ -641,10 +578,6 @@ angular.module('addCluster.ctrl', [])
                 if (angular.isDefined(clusterObject.workers.taskExecutorJmxPort)) {
                     $scope.selClusterObj.jmxPortTT_DN = clusterObject.workers.taskExecutorJmxPort;
                 }
-                if (angular.isDefined(clusterObject.workers.user)) {
-                    $scope.selClusterObj.userWN = clusterObject.workers.user;
-                }
-
                 if (angular.isDefined(clusterObject.workers.hosts)) {
 
                     $scope.workerHostArr = clusterObject.workers.hosts;
@@ -664,8 +597,6 @@ angular.module('addCluster.ctrl', [])
 
                 if (angular.isDefined(clusterObject.enableHostRange)) {
                     $scope.selectedDN = clusterObject.enableHostRange;
-                    //$scope.selectedDN = new Boolean(clusterObject.enableHostRange);
-
                 }
                 if (angular.isDefined(clusterObject.agents.agents)) {
                     angular.forEach(clusterObject.agents.agents, function(value, key) {
@@ -701,7 +632,6 @@ angular.module('addCluster.ctrl', [])
 
             var clusterObj = common.getFieldCaption(cluster);
             $scope.userMN_D = clusterObj.userMN;
-            //$scope.hostMN_D = clusterObj.hostMN;
             $scope.fileTypeMN_D = clusterObj.fileTypeMN;
             $scope.agentPortMN_D = clusterObj.agentPortMN;
             $scope.jmxPortMN_D = clusterObj.jmxPortMN;
@@ -716,43 +646,6 @@ angular.module('addCluster.ctrl', [])
                 }
             }
         };
-
-        /*  $scope.criteriaBased = function(param){
-                $scope.startCriteria = false;
-                if($scope.selProfilingObj.enableDataProfiling === 'withCriteria'){
-                        $scope.startCriteria = true;
-                }            
-            };*/
-        /*  $scope.resetDataNodes = function() {
-              angular.forEach($scope.selClusterObj.nodeArr, function(value,key) {
-                  value.userDN = "";
-                  angular.forEach(value.hostDN, function(valueChild,keyChild) {
-                      valueChild.host = "";
-                  });
-              });
-          };*/
-
-        /*  $scope.setNodeFromMaster = function() {
-              if($scope.selClusterObj.copyFromMaster) {
-                  angular.forEach($scope.selClusterObj.nodeArr, function(value,key) {
-                          value.userDN = $scope.selClusterObj.userMN;
-                      angular.forEach(value.hostDN, function(valueChild,keyChild) {
-                          //valueChild.host = $scope.selClusterObj.hostMN;
-                          valueChild.host = $scope.setProfilingObj.hostMNArr;
-                      });
-                  });
-              } else {
-                  $scope.resetDataNodes();
-              }
-          };*/
-
-        /*$scope.generateHostFields = function(index){
-             $scope.selClusterObj.nodeArr[index].hostDN.push({"host" : ""});
-        };
-
-         $scope.removeHostFields = function(nodeKey,hostKey) {
-             $scope.selClusterObj.nodeArr[nodeKey].hostDN.splice(hostKey,1);
-         };*/
 
          /** Display messages on save or update the cluster */
         $scope.saveSuccess = false;

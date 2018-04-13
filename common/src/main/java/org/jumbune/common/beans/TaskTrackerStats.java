@@ -1,4 +1,4 @@
-package com.impetus.jumbune.common.beans;
+package org.jumbune.common.beans;
 
 public class TaskTrackerStats extends JMXStats implements Stats {
 

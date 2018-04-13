@@ -14,13 +14,10 @@ public class JumbuneInfo {
 
 	private static String version;
 
-	private static boolean secured;
-
 	private static final Logger LOGGER = LogManager.getLogger(JumbuneInfo.class);
 
 	static {
 		setHome(null);
-		secured = false;
 	}
 
 	/**
@@ -45,22 +42,6 @@ public class JumbuneInfo {
 		
 		JumbuneInfo.home = home;
 		LOGGER.debug("JUMBUNE HOME [" + JumbuneInfo.home + "]");
-	}
-
-	/**
-	 * Checks if Jumbune is secured or not This method is meant to be used only for
-	 * ui purpose for login and dashboard related UI functionality. This method
-	 * should not be used for checking whether a particular cluster is secured or
-	 * not. For that purpose use cluster.isSecured() method.
-	 * 
-	 * @return true if secured otherwise flase;
-	 */
-	public static boolean isSecured() {
-		return secured;
-	}
-
-	public static void setSecured(boolean secured) {
-		JumbuneInfo.secured = secured;
 	}
 
 	/**

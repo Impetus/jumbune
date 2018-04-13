@@ -52,17 +52,6 @@ angular.module('dataValidateComp.ctrl', []).controller('dataValidationController
     $scope.back = function() {
         $location.path('/add-analyze-data-configuration');
     };
-    /*    var searchModule = $location.search().module;
-     
-               if(searchModule) { 
-                    
-                } else {
-                     $scope.autoFillValidation = { analyzeData: $scope.abc()} 
-                }
-        $scope.abc = function () {
-                    console.log("ggh");
-        }*/
-
     function isNullOrEmpty(val) {
     	if (val == null || val == '') {
     		return true;
@@ -158,7 +147,7 @@ angular.module('dataValidateComp.ctrl', []).controller('dataValidationController
                 };
 
                 $http(req).then(function(data) {
-                    common.setOptimizeJobName(data.data.JOB_NAME);
+                    common.setJobName(data.data.JOB_NAME);
                     $location.path('/analyze-data-comp');
                 }, function(error) {
                     console.log("in error", error)

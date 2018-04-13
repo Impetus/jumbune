@@ -1,14 +1,24 @@
 package org.jumbune.remoting.server.invocations;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.FileOwnerAttributeView;
+import java.nio.file.attribute.UserPrincipal;
+import java.nio.file.attribute.UserPrincipalLookupService;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Vector;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,9 +33,11 @@ import org.jumbune.remoting.server.JumbuneAgent;
 
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
+import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
+import com.jcraft.jsch.SftpException;
 
 /**
  * The Class CommandDelegatorMethods. Its the container for the methods to be invoked from {@link org.jumbune.remoting.server.CommandDelegator} class. 
@@ -53,6 +65,12 @@ public class CommandDelegatorMethods {
 	private static final String BASH_C = "bash -c ";
 	
 	private static final String JMX_AGENT_LOG = "jmx.log";
+	
+	private static final String SFTP = "sftp";
+	
+	private static final String PARENT_DIR = "..";
+
+	private static final String CURRENT_DIR = ".";
 
 	/**
 	 * This method transfers jumbune's JMXServer to all the nodes in the cluster.
@@ -373,4 +391,171 @@ public class CommandDelegatorMethods {
 		LOGGER.debug("Session Established "+":["+session.isConnected()+"], for user ["+switchedIdentity.getUser()+"]");
 		return session;
 	}
+	
+public void runScpAcrossNodes(Command command){
+		
+		ScpParams scpParams =  new ScpParams(command);
+		if(scpParams.getScpOptions()!=null){
+			LOGGER.debug("scpParams.getScpOptions():"+Arrays.toString(scpParams.getScpOptions().toArray()));
+		}
+		
+		LOGGER.debug("scpParams.getSourceUser():"+scpParams.getSourceUser());
+		LOGGER.debug("scpParams.getSourceHost():"+scpParams.getSourceHost());
+		LOGGER.debug("scpParams.getSourceLocation():"+scpParams.getSourceLocation());
+		
+		
+		LOGGER.debug("scpParams.getDestinationUser():"+scpParams.getDestinationUser());
+		LOGGER.debug("scpParams.getDestinationHost():"+scpParams.getDestinationHost());
+		LOGGER.debug("scpParams.getDestinationLocation():"+scpParams.getDestinationLocation());
+		Session session = null ;
+	    session = establishConnection(scpParams.getSourceUser(), scpParams.getSourceHost(), command.getSwitchedIdentity());
+	    Channel channel = null;
+	    ChannelSftp channelSftp = null;
+	    try {
+			channel = session.openChannel(SFTP);
+			channel.connect();
+			channelSftp = (ChannelSftp) channel;
+			if (isDirectory(channelSftp, scpParams.getSourceLocation())) {
+				downloadDirectory(channelSftp, scpParams.getSourceLocation() + File.separator, scpParams.getDestinationLocation(),command.getSwitchedIdentity().getWorkingUser());
+			} else {
+				downloadSingleFile(channelSftp, scpParams.getSourceLocation(), scpParams.getDestinationLocation(), command.getSwitchedIdentity().getWorkingUser());
+			}
+			
+		} catch (JSchException | SftpException e) {
+			LOGGER.error("Unable to copy the required file from worker nodes to agent.", e);
+		} finally {
+			if (channelSftp != null) {
+				channelSftp.disconnect();
+			}
+			if (channel != null) {
+				channel.disconnect();	
+			}
+			if (session != null) {
+				session.disconnect();
+	    	}
+		}
+	}
+
+public static Session establishConnection(String username, String namenodeIP, SwitchedIdentity switchedIdentity) {
+	JSch jsch = new JSch();
+	Session session = null;
+	try {
+		if(switchedIdentity.getPrivatePath() != null && !switchedIdentity.getPrivatePath().isEmpty()){
+			jsch.addIdentity(switchedIdentity.getPrivatePath());	
+		}
+		session = jsch.getSession(username, namenodeIP,22);
+	} catch (JSchException e) {
+		LOGGER.error(String.format("Unable to create jsch session for user [ %s ], namenode [ %s ]", username, namenodeIP));
+	}
+	java.util.Properties config = new java.util.Properties();
+	try {
+		if(switchedIdentity.getPasswd()!=null) {
+			session.setPassword(StringUtil.getPlain(switchedIdentity.getPasswd()));
+			config.put("PreferredAuthentications", "password");
+		}
+	} catch (Exception e) {
+		LOGGER.error("Failed to Decrypt the password", e);
+	}
+	
+	config.put("StrictHostKeyChecking", "no");
+	session.setConfig(config);
+	try {
+		session.connect();
+	} catch (JSchException e) {
+		LOGGER.error("Failed to authenticate user [" + username + "], [" + namenodeIP + "], check username and password");
+	}
+	return session;
+}
+
+/**
+ * This method downloads a single file
+ * @param channelSftp
+ * @param remoteFilePath remote file (not directory) path
+ * @param localDirPath
+ * @throws SftpException
+ */
+private void downloadSingleFile(ChannelSftp channelSftp, String remoteFilePath,
+		String localDirPath, String user) throws SftpException {
+	new File(localDirPath).mkdirs();
+	changeOwnership(localDirPath, user);
+	channelSftp.get(remoteFilePath, localDirPath + File.separator + Paths.get(remoteFilePath).getFileName().toString());
+	changeOwnership(localDirPath + File.separator + Paths.get(remoteFilePath).getFileName().toString(), user);
+}
+
+/**
+ * This method downloads whole directory recursively
+ * @param channelSftp
+ * @param remotePath remote directory (not file) path
+ * @param localPath
+ * @throws SftpException
+ */
+private void downloadDirectory(ChannelSftp channelSftp, String remotePath, String localPath, String user) throws SftpException {
+	@SuppressWarnings("unchecked")
+	Vector<ChannelSftp.LsEntry> childs = channelSftp.ls(remotePath);
+	changeOwnership(localPath, user);
+	for (ChannelSftp.LsEntry child : childs) {
+		if (child.getAttrs().isDir()) {
+			if (CURRENT_DIR.equals(child.getFilename()) || PARENT_DIR.equals(child.getFilename())) {
+				continue;
+			}
+			new File(localPath + File.separator + child.getFilename()).mkdirs();
+			changeOwnership(localPath + File.separator + child.getFilename(), user);
+			downloadDirectory(channelSftp, remotePath + File.separator + child.getFilename() + File.separator,
+					localPath + File.separator + child.getFilename(),user);
+		} else {
+			channelSftp.get(remotePath + File.separator + child.getFilename(),
+					localPath + File.separator + child.getFilename());
+			changeOwnership(localPath + File.separator + child.getFilename(), user);
+		}
+		
+	}
+}
+
+
+/** This method changes the ownership of folder/file to the user provided
+ * @param destinationLocation : the location of the path to be owned
+ * @param user : the user which needs to own the folder/file
+ */
+private void changeOwnership(String destinationLocation, String user){
+	
+	Path path = Paths.get(destinationLocation);
+    FileOwnerAttributeView view = Files.getFileAttributeView(path,
+        FileOwnerAttributeView.class);
+    UserPrincipalLookupService lookupService = FileSystems.getDefault()
+        .getUserPrincipalLookupService();
+    UserPrincipal userPrincipal;
+	try {
+		userPrincipal = lookupService.lookupPrincipalByName(user);
+		Files.setOwner(path, userPrincipal);
+	} catch (IOException e) {
+		LOGGER.error("Error while changing ownership of destination location[" + destinationLocation +"]" + "to user[" + user + "]" , e);
+	}
+}
+
+/**
+ * Checks if the remote file path provided is a directory or a file.
+ * @param channelSftp
+ * @param remotePath
+ * @return
+ * @throws SftpException
+ */
+@SuppressWarnings("unchecked")
+private boolean isDirectory(ChannelSftp channelSftp, String remotePath) throws SftpException {
+	Vector<ChannelSftp.LsEntry> childs = channelSftp.ls(remotePath);
+	return childs.size() == 1 ? false : true;
+}
+
+private static String scpCommandCreator(List<String> scpOptions, String destinationLocation){
+	StringBuilder sb = new StringBuilder();
+	sb.append(RemotingConstants.SCP).append(RemotingConstants.SINGLE_SPACE).append("-f").append(RemotingConstants.SINGLE_SPACE).append(listAsString(scpOptions)).append(RemotingConstants.SINGLE_SPACE).append(destinationLocation);
+	return sb.toString();
+}
+
+private static Object listAsString(List<String> scpOptions) {
+	StringBuilder sb = new StringBuilder();
+	for(String scpOption: scpOptions){
+		sb.append(scpOption).append(RemotingConstants.SINGLE_SPACE);
+	}
+	return sb.toString();
+}
 }

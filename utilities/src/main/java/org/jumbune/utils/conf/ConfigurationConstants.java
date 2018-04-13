@@ -18,8 +18,6 @@ public interface ConfigurationConstants {
 
 	String TICKET_CONFIGURATION_FILE = "ticketConfiguration.json";
 
-	String KDC_CONFIGURATION_FILE = "kdcConfiguration.json";
-
 	String JUMBUNE_ENV_VAR_NAME = "JUMBUNE_HOME";
 
 	String SLA_CONFIGURATIONS = "slaConfigurations.json";

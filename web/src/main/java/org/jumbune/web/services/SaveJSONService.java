@@ -24,7 +24,7 @@ import org.jumbune.utils.exception.JumbuneRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.jumbune.common.job.EnterpriseJobConfig;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.web.utils.WebConstants;
 import org.jumbune.web.utils.WebUtil;
 
@@ -40,9 +40,9 @@ public class SaveJSONService {
 	@POST
 	@Produces(MediaType.TEXT_PLAIN)
 	@Consumes(MediaType.APPLICATION_JSON)
-	public Response processPost(String enterpriseJobConfigJSON){
+	public Response processPost(String jobConfigJSON){
 		try {
-			return service(enterpriseJobConfigJSON);
+			return service(jobConfigJSON);
 		} catch (IOException e) {
 			LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));
 			return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
@@ -64,11 +64,11 @@ public class SaveJSONService {
         
         LOGGER.debug("Received JSON [" + configJSON + "]");
         Gson gson = new Gson();
-        EnterpriseJobConfig config = gson.fromJson(configJSON, EnterpriseJobConfig.class);
+        JobConfig config = gson.fromJson(configJSON, JobConfig.class);
         ClasspathElement classpathElement = config.getClasspath().getUserSupplied();
         addUserSuppliedJars(configJSON, classpathElement);
         
-        String jsonString = gson.toJson(config, EnterpriseJobConfig.class);
+        String jsonString = gson.toJson(config, JobConfig.class);
         
         File file = new File(tempDirectoryPath + fileName);
 

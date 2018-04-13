@@ -24,7 +24,7 @@ import org.jumbune.common.utils.Constants;
 import org.jumbune.utils.exception.JumbuneException;
 
 import com.google.gson.Gson;
-import org.jumbune.common.job.EnterpriseJobConfig;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.ExtendedConfigurationUtil;
 import org.jumbune.utils.exception.ExtendedErrorCodesAndMessages;
 import org.jumbune.web.utils.WebConstants;
@@ -92,7 +92,7 @@ public class GatherScheduledJobResultService {
             try {
                     Gson gson = new Gson();
                     inputStreamReader  = new InputStreamReader(new FileInputStream(new File(filePath)));
-                    Config config = (Config)gson.fromJson(inputStreamReader, EnterpriseJobConfig.class);
+                    Config config = (Config)gson.fromJson(inputStreamReader, JobConfig.class);
                     return config;
             } finally {
                     if(inputStreamReader != null){
@@ -122,11 +122,11 @@ public class GatherScheduledJobResultService {
 				+ scheduledJobName;
 		String jsonFileLoc = ExtendedConfigurationUtil.getScheduleJobJsonFileLoc(scheduleJobLoc);
 		try {
-			EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) loadJob(jsonFileLoc);
+			JobConfig jobConfig = (JobConfig) loadJob(jsonFileLoc);
 			
 
 			WebUtil util = new WebUtil();
-			String tabs = util.getTabsInformation(enterpriseJobConfig);
+			String tabs = util.getTabsInformation(jobConfig);
 
 			request.setAttribute("tabs", tabs);
 			request.setAttribute("scheduledJobName", scheduledJobName);

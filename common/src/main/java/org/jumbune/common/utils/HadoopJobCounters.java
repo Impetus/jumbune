@@ -10,15 +10,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.JobCounterBean;
-import org.jumbune.common.beans.cluster.Agent;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.job.JumbuneRequest;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jumbune.remoting.client.Remoter;
-import org.jumbune.remoting.client.RemoterFactory;
 
 /**
  * The Class HadoopJobCounters. This class populates the job counters according
@@ -59,7 +58,7 @@ public class HadoopJobCounters {
 		
 		JobConfig jobConfig =  jumbuneRequest.getJobConfig();
 		String expectedLocation = new StringBuilder()
-				.append(JobConfig.getJumbuneHome()).append(File.separator)
+				.append(JumbuneInfo.getHome())
 				.append(Constants.JOB_JARS_LOC)
 				.append(jobConfig.getJumbuneJobName()).append(File.separator)
 				.append("cluster-configuration.properties").toString();

@@ -36,11 +36,7 @@ angular.module('directives')
                 disable: '=',
                 tab: '@'
             },
-            link: function (scope, elem, attr) {               
-                    $('#formDisableOneClick').one('click', function() {  
-                        $(this).attr('disabled','disabled');
-                    });
-                
+            link: function (scope, elem, attr) {  
             },
             templateUrl: "app/form-buttons/jumbune-widget-form-buttons.three.html"
         };

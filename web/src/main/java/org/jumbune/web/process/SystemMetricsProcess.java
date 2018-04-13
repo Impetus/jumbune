@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.cluster.Cluster;
 
 import com.google.gson.Gson;
-import org.jumbune.common.beans.cluster.EnterpriseClusterDefinition;
+import org.jumbune.common.beans.cluster.ClusterDefinition;
 import org.jumbune.web.services.ClusterAnalysisService;
 import org.jumbune.web.utils.StatsManager;
 
@@ -51,7 +51,7 @@ public class SystemMetricsProcess extends Thread implements BackgroundProcess {
 	}
 
 	public Cluster getCluster(String clusterName) throws IOException {
-		EnterpriseClusterDefinition cluster = ClusterAnalysisService.cache.getCluster(clusterName);
+		ClusterDefinition cluster = ClusterAnalysisService.cache.getCluster(clusterName);
 		if (cluster == null) {
 			File file = new File(System.getenv("JUMBUNE_HOME") + "/clusters/" + clusterName + ".json");
 			StringBuffer json = new StringBuffer();
@@ -67,7 +67,7 @@ public class SystemMetricsProcess extends Thread implements BackgroundProcess {
 					br.close();
 				}
 			}
-			cluster = new Gson().fromJson(json.toString(), EnterpriseClusterDefinition.class);
+			cluster = new Gson().fromJson(json.toString(), ClusterDefinition.class);
 			ClusterAnalysisService.updateClusterCache(clusterName, cluster);
 		}
 		return cluster;

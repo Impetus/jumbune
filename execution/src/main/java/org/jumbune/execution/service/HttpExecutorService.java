@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.HttpReportsBean;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.ReportsBean;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.job.JumbuneRequest;
@@ -20,7 +21,7 @@ import org.jumbune.utils.exception.ErrorCodesAndMessages;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
 
-import org.jumbune.common.job.EnterpriseJobConfig;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.execution.beans.Parameters;
 import org.jumbune.execution.processor.Processor;
 import org.jumbune.execution.utils.ExecutionConstants;
@@ -106,18 +107,18 @@ public class HttpExecutorService extends CoreExecutorService {
 	 */
 	public JumbuneRequest runInSeperateThread(JumbuneRequest jumbuneRequest, HttpReportsBean reports) throws JumbuneException {
 		List<Processor> processors;
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig) jumbuneRequest.getConfig();
+		JobConfig jobConfig = (JobConfig) jumbuneRequest.getConfig();
 		Cluster cluster = jumbuneRequest.getCluster();
-		if (JobConfigUtil.isEnable(enterpriseJobConfig.getEnableStaticJobProfiling()) && !checkProfilingState()) {
+		if (JobConfigUtil.isEnable(jobConfig.getEnableStaticJobProfiling()) && !checkProfilingState()) {
 			throw new JumbuneException(ErrorCodesAndMessages.COULD_NOT_EXECUTE_PROGRAM);
 		}
 
 		this.reports = reports;
 
-		processors = getProcessorChain(enterpriseJobConfig, reports, HTTP_BASED);
+		processors = getProcessorChain(jobConfig, reports, HTTP_BASED);
 		createJobJarFolderOnAgent(jumbuneRequest);
 		try {
-			persistJsonInfoForShutdownHook(jumbuneRequest,EnterpriseJobConfig.getJumbuneHome());
+			persistJsonInfoForShutdownHook(jumbuneRequest, JumbuneInfo.getHome());
 		} catch (IOException e) {
 			LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));
 		}

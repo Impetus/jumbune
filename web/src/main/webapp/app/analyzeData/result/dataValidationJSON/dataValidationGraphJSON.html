@@ -27,12 +27,7 @@
 <div class="resultWrapper" id="dataValidationWrap">
     <div class="widgetRow" ng-init="init()">
         <div class="widgetWrapper" id="dataValidationWidget">
-           <!--  <h2>Data Validation</h2> -->
-            <!-- <h2><span class="tracking">Data Validation</span><span class="tracking1" style="float:right;">Jumbune Job&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;{{showJobName}}</span></h2> -->
-            <h2><span class="tracking"><i class="fa fa-home" style="font-size:30px;cursor:pointer;" ng-click="clickedHomeIcon()"></i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Job&nbsp;&nbsp;-&nbsp;&nbsp;{{showJobName}}(Json Data Validation Job)</span><span class="tracking1" style="float:right;"><!-- Jumbune Job Name&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;{{showJobName}} --></span><span style="float:right;margin-top:5px;padding-right:15px;"><i class="fa fa-key rotateClass tip" data-toggle="tooltip" ng-show="licenseExpireTrue" title="License will expire soon." data-placement="right" style="color:#F44336"></i>
-            <i ng-show="licenseExpireDays" class="fa fa-key rotateClass tip" data-toggle="tooltip" title="License will expire in {{daysDiffShow}} day." data-placement="right" style="color:#F44336"></i> </span></h2> 
-           
-            <!-- <div align="center" id="chart1" style="padding:15px 0;display:inline-block;"></div> -->
+            <h2><span class="tracking"><i class="fa fa-home" style="font-size:30px;cursor:pointer;" ng-click="clickedHomeIcon()"></i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Job&nbsp;&nbsp;-&nbsp;&nbsp;{{showJobName}}(Json Data Validation Job)</span><span class="tracking1" style="float:right;"></span></h2> 
             <div ng-show="counterValidationFlag" class="col-lg-12">
                 <div class="panel panel-primary">
                     <div class="panel-heading">
@@ -83,9 +78,6 @@
                     </div>
                 </div>
             </div>
-           <!--  <div class="clearfix dataValidationChartWrapper" id="resultWidgetContainer"> 
-              
-            </div> -->
         <div class="row clearfix dataValidationChartWrapper" id="resultWidgetContainer">
                <div class="col-md-6">
                     <h3>Clean vs Violated Data</h3>
@@ -96,57 +88,55 @@
                     <h3>Data Violations</h3>
                     <div ng-show="noJsonDataViolatnFlag" class="yellow" style="position:relative;top:90px;text-align:center;font-weight:bold;font-size:21px;">No Json Data Violations Found</div>
                     <div class="ring-loader" style="margin-top:145px;margin-bottom:145px"></div>
-                   <!--  <div align="center" id="dataViolationGraphId" ng-click="sampledetails(finalTableData)"></div> -->
-                    <div ng-show="!noJsonDataViolatnFlag" style="width: 500px;" align="center" id="jsonGraphViolations"></div><!-- 
-                    <div align="center" id="dataViolationGraphId" ng-click="sampledetails(finalTableData)"></div> -->
+                    <div ng-show="!noJsonDataViolatnFlag" style="width: 500px;" align="center" id="jsonGraphViolations"></div>
                 </div>
-        </div>
-
-            <div class="widget-containerDV" ng-if="tableJSONHideFlag">
-                <div class="widget-headerDV">Data Violations Table(<span id="voilationHeader">{{violationJSONTable.label}}</span>)<span id="voilationHeader1" style="float:right" >File Name&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;{{showFileName}}</span></div>
-                  <div class="widget-body"> 
-                    <table class="table-striped dtl-tbl dvdatabox" style="width: 30%; float: left;">
-                        <thead>
-                            <tr>
-                                <th>File Name</th>
-                                <th>Violations</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                                <tr ng-click="showJsonFileViolaions(row.fileName)" ng-repeat="row in tableData">
-                                    <td>
-                                        <ul>
-                                            <li style="cursor: pointer; border-bottom: 1px solid #ccc;border-right: 1px solid #ccc;font-size: 12px;padding: 5px;" ng-click="getJSONCall(row.fileName)">
-                                                {{row.fileName}}
-                                            </li>
-                                         </ul>
-                                    </td>
-                                    <td>
-                                        <ul>
-                                            <li style="border-bottom: 1px solid #ccc;border-right: 1px solid #ccc;font-size: 12px;padding: 5px;">
-                                            {{row.violatedTupleinFile}}
-                                            </li>
-                                        </ul>
-                                    </td>
+            </div>
+    
+                <div class="widget-containerDV" ng-if="tableJSONHideFlag">
+                    <div class="widget-headerDV">Data Violations Table(<span id="voilationHeader">{{violationJSONTable.label}}</span>)<span id="voilationHeader1" style="float:right" >File Name&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;{{showFileName}}</span></div>
+                      <div class="widget-body"> 
+                        <table class="table-striped dtl-tbl dvdatabox" style="width: 30%; float: left;">
+                            <thead>
+                                <tr>
+                                    <th>File Name</th>
+                                    <th>Violations</th>
                                 </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div ui-grid="gridOptionsTestJson" ng-if="jsonDataFlag" ui-grid-pagination class="grid" style="width: 450px;  height: 300px; border-left: 1px solid #ccc;float: right;width: 60%;"></div>
-               
+                            </thead>
+                            <tbody>
+                                    <tr ng-click="showJsonFileViolaions(row.fileName)" ng-repeat="row in tableData">
+                                        <td>
+                                            <ul>
+                                                <li style="cursor: pointer; border-bottom: 1px solid #ccc;border-right: 1px solid #ccc;font-size: 12px;padding: 5px;" ng-click="getJSONCall(row.fileName)">
+                                                    {{row.fileName}}
+                                                </li>
+                                             </ul>
+                                        </td>
+                                        <td>
+                                            <ul>
+                                                <li style="border-bottom: 1px solid #ccc;border-right: 1px solid #ccc;font-size: 12px;padding: 5px;">
+                                                {{row.violatedTupleinFile}}
+                                                </li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div ui-grid="gridOptionsTestJson" ng-if="jsonDataFlag" ui-grid-pagination class="grid" style="width: 450px;  height: 300px; border-left: 1px solid #ccc;float: right;width: 60%;"></div>
+                   
+                </div> 
             </div> 
-        </div> 
- <p id="errorMessage"
-   style="text-align: center;
-            color: rgb(169, 68, 66);
-            width: 600px;
-            padding: 20px;
-            border-radius: 5px;
-            background: rgb(235, 204, 209);
-            margin: 0 auto;
-            position: relative;
-            top: 150px;
-            display: none"
-    ></p>
+     <p id="errorMessage"
+       style="text-align: center;
+                color: rgb(169, 68, 66);
+                width: 600px;
+                padding: 20px;
+                border-radius: 5px;
+                background: rgb(235, 204, 209);
+                margin: 0 auto;
+                position: relative;
+                top: 150px;
+                display: none"
+        ></p>
+        </div>
     </div>
-</div>

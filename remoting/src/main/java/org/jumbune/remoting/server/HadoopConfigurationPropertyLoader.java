@@ -67,17 +67,20 @@ public class HadoopConfigurationPropertyLoader {
 		}
 	}
 	
-	public static synchronized HadoopConfigurationPropertyLoader getInstance(){
-		String configurationFilePath;
-		try{
-			if(instance == null){
-				String agentHome = System.getenv("AGENT_HOME");
-				configurationFilePath = agentHome + File.separator + CONFIGURATION_FILE_NAME;
-				instance = new HadoopConfigurationPropertyLoader(new File(configurationFilePath));
-				return instance;
+	public static HadoopConfigurationPropertyLoader getInstance() {
+		if (instance == null) {
+			synchronized (HadoopConfigurationPropertyLoader.class) {
+				if (instance == null) {
+					try {
+						String agentHome = JumbuneAgent.getAgentDirPath();
+						String configurationFilePath = agentHome + File.separator + CONFIGURATION_FILE_NAME;
+						instance = new HadoopConfigurationPropertyLoader(new File(configurationFilePath));
+					} catch (IOException e) {
+						LOGGER.error("Could not create configuration property loader object", e);
+					}
+					return instance;
+				}
 			}
-		}catch(IOException e){
-			LOGGER.error("Could not create configuration property loader object", e);
 		}
 		return instance;
 	}

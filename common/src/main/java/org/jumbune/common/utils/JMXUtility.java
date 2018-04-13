@@ -3,26 +3,25 @@ package org.jumbune.common.utils;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jumbune.common.beans.cluster.Agent;
 import org.jumbune.common.utils.CommandWritableBuilder;
+import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.remoting.client.Remoter;
-import org.jumbune.remoting.client.RemoterFactory;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemotingMethodConstants;
 
-import org.jumbune.common.beans.cluster.EnterpriseCluster;
+import org.jumbune.common.beans.cluster.Cluster;
 
 public final class JMXUtility {
 
 	private static final String JMX_AGENT_DIR = "/jmx_agent/";
 		
-	public void sendJmxAgentToAllDaemons(EnterpriseCluster cluster){				
+	public void sendJmxAgentToAllDaemons(Cluster cluster){				
 		Remoter remoter = RemotingUtil.getRemoter(cluster);
 
 		// building commandWritable
 	    List<String> commandParams = prepareCommandParamsForJMXOperations(cluster);
-	    String jmxAgentDir = cluster.getWorkers().getWorkDirectory() + JMX_AGENT_DIR ;
+	    String jmxAgentDir = Constants.HOME + cluster.getAgents().getUser() + Constants.DOTJUMBUNE + JMX_AGENT_DIR ;
 
 	    RemotingUtil.mkDir(new CommandWritableBuilder(cluster), remoter, jmxAgentDir);
 	  
@@ -33,19 +32,19 @@ public final class JMXUtility {
 	}
 	
 	
-  private List<String> prepareCommandParamsForJMXOperations(EnterpriseCluster cluster){
+  private List<String> prepareCommandParamsForJMXOperations(Cluster cluster){
 	  List<String> commandParams = new ArrayList<>();
-	   final String jmxAgentDir = cluster.getWorkers().getWorkDirectory() + JMX_AGENT_DIR ;	    
+	   final String jmxAgentDir = Constants.HOME + cluster.getAgents().getUser() + Constants.DOTJUMBUNE + JMX_AGENT_DIR ;	    
 		commandParams.add(jmxAgentDir);
 	    commandParams.addAll(cluster.getWorkers().getHosts());
 	    commandParams.add(cluster.getNameNode());
-	    commandParams.add(cluster.getTaskManagers().getActive());
+	    commandParams.add(cluster.getResourceManager());
 	    //  commandParams.addAll(cluster.getNameNodes().getHosts());
 	    return commandParams;
   }
 
   
-  public boolean establishConnectionToJmxAgent(EnterpriseCluster cluster){
+  public boolean establishConnectionToJmxAgent(Cluster cluster){
 
 		Remoter remoter = RemotingUtil.getRemoter(cluster);
 	    List<String> commandParams = prepareCommandParamsForJMXOperations(cluster);
@@ -56,7 +55,7 @@ public final class JMXUtility {
 	   return false;	  
   }
   
-  public void shutDownJMXAgents(EnterpriseCluster cluster) {
+  public void shutDownJMXAgents(Cluster cluster) {
 
 		Remoter remoter = RemotingUtil.getRemoter(cluster);
 	    List<String> commandParams = prepareCommandParamsForJMXOperations(cluster);

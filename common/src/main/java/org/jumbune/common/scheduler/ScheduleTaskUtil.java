@@ -10,24 +10,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.JobStatus;
 import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
+import org.jumbune.common.utils.ExtendedConfigurationUtil;
+import org.jumbune.common.utils.ExtendedConstants;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
 
-import org.jumbune.common.job.EnterpriseJobConfig;
-import org.jumbune.common.utils.ExtendedConfigurationUtil;
-import org.jumbune.common.utils.ExtendedConstants;
 import com.google.gson.Gson;
 
 
@@ -90,10 +88,9 @@ public class ScheduleTaskUtil {
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws JumbuneException the hTF exception
 	 */
-	public void scheduleJumbuneTaskAndCopyResources(Config config, boolean isReAttempt) throws IOException, JumbuneException {
-		EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig)config;
-		String scheduleJobDateTime = enterpriseJobConfig.getJumbuneScheduleTaskTiming();
-		String scheduleJobName = enterpriseJobConfig.getJumbuneJobName();
+	public void scheduleJumbuneTaskAndCopyResources(JobConfig jobConfig, boolean isReAttempt) throws IOException, JumbuneException {
+		String scheduleJobDateTime = jobConfig.getJumbuneScheduleTaskTiming();
+		String scheduleJobName = jobConfig.getJumbuneJobName();
 
 		StringBuilder scheduleJobLoc = getScheduleJobLoc(scheduleJobName, isReAttempt);
 
@@ -101,15 +98,15 @@ public class ScheduleTaskUtil {
 		
 		//Copy scheduled job jar and resources if at least one of following modules is enabled: flow debugging, tuning.
 		//Skip this for HDFS validation. 
-		if(Enable.TRUE.equals(enterpriseJobConfig.getDebugAnalysis())){
-			copyScheduledJobJarAndResources(config, scheduleJobLoc.toString());
+		if(Enable.TRUE.equals(jobConfig.getDebugAnalysis())){
+			copyScheduledJobJarAndResources(jobConfig, scheduleJobLoc.toString());
 		}
 		String jsonFileName = ExtendedConfigurationUtil.getScheduleJobJsonFileLoc(scheduleJobLoc.toString());
 
 		scheduleJumbuneTask(scheduleJobDateTime, scheduleJobLoc);
 
 		// Copy the command file and respective json to scheduledJobs folder...
-		copyJsonFileToScheduleJobsLoc(jsonFileName, config);
+		copyJsonFileToScheduleJobsLoc(jsonFileName, jobConfig);
 	}
 
 	/**
@@ -131,23 +128,22 @@ public class ScheduleTaskUtil {
 	/**
 	 * It copies the jar to a given location and updates location in yamlConfig.
 	 *
-	 * @param config the config
+	 * @param jobConfig the config
 	 * @param scheduleJobLoc the schedule job loc
 	 * @throws JumbuneException the hTF exception
 	 */
-	private void copyScheduledJobJarAndResources(Config config, String scheduleJobLoc) {
+	private void copyScheduledJobJarAndResources(JobConfig jobConfig, String scheduleJobLoc) {
 		try {
-			EnterpriseJobConfig enterpriseJobConfig = (EnterpriseJobConfig)config;
-			if(null==enterpriseJobConfig.getInputFile()){
+			if(null==jobConfig.getInputFile()){
 				return;
 			}
-			ConfigurationUtil.copyFileToDestinationLocation(enterpriseJobConfig.getInputFile(), scheduleJobLoc);
-			String inputFile = enterpriseJobConfig.getInputFile();
+			ConfigurationUtil.copyFileToDestinationLocation(jobConfig.getInputFile(), scheduleJobLoc);
+			String inputFile = jobConfig.getInputFile();
 			String fileName = inputFile.substring(inputFile.lastIndexOf(File.separator));
 
 			String updatedFileLoc = scheduleJobLoc + fileName;
 			LOG.debug("updated file location  " + updatedFileLoc);
-			enterpriseJobConfig.setInputFile(updatedFileLoc);
+			jobConfig.setInputFile(updatedFileLoc);
 
 		} catch (IOException ie) {
 			LOG.error(JumbuneRuntimeException.throwUnresponsiveIOException(ie.getStackTrace()));

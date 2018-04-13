@@ -8,8 +8,6 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.ws.rs.core.Response;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,21 +15,17 @@ import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
-import org.jumbune.common.beans.Feature;
 import org.jumbune.common.beans.HttpReportsBean;
-import org.jumbune.common.job.JobConfig;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.job.JumbuneRequest;
-import org.jumbune.common.utils.Constants;
-import org.jumbune.common.utils.FileUtil;
-import org.jumbune.utils.exception.JumbuneRuntimeException;
-
-import com.google.gson.Gson;
-import org.jumbune.common.beans.cluster.EnterpriseClusterDefinition;
 import org.jumbune.common.utils.ExtendedConfigurationUtil;
-import org.jumbune.common.utils.JMXUtility;
+import org.jumbune.common.utils.FileUtil;
 import org.jumbune.common.utils.JobRequestUtil;
 import org.jumbune.execution.service.HttpExecutorService;
+import org.jumbune.utils.exception.JumbuneRuntimeException;
 import org.jumbune.web.utils.WebConstants;
+
+import com.google.gson.Gson;
 
 /**
  * The Class JobAnalysisSocket.
@@ -172,8 +166,7 @@ public class JobAnalysisSocket {
 	}
 
 	private String getJobType(String jobName) {
-		String[] jobTypes = { WebConstants.ANALYZE_DATA, WebConstants.ANALYZE_JOB,
-				WebConstants.OPTIMIZE_JOB };
+		String[] jobTypes = { WebConstants.ANALYZE_DATA, WebConstants.ANALYZE_JOB };
 
 		String jsonRepoPath = System.getenv(WebConstants.JUMBUNE_HOME) + WebConstants.JSON_REPO;
 		String slashJsonName = File.separator + jobName;
@@ -197,7 +190,7 @@ public class JobAnalysisSocket {
 			return;
 		}
 		PrintWriter out = null;
-		String jsonPath = JobConfig.getJumbuneHome() + WebConstants.JSON_REPO + jobType
+		String jsonPath = JumbuneInfo.getHome() + WebConstants.JSON_REPO + jobType
 				+ File.separator + jobName + WebConstants.JOB_RESPONSE_JSON;
 		try {
 			out = new PrintWriter(jsonPath);
@@ -217,7 +210,7 @@ public class JobAnalysisSocket {
 		if (jobType == null) {
 			return "";
 		}
-		String jsonPath = JobConfig.getJumbuneHome() + WebConstants.JSON_REPO + jobType
+		String jsonPath = JumbuneInfo.getHome() + WebConstants.JSON_REPO + jobType
 				+ File.separator + jobName + WebConstants.JOB_RESPONSE_JSON;
 		String result = null;
 		try {
@@ -250,19 +243,13 @@ public class JobAnalysisSocket {
 			return reports;
 		}
 		JumbuneRequest jumbuneRequest = JobRequestUtil.addJobConfigWithCluster(jobJson);
-		if (jumbuneRequest.getJobConfig().getActivated().equals(Feature.OPTIMIZE_JOB)
-				&& jumbuneRequest.getCluster().isJmxPluginEnabled()) {
-			new JMXUtility().establishConnectionToJmxAgent(
-					(EnterpriseClusterDefinition) jumbuneRequest.getCluster());
-		}
 		LOGGER.debug("Triggered jumbune job for jumbuneRequest: " + jumbuneRequest);
 		service.runInSeperateThread(jumbuneRequest, reports);
 		return reports;
 	}
 	
 	private String readJobConfig(String jobName) throws Exception {
-		String[] jobTypes = { WebConstants.ANALYZE_DATA, WebConstants.ANALYZE_JOB,
-				WebConstants.OPTIMIZE_JOB };
+		String[] jobTypes = { WebConstants.ANALYZE_DATA, WebConstants.ANALYZE_JOB};
 
 		String jsonRepoPath = System.getenv(WebConstants.JUMBUNE_HOME) + WebConstants.JSON_REPO;
 		String slashJsonName = File.separator + jobName + WebConstants.JOB_REQUEST_JSON;

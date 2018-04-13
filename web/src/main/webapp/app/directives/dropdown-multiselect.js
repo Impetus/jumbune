@@ -27,8 +27,6 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$http', '$rootSc
 				var groups     = attrs.groupBy ? true : false;
 				var type       = attrs.listype;
 				var template   = '<div class="multiselect-parent btn-group dropdown-multiselect">';
-				//template += '<ul ><li ng-repeat="(key, mainoption)  in options | filter: searchFilter">{{key}}<ul><li ng-repeat="(subkey, suboption) in mainoption | filter: searchFilter">{{subkey}}<ul><li ng-repeat="row in suboption"></li></ul></li></ul></li></ul>';
-				//template += '<li ng-show="settings.enableSearch"><div class="dropdown-header"><input type="text" class="form-control" style="width: 100%;" ng-model="searchFilter" placeholder="{{texts.searchPlaceholder}}" /></li>';
 				template += '<span ng-click="toggleDropdown()" class="filter-categories-span">{{getButtonText()}}</span>';
 				if (type == "categories") {
 					template += '<ul id="clusterMonitoringStats" class="dropdown-menu dropdown-menu-form pull-right" ng-style="{display: open ? \'block\' : \'none\', height : settings.scrollable ? settings.scrollableHeight : \'auto\', minWidth : settings.scrollable ? settings.scrollableWidth : \'auto\' }" style="overflow: auto" >' +
@@ -38,17 +36,12 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$http', '$rootSc
 						'                   <li ng-repeat="(subkey, suboption) in mainoption | filter: searchFilter"   ><span class="list-group-item " ng-click="toggleHeader($event,subkey)"><i id="i_{{subkey}}_{{domId}}_{{nodeKey1}}" class="fa fa-caret-down fa-caret-right" style="padding-right: 5px;"></i>{{subkey}}</span>';
 
 					template += '<ul id="ul_{{subkey}}_{{domId}}_{{nodeKey1}}" style="display:none">';
-
-					//template += '<li>';
 					if (groups) {
 						template += '<li ng-repeat-start="option in orderedItems | filter: searchFilter" ng-show="getPropertyForObject(option, settings.groupBy) !== getPropertyForObject(orderedItems[$index - 1], settings.groupBy)" role="presentation" class="dropdown-header">{{ getGroupTitle(getPropertyForObject(option, settings.groupBy)) }}</li>';
 						template += '<li ng-repeat-end role="presentation">';
 					} else {
 						template += '<li role="presentation" ng-repeat="option in suboption | filter: searchFilter" class="list-group-item node-treeview5" >';
 					}
-
-
-					//template += '<a role="menuitem" tabindex="-1" ng-click="setSelectedItem(getPropertyForObject(option,settings.idProp))">';
 
 					if (checkboxes && (attrs.valtype == 'Allnode')) {
 						template += '<div class="checkbox">' + '<input ' + 'class="checkboxInput" ' + 'type="checkbox" ' + 'ng-click="checkboxClick($event, getPropertyForObject(option,settings.idProp),key,subkey,false,clusterWide)"' + 'id = clusterWide.{{key}}.{{subkey}}.{{getPropertyForObject(option,settings.idProp)}} ' + 'ng-disabled="countFlag && (ifDisable(getPropertyForObject(option,settings.idProp),key,subkey))" ' + 'ng-checked="isChecked(getPropertyForObject(option,settings.idProp),key,subkey)" /> ' + '<label style="color:#333;cursor: auto;">' + '{{getPropertyForObject(option, settings.idProp)}} ' + '</label>' + '</div></a>';
@@ -57,10 +50,6 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$http', '$rootSc
 					} else {
 						template += '<span data-ng-class="{\'glyphicon glyphicon-ok\': isChecked(getPropertyForObject(option,settings.idProp))}"></span> {{getPropertyForObject(option, settings.displayProp)}}</a>';
 					}
-
-					//template += '</li>';
-
-
 					template += '<li class="divider" ng-show="settings.selectionLimit > 1"></li>';
 					template += '<li role="presentation" ng-show="settings.selectionLimit > 1"><a role="menuitem">{{selectedModel.length}} {{texts.selectionOf}} {{settings.selectionLimit}} {{texts.selectionCount}}</a></li>';
 
@@ -72,11 +61,6 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$http', '$rootSc
 					template += '<ul class="dropdown-menu dropdown-menu-form pull-right" ng-style="{display: open ? \'block\' : \'none\', height : settings.scrollable ? settings.scrollableHeight : \'auto\', minWidth : settings.scrollable ? settings.scrollableWidth : \'auto\' }" style="overflow: auto"  >' +
 						'<li ng-show="settings.enableSearch"><div class="dropdown-header"><input type="text" class="form-control" style="width: 100%; margin-bottom:5px;" ng-model="searchFilter" placeholder="{{texts.searchPlaceholder}}" /></li>'
 
-
-
-
-
-					//template += '<li>';
 					if (groups) {
 						template += '<li ng-repeat-start="option in orderedItems | filter: searchFilter" ng-show="getPropertyForObject(option, settings.groupBy) !== getPropertyForObject(orderedItems[$index - 1], settings.groupBy)" role="presentation" class="dropdown-header">{{ getGroupTitle(getPropertyForObject(option, settings.groupBy)) }}</li>';
 						template += '<li ng-repeat-end role="presentation">';
@@ -109,7 +93,9 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$http', '$rootSc
 				var type         = $attrs.listype;
 				var id2          = $attrs.tabNodeId;
 				var nodeKey      = '';
-				$scope.options = $scope.options[$attrs.tabNodeId];
+				if ( type == "categories" ) {
+					$scope.options = $scope.options[$attrs.tabNodeId];
+				}
 				$scope.tabId = $attrs.tabNodeId;
 				$scope.countVar  = 0;
 				$scope.countFlag = false;
@@ -117,7 +103,6 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$http', '$rootSc
 				if ($attrs.tabNodeId) {
 					var tabWithoutDot = $attrs.tabNodeId.split('.').join('_');
 					$scope.customFunctions[tabWithoutDot] = {};
-
 					$scope.customFunctions[tabWithoutDot]['addStat'] = function(id, key, subkey) {
 						if ($attrs.tabNodeId == 'All Nodes') {
 							var idclusterWide = document.getElementById("clusterWide" + "." + key + "." + subkey + "." + id);
@@ -147,6 +132,7 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$http', '$rootSc
 								return $scope.selectedModel.indexOf(id) === -1;
 						}
 					};
+
 					$scope.customFunctions[tabWithoutDot]['removeStat'] = function(id, key, subkey) {
 						if ($attrs.tabNodeId == 'All Nodes') {
 							var idclusterWide = document.getElementById("clusterWide" + "." + key + "." + subkey + "." + id);
@@ -264,16 +250,6 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$http', '$rootSc
 					}
 				};
 
-
-				/* $scope.checkboxClick = function ($event, id,key,subkey) {
-					$scope.setSelectedItem(id, key, subkey);
-					if(key && subkey) {
-						$scope.setReadWriteData(id, key, subkey);
-						$scope.setReadWriteNodeData(id, key, subkey)
-					}
-					$event.stopImmediatePropagation();
-				};*/
-
 				$scope.ifDisable = function(id, key, subkey) {
 					$scope.countVar  = common.getCountVar();
 					$scope.countFlag = common.getCountFlag();
@@ -303,8 +279,6 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$http', '$rootSc
 						} else   {
 							var indexSOData = $scope.readWriteServiceData[key][subkey].indexOf(id);
 							$scope.readWriteServiceData[key][subkey].splice(indexSOData, 1);
-							  // $scope.readWriteServiceData[key][subkey].splice(_.findIndex($scope.readWriteServiceData[key][subkey], findObj), 1);
-							
 						}
 						if ($scope.readWriteServiceData[key][subkey].length <= 0) {
 							delete $scope.readWriteServiceData[key][subkey]
@@ -326,7 +300,6 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$http', '$rootSc
 						var findNodeObj = (idNodeData);
 
 						var exists = $scope.selectedModel.indexOf(findNodeObj) !== -1;
-						// if(nodeKey != 'All Nodes'){
 						if (exists) {
 							if (!$scope.nodeServiceData[nodeKey])
 								$scope.nodeServiceData[nodeKey] = {};
@@ -339,10 +312,8 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$http', '$rootSc
 							$scope.nodeServiceData[nodeKey][key][subkey].push(id);
 						} else {
 							var indexSO1 = $scope.nodeServiceData[nodeKey][key][subkey].indexOf(id);
-							//$scope.selectedModel.splice(indexSO1, 1);
 							$scope.nodeServiceData[nodeKey][key][subkey].splice(indexSO1, 1);						
 						}
-						// }   
 						if ($scope.nodeServiceData[nodeKey][key][subkey].length <= 0) {
 							delete $scope.nodeServiceData[nodeKey][key][subkey]
 						}
@@ -515,8 +486,6 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$http', '$rootSc
 					} else {
 						return object;
 					}
-
-					//return '';
 				};
 
 				$scope.selectAll = function() {
@@ -568,12 +537,9 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$http', '$rootSc
 					}
 
 					dontRemove = dontRemove || false;
-
-					//var exists = _.findIndex($scope.selectedModel, findObj) !== -1;
 					var exists = $scope.selectedModel.indexOf(findObj) !== -1;
 
 					if (!dontRemove && exists) {
-						//$scope.selectedModel.splice(_.findIndex($scope.selectedModel, findObj), 1);
 						var indexSO = $scope.selectedModel.indexOf(findObj);
 						$scope.selectedModel.splice(indexSO, 1);
 						$scope.externalEvents.onItemDeselect(findObj);
@@ -587,7 +553,6 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$http', '$rootSc
 						if ($scope.countVar >= 25) {
 							$scope.countFlag = true;
 							common.setCountFlag($scope.countFlag)
-								//common.setCountVar($scope.countVar)
 							$('#myModal11').modal({ show: true });
 						}
 						$scope.selectedModel.push(finalObj);
@@ -618,23 +583,12 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$http', '$rootSc
 								}
 						}
 				});
-				//var cpuUsageChecked = 'systemStats.cpu.CpuUsage';
 				var flag = true;
 				$scope.isChecked = function(id, key, subkey) {
 					var listId = key + "." + subkey + "." + id;
 					if ($scope.singleSelection) {
 						return $scope.selectedModel !== null && angular.isDefined($scope.selectedModel[$scope.settings.idProp]) && $scope.selectedModel[$scope.settings.idProp] === getFindObj(id)[$scope.settings.idProp];
-					} /*else if ((listId == cpuUsageChecked)) {
-						if (flag) {
-							flag = false;
-							$scope.setSelectedItem(id, key, subkey);
-							if (key && subkey) {
-								$scope.setReadWriteData(id, key, subkey);
-								$scope.setReadWriteNodeData(id, key, subkey)
-							}
-						}
-						return $scope.selectedModel.indexOf(id) === -1;
-					}*/ else {
+					} else {
 							for ( var i=0; i< arrayVal.length; i++) {
 								if (listId == arrayVal[i].value) {
 									if ( flag) {
@@ -654,8 +608,6 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$http', '$rootSc
 								}
 							}
 						}
-					//return _.findIndex($scope.selectedModel, getFindObj(id)) !== -1;
-					//return $scope.selectedModel.indexOf(id) !== -1;
 				};
 				var flag1 = true;
 				$scope.isCheckedNode = function(id, key, subkey) {
@@ -683,7 +635,6 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$http', '$rootSc
 								}
 							}
 						}
-					//return $scope.selectedModel.indexOf(id) !== -1;
 				};
 				$scope.toggleHeader = function(event, id) {
 					var id2 = $attrs.tabNodeId;
@@ -694,7 +645,7 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$http', '$rootSc
 						$("#i_" + id + "_" + $scope.domId + "_" + nodeKey).toggleClass("fa-caret-right");
 					} else {
 						//nothing
-						//id2.split('\).forEach(function(index){nodeKey+=index})
+						
 						nodeKey = id2.replace(/\s/g, "");
 						$("#ul_" + id + "_" + $scope.domId + "_" + nodeKey).toggle();
 						$("#i_" + id + "_" + $scope.domId + "_" + nodeKey).toggleClass("fa-caret-right");

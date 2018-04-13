@@ -1,28 +1,14 @@
 
-<!-- <h2 style="margin-top:0">Debugger</h2> -->
-
 <div class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock" >{{blockMessage}}</div>
 
 
 <p><strong>Note:</strong> Creates reports which helps to detect Map-Reduce implementation faults. Performs Map-Reduce job flow analysis</p>
-<!-- <div class="error" ng-show="debuggerTab.isValidationChecked">
-    <span class="error" >Please select validation checkboxes</span>
-</div> -->
+
 <table class="frm-tbl" style="width:100%" ng-init="debuggerTab.init()">
 	<tbody>
 		<tr ng-show="false" ng-init="debuggerTab.enableDebChk=methodDebugger">
 			<td colspan="2"><label class="option-label"><input type="checkbox" ng-model="debuggerTab.enableDebChk"><span>Enable Debugger</span></td>
 		</tr>
-
-
-
-		<!-- <tr>
-			<td colspan="2"><label class="option-label"><input  type="checkbox" ng-change="debuggerTab.setTabValue()" ng-required="debuggerTab.enableDebChk && !debuggerTab.usrDefChk" ng-model="debuggerTab.useRegexChk"><span>Use Regex</span></td>
-		</tr>
-		<tr>
-			<td colspan="2"><label class="option-label"><input  type="checkbox" ng-change="debuggerTab.setTabValue()" ng-required="debuggerTab.enableDebChk && !debuggerTab.useRegexChk" ng-model="debuggerTab.usrDefChk"><span>User Defined Validations</span></td>
-		</tr> -->
-
 
 	<tr>Validation task output key/value</tr>
 
@@ -44,8 +30,6 @@
 					<div class="col-md-6 col-layout config-list">
 						<div class="row">
 							<div class="hdr txt-rgt">
-								<!-- <a href="javascript:void(0)" ng-show="debuggerTab.indexUseRegex!=null" ng-click="debuggerTab.useRegexEdit()" ><i class="fa fa-pencil circle-icon yel-icon"></i></a>
-								<a href="javascript:void(0)" ng-show="debuggerTab.indexUseRegex!=null" ng-click ="debuggerTab.useRegexDelete()" ><i class="fa fa-minus circle-icon red-icon"></i></a> -->
 								<a href="javascript:void(0)" ng-click="debuggerTab.addUserRegexClick()" ><i class="fa fa-plus circle-icon green-icon"></i></a>
 							</div>
 							<div class="main-body">
@@ -65,7 +49,6 @@
 									<table class="frm-tbl summary-tbl">
 										<tr>
 											<td>Mapper/Reducer Name</td>
-											<!-- <td><input type="text" ng-disabled="debuggerTab.regexType == 'edit'" ng-required="debuggerTab.enableDebChk" ng-model="debuggerTab.reducerNameText" ng-trim/></td> -->
 											<td class='my-tool-tip'><input type="text" ng-required="debuggerTab.enableDebChk" name = "reduceNameTXT" required ng-model="debuggerTab.reducerNameText" ng-trim/><i data-toggle="tooltip" title="The fully qualified class name of the Mapper/Reduce class for debugging." class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i></td>
 										</tr>
 										<tr>
@@ -87,28 +70,6 @@
 							</div>
 						</div>
 
-						<!-- <div class="row" id="regexDataLabel" style="display:none" >
-							<div class="hdr"></div>
-							<div class="main-body">
-								<div class="content-wpr">
-									<table class="frm-tbl summary-tbl">
-										<tr>
-											<td>Mapper/Reducer Name</td>
-											<td>{{debuggerTab.reducerNameText}}</td>
-										</tr>
-										<tr>
-											<td>Regex on Key</td>
-											<td>{{debuggerTab.regexKeyText}}</td>
-										</tr>
-										<tr>
-											<td>Regex on Value</td>
-											<td>{{debuggerTab.regexValText}}</td>
-										</tr>
-									</table>
-								</div>
-							</div>
-						</div> -->
-
 					</div>
 					<div class="clear"></div>
 				</div>
@@ -118,13 +79,10 @@
 					<div class="col-md-6 col-layout config-list">
 						<div class="row">
 							<div class="hdr txt-rgt">
-								<!-- <a href="javascript:void(0)" ng-show="debuggerTab.indexUdv!=null" ng-click="debuggerTab.udvEdit()"><i class="fa fa-pencil circle-icon yel-icon"></i></a>
-								<a href="javascript:void(0)" ng-show="debuggerTab.indexUdv!=null" ng-click ="debuggerTab.udvDelete()"><i class="fa fa-minus circle-icon red-icon"></i></a> -->
 								<a href="javascript:void(0)" ng-click="debuggerTab.addUdvClick()"><i class="fa fa-plus circle-icon green-icon"></i></a>
 							</div>
 							<div class="main-body">
 								<ul class="list">
-									<!-- <li class="active"><a href="#">User validation 1</a></li> -->
 									<li class="udv-rows" id="udv_{{$index}}" ng-repeat = "row in debuggerTab.udv">{{row.classname}}
 									<div style="float:right;"><a href="javascript:void(0)" ng-click="debuggerTab.udvEdit($index); $event.stopPropagation()"><i class="fa fa-pencil circle-icon yel-icon"></i></a>
 								<a href="javascript:void(0)" ng-click ="debuggerTab.udvDelete($index)"><i class="fa fa-minus circle-icon red-icon"></i></a></div></li>
@@ -142,7 +100,6 @@
 										<tr>
 											<td>Mapper/Reducer Name</td>
 											<td>
-												<!-- <input type="text" ng-disabled="debuggerTab.userType == 'edit'" ng-required="debuggerTab.enableDebChk" ng-model="debuggerTab.udvReducerNameText" ng-trim> -->
 												<input type="text" ng-required="debuggerTab.enableDebChk" ng-model="debuggerTab.udvReducerNameText" ng-trim>
 											</td>
 										</tr>

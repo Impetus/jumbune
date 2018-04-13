@@ -7,7 +7,6 @@ import static org.jumbune.common.influxdb.beans.InfluxDBConstants.COLON;
 import static org.jumbune.common.influxdb.beans.InfluxDBConstants.COMMA;
 import static org.jumbune.common.influxdb.beans.InfluxDBConstants.EQUAL;
 import static org.jumbune.common.influxdb.beans.InfluxDBConstants.HTTP;
-import static org.jumbune.common.influxdb.beans.InfluxDBConstants.INFLUX_DB_CONF_IS_NULL;
 import static org.jumbune.common.influxdb.beans.InfluxDBConstants.SPACE;
 import static org.jumbune.common.influxdb.beans.InfluxDBConstants.WRITE_U;
 
@@ -26,11 +25,13 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.jumbune.common.influxdb.beans.InfluxDBConstants;
+import org.jumbune.common.influxdb.beans.ResultSet;
+import org.jumbune.common.influxdb.beans.TimeUtil;
+import org.jumbune.common.utils.Constants;
 import org.jumbune.utils.conf.beans.InfluxDBConf;
 
 import com.google.gson.Gson;
-import org.jumbune.common.influxdb.beans.ResultSet;
-import org.jumbune.common.influxdb.beans.TimeUtil;
 
 public class InfluxDataWriter {
 
@@ -156,7 +157,9 @@ public class InfluxDataWriter {
 		if (tags == null) {
 			tags = new HashMap<String, String>();
 		}
-		tags.put(tagKey, tagValue);
+		tags.put(tagKey, tagValue.replaceAll(InfluxDBConstants.REGEX4, InfluxDBConstants.REGEX3)
+				.replaceAll(Constants.COMMA, InfluxDBConstants.REGEX2)
+				.replaceAll(Constants.SPACE_REGEX, InfluxDBConstants.REGEX1));
 	}
 
 	public void setTime(Long time, TimeUnit timeUnit) {

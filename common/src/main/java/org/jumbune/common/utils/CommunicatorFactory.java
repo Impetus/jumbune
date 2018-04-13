@@ -3,8 +3,6 @@ package org.jumbune.common.utils;
 import java.net.InetSocketAddress;
 import java.security.PrivilegedExceptionAction;
 
-import javax.security.auth.Subject;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.v2.api.HSClientProtocol;
 import org.apache.hadoop.mapreduce.v2.api.MRClientProtocol;
@@ -14,14 +12,11 @@ import org.apache.hadoop.yarn.api.ApplicationClientProtocol;
 import org.apache.hadoop.yarn.ipc.YarnRPC;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.utils.yarn.communicators.MRCommunicator;
 import org.jumbune.utils.yarn.communicators.RMCommunicator;
 
-/**
- *
- */
+
 public class CommunicatorFactory {
 	
 	private static volatile CommunicatorFactory instance = null;
@@ -80,12 +75,7 @@ public class CommunicatorFactory {
 		return rmCommunicator;
 	}
 
-	public RMCommunicator createRMCommunicator(final Cluster cluster, Subject subject)
-			throws Exception {
-		
-			return createRMCommunicator(cluster);
-	}
-	
+
 	public MRCommunicator createMRCommunicator(final Cluster cluster) throws Exception {
 
 		LOGGER.debug("Creating MRCommunicator for Cluster [ "
@@ -120,11 +110,5 @@ public class CommunicatorFactory {
 		MRCommunicator mrCommunicator = new MRCommunicator(proxy);
 		return mrCommunicator;
 	}
-
-	public MRCommunicator createMRCommunicator(final Cluster cluster, Subject subject)
-			throws Exception {
-			return createMRCommunicator(cluster);		
-	}
-
 
 }
