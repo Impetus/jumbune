@@ -1046,17 +1046,6 @@
         self.getRealmData = function() {
             return this.setRealmdata;
         }
-        this.setHideManageCluster = null;
-        self.setHideManageClusterButtons = function(obj) {
-            this.setHideManageCluster = angular.copy(obj);
-            localStorage.setItem('hideManageCluster', self.setHideManageCluster);
-        }
-        self.getHideManageClusterButtons = function() {
-             if ( self.setHideManageCluster == null ) {
-                 self.setHideManageCluster = localStorage.getItem('hideManageCluster');
-             }
-            return this.setHideManageCluster;
-        }
     }]);
 
 

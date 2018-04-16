@@ -19,7 +19,6 @@ angular.module('dashboard.ctrl', ["ngAnimate"])
 			$scope.manageClusterClicked = false;
 			$scope.jobToDelete = '';
 			$scope.inValidRealm = false;
-			$scope.hideManageClusterButtons = common.getHideManageClusterButtons();
 			self.hideAllDropdown = function() {
 				$scope.manageClusterValue = true;
 				$scope.recentJobsValue = true;

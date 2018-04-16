@@ -47,14 +47,14 @@
       <!-- <i class="fa fa-times"></i> -->
    </span>
    <span class="linkHighlightBg"></span>
-   <div align="right" ng-show="hideManageClusterButtons"><a href="#/add-cluster" class="link"><i class="fa fa-plus"></i> New</a></div>
+   <div align="right"><a href="#/add-cluster" class="link"><i class="fa fa-plus"></i> New</a></div>
    <ul>
       <li class="clearfix" ng-repeat="(key, value) in getClusterList">
          <span class="pull-left">{{value}}</span>
          <span class="pull-right">
          <i class="fa fa-pencil" alt="Edit Cluster" title="Edit Cluster" ng-click="DashboardController.editCluster(value)"></i>
          <i title="Cluster Configuration" alt="Cluster Configuration" class="fa fa-cog" ng-click="DashboardController.manageCluster(value)"></i>
-         <i ng-show="hideManageClusterButtons" ng-click="DashboardController.deleteClusterName(key)" title="Delete Cluster" alt="Delete Cluster" class="fa fa-trash"></i>
+         <i ng-click="DashboardController.deleteClusterName(key)" title="Delete Cluster" alt="Delete Cluster" class="fa fa-trash"></i>
          </span>
       </li>
    </ul>

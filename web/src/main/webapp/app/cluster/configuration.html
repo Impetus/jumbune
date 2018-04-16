@@ -67,7 +67,7 @@
 				<div style="position:relative;top:30px;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock">{{blockMessage}}</div>
 				<div style="position:relative;top:30px;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
 			</div>
-			<div class="textCenter" ng-show="hideManageClusterButtons">
+			<div class="textCenter">
 				<button type="button" class="btn btn-default" ng-click="backConfigData()">Cancel</button>&nbsp;&nbsp;
 				<button type="button" class="btn btn-primary" ng-click="saveConfigData()">Save</button>
 			</div>
@@ -114,7 +114,7 @@
 				<div style="position:relative;top:33px;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock">{{blockMessage}}</div>
 				<div style="position:relative;top:33px;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
 			</div>
-			<div class="textCenter" ng-show="hideManageClusterButtons">
+			<div class="textCenter">
 				<button type="button" class="btn btn-default" ng-click="backConfigData()">Cancel</button>&nbsp;&nbsp;
 				<button type="button" class="btn btn-primary" ng-click="resetHASettings()">Reset</button>
 				<button type="button" class="btn btn-primary" ng-click="saveConfigData()">Save</button>
@@ -163,7 +163,7 @@
 				<div style="position:relative;top:33px;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock">{{blockMessage}}</div>
 				<div style="position:relative;top:33px;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
 			</div>
-			<div class="textCenter" ng-show="hideManageClusterButtons">
+			<div class="textCenter">
 				<!-- <div class="textCenter fixed-btn"> -->
 				<button type="button" class="btn btn-default" ng-click="backConfigData()">Cancel</button>&nbsp;&nbsp;
 				<button type="button" class="btn btn-primary" ng-click="resetInfluxDBSettings()">Reset</button>
@@ -451,7 +451,7 @@
 			<div style="top:15px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock">{{blockMessage}}</div>
 			<div style="top:15px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
 
-			<div class="textCenter" ng-show="hideManageClusterButtons">
+			<div class="textCenter">
 				<button type="button" class="btn btn-default" ng-click="backConfigData()">Cancel</button>&nbsp;&nbsp;
 				<button type="button" class="btn btn-primary" ng-click="resetAlertSettings()">Reset</button>
 				<button type="button" class="btn btn-primary" ng-click="saveConfigData()">Save</button>
@@ -565,7 +565,7 @@
 				<div style="top: 15px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock">{{blockMessage}}</div>
 				<div style="top: 15px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
 			</div>
-			<div class="textCenter" ng-show="hideManageClusterButtons">
+			<div class="textCenter">
 				<button type="button" class="btn btn-default" ng-click="backConfigData()">Cancel</button>&nbsp;&nbsp;
 				<button type="button" class="btn btn-primary" ng-click="saveConfigData()">Save</button>
 			</div>
@@ -606,7 +606,7 @@
 				<div style="top:75px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock">{{blockMessage}}</div>
 				<div style="top:75px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
 			</div>
-			<div class="textCenter" ng-show="hideManageClusterButtons">
+			<div class="textCenter">
 				<!-- <div class="textCenter fixed-btn"> -->
 				<button type="button" class="btn btn-default" ng-click="backConfigData()">Cancel</button>&nbsp;&nbsp;
 				<button type="button" ng-disabled="disableNextAnalyzeData()" class="btn btn-primary" ng-click="saveConfigData()">Save</button>
@@ -675,8 +675,8 @@
 				<div style="top: 15px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displaySaveBlock"><span class="textCenter">{{blockMessage}}</span></div>
 				<div style="top: 15px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
 			</div>
-			<!--<div style="min-height: 111px;"></div>-->
-			<div class="textCenter" ng-show="hideManageClusterButtons">
+			
+			<div class="textCenter">
 				<button type="button" class="btn btn-default" ng-click="backConfigData()">Cancel</button>&nbsp;&nbsp;
 				<button type="button" class="btn btn-primary" ng-click="saveConfigData()">Save</button>
 			</div>
@@ -705,7 +705,7 @@
 			<div style="top:190px;position:relative;width:350px;text-align:center; margin:0 auto;padding:5px;" class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
 			</div>
 
-			<div class="textCenter" ng-show="hideManageClusterButtons">
+			<div class="textCenter">
 				<button type="button" class="btn btn-default" ng-click="backConfigData()">Cancel</button>&nbsp;&nbsp;
 				<button type="button" class="btn btn-primary" ng-click="resetBackgroundProcessSettings()">Reset</button>
 				<button type="button" class="btn btn-primary" ng-click="saveConfigData()">Save</button>

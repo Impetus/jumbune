@@ -28,7 +28,6 @@ angular.module('addCluster.ctrl', [])
         $scope.nameNodeHostArrCount = [1];
         $scope.agentHostPortCount = [1];
         $scope.isMapr = common.getIsMapr();
-        $scope.hideManageClusterButtons = common.getHideManageClusterButtons();
 
         getIsMaprDistributionFactory.isMaprDistribution({},
                 function(data) {

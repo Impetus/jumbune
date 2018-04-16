@@ -17,7 +17,6 @@ angular.module('configuration.ctrl', [])
 		$scope.toEditSLAActionData = false;
 		$scope.toEditQueueConfData = false;
 		$scope.isExecutionEngineAll = false;
-		$scope.hideManageClusterButtons = common.getHideManageClusterButtons();
 		$scope.toAddAlertActionData = true;
 		$scope.toAddSLAActionData = true;
 		$scope.toAddQueueConfData = true;
