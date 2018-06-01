@@ -4,7 +4,6 @@ jdk:
 env:
   - JUMBUNE_HOME=/home/travis/
 install: 
-  - mvn clean install -DskipTests=true
   - mvn clean install -DskipTests=true -P yarn
 
 notifications:
