@@ -25,7 +25,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.jumbune</groupId>
-			<artifactId>jumbune-monitoring</artifactId>
+			<artifactId>jumbune-cluster-monitoring</artifactId>
 			<version>${build.number}</version>
 		</dependency>
 			<dependency>
