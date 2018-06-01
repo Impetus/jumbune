@@ -16,7 +16,6 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.common.utils.Constants;
 
-import com.google.gson.Gson;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.JobRequestUtil;
 import org.jumbune.common.utils.ValidateInput;
@@ -37,8 +36,7 @@ public class ValidateService {
 
 			// Creating JumbuneRequest Object
 			String jobConfigJSON = form.getField(JSON_DATA).getValue();
-			Gson gson = new Gson();
-			JobConfig jobConfig = gson.fromJson(jobConfigJSON,
+			JobConfig jobConfig = Constants.gson.fromJson(jobConfigJSON,
 					JobConfig.class);
 			JumbuneRequest jumbuneRequest = new JumbuneRequest();
 			jumbuneRequest.setConfig(jobConfig);
@@ -60,8 +58,7 @@ public class ValidateService {
 		} else {
 			jobInputErrors.put(Constants.STATUS, Constants.ERROR_);
 		}
-		Gson gson = new Gson();
-		return Response.ok(gson.toJson(jobInputErrors)).build();
+		return Response.ok(Constants.gson.toJson(jobInputErrors)).build();
 	}
 	
 	@GET
@@ -71,8 +68,7 @@ public class ValidateService {
 		ValidateInput validateInput = new ValidateInput();
 		jobInputErrors = validateInput.checkJobNameAlreadyExists(jobName);
 		
-		Gson gson = new Gson();
-		return Response.ok(gson.toJson(jobInputErrors)).build();
+		return Response.ok(Constants.gson.toJson(jobInputErrors)).build();
 	}
 
 }

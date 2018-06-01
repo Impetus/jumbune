@@ -2,9 +2,7 @@ package org.jumbune.execution.utils;
 
 import static org.jumbune.execution.utils.ExecutionConstants.COUNTERS;
 import static org.jumbune.execution.utils.ExecutionConstants.ERRORANDEXCEPTION;
-import static org.jumbune.execution.utils.ExecutionConstants.MAPRED_JOBCLIENT;
 import static org.jumbune.execution.utils.ExecutionConstants.MESSAGE_COULD_NOT_EXECUTE_JOB;
-import static org.jumbune.execution.utils.ExecutionConstants.RUNNING_JOB;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -26,7 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,7 +37,6 @@ import org.jumbune.common.beans.FieldValidationBean;
 import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.cluster.Cluster;
-import org.jumbune.common.beans.cluster.LogSummaryLocation;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.job.JumbuneRequest;
@@ -48,8 +44,6 @@ import org.jumbune.common.utils.ArrayParamBuilder;
 import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
-import org.jumbune.common.utils.ExtendedConstants;
-import org.jumbune.common.utils.FileUtil;
 import org.jumbune.common.utils.HadoopJobCounters;
 import org.jumbune.common.utils.JobConfigUtil;
 import org.jumbune.common.utils.MessageLoader;
@@ -76,7 +70,6 @@ public class ProcessHelper {
 
 	private static final Logger LOGGER = LogManager.getLogger(ProcessHelper.class);
 	private static final MessageLoader MESSAGES = MessageLoader.getInstance();
-	private static boolean isYarnJob = false;
 	private static String jobJson = null;
 	private static int noOfViolations = 0;
 
@@ -105,8 +98,6 @@ public class ProcessHelper {
 			JumbuneRequest jumbuneRequest, boolean isDebugged) throws IOException {
 		Config config = jumbuneRequest.getConfig();
 		JobConfig jobConfig = (JobConfig) config;
-		String hadoopType = FileUtil.getClusterInfoDetail(ExtendedConstants.HADOOP_TYPE);
-		isYarnJob = hadoopType.equalsIgnoreCase(ExtendedConstants.YARN);
 		List<JobDefinition> jobDefList = jobConfig.getJobs();
 
 		Map<String, Map<String, String>> jobsCounterMap = new LinkedHashMap<String, Map<String, String>>();
@@ -301,74 +292,6 @@ public class ProcessHelper {
 		return response;
 	}
 
-	/**
-	 * This method will write the master log folder location to a file. The master
-	 * log location information is required by services module. The file in which
-	 * location is written is placed inside the lib/ directory lib directory being
-	 * the one that holds all jars required by HTF framework If any change is made
-	 * in location where services.properties file is created a similar change should
-	 * be made in ServicesUtil class
-	 * 
-	 * @throws JumbuneException
-	 */
-	public void writeLogLocationToFile(LogSummaryLocation logSummaryLoc) {
-		LOGGER.debug("writing logs information to file for services  ");
-		String serviceJsonPath = org.jumbune.common.utils.JobConfigUtil.getServiceJsonPath();
-		try {
-			String jsonString = Constants.gson.toJson(logSummaryLoc, LogSummaryLocation.class);
-			ConfigurationUtil.writeToFile(serviceJsonPath, jsonString, true);
-
-		} catch (IOException e) {
-			// Don't terminate operation if unable to copy logSummary location
-			LOGGER.error("Unable to copy logSummary location", e);
-		}
-	}
-
-	private static Map<String, Map<String, String>> getRemoteJobCounters(String processName, String response,
-			Config config, boolean isDebugged) throws IOException {
-		List<String> jobs = new LinkedList<String>();
-		Map<String, String> map = null;
-		Map<String, Map<String, String>> jobCounterMap = new LinkedHashMap<String, Map<String, String>>();
-
-		BufferedReader reader = new BufferedReader(
-				new InputStreamReader(new ByteArrayInputStream(response.getBytes())));
-
-		String jobName = null;
-		try {
-			while (true) {
-				String line = reader.readLine();
-				if (line == null) {
-					break;
-				}
-				map = new HashMap<String, String>();
-				if (line.contains(RUNNING_JOB)) {
-					jobName = processJobName(jobs, line);
-				} else if (line.contains(COUNTERS)) {
-					jobName = processCounters(processName, map, jobCounterMap, reader, jobName, line);
-				} else if (line.contains("Exception") || line.contains("Error")) {
-					processExceptionCondition(processName, map, jobCounterMap, reader, jobName, line);
-				}
-			}
-		} finally {
-			if (reader != null) {
-				reader.close();
-			}
-		}
-		if (isDebugged && jobs.size() > 1) {
-			JobConfig jobConfig = (JobConfig) config;
-			String fileName = jobConfig.getMasterConsolidatedLogLocation() + "jobChain-" + processName
-					+ "_instrumented.log";
-
-			StringBuilder data = new StringBuilder();
-			for (String string : jobs) {
-				data.append(string).append("\n");
-			}
-			ConfigurationUtil.writeToFile(fileName, data.toString(), true);
-
-		}
-		return jobCounterMap;
-	}
-
 	private static void processExceptionCondition(String processName, Map<String, String> map,
 			Map<String, Map<String, String>> jobCounterMap, BufferedReader reader, String jobName, String line)
 			throws IOException {
@@ -383,44 +306,6 @@ public class ProcessHelper {
 			LOGGER.error(lineTmp);
 		}
 		jobCounterMap.put(processName + (jobName == null ? "" : "-" + jobName), map);
-	}
-
-	private static String processJobName(List<String> jobs, String line) {
-		String jobName = line.split(RUNNING_JOB)[1];
-		jobs.add(jobName);
-		return jobName;
-	}
-
-	private static String processCounters(String processName, Map<String, String> map,
-			Map<String, Map<String, String>> jobCounterMap, BufferedReader reader, String jobName, String line)
-			throws IOException {
-		int count = Integer.valueOf((line.split(COUNTERS)[1].trim()));
-		while (count > 0) {
-			String lineTmp = line;
-			lineTmp = reader.readLine();
-			if (lineTmp == null) {
-				break;
-			}
-			if (lineTmp.contains("=")) {
-				String[] counterDetail = lineTmp.split(MAPRED_JOBCLIENT)[1].split("=");
-				map.put(ExecutionUtil.convertInCamelCase(counterDetail[0].trim()), counterDetail[1].trim());
-				count--;
-			}
-		}
-		jobCounterMap.put(processName + "_" + jobName, map);
-		return null;
-	}
-
-	/**
-	 * loads the execution message
-	 * 
-	 * @return
-	 * @throws JumbuneException
-	 */
-	public MessageLoader loadMessages() throws JumbuneException {
-		final String messageFileName = Constants.MESSAGE_FILE;
-		final InputStream msgStream = this.getClass().getClassLoader().getResourceAsStream(messageFileName);
-		return new MessageLoader(msgStream);
 	}
 
 	/**
@@ -439,13 +324,8 @@ public class ProcessHelper {
 	private void populateJobCounterMap(JobProcessBean bean, Map<String, Map<String, String>> jobCounterMap,
 			JumbuneRequest jumbuneRequest, Boolean isDebugged) throws IOException {
 		Config config = jumbuneRequest.getConfig();
-		if (isYarnJob) {
-			jobCounterMap
-					.putAll(getRemoteYarnJobCounters(bean.getJobName(), bean.getProcessResponse(), config, isDebugged));
-		} else {
-			jobCounterMap
-					.putAll(getRemoteJobCounters(bean.getJobName(), bean.getProcessResponse(), config, isDebugged));
-		}
+		jobCounterMap
+		.putAll(getRemoteYarnJobCounters(bean.getJobName(), bean.getProcessResponse(), config, isDebugged));
 		hadoopJobCounters = new HadoopJobCounters();
 		hadoopJobCounters.setJobCounterBeans(bean.getJobName(), bean.getProcessResponse(), jumbuneRequest);
 	}
@@ -866,7 +746,6 @@ public class ProcessHelper {
 	private ArrayParamBuilder buildXmlCommandString(JumbuneRequest jumbuneRequest, String inputPath,
 			String dvFileDir, String schemaPath) {
 		JobConfig config = jumbuneRequest.getJobConfig();
-		Cluster cluster = jumbuneRequest.getCluster();
 
 		String prefix = config.getTempDirectory() + config.getFormattedJumbuneJobName();
 
@@ -889,7 +768,6 @@ public class ProcessHelper {
 			String dvFileDir, String dataParameter, String nullParameter, String regexParameter,
 			String additionalParams) {
 		JobConfig config = jumbuneRequest.getJobConfig();
-		Cluster cluster = jumbuneRequest.getCluster();
 
 		String prefix = config.getTempDirectory() + config.getFormattedJumbuneJobName();
 

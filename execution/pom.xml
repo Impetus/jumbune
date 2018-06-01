@@ -31,7 +31,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.jumbune</groupId>
-			<artifactId>jumbune-profiling</artifactId>
+			<artifactId>jumbune-cluster-monitoring</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.jumbune</groupId>
@@ -45,7 +45,7 @@
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-api</artifactId>
 			<version>2.1</version>
-		</dependency>		
+		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>

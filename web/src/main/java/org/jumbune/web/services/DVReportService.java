@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,7 +24,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.jumbune.common.beans.JumbuneInfo;
-import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.datavalidation.dsc.DataSourceCompConstants;
 import org.jumbune.utils.JobUtil;
@@ -35,10 +33,8 @@ import org.jumbune.web.beans.DVReport;
 import org.jumbune.web.beans.DataSourceCompReport;
 import org.jumbune.web.utils.WebConstants;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import com.google.gson.reflect.TypeToken;
 
 /**
  * For fetching data validation reports corresponding to a violation failed in a
@@ -94,8 +90,6 @@ public class DVReportService{
 			@QueryParam("page") String pageNum, @QueryParam("rows") String rows, @QueryParam("jobName") String jobName)
 			throws IOException {
 		LOGGER.debug("Starting to process Data Validation report");
-		Gson gson = new Gson();
-		JobConfig jobConfig = null;
 		DVReport dvReport = getDVReport(fileName, dvType, pageNum, rows, jobName);
 		return Response.ok(dvReport).build();
 
@@ -138,7 +132,6 @@ public class DVReportService{
 			@QueryParam("rows") String sRows, @QueryParam("jobName") String jobName) {
 		BufferedReader br = null;
 		try {
-			Gson gson = new Gson();
 			DataSourceCompReport dvReport = new DataSourceCompReport();
 			StringBuilder stringBuilder = new StringBuilder();
 			stringBuilder.append(JumbuneInfo.getHome()).append(JOB_JAR_LOCATION).append(jobName)
@@ -194,7 +187,7 @@ public class DVReportService{
 			}
 			dvReport.setTotal(totalPgCount);
 			dvReport.setRecords(totalRecords);
-			return Response.ok(gson.toJson(dvReport)).build();
+			return Response.ok(Constants.gson.toJson(dvReport)).build();
 		} catch (IOException e) {
 			LOGGER.error(JumbuneRuntimeException.throwException(e.getStackTrace()));
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
@@ -222,11 +215,11 @@ public class DVReportService{
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getJsonSchema(@FormDataParam("inputFile") InputStream stream) {
-		Gson gson = new Gson();
-		Type type = new TypeToken<LinkedHashMap<String, String>>() {
-		}.getType();
+		
 
 		// data contains jobName, jobSubmissionUser and selectedCluster
+		// Type type = new TypeToken<LinkedHashMap<String, String>>() {
+		// }.getType();
 		// Map<String, String> data =
 		// gson.fromJson(form.getField("jsonData").getValue(), type);
 
@@ -237,7 +230,7 @@ public class DVReportService{
 		try {
 			jsonSchema = IOUtils.toString(stream, "UTF-8");
 			jsonElement = new JsonParser().parse(jsonSchema);
-			return Response.ok(gson.toJson(populateDataTypeKey(jsonElement, "", map))).build();
+			return Response.ok(Constants.gson.toJson(populateDataTypeKey(jsonElement, "", map))).build();
 		} catch (Exception e) {
 			LOGGER.error(JumbuneRuntimeException.throwFileNotLoadedException(e.getStackTrace()));
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();

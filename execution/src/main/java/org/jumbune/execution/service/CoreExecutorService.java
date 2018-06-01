@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -21,8 +20,6 @@ import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.Module;
 import org.jumbune.common.beans.ReportsBean;
 import org.jumbune.common.beans.cluster.Cluster;
-import org.jumbune.common.beans.cluster.NameNodes;
-import org.jumbune.common.beans.cluster.Workers;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.job.JumbuneRequest;
@@ -30,7 +27,6 @@ import org.jumbune.common.scheduler.ScheduleTaskUtil;
 import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
-import org.jumbune.common.utils.JobConfigUtil;
 import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.execution.beans.CommunityModule;
 import org.jumbune.execution.beans.DataQualityTaskEnum;
@@ -39,8 +35,6 @@ import org.jumbune.execution.processor.DebugProcessor;
 import org.jumbune.execution.processor.Processor;
 import org.jumbune.execution.processor.ProfilingProcessor;
 import org.jumbune.execution.utils.ExecutionConstants;
-import org.jumbune.execution.utils.ExecutionUtil;
-import org.jumbune.execution.utils.ProcessHelper;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.BasicJobConfig;
 import org.jumbune.remoting.common.CommandType;
@@ -59,13 +53,9 @@ public abstract class CoreExecutorService {
 
 	private static final Logger LOGGER = LogManager
 			.getLogger(CoreExecutorService.class);
-	protected static final String NO = "NO";
 	protected static final String REATTEMPT_TASK_SCHEDULING_TIME = "*/10 * * * *";
 
 	protected static final boolean HTTP_BASED = false;
-	protected static final boolean CONSOLE_BASED = true;
-	protected static final boolean SCHEDULER_BASED = false;
-	protected static final ProcessHelper HELPER = new ProcessHelper();
 	private static final String JSON_FILE = "/jsonInfo.ser";
 	/** The Constant MAKE_JOBJARS_DIR_ON_AGENT. */
 	private static final String MAKE_JOBJARS_DIR_ON_AGENT = "mkdir -p AGENT_HOME/jobJars/";
@@ -293,15 +283,6 @@ public abstract class CoreExecutorService {
 		}
 		return false;
 	}
-
-	protected String isQueueTask() {
-		Scanner scanner = new Scanner(System.in);
-		String question = "Some other job is currently executing, should this job be queued. If yes please provide name for task, else type 'no'";
-		String answer = ExecutionUtil.readInputFromConsole(scanner,
-				"Enter a valid name", question);
-		return answer;
-	}
-	
 	
 	/**
 	 * This method cleans up the job name folder in temp directory on slaves.

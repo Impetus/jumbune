@@ -21,7 +21,7 @@ public class HDPLocator extends AbstractDistributionLocator{
 
 	private static final String expectedHiveConf = "/etc/hive";
 
-	public static final Logger LOGGER = LogManager.getLogger(HDPLocator.class);
+	private static final Logger LOGGER = LogManager.getLogger(HDPLocator.class);
 
 
 	@Override

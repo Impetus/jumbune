@@ -27,12 +27,10 @@ import javax.ws.rs.core.Response.Status;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.beans.cluster.ClusterDefinition;
 import org.jumbune.common.beans.cluster.HadoopUsers;
 import org.jumbune.common.influxdb.InfluxDBUtil;
-import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.FileUtil;
 import org.jumbune.common.utils.JMXUtility;
@@ -59,8 +57,6 @@ public class ClusterOperationsService{
 	/** The Constant LOGGER. */
 	private static final Logger LOGGER = LogManager
 			.getLogger(ClusterOperationsService.class);
-
-	private static final String SIGNATUREFAILURE = "Verify Signature on license key....[FAILED]";
 
 	/**
 	 * Persist cluster.
@@ -113,7 +109,7 @@ public class ClusterOperationsService{
 			throws IOException {
 		
 		String response;
-		try{
+		try {
            response = Constants.gson.toJson(JobRequestUtil.getClusterByName(clusterName));
 		} catch (Exception e) {
 			response = "No cluster with name " + clusterName + " exists. Please provide a valid cluster name";
@@ -323,7 +319,7 @@ public class ClusterOperationsService{
 	public Response getHadoopType()
 			throws IOException {
 		Map<String, String> hadoopTypeMap  = new HashMap<String, String>();
-		hadoopTypeMap.put("hadoopType", FileUtil.getClusterInfoDetail(Constants.HADOOP_TYPE));
+		hadoopTypeMap.put("hadoopType", "yarn");
 		String hadoopType = Constants.gson.toJson(hadoopTypeMap);
 		return Response.ok(hadoopType).build();
 	

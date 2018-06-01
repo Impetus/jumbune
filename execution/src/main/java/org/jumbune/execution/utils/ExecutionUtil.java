@@ -47,16 +47,11 @@ import java.util.Scanner;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import org.jumbune.common.job.JobConfig;
-import org.jumbune.execution.beans.YesNo;
-
 import org.jumbune.common.beans.JobDefinition;
-import org.jumbune.common.job.Config;
-import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.CollectionUtil;
 import org.jumbune.common.utils.ConsoleLogUtil;
 import org.jumbune.common.utils.MessageLoader;
+import org.jumbune.execution.beans.YesNo;
 import org.jumbune.utils.beans.LogLevel;
 import org.jumbune.utils.exception.JumbuneException;
 
@@ -241,18 +236,6 @@ public final class ExecutionUtil {
 				excludeJobs(jobDefList, index);
 			}
 		}
-	}
-
-	/**
-	 * This method is used to exclude the given jobs from JobDefinition list.
-	 * 
-	 * @param loader
-	 * @param index
-	 */
-	public static void excludeJobs(Config config, String[] index) {
-		JobConfig jobConfig = (JobConfig)config;
-		List<JobDefinition> jobList = jobConfig.getJobs();
-		excludeJobs(jobList, index);
 	}
 
 	/**

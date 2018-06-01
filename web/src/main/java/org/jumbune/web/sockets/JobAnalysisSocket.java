@@ -18,14 +18,13 @@ import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import org.jumbune.common.beans.HttpReportsBean;
 import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.job.JumbuneRequest;
+import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.ExtendedConfigurationUtil;
 import org.jumbune.common.utils.FileUtil;
 import org.jumbune.common.utils.JobRequestUtil;
 import org.jumbune.execution.service.HttpExecutorService;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
 import org.jumbune.web.utils.WebConstants;
-
-import com.google.gson.Gson;
 
 /**
  * The Class JobAnalysisSocket.
@@ -114,7 +113,7 @@ public class JobAnalysisSocket {
 				map.put(report.getName(), FileUtils.readFileToString(report));
 			}
 		}
-		return new Gson().toJson(map);
+		return Constants.gson.toJson(map);
 	}
 
 	/**
@@ -147,7 +146,6 @@ public class JobAnalysisSocket {
 	 */
 	private void asyncPublishResult(HttpReportsBean reports, Session session)
 			throws IOException, InterruptedException {
-		Gson gson = new Gson();
 		int completedModulesCount = reports.getAllCompletedReports().size();
 		int expectedCounter = completedModulesCount;
 		boolean executing = reports.isAnyProcessRunning();
@@ -155,7 +153,7 @@ public class JobAnalysisSocket {
 			executing = reports.isAnyProcessRunning();
 			completedModulesCount = reports.getAllCompletedReports().size();
 			if (expectedCounter != completedModulesCount) {
-				String report = gson.toJson(reports.getAllReports());
+				String report = Constants.gson.toJson(reports.getAllReports());
 				session.getRemote().sendString(report);
 				saveReports(report);
 				expectedCounter = completedModulesCount;

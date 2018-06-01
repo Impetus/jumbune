@@ -36,7 +36,6 @@ import org.objectweb.asm.Type;
 /**
  * This is interface for constants used in instrument module.
  */
-@SuppressWarnings("deprecation")
 public interface InstrumentConstants {
 	String CLASSNAME_CLASS_HAS_BEEN_INSTRUMENTED = Type.getInternalName(Instrumented.class);
 	String CLASSNAME_MAPPER_CONTEXT = Type.getInternalName(Mapper.Context.class);

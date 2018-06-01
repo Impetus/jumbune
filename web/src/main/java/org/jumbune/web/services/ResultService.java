@@ -28,23 +28,23 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.HttpReportsBean;
 import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.common.utils.CommandWritableBuilder;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
-import org.jumbune.common.utils.RemotingUtil;
-import org.jumbune.common.utils.ResourceUsageCollector;
-import org.jumbune.remoting.client.Remoter;
-import org.jumbune.remoting.common.CommandType;
-import org.jumbune.utils.exception.JumbuneException;
-
-import com.google.gson.Gson;
-import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.ExtendedConfigurationUtil;
 import org.jumbune.common.utils.ExtendedConstants;
+import org.jumbune.common.utils.RemotingUtil;
+import org.jumbune.common.utils.ResourceUsageCollector;
 import org.jumbune.execution.service.HttpExecutorService;
+import org.jumbune.remoting.client.Remoter;
+import org.jumbune.remoting.common.CommandType;
 import org.jumbune.utils.exception.ExtendedErrorCodesAndMessages;
+import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.web.utils.WebConstants;
+
+import com.google.gson.Gson;
 
 
 /**
@@ -52,7 +52,7 @@ import org.jumbune.web.utils.WebConstants;
  */
 @Path(WebConstants.RESULT_SERVICE_URL)
 public class ResultService {
-	private  final String JOBJARS = "/jobJars/";
+	
 	private final String BIN_HADOOP = "/bin/hadoop";
 	private final String RUNNING_JOB = "Running job:";
 	private final String JOB_KILL = "job -kill ";
@@ -120,8 +120,7 @@ public class ResultService {
 
 				reportMap.put(REPORT_JSON, reportsJson);
 
-				Gson gson = new Gson();
-				out.println(gson.toJson(reportMap));
+				out.println(Constants.gson.toJson(reportMap));
 
 				LOG.debug("Report Map " + reportMap);
 			} catch (JumbuneException e) {
@@ -143,7 +142,7 @@ public class ResultService {
 						session.removeAttribute("ExecutorServReference");
 						service.stopExecution();
 						StringBuilder sb = new StringBuilder();
-						sb.append(System.getenv("JUMBUNE_HOME"))
+						sb.append(JumbuneInfo.getHome())
 								.append(WebConstants.TMP_DIR_PATH)
 								.append(WebConstants.JUMBUNE_STATE_FILE);
 						File file = new File(sb.toString());
@@ -229,18 +228,17 @@ public class ResultService {
 
 	private void readHadoopJobIDAndKillJob(Cluster cluster,
 			File hadoopJobStateFile) throws IOException {
-		BufferedReader br=new BufferedReader(new InputStreamReader(new FileInputStream(hadoopJobStateFile)));
-		String line=null,jobName=null;
-		while((line=br.readLine())!=null){
-			if(line.contains(HADOOP_JOB_COMPLETED)){
-				return;
+		String line = null, jobName = null;
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(hadoopJobStateFile)))) {
+			
+			while((line=br.readLine())!=null){
+				if(line.contains(HADOOP_JOB_COMPLETED)){
+					return;
+				}
+				if(line.contains(RUNNING_JOB)){
+					jobName=line.split(RUNNING_JOB)[1].trim();
+				}
 			}
-			if(line.contains(RUNNING_JOB)){
-				jobName=line.split(RUNNING_JOB)[1].trim();
-			}
-		}
-		if(br!=null){
-			br.close();
 		}
 		Remoter remoter = RemotingUtil.getRemoter(cluster, "");
 		StringBuilder sbReport = new StringBuilder();

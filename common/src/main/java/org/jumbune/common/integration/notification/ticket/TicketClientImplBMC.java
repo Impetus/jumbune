@@ -23,8 +23,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.google.gson.Gson;
+import org.jumbune.common.utils.Constants;
 
 
 /**
@@ -249,11 +248,10 @@ public class TicketClientImplBMC implements TicketClient {
 	 * @return the string
 	 */
 	private String marshal(final Map<String, Object> entryAttrib) {
-		Gson gson = new Gson();
 		StringBuilder builder = new StringBuilder();		
 		entryAttrib.put(SUBMITTER, SUBMITTER_VAL);
 		entryAttrib.put(SHORT_DESC, SHORT_DESC_VAL);		
-		builder.append(OPEN_BRACE).append(VALUES).append(COLON).append(gson.toJson(entryAttrib)).append(CLOSE_BRACE);
+		builder.append(OPEN_BRACE).append(VALUES).append(COLON).append(Constants.gson.toJson(entryAttrib)).append(CLOSE_BRACE);
 		return builder.toString();
 	}
 

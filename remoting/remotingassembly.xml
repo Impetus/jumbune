@@ -26,8 +26,8 @@
 			<unpack>true</unpack>
 			<useTransitiveDependencies>false</useTransitiveDependencies>
 			<includes>
-			   <include>org.jumbune:remoting-jsch:jar:2.0</include>
-			   <include>org.jumbune:remoting-common:jar:2.0</include>
+			   <include>org.jumbune:jumbune-remoting-jsch:jar:2.0</include>
+			   <include>org.jumbune:jumbune-remoting-common:jar:2.0</include>
 				<include>org.apache.logging.log4j:log4j-api:jar:2.1</include>
 				<include>org.apache.logging.log4j:log4j-core:jar:2.1</include>
 				<include>io.netty:netty-handler:jar:4.0.32.Final</include>

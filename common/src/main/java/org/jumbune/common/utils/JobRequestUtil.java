@@ -3,11 +3,9 @@ package org.jumbune.common.utils;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -29,23 +27,17 @@ import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.job.JumbuneRequest;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
-
 public class JobRequestUtil {
-
-	private static final String DQT_SCHEDULED_JSON = "scheduledJson.json";
 
 	private static final String TWO_ = "2_";
 
-	private static final String CLUSTERS_DIR = "/clusters/";
+	private static final String CLUSTERS_DIR = "clusters/";
 
-	private static final String JUMBUNE_HOME = "JUMBUNE_HOME";
 	private static final Logger LOGGER = LogManager.getLogger(JobRequestUtil.class);
 
-	private static final String DQ_JOBS_DIR = "/ScheduledJobs/IncrementalDQJobs/";
+	private static final String DQ_JOBS_DIR = "ScheduledJobs/IncrementalDQJobs/";
 
-	private static final String TUNING_SCHEDULED_DIR = "/scheduledJobs/userScheduled/";
+	private static final String TUNING_SCHEDULED_DIR = "scheduledJobs/userScheduled/";
 
 	private static String JSON_REPO = "/jsonrepo/";
 
@@ -89,18 +81,12 @@ public class JobRequestUtil {
 
 	/**
 	 * Prepare Job config.
-	 * 
 	 * @param data
-	 *            the data
-	 * @return the Job config
+	 * @return
 	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
-	 * @throws FileUploadException
-	 *             the file upload exception
 	 */
 	public static Config prepareJobConfig(String data) throws IOException {
-		Gson gson = new Gson();
-		return gson.fromJson(data, JobConfig.class);
+		return Constants.gson.fromJson(data, JobConfig.class);
 
 	}
 
@@ -117,7 +103,7 @@ public class JobRequestUtil {
 
 	public static ClusterDefinition getClusterByName(String clusterName)
 			throws IOException {
-		File file = new File(System.getenv(JUMBUNE_HOME) + CLUSTERS_DIR + clusterName + ".json");
+		File file = new File(JumbuneInfo.getHome() + CLUSTERS_DIR + clusterName + ".json");
 		if (!file.exists()) {
 			throw new IOException("Cluster:" + clusterName + " not exists");
 		}
@@ -134,8 +120,7 @@ public class JobRequestUtil {
 				br.close();
 			}
 		}
-		Gson gson = new Gson();
-		return gson.fromJson(json.toString(), ClusterDefinition.class);
+		return Constants.gson.fromJson(json.toString(), ClusterDefinition.class);
 	}
 
 	public static List<String> getClusterNodes(Cluster cluster) {
@@ -194,11 +179,11 @@ public class JobRequestUtil {
 	}
 
 	public static boolean isJobDQTScheduledType(String jobName) {
-		return new File(System.getenv(JUMBUNE_HOME) + DQ_JOBS_DIR + jobName).exists();
+		return new File(JumbuneInfo.getHome() + DQ_JOBS_DIR + jobName).exists();
 	}
 
 	public static boolean isJobTuningScheduledType(String jobName) {
-		return new File(System.getenv(JUMBUNE_HOME) + TUNING_SCHEDULED_DIR + jobName).exists();
+		return new File(JumbuneInfo.getHome() + TUNING_SCHEDULED_DIR + jobName).exists();
 	}
 
 	public static JobStatus getScheduledTuningJobStatus(String jobName) throws IOException {
@@ -211,26 +196,11 @@ public class JobRequestUtil {
 			return null;
 		}
 	}
-
-	/**
-	 * This method is used to load json according to the file path.
-	 *
-	 * @param filePath
-	 *            the file path
-	 * @return the object
-	 * @throws IOException 
-	 * @throws JsonSyntaxException 
-	 * @throws FileNotFoundException
-	 *             the file not found exception
-	 */
-	private static JobConfig loadJob(String jobName) throws JsonSyntaxException, IOException {
-		return new Gson().fromJson(getJobJson(jobName), JobConfig.class);
-	}
 	
 	public static String getJobJson(String jobName) throws IOException {
 		String[] jobTypes = { ANALYZE_DATA, ANALYZE_JOB };
 
-		String jsonRepoPath = System.getenv(JUMBUNE_HOME) + JSON_REPO;
+		String jsonRepoPath = JumbuneInfo.getHome() + JSON_REPO;
 		String slashJsonName = File.separator + jobName + JOB_REQUEST_JSON;
 		StringBuilder jobConfigFile = null;
 
@@ -246,7 +216,7 @@ public class JobRequestUtil {
 	
 	public static List<Map<String, String>> getScheduledDQTJobsList()
 			throws IOException, ParseException {
-		File dir = new File(System.getenv(JUMBUNE_HOME) + DQ_JOBS_DIR);
+		File dir = new File(JumbuneInfo.getHome() + DQ_JOBS_DIR);
 		if (dir.exists()) {
 			File[] files = dir.listFiles();
 			List<Map<String, String>> list = new ArrayList<Map<String, String>>(files.length);
@@ -269,38 +239,6 @@ public class JobRequestUtil {
 		return Collections.emptyList();
 	}
 
-	private static String getScheduledDQTJobTime(String jobName) throws FileNotFoundException {
-		
-		JobConfig config = loadJobForDQT(jobName);
-		String time = config.getDataQualityTimeLineConfig().getTime();
-		if (time == null) {
-			time = config.getDataQualityTimeLineConfig().getCronExpression();
-		}
-		return time;
-	}
-
-	private static JobConfig loadJobForDQT(String jobName) throws FileNotFoundException {
-		String jobConfigFilePath = System.getenv(JUMBUNE_HOME) + DQ_JOBS_DIR + jobName
-				+ DQT_SCHEDULED_JSON;
-		InputStream inputStream = null;
-		InputStreamReader inputStreamReader = null;
-		try {
-			File file = new File(jobConfigFilePath);
-			inputStream = new FileInputStream(file);
-			Gson gson = new Gson();
-			inputStreamReader = new InputStreamReader(inputStream);
-			return gson.fromJson(inputStreamReader, JobConfig.class);
-		} finally {
-			if (inputStreamReader != null) {
-				try {
-					inputStreamReader.close();
-				} catch (IOException ioe) {
-					LOGGER.error("Failed to close input stream of job config file");
-				}
-			}
-		}
-	}
-
 	/**
 	 * Return job status of dqt job. This method will return only two status
 	 * completed and scheduled. If the 2nd iteration (After 1st time job when
@@ -312,7 +250,7 @@ public class JobRequestUtil {
 	 * @return job status
 	 */
 	public static JobStatus getScheduledDQTJobStatus(String jobName) {
-		File dir = new File(System.getenv(JUMBUNE_HOME) + DQ_JOBS_DIR + jobName);
+		File dir = new File(JumbuneInfo.getHome() + DQ_JOBS_DIR + jobName);
 		for (File file : dir.listFiles()) {
 			if (file.getName().startsWith(TWO_)) {
 				return JobStatus.COMPLETED;

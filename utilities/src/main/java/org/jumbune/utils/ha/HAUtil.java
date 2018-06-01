@@ -1,27 +1,38 @@
 package org.jumbune.utils.ha;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.jumbune.utils.beans.ClusterHADetails;
+
 /**
  * The Class HAUtil. This class maintains the state of currently active NameNode and currently active agent.
  * Specifically this class is used to detect the change in leadership of NameNode or Agent.
  */
 public final class HAUtil {
-
-	/** The active nn host. */
-	private static String activeNNHost;
 	
-	/** The active agent host. */
-	private static String activeAgentHost;
+	/**
+	 * Key = Cluster name
+	 * Value = Cluster ha information
+	 */
+	private static Map<String, ClusterHADetails> clusterHADetailsMap = new HashMap<>(1);
 	
-	/** The active agent port. */
-	private static int activeAgentPort;
+	private static ClusterHADetails getClusterHADetails(String clusterName) {
+		ClusterHADetails details = clusterHADetailsMap.get(clusterName);
+		if (details == null) {
+			details = new ClusterHADetails();
+			clusterHADetailsMap.put(clusterName, details);
+		}
+		return details;
+	}
 
 	/**
 	 * Gets the active nn host.
 	 *
 	 * @return the active nn host
 	 */
-	public static String getActiveNNHost() {
-		return activeNNHost;
+	public static String getActiveNNHost(String clusterName) {
+		return getClusterHADetails(clusterName).getActiveNNHost();
 	}
 
 	/**
@@ -29,8 +40,8 @@ public final class HAUtil {
 	 *
 	 * @param activeNNHost the new active nn host
 	 */
-	public static synchronized void setActiveNNHost(String activeNNHost) {
-		HAUtil.activeNNHost = activeNNHost;
+	public static synchronized void setActiveNNHost(String clusterName, String activeNNHost) {
+		getClusterHADetails(clusterName).setActiveNNHost(activeNNHost);
 	}
 
 	/**
@@ -38,8 +49,8 @@ public final class HAUtil {
 	 *
 	 * @return the active agent host
 	 */
-	public static String getActiveAgentHost() {
-		return activeAgentHost;
+	public static String getActiveAgentHost(String clusterName) {
+		return getClusterHADetails(clusterName).getActiveAgentHost();
 	}
 
 	/**
@@ -47,8 +58,8 @@ public final class HAUtil {
 	 *
 	 * @param activeAgentHost the new active agent host
 	 */
-	public static synchronized void setActiveAgentHost(String activeAgentHost) {
-		HAUtil.activeAgentHost = activeAgentHost;
+	public static synchronized void setActiveAgentHost(String clusterName, String activeAgentHost) {
+		getClusterHADetails(clusterName).setActiveAgentHost(activeAgentHost);
 	}
 
 	/**
@@ -56,8 +67,8 @@ public final class HAUtil {
 	 *
 	 * @return the active agent port
 	 */
-	public static int getActiveAgentPort() {
-		return activeAgentPort;
+	public static int getActiveAgentPort(String clusterName) {
+		return getClusterHADetails(clusterName).getActiveAgentPort();
 	}
 
 	/**
@@ -65,8 +76,8 @@ public final class HAUtil {
 	 *
 	 * @param activeAgentPort the new active agent port
 	 */
-	public static synchronized void setActiveAgentPort(int activeAgentPort) {
-		HAUtil.activeAgentPort = activeAgentPort;
+	public static synchronized void setActiveAgentPort(String clusterName, int activeAgentPort) {
+		getClusterHADetails(clusterName).setActiveAgentPort(activeAgentPort);
 	}
 
 	/**
@@ -76,8 +87,9 @@ public final class HAUtil {
 	 * @param port the port
 	 * @return true, if successful
 	 */
-	public static boolean compareAgent(String host, int port){
-		return activeAgentPort == port && activeAgentHost.equals(host);
+	public static boolean compareAgent(String clusterName, String host, int port) {
+		ClusterHADetails details = getClusterHADetails(clusterName);
+		return details.getActiveAgentHost().equals(host) && details.getActiveAgentPort() == port;
 	}
     
 }

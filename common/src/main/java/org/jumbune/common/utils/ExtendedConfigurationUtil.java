@@ -5,8 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 
-import org.jumbune.common.utils.ConfigurationUtil;
-import org.jumbune.common.utils.Constants;
+import org.jumbune.common.beans.JumbuneInfo;
 
 public class ExtendedConfigurationUtil extends ConfigurationUtil {
 
@@ -36,7 +35,7 @@ public class ExtendedConfigurationUtil extends ConfigurationUtil {
 	 * @return - String specifying path where scheduled job related data is kept
 	 */
 	public static String getScheduleJobLocation() {
-		return System.getenv(Constants.JUMBUNE_ENV_VAR_NAME) + ExtendedConstants.SCHEDULED_JOB_LOC;
+		return JumbuneInfo.getHome() + ExtendedConstants.SCHEDULED_JOB_LOC;
 	}
 	
 	/**
@@ -63,11 +62,7 @@ public class ExtendedConfigurationUtil extends ConfigurationUtil {
 	 * @return - string location of scheduling job execution script
 	 */
 	public static String getSchedulingScriptLoc() {
-		String jumbuneHome = System.getenv(Constants.JUMBUNE_ENV_VAR_NAME);
-		if (! jumbuneHome.endsWith("/")) {
-			return jumbuneHome + "/" + ExtendedConstants.SCHEDULING_SCRIPT_LOC;
-		}
-		return jumbuneHome + ExtendedConstants.SCHEDULING_SCRIPT_LOC;
+		return JumbuneInfo.getHome() + ExtendedConstants.SCHEDULING_SCRIPT_LOC;
 	}
 
 	/**
@@ -89,7 +84,7 @@ public class ExtendedConfigurationUtil extends ConfigurationUtil {
 	 * @return - return path of file to be written and then set in crontab
 	 */
 	public static String getJumbuneModifiedCronFilePath() {
-		return System.getenv(Constants.JUMBUNE_ENV_VAR_NAME) + ExtendedConstants.MODIFIED_CRON_FILE;
+		return JumbuneInfo.getHome() + ExtendedConstants.MODIFIED_CRON_FILE;
 	}
 
 }

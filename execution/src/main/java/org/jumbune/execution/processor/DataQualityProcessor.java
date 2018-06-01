@@ -33,6 +33,7 @@ import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.common.scheduler.DataQualityTaskScheduler;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.JobConfigUtil;
+import org.jumbune.common.utils.JobRequestUtil;
 import org.jumbune.common.utils.RemoteFileUtil;
 import org.jumbune.dataprofiling.utils.DataProfilingConstants;
 import org.jumbune.datavalidation.DataValidationReport;
@@ -41,18 +42,16 @@ import org.jumbune.datavalidation.report.DVReportGenerator;
 import org.jumbune.datavalidation.report.JsonDVReportGenerator;
 import org.jumbune.datavalidation.report.XmlDVReportGenerator;
 import org.jumbune.datavalidation.xml.XmlDataValidationReport;
+import org.jumbune.execution.beans.CommunityModule;
+import org.jumbune.execution.beans.DataQualityTaskEnum;
+import org.jumbune.execution.beans.Parameters;
+import org.jumbune.execution.utils.ExecutionConstants;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
-import org.jumbune.common.job.JobConfig;
-import org.jumbune.common.utils.JobRequestUtil;
-import org.jumbune.execution.beans.CommunityModule;
-import org.jumbune.execution.beans.DataQualityTaskEnum;
-import org.jumbune.execution.beans.Parameters;
-import org.jumbune.execution.utils.ExecutionConstants;
 
 /**
  * 
@@ -61,8 +60,6 @@ import org.jumbune.execution.utils.ExecutionConstants;
  * 
  */
 public class DataQualityProcessor extends BaseProcessor {
-
-	private static final String USER_DATE_PATTERN = "yyyy/MM/dd HH:mm";
 
 	private static final Logger LOGGER = LogManager.getLogger(DataQualityProcessor.class);
 

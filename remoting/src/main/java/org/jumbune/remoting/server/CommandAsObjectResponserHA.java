@@ -58,19 +58,11 @@ public class CommandAsObjectResponserHA extends AbstractCommandHandler {
 	/** The Constant VMSTAT_COMMAND. */
 	private static final String VMSTAT_COMMAND = "vmstat -s && exit";
 	
-	private static final String EXECUTE_SHELL_JSCH = "executeShellJsch";
-	
-	private static final String EXECUTE_EXEC_JSCH = "executeExecJsch";
-	
 	private static final String EXECUTE_RESPONSIVE_SHELL_JSCH = "executeResponsiveShellJsch";
-	
-	private static final String EXECUTE_RESPONSIVE_EXEC_JSCH = "executeResponsiveExecJsch";
 	
 	private static final String EXECUTE_COMMAND_WITH_RUNTIME = "executeCommandWithRuntime";
 
 	private static final String BIN_JAVA = "/bin/java";
-
-	private static final String LIB_ALL = "/lib/*";
 	
 	private static final String NOHUP = "/usr/bin/nohup";
 	

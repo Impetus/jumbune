@@ -17,9 +17,7 @@ public class CDHLocator extends AbstractDistributionLocator {
 	
 	private static final String expectedHiveConf = "/etc/hive";
 
-	private static final String usrBinDir = "/usr/bin/hadoop";
-
-	public static final Logger LOGGER = LogManager
+	private static final Logger LOGGER = LogManager
 			.getLogger(CDHLocator.class);
 
 	@Override

@@ -29,33 +29,12 @@ public interface AlertConstants {
 	String NUM_FAILED_VOLUMES = ".NumFailedVolumes";
 
 	String DATA_NODE = "DataNode";
-
-	/** The Constant UPDATE_INTERVAL. */
-	String UPDATE_INTERVAL ="UpdateInterval";
-	
-	/** The Constant DISKSPACE_ALERT. */
-	String DISKSPACE_ALERT = "DiskSpace Alert";
-	
-	/** The Constant DATASET_CAPACITY. */
-	String DATASET_CAPACITY ="FSDatasetState-null.Capacity";
-	
-	/** The Constant DATASET_CAPACITY. */
-	String HORTONWORK_DATASET_CAPACITY ="FSDatasetState.Capacity";
 	
 	/** The Constant DISKSPACE_ALERT_MESSAGE. */
 	String DISKSPACE_ALERT_MESSAGE ="Running out of diskspace";
 	
-	/** The Constant WORKER. */
-	String WORKER = "Worker: ";
-	
 	/** The Constant UNDER_REPLICATED_BLOCK_MESSAGE. */
 	String UNDER_REPLICATED_BLOCK_MESSAGE =" under replicated block(s) found";
-	
-	/** The Constant UNDER_REPLICATED_BLOCK. */
-	String UNDER_REPLICATED_BLOCK = " Replicated block(s) Alert";
-	
-	/** The Constant HDFS_SPACE_USAGE_ALERT. */
-	String HDFS_SPACE_USAGE_ALERT = "HDFS Space Usage Alert";
 	
 	/** The Constant HDFS_SPACE_USAGE_MESSAGE. */
 	String HDFS_SPACE_USAGE_MESSAGE = " HDFS is running out of space";

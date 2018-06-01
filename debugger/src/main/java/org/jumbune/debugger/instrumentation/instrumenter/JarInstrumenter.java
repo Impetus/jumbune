@@ -352,16 +352,17 @@ public class JarInstrumenter extends Instrumenter {
 		zos.putNextEntry(xmlFileEntry);
 		String filePath = JumbuneInfo.getHome() + LOG4J_FILE_PATH;
 		byte[] buffer = new byte[InstrumentConstants.FOUR_ZERO_NINE_SIX];
-		InputStream is = new FileInputStream(filePath);
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		int read = 0;
-		while ((read = is.read(buffer)) != -1) {
-			baos.write(buffer, 0, read);
-		}
-		zos.write(baos.toByteArray());
-		zos.closeEntry();
+		try (InputStream is = new FileInputStream(filePath)) {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			int read = 0;
+			while ((read = is.read(buffer)) != -1) {
+				baos.write(buffer, 0, read);
+			}
+			zos.write(baos.toByteArray());
+			zos.closeEntry();
 
-		addUtilClasses(getConfig(), zos);
+			addUtilClasses(getConfig(), zos);
+		}
 	} 
 	/**
 	 * <p>

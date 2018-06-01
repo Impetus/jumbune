@@ -5,11 +5,10 @@ import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.profiling.utils.HTFProfilingException;
-import org.jumbune.profiling.utils.ProfilerStats;
-
 import org.jumbune.common.influxdb.InfluxDBUtil;
 import org.jumbune.common.influxdb.beans.InfluxDBConstants;
+import org.jumbune.monitoring.utils.HTFProfilingException;
+import org.jumbune.monitoring.utils.ProfilerStats;
 import org.jumbune.web.services.ClusterAnalysisService;
 
 public class StatsWriterThread implements Runnable {

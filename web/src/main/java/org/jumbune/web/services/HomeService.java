@@ -43,17 +43,14 @@ import org.jumbune.common.scheduler.DataQualityTaskScheduler;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.ExtendedConfigurationUtil;
 import org.jumbune.common.utils.FileUtil;
-import org.jumbune.common.utils.JenkinsBuildDetails;
 import org.jumbune.common.utils.JobRequestUtil;
-import org.jumbune.profiling.utils.JMXConnectorCache;
+import org.jumbune.monitoring.utils.JMXConnectorCache;
 import org.jumbune.remoting.client.SingleNIOEventGroup;
 import org.jumbune.remoting.common.BasicJobConfig;
 import org.jumbune.utils.conf.AdminConfigurationUtil;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
 import org.jumbune.web.utils.WebConstants;
-
-import com.google.gson.Gson;
 
 import io.netty.channel.EventLoopGroup;
 
@@ -164,7 +161,7 @@ public class HomeService {
 	public Response getSupportedFeatures() throws IOException {
 		try {
 			List<String> supportedFeatures = getSupportedFeatures0();
-			return Response.ok(new Gson().toJson(supportedFeatures)).build();
+			return Response.ok(Constants.gson.toJson(supportedFeatures)).build();
 		}catch (Exception e) {
 			LOGGER.error(JumbuneRuntimeException.throwException(e.getStackTrace()));
 			return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
@@ -177,9 +174,8 @@ public class HomeService {
 	public Response getBuildNumber() throws IOException {
 		try {
 			Map<String, String> map = new HashMap<>(1);
-			String buildno = JenkinsBuildDetails.getJenkinsFromResources();
-			map.put("buildno", buildno);
-			return Response.ok(new Gson().toJson(map)).build();
+			map.put("buildno", "2.0");
+			return Response.ok(Constants.gson.toJson(map)).build();
 		}catch (Exception e) {
 			LOGGER.error(JumbuneRuntimeException.throwException(e.getStackTrace()));
 			return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
@@ -246,7 +242,7 @@ public class HomeService {
 				recentJobsList.add(map);
 			}
 
-			return Response.ok(new Gson().toJson(recentJobsList)).build();
+			return Response.ok(Constants.gson.toJson(recentJobsList)).build();
 		} catch (Exception e) {
 			LOGGER.error(JumbuneRuntimeException.throwException(e.getStackTrace()));
 			return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
@@ -258,8 +254,7 @@ public class HomeService {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getScheduledDQTJobsList() {
 		try {
-			Gson gson = new Gson();
-			return Response.ok( gson.toJson(JobRequestUtil.getScheduledDQTJobsList())).build();
+			return Response.ok( Constants.gson.toJson(JobRequestUtil.getScheduledDQTJobsList())).build();
 		} catch (IOException | ParseException e) {
 			LOGGER.error(e);
 			return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
@@ -277,7 +272,7 @@ public class HomeService {
 			configurations.put(EMAIL_CONFIGURATION, AdminConfigurationUtil.getEmailConfiguration(clusterName));
 			configurations.put(HA_CONFIGURATION, AdminConfigurationUtil.getHAConfiguration(clusterName));
 			configurations.put(INFLUXDB_CONFIGURATION, AdminConfigurationUtil.getInfluxdbConfiguration(clusterName));
-			return Response.ok( new Gson().toJson(configurations)).build();
+			return Response.ok( Constants.gson.toJson(configurations)).build();
 		} catch (Exception e) {
 			return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e).build();
 		}
@@ -372,7 +367,7 @@ public class HomeService {
 						getExampleList(jsonRepoDir.toString()));
 			}
 
-			return Response.ok(new Gson().toJson(allJobs)).build();
+			return Response.ok(Constants.gson.toJson(allJobs)).build();
 		} catch (Exception e) {
 			LOGGER.error(JumbuneRuntimeException.throwException(e.getStackTrace()));
 			return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
@@ -437,8 +432,7 @@ public class HomeService {
 			@PathParam("scheduledJobName") final String scheduledJobName) {
 		try {
 			Map<String, String> schedulerMapper = processSchedulerRequest(scheduledJobName);
-			Gson gson = new Gson();
-			String schedulerResponse = gson.toJson(schedulerMapper);
+			String schedulerResponse = Constants.gson.toJson(schedulerMapper);
 			return Response.ok(schedulerResponse).build();
 		} catch (Exception e) {
 			LOGGER.error(JumbuneRuntimeException.throwException(e.getStackTrace()));
@@ -464,8 +458,7 @@ public class HomeService {
 			if (file.exists()) {
 				Map<String, String> map = new HashMap<String, String>();
 				map.put("SELF_TUNING", FileUtils.readFileToString(file));
-				Gson gson = new Gson();
-				return Response.ok(gson.toJson(map)).build();
+				return Response.ok(Constants.gson.toJson(map)).build();
 			} else {
 				throw new Exception(file + " not exists");
 			}
@@ -486,7 +479,7 @@ public class HomeService {
 			map.put(IS_MAPR, isMapr);
 			map.put(IS_EMR, Constants.EMRAPACHE.equalsIgnoreCase(hadoopDistribution) 
 					|| Constants.EMRMAPR.equalsIgnoreCase(hadoopDistribution));
-			return Response.ok(new Gson().toJson(map)).build();
+			return Response.ok(Constants.gson.toJson(map)).build();
 		} catch (Exception e) {
 			LOGGER.error(JumbuneRuntimeException.throwException(e.getStackTrace()));
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
@@ -554,7 +547,7 @@ public class HomeService {
 	 */
 	private void service() throws ServletException, IOException {
 		StringBuilder sb = new StringBuilder();
-		sb.append(System.getenv("JUMBUNE_HOME")).append(WebConstants.TMP_DIR_PATH)
+		sb.append(JumbuneInfo.getHome()).append(WebConstants.TMP_DIR_PATH)
 				.append(WebConstants.JUMBUNE_STATE_FILE);
 
 		File file = new File(sb.toString());

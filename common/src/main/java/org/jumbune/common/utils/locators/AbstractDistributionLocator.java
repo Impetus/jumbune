@@ -12,12 +12,12 @@ import org.jumbune.utils.exception.JumbuneRuntimeException;
 public abstract class AbstractDistributionLocator implements
 		HadoopDistributionLocator {
 
-	public static final Logger LOGGER = LogManager
+	private static final Logger LOGGER = LogManager
 			.getLogger(AbstractDistributionLocator.class);
-	protected static final String ECHO_HADOOP_HOME = "echo $HADOOP_HOME \n \n ";
+	private static final String ECHO_HADOOP_HOME = "echo $HADOOP_HOME \n \n ";
 	private static final String LS_POSTFIX_PART = " -Rl | grep /";
 	protected static final String LS_PREFIX_PART = "ls ";
-	protected static final String WHEREIS_HADOOP = "whereis hadoop";
+	private static final String WHEREIS_HADOOP = "whereis hadoop";
 
 	/* (non-Javadoc)
 	 * @see org.jumbune.common.utils.HadoopDistributionLocator

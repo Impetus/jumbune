@@ -112,7 +112,6 @@ public class DataProfilingJobExecutor {
 		Path path = null;
 		Text key = null;
 		IntWritable value = null;
-		String unMatchedValue = null;
 		SequenceFile.Reader reader = null;
 		CriteriaBasedDataProfiling criteriaBasedDataProfiling = null ;
 		Set<CriteriaBasedDataProfiling> matchedList = new HashSet<CriteriaBasedDataProfiling>();

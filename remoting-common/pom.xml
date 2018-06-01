@@ -5,16 +5,16 @@
     <artifactId>jumbune</artifactId>
     <version>2.0</version>
   </parent>
-  
-  
+
+
     	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
-  
+
   	<groupId>org.jumbune</groupId>
-  <artifactId>remoting-common</artifactId>
+  <artifactId>jumbune-remoting-common</artifactId>
 	<version>${build.number}</version>
-  
+
   <build>
   <sourceDirectory>../remoting</sourceDirectory>
 	<resources>
@@ -24,7 +24,7 @@
 				<include>ha_conf.properties</include>
 			</includes>
 		</resource>
-	</resources>  
+	</resources>
   <plugins>
 	<plugin>
 			<artifactId>maven-jar-plugin</artifactId>
@@ -38,7 +38,7 @@
 							<includes>
 								<include>org/jumbune/remoting/common**/**</include>
 								<include>ha_conf.properties</include>
-							</includes>							
+							</includes>
 						</configuration>
 					</execution>
 				</executions>
@@ -114,7 +114,7 @@
 		<artifactId>guava</artifactId>
 		<version>18.0</version>
 	</dependency>
-		
+
 		<dependency>
 			<groupId>org.apache.zookeeper</groupId>
 			<artifactId>zookeeper</artifactId>
@@ -123,7 +123,7 @@
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
- 			<scope>compile</scope> 
+ 			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.google.protobuf</groupId>
@@ -134,7 +134,7 @@
 							<groupId>*</groupId>
 							<artifactId>*</artifactId>
 						</exclusion>
-					</exclusions>		
+					</exclusions>
 			</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -145,7 +145,7 @@
 			<groupId>com.sun</groupId>
 			<artifactId>tools</artifactId>
 			<version>1.7</version>
-			<scope>system</scope> 
+			<scope>system</scope>
 			<systemPath>${java.home}/../lib/tools.jar</systemPath>
 		</dependency>
 	</dependencies>

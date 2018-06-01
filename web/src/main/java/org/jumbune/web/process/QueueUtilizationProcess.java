@@ -8,11 +8,11 @@ import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.clusterprofiling.SchedulerService;
-import org.jumbune.clusterprofiling.beans.JobQueueBean;
-import org.jumbune.clusterprofiling.beans.QueueStats;
-import org.jumbune.clusterprofiling.yarn.beans.Scheduler;
-import org.jumbune.clusterprofiling.yarn.helper.ClusterProfilingHelper;
+import org.jumbune.clusteranalysis.beans.JobQueueBean;
+import org.jumbune.clusteranalysis.queues.SchedulerService;
+import org.jumbune.clusteranalysis.queues.SchedulerUtil;
+import org.jumbune.clusteranalysis.queues.beans.Scheduler;
+import org.jumbune.clusteranalysis.service.ClusterProfilingHelper;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.beans.cluster.ClusterDefinition;
 import org.jumbune.common.utils.CommunicatorFactory;
@@ -46,7 +46,6 @@ public class QueueUtilizationProcess extends Thread
 
 	private Cluster cluster;
 	private ClusterProfilingHelper cph;
-	private List<QueueStats> queueStats;
 	private List<JobQueueBean> jobQueueBeans;
 	private SchedulerService schedulerService;
 	private YarnQueuesUtils yarnQueuesUtils;
@@ -84,7 +83,7 @@ public class QueueUtilizationProcess extends Thread
 		}
 
 		// Creating Cluster Profiling Helper instance
-		cph = ClusterProfilingHelper.getInstance();
+		cph = new ClusterProfilingHelper();
 
 		schedulerService = SchedulerService.getInstance();
 		this.yarnQueuesUtils = YarnQueuesUtils.getInstance();
@@ -139,10 +138,10 @@ public class QueueUtilizationProcess extends Thread
 		try {
 			Scheduler scheduler = schedulerService.fetchSchedulerInfo(cluster);
 			if (scheduler.isFairScheduler()) {
-				this.yarnQueuesUtils.persistFairSchedulerData(scheduler.getFairSchedulerLeafQueues(),
+				this.yarnQueuesUtils.persistFairSchedulerData(SchedulerUtil.getFairSchedulerLeafQueues(scheduler),
 						clusterName);
 			} else {
-				this.yarnQueuesUtils.persistCapacitySchedulerData(scheduler.getCapcitySchedulerLeafQueues(),
+				this.yarnQueuesUtils.persistCapacitySchedulerData(SchedulerUtil.getCapcitySchedulerLeafQueues(scheduler),
 						clusterName);
 			}
 		} catch (Exception e) {

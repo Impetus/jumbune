@@ -128,22 +128,7 @@ public class RMInfoService {
 						.append(":").append(getRMWebAppPort()).append("/ws/v1/cluster/info");
 
 				url = new URL(builder.toString());
-
-				// if (subject == null) {
 				connection = (HttpURLConnection) url.openConnection();
-				// }
-				// TODO : for secured cluster
-				/*
-				 * else { connection = Subject.doAs(subject, new
-				 * PrivilegedExceptionAction<HttpURLConnection>() {
-				 * 
-				 * @Override public HttpURLConnection run() throws Exception {
-				 * AuthenticatedURL.Token token = new AuthenticatedURL.Token(); return new
-				 * AuthenticatedURL().openConnection(url, token); }
-				 * 
-				 * }); }
-				 */
-
 				connection.setRequestProperty(ACCEPT, APPLICATION_XML);
 				connection.setRequestMethod(GET);
 

@@ -460,15 +460,15 @@ public class RemoterNonHA implements Remoter {
 	private void writeToChannel(Channel channel, String[] magicBytes, Object pathOrCommand, Object attachment) throws ConnectException {
 
 		//update leader agent details
-		if (pathOrCommand instanceof CommandWritable
-				&& ((CommandWritable) pathOrCommand).isCommandForMaster()) {
-			CommandWritable commandWritable = (CommandWritable) pathOrCommand;
+//		if (pathOrCommand instanceof CommandWritable
+//				&& ((CommandWritable) pathOrCommand).isCommandForMaster()) {
+//			CommandWritable commandWritable = (CommandWritable) pathOrCommand;
 //			AgentNode agent = ZKUtils.getLeaderAgentfromZK();
 //			commandWritable.setNameNodeHost(agent.getHost());
 //			if(commandWritable.isHasSshAuthKeysFile()){
 //				commandWritable.setSshAuthKeysFile(agent.getPrivateKey());
 //			}
-		}
+//		}
 
 		long firstAttempt = System.currentTimeMillis();
 		long timeOut = RemotingConstants.TEN * RemotingConstants.THOUSAND;

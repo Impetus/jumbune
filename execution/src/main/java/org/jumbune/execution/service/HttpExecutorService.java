@@ -1,7 +1,6 @@
 package org.jumbune.execution.service;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,17 +13,15 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.HttpReportsBean;
 import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.ReportsBean;
-import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.common.utils.JobConfigUtil;
-import org.jumbune.utils.exception.ErrorCodesAndMessages;
-import org.jumbune.utils.exception.JumbuneException;
-import org.jumbune.utils.exception.JumbuneRuntimeException;
-
-import org.jumbune.common.job.JobConfig;
 import org.jumbune.execution.beans.Parameters;
 import org.jumbune.execution.processor.Processor;
 import org.jumbune.execution.utils.ExecutionConstants;
+import org.jumbune.utils.exception.ErrorCodesAndMessages;
+import org.jumbune.utils.exception.JumbuneException;
+import org.jumbune.utils.exception.JumbuneRuntimeException;
 
 /**
  * 
@@ -81,25 +78,6 @@ public class HttpExecutorService extends CoreExecutorService {
 	 * This method will identify application flow and execute each processor
 	 * chain in a separate thread
 	 * 
-	 * @param is
-	 * @param reports
-	 * @return YamlLoader
-	 * @throws JumbuneException
-	 */
-	public JumbuneRequest runInSeperateThread(InputStream is,
-			HttpReportsBean reports) throws JumbuneException {
-
-		JumbuneRequest jumbuneRequest = JobConfigUtil.jumbuneRequest(is);
-		return runInSeperateThread(jumbuneRequest, reports);
-
-	}
-	
-	
-
-	/**
-	 * This method will identify application flow and execute each processor
-	 * chain in a separate thread
-	 * 
 	 * @param config
 	 * @param reports
 	 * @return YamlLoader
@@ -108,7 +86,6 @@ public class HttpExecutorService extends CoreExecutorService {
 	public JumbuneRequest runInSeperateThread(JumbuneRequest jumbuneRequest, HttpReportsBean reports) throws JumbuneException {
 		List<Processor> processors;
 		JobConfig jobConfig = (JobConfig) jumbuneRequest.getConfig();
-		Cluster cluster = jumbuneRequest.getCluster();
 		if (JobConfigUtil.isEnable(jobConfig.getEnableStaticJobProfiling()) && !checkProfilingState()) {
 			throw new JumbuneException(ErrorCodesAndMessages.COULD_NOT_EXECUTE_PROGRAM);
 		}

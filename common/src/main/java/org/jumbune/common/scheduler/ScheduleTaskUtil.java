@@ -3,13 +3,10 @@ package org.jumbune.common.scheduler;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,8 +22,6 @@ import org.jumbune.common.utils.ExtendedConfigurationUtil;
 import org.jumbune.common.utils.ExtendedConstants;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
-
-import com.google.gson.Gson;
 
 
 /**
@@ -54,31 +49,6 @@ public class ScheduleTaskUtil {
 	
 	/** The Constant CURRENT_DIR. */
 	private static final File CURRENT_DIR = new File(".");
-
-
-
-	
-	/**
-	 * It schedules jumbune task and also copies resources like execution script and desired json file in destination folder.
-	 *
-	 * @param scheduleJobName the schedule job name
-	 * @param scheduleJobDateTime - time of scheduling jumbune task
-	 * @param jobConfigInputStream - input stream of JobConfig
-	 * @param isReAttempt the is re attempt
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws JumbuneException the hTF exception
-	 */
-	public void scheduleJumbuneTaskAndCopyResources(String scheduleJobName, String scheduleJobDateTime, InputStream jobConfigInputStream,
-			boolean isReAttempt) throws IOException, JumbuneException {
-		StringBuilder scheduleJobLoc = getScheduleJobLoc(scheduleJobName, isReAttempt);
-
-		String jsonFileName = ExtendedConfigurationUtil.getScheduleJobJsonFileLoc(scheduleJobLoc.toString());
-
-		scheduleJumbuneTask(scheduleJobDateTime, scheduleJobLoc);
-
-		// Copy the command file and respective json to scheduledJobs folder...
-		copyJsonFileToScheduleJobsLoc(jsonFileName, jobConfigInputStream);
-	}
 
 	/**
 	 * It schedules jumbune task and also copies resources like execution script and desired yaml file in destination folder.
@@ -241,50 +211,10 @@ public class ScheduleTaskUtil {
 		scheduledJobScript.setExecutable(true);
 	}
 
-	/**
-	 * It copies the user's json file to schedulerJobs/<currentJob>/ location. So that this file could be read when executing the scheduled job
-	 *
-	 * @param jsonFileDestLoc - destination location where the file should be copied
-	 * @param inputStream - input stream of the user's json file
-	 * @throws JumbuneException the hTF exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	private void copyJsonFileToScheduleJobsLoc(String jsonFileDestLoc, InputStream inputStream) throws IOException {
-		LOG.debug("Copying json file to destination folder " + jsonFileDestLoc);
-		File userJsonFile = new File(jsonFileDestLoc);
-		OutputStream out = null;
-		try {
-			if (!userJsonFile.exists()) {
-				userJsonFile.mkdirs();
-			}
-
-			out = new FileOutputStream(userJsonFile);
-			byte buf[] = new byte[Constants.ONE_ZERO_TWO_FOUR];
-			int len;
-			while ((len = inputStream.read(buf)) > 0) {
-				out.write(buf, 0, len);
-			}
-
-		} catch (FileNotFoundException e) {
-			LOG.error(JumbuneRuntimeException.throwFileNotLoadedException(e.getStackTrace()));
-		} catch (IOException e) {
-			LOG.error(JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));
-		} finally {
-			if (out != null) {
-				out.close();
-			}
-			if (inputStream != null) {
-				inputStream.close();
-			}
-		}
-
-	}
-
 	private void copyJsonFileToScheduleJobsLoc(String jsonFileDestLoc, Config config) throws IOException {
 		LOG.debug("Copying json file to destination folder " + jsonFileDestLoc);
 		// Write jobConfig to file
-		Gson gson = new Gson();
-		ConfigurationUtil.writeToFile(jsonFileDestLoc, gson.toJson(config));
+		ConfigurationUtil.writeToFile(jsonFileDestLoc, Constants.gson.toJson(config));
 	}
 	
 	
@@ -407,44 +337,5 @@ public class ScheduleTaskUtil {
 			LOG.error(JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));
 		}
 	}
-	
-	/**
-	 * Delete current job entry from cron.
-	 *
-	 * @param currentJobLoc the current job loc
-	 * @throws JumbuneException the hTF exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	public void deleteCurrentJobEntryFromCron(String currentJobLoc) throws IOException {
-		
-		InputStream cronInputStream = getCurrentUserCronTabInfo();
-		
-		if (cronInputStream != null && cronInputStream.available() != 0) {
-			InputStreamReader isReader = new InputStreamReader(cronInputStream);
-			BufferedReader br = new BufferedReader(isReader);
-			StringBuilder cronBuilder = new StringBuilder();
-			String textinLine;
-			while (true) {
-				try {
-					textinLine = br.readLine();
-					if (textinLine == null){
-						break;
-					}
-					if (!textinLine.contains(currentJobLoc)) {
-						cronBuilder.append(textinLine);
-					}
-
-					cronBuilder.append(NEW_LINE);
-				} catch (IOException e1) {
-					LOG.error(JumbuneRuntimeException.throwUnresponsiveIOException(e1.getStackTrace()));
-				}
-			}
-			cronInputStream.close();
-			
-			writeLatestCronTabToFile(cronBuilder.toString());
-			addUpdatedFileToCron();
-		}
-	}
-
 	
 }

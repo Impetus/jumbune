@@ -1,20 +1,20 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
- 
- 
+
+
   <parent>
     <groupId>org.jumbune</groupId>
     <artifactId>jumbune</artifactId>
     <version>2.0</version>
   </parent>
- 
-  
+
+
   	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
-  
+
   	<groupId>org.jumbune</groupId>
-  <artifactId>remoting-jsch</artifactId>
+  <artifactId>jumbune-remoting-jsch</artifactId>
 	  <version>${build.number}</version>
   <build>
   <sourceDirectory>../remoting/src/main/java</sourceDirectory>
@@ -37,7 +37,7 @@
 			</plugin>
 		</plugins>
   </build>
-  
+
   <dependencies>
   		<dependency>
 			<groupId>org.jumbune</groupId>
@@ -105,7 +105,7 @@
 		<artifactId>guava</artifactId>
 		<version>18.0</version>
 	</dependency>
-		
+
 		<dependency>
 			<groupId>org.apache.zookeeper</groupId>
 			<artifactId>zookeeper</artifactId>
@@ -114,7 +114,7 @@
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
- 			<scope>compile</scope> 
+ 			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.google.protobuf</groupId>
@@ -125,7 +125,7 @@
 							<groupId>*</groupId>
 							<artifactId>*</artifactId>
 						</exclusion>
-					</exclusions>		
+					</exclusions>
 			</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -136,7 +136,7 @@
 			<groupId>com.sun</groupId>
 			<artifactId>tools</artifactId>
 			<version>1.7</version>
-			<scope>system</scope> 
+			<scope>system</scope>
 			<systemPath>${java.home}/../lib/tools.jar</systemPath>
 		</dependency>
 	</dependencies>

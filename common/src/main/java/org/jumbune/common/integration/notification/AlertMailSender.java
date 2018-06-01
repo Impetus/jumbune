@@ -26,7 +26,7 @@ import javax.mail.internet.MimeMultipart;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.beans.Alert;
+import org.jumbune.common.beans.AlertInfo;
 import org.jumbune.utils.conf.AdminConfigurationUtil;
 import org.jumbune.utils.conf.beans.AlertAction;
 import org.jumbune.utils.conf.beans.EmailConfiguration;
@@ -63,7 +63,7 @@ public class AlertMailSender implements AlertNotifier{
 	 * @return true, if successful
 	 */
 	@Override
-	public void sendNotification(List<Alert> notificationList, AlertAction alertAction,
+	public void sendNotification(List<AlertInfo> notificationList, AlertAction alertAction,
 			String clusterName) {
 		try {
 			EmailConfiguration emailConfiguration = AdminConfigurationUtil.getEmailConfiguration(clusterName);
@@ -97,14 +97,14 @@ public class AlertMailSender implements AlertNotifier{
 				message.setFrom(new InternetAddress(senderName + "<" + senderID + ">"));
 				message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(emailTo));
 
-				List<Alert> tempList = new ArrayList<>();
-				for (Alert alert : notificationList) {
-					tempList.add(alert.deepCopy());
+				List<AlertInfo> tempList = new ArrayList<>();
+				for (AlertInfo alertInfo : notificationList) {
+					tempList.add(alertInfo.deepCopy());
 				}
 				Date date = new Date();
-				for (Alert alert : tempList) {
-					if (!alert.getSkipOccuringSince()) {
-						alert.setDate(getDateDifference(date.getTime(), alert.getFirstOccurrence()));
+				for (AlertInfo alertInfo : tempList) {
+					if (!alertInfo.getSkipOccuringSince()) {
+						alertInfo.setDate(getDateDifference(date.getTime(), alertInfo.getFirstOccurrence()));
 					}
 				}
 				message.setSubject(notificationList.get(0).getLevel()+ " Alert(s)!! on "+clusterName+" cluster");

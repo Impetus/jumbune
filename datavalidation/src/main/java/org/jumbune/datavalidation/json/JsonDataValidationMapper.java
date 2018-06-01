@@ -90,7 +90,6 @@ public class JsonDataValidationMapper extends Mapper<LongWritable, Text, Text, F
 	/* (non-Javadoc)
 	 * @see org.apache.hadoop.mapreduce.Mapper#setup(org.apache.hadoop.mapreduce.Mapper.Context)
 	 */
-	@SuppressWarnings("rawtypes")
 	protected void setup(Mapper.Context context){		
 		String jsonString = context.getConfiguration().get(JsonDataVaildationConstants.JSON_ARGUMENT);
 		String regexString = context.getConfiguration().get(JsonDataVaildationConstants.REGEX_ARGUMENT);

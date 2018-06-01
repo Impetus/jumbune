@@ -121,32 +121,6 @@ public final class JschUtil {
 			session.disconnect();
 		}
 		return isConnected;
-	}	
-	
-	/**
-	 * Gets the jumbune user info.
-	 *
-	 * @param commandType the command type
-	 * @param switchedIdentity the switched identity
-	 * @return the jumbune user info
-	 * @throws Exception the exception
-	 */
-	private static UserInfo getJumbuneUserInfo(CommandType commandType,
-			CommandWritable.Command.SwitchedIdentity switchedIdentity) throws Exception{
-		
-		UserInfo info;
-		if(commandType.equals(CommandType.HADOOP_FS)){
-			info = new JumbuneUserInfo(StringUtil.getPlain(switchedIdentity.getPasswd()));
-		}else if(commandType.equals(CommandType.HADOOP_JOB)){
-			info = new JumbuneUserInfo(StringUtil.getPlain(switchedIdentity.getPasswd()));
-		}else if(commandType.equals(CommandType.MAPRED)){
-			info = new JumbuneUserInfo(StringUtil.getPlain(switchedIdentity.getPasswd()));
-		}else if(commandType.equals(CommandType.USER)){
-			info = new JumbuneUserInfo();
-		}else{
-			info = new JumbuneUserInfo();
-		}
-		return info;
 	}
 	
 	/**
@@ -461,29 +435,6 @@ public final class JschUtil {
 			session.disconnect();
 		}
 		return pid;
-	}
-	
-	
-	
-	private static void logJsch(Channel channel, InputStream in) 
-	{
-	    try {
-	        byte[] tmp = new byte[1024];
-	        while (true) {
-	            while (in.available() > 0) {
-	                int i = in.read(tmp, 0, 1024);
-	                if (i < 0)
-	                    break;
-	                LOGGER.debug(new String(tmp, 0, i));
-	            }
-	            if (channel.isClosed()) {
-	            	LOGGER.debug("exit-status: " + channel.getExitStatus());
-	                break;
-	            }
-	        }
-	    } catch (Exception ex) {
-	    	LOGGER.error(ex);
-	    }
 	}
 	
 }

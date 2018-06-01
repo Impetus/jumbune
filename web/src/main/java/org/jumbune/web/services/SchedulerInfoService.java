@@ -18,12 +18,10 @@ import javax.ws.rs.core.Response.Status;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.Constants;
-import org.jumbune.common.utils.RemoteFileUtil;
-import org.jumbune.utils.exception.JumbuneRuntimeException;
-
-import com.google.gson.Gson;
 import org.jumbune.common.utils.ExtendedConfigurationUtil;
 import org.jumbune.common.utils.ExtendedConstants;
+import org.jumbune.common.utils.RemoteFileUtil;
+import org.jumbune.utils.exception.JumbuneRuntimeException;
 import org.jumbune.web.utils.WebConstants;
 
 
@@ -43,8 +41,7 @@ public class SchedulerInfoService {
 	public Response processGet() {
 		try {
 			Map<String, String> fileArrayMap = getScheduledJobList();
-			Gson gson = new Gson();
-			String scheduledJobArray = gson.toJson(fileArrayMap);
+			String scheduledJobArray = Constants.gson.toJson(fileArrayMap);
 			return Response.ok(scheduledJobArray).build();
 		} catch (IOException e) {
 			LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));

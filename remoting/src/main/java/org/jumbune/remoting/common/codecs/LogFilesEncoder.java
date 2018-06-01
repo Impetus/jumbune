@@ -1,22 +1,21 @@
 package org.jumbune.remoting.common.codecs;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.serialization.ObjectEncoder;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Arrays;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.remoting.common.RemotingConstants;
 import org.jumbune.remoting.common.codecs.writable.TextFile;
 import org.jumbune.remoting.common.codecs.writable.TextFiles;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.serialization.ObjectEncoder;
 
 /**
  * The Class LogFilesEncoder is responsible for reading the streams from the file.

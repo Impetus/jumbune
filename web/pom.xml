@@ -119,7 +119,7 @@
 
 		<dependency>
 			<groupId>org.jumbune</groupId>
-			<artifactId>jumbune-cluster-profiling</artifactId>
+			<artifactId>jumbune-cluster-analysis</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 

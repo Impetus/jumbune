@@ -168,11 +168,11 @@ Product includes Other 3rd party software as indicated below
     Linking               : Dynamic
     Modified By Impetus   : No
 
-20. Name                  : Apache Rumen
-    Source                : http://hadoop.apache.org/docs/r1.2.1/rumen.html   
+20. Name                  : Dalvik
+    Source                : http://code.google.com/p/dalvik/
     License               : Apache License Version 2.0
     License Source        : http://www.apache.org/licenses/LICENSE-2.0
-    Linking               : Static
+    Linking		  : Static
     Modified By Impetus   : Yes
 
 21. Name                  : Junit
@@ -202,10 +202,3 @@ Product includes Other 3rd party software as indicated below
     License Source        : http://opensource.org/licenses/BSD-3-Clause
     Linking		  : Static
     Modified By Impetus   : No
-
-25. Name                  : Dalvik
-    Source                : http://code.google.com/p/dalvik/
-    License               : Apache License Version 2.0
-    License Source        : http://www.apache.org/licenses/LICENSE-2.0
-    Linking		  : Static
-    Modified By Impetus   : Yes

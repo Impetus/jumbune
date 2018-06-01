@@ -4,11 +4,11 @@ import java.util.List;
 
 import org.jumbune.utils.conf.beans.AlertAction;
 
-import org.jumbune.common.beans.Alert;
+import org.jumbune.common.beans.AlertInfo;
 
 public interface AlertNotifier {
 	
-	public void sendNotification(List<Alert> notificationList, AlertAction alertAction, String clusterName);
+	public void sendNotification(List<AlertInfo> notificationList, AlertAction alertAction, String clusterName);
 	
 
 }

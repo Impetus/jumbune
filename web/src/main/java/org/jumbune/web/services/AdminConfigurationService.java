@@ -21,6 +21,7 @@ import javax.ws.rs.core.Response.Status;
 import org.apache.hadoop.yarn.api.records.QueueInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.influxdb.InfluxDBUtil;
 import org.jumbune.common.utils.Constants;
@@ -50,10 +51,6 @@ public class AdminConfigurationService {
 
 	/** The Constant LOGGER. */
 	private static final Logger LOGGER = LogManager.getLogger(AdminConfigurationService.class);
-
-	public AdminConfigurationService() {
-		super();
-	}
 
 	@GET
 	@Path("/clusterconfiguration/{clusterName}")
@@ -179,7 +176,7 @@ public class AdminConfigurationService {
 	 */
 	public static void checkAndCreateConfAndInfluxDatabase(String clusterName) throws Exception {
 
-		File clusterConfigurationsDir = new File(System.getenv(Constants.JUMBUNE_ENV_VAR_NAME)
+		File clusterConfigurationsDir = new File(JumbuneInfo.getHome()
 				+ ConfigurationConstants.CLUSTERS_CONFIGURATION_DIR + clusterName);
 
 		InfluxDBConf influxDBConf = null;
@@ -303,11 +300,12 @@ public class AdminConfigurationService {
 			AdminConfigurationUtil.saveSlaConfigurations(clusterName, admin.getSlaConfigurations());
 
 			BackgroundProcessConfiguration bpc = admin.getBackgroundProcessConfiguration();
-				boolean isQueuesProcessEnabled = bpc.getProcessMap().get(ProcessType.QUEUE_UTILIZATION).booleanValue();
-				Cluster cluster = ClusterAnalysisService.cache.getCluster(clusterName);
+			
 				AdminConfigurationUtil.saveBackgroundProcessConfiguration(clusterName, bpc);
+				/*boolean isQueuesProcessEnabled = bpc.getProcessMap().get(ProcessType.QUEUE_UTILIZATION).booleanValue();
+				Cluster cluster = ClusterAnalysisService.cache.getCluster(clusterName);
 				
-				/*if (bpc.getProcessMap().get(ProcessType.SYSTEM_METRICS)) {
+				if (bpc.getProcessMap().get(ProcessType.SYSTEM_METRICS)) {
 					StatsManager.getInstance().startBackgroundProcess(ClusterAnalysisService.cache.getCluster(clusterName));
 				} else {
 					StatsManager.getInstance().stopBackgroundProcess(ClusterAnalysisService.cache.getCluster(clusterName));
@@ -371,7 +369,7 @@ public class AdminConfigurationService {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getDefaultConfiguration(@PathParam("confFileName") final String confFileName) {
 		try {
-			String path = System.getenv(Constants.JUMBUNE_ENV_VAR_NAME)
+			String path = JumbuneInfo.getHome()
 					+ ConfigurationConstants.DEFAULT_CONFIGURATION_DIR + confFileName;
 			return Response.ok(FileUtil.readFileIntoString(path)).build();
 		} catch (Exception e) {

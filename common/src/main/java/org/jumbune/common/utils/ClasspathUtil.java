@@ -16,25 +16,9 @@ public interface ClasspathUtil {
 	/** The classpath type none. */
 	int CLASSPATH_TYPE_NONE = 0;
 	
-	/** The classpath type thick jar. */
-	int CLASSPATH_TYPE_THICK_JAR = 1;
-	
-	/** The classpath type hadoop lib. */
-	int CLASSPATH_TYPE_HADOOP_LIB = 2;
-	
-	/** The classpath type external. */
-	int CLASSPATH_TYPE_EXTERNAL = 3;
-	
 	/** The classpath type libjars. */
 	int CLASSPATH_TYPE_LIBJARS = 4;
 
-	// constants for source types
-	/** The source type thick jar. */
-	int SOURCE_TYPE_THICK_JAR = 1;
-	
-	/** The source type hadoop lib. */
-	int SOURCE_TYPE_HADOOP_LIB = 2;
-	
 	/** The source type master. */
 	int SOURCE_TYPE_MASTER = 3;
 	

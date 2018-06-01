@@ -9,8 +9,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.jumbune.common.beans.cluster.Cluster;
-import org.jumbune.profiling.beans.CategoryInfo;
-import org.jumbune.profiling.yarn.beans.YarnCategoryInfo;
+import org.jumbune.monitoring.beans.CategoryInfo;
+import org.jumbune.monitoring.yarn.beans.YarnCategoryInfo;
 
 /**
  * [Related to 'Hadoop Daemons and System Metrics' section in Analyze Cluster
@@ -287,18 +287,6 @@ public class StatsManager {
 		if (metadata != null) {
 			metadata.removeNodeSpecificAllStats();
 		}
-	}
-
-	public void updateRefreshInterval(int interval) {
-		if (interval == 15000) {
-			this.STATS_WRITING_TIME_INTERVAL = 10000;
-		} else if (interval == 20000) {
-			this.STATS_WRITING_TIME_INTERVAL = 15000;
-		} else {
-			this.STATS_WRITING_TIME_INTERVAL = interval - 10000;
-		}
-		
-		
 	}
 
 }

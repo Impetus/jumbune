@@ -2,7 +2,6 @@ package org.jumbune.remoting.server;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -47,9 +46,7 @@ import org.jumbune.remoting.common.AgentNode;
 import org.jumbune.remoting.common.AgentNodeStatus;
 import org.jumbune.remoting.common.BasicJobConfig;
 import org.jumbune.remoting.common.CommandType;
-import org.jumbune.remoting.common.JschUtil;
 import org.jumbune.remoting.common.RemotingConstants;
-import org.jumbune.remoting.common.StringUtil;
 import org.jumbune.remoting.common.command.CommandWritable;
 import org.jumbune.remoting.common.command.CommandWritable.Command;
 import org.jumbune.remoting.server.ha.integration.zk.AgentLeaderElector;
@@ -134,8 +131,6 @@ public final class JumbuneAgent {
     private static SyncExecutor syncExecutor;
        
     private static String agentDirPath ;
-	
-    private static final String HA_FLAG = "-ha";
 
 	private static final String HADOOP_VERSION_YARN_COMMAND = "bin/hadoop version";
     
@@ -728,27 +723,6 @@ public final class JumbuneAgent {
 				return false;
 			}
 		}
-	}
-
-	private static String promptPassword(String user) {
-		char[] passwd;
-		Console console = System.console();
-		boolean verified = false;
-		String encryptedPassword = null;
-		do{
-			CONSOLE_LOGGER.info("Please provide the password for "+user+ " user:");
-			passwd = console.readPassword();
-			try {
-				encryptedPassword = StringUtil.getEncrypted(new String(passwd));
-				verified = JschUtil.verifyPassword(user, encryptedPassword);
-			} catch (Exception e) {
-				verified = false;
-			}
-			if(!verified){
-				CONSOLE_LOGGER.info("Password verification failed for user ["+user+"]");
-			}
-		}while(!verified);
-		return encryptedPassword;
 	}
 	
 	/***

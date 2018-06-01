@@ -20,22 +20,22 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 public class ClusterDefinition implements Cluster {
 
-	protected String clusterName;
+	private String clusterName;
 
 	private NameNodes nameNodes;
 
-	protected HadoopUsers hadoopUsers;
+	private HadoopUsers hadoopUsers;
 
 	private Agents agents;
 
 	/** The host range from value. */
-	protected String hostRangeFromValue;
+	private String hostRangeFromValue;
 
 	/** The host range to value. */
-	protected String hostRangeToValue;
+	private String hostRangeToValue;
 
 	/** The enable host range. */
-	protected String enableHostRange;
+	private String enableHostRange;
 
 	/** The unavailable workers. */
 	private List<String> unavailableHosts;
@@ -59,6 +59,16 @@ public class ClusterDefinition implements Cluster {
 	private transient String historyServer = null;
 
 	private transient RMInfoService rmInfoService = new RMInfoService(this);
+	
+	private static com.google.protobuf.Parser<ActiveNodeInfo> PARSER =
+			new com.google.protobuf.AbstractParser<ActiveNodeInfo>() {
+		public ActiveNodeInfo parsePartialFrom(
+				com.google.protobuf.CodedInputStream input,
+				com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+						throws com.google.protobuf.InvalidProtocolBufferException {
+			return new ActiveNodeInfo(input, extensionRegistry);
+		}
+	};
 
 	private static final Logger LOGGER = LogManager.getLogger(ClusterDefinition.class);
 
@@ -191,23 +201,23 @@ public class ClusterDefinition implements Cluster {
 		String activeAgentHost = null;
 		synchronized (ClusterDefinition.class) {
 			activeNNHost = getActiveNNFromZK(getZkHosts());
-			if (HAUtil.getActiveNNHost() == null || HAUtil.getActiveNNHost().isEmpty()) {
-				HAUtil.setActiveNNHost(activeNNHost);
+			if (HAUtil.getActiveNNHost(clusterName) == null || HAUtil.getActiveNNHost(clusterName).isEmpty()) {
+				HAUtil.setActiveNNHost(clusterName, activeNNHost);
 			}
-			if (HAUtil.getActiveAgentHost() == null || HAUtil.getActiveAgentHost().isEmpty()) {
+			if (HAUtil.getActiveAgentHost(clusterName) == null || HAUtil.getActiveAgentHost(clusterName).isEmpty()) {
 				activeAgent = getJumbuneAgent();
 				activeAgentHost = activeAgent.getHost();
-				HAUtil.setActiveAgentHost(activeAgentHost);
-				HAUtil.setActiveAgentPort(Integer.parseInt(activeAgent.getPort()));
+				HAUtil.setActiveAgentHost(clusterName, activeAgentHost);
+				HAUtil.setActiveAgentPort(clusterName, Integer.parseInt(activeAgent.getPort()));
 			} else {
-				activeAgentHost = HAUtil.getActiveAgentHost();
+				activeAgentHost = HAUtil.getActiveAgentHost(clusterName);
 			}
 
 			Agent newAgent = null;
 			int agentRetryAttempts = 5;
 			int i = 1;
 			// check if the namenode leadership has changed
-			if (!HAUtil.getActiveNNHost().equals(activeNNHost)) {
+			if (!HAUtil.getActiveNNHost(clusterName).equals(activeNNHost)) {
 				// check if active agent is residing on active NameNode
 				if (!activeNNHost.equals(activeAgentHost)) {
 					// iterating and killing agents till the agent on active NameNode becomes active
@@ -223,9 +233,9 @@ public class ClusterDefinition implements Cluster {
 						} else {
 							// updating global state of currently active agent
 							// and NN
-							HAUtil.setActiveAgentHost(newAgent.getHost());
-							HAUtil.setActiveAgentPort(Integer.parseInt(newAgent.getPort()));
-							HAUtil.setActiveNNHost(activeNNHost);
+							HAUtil.setActiveAgentHost(clusterName, newAgent.getHost());
+							HAUtil.setActiveAgentPort(clusterName, Integer.parseInt(newAgent.getPort()));
+							HAUtil.setActiveNNHost(clusterName, activeNNHost);
 						}
 						i++;
 					} while (!newAgent.getHost().equals(activeNNHost) && i <= agentRetryAttempts);
@@ -254,7 +264,7 @@ public class ClusterDefinition implements Cluster {
 		remoter.shutdownAgent();
 		
 		// block till a change in leadership of agent
-		while (agent != null && HAUtil.compareAgent(agent.getHost(), Integer.parseInt(agent.getPort()))) {
+		while (agent != null && HAUtil.compareAgent(clusterName, agent.getHost(), Integer.parseInt(agent.getPort()))) {
 			try {
 				LOGGER.debug("Blocking till a new leader agent is elected...");
 				agent = getJumbuneAgent();
@@ -284,17 +294,7 @@ public class ClusterDefinition implements Cluster {
 			LOGGER.error(e);			
 		}
 		return activeNameNode;
-	}
-	
-	public static com.google.protobuf.Parser<ActiveNodeInfo> PARSER =
-            new com.google.protobuf.AbstractParser<ActiveNodeInfo>() {
-          public ActiveNodeInfo parsePartialFrom(
-              com.google.protobuf.CodedInputStream input,
-              com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-              throws com.google.protobuf.InvalidProtocolBufferException {
-            return new ActiveNodeInfo(input, extensionRegistry);
-          }
-        };	
+	}	
 
 	public String[] getZkHosts() {
 		String[] zkHosts = new String[zks.size()];

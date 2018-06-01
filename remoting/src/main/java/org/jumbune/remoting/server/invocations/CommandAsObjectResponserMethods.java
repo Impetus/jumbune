@@ -24,7 +24,6 @@ import org.jumbune.remoting.common.command.CommandWritable;
 import org.jumbune.remoting.common.command.CommandWritable.Command;
 import org.jumbune.remoting.common.command.CommandWritable.Command.SwitchedIdentity;
 import org.jumbune.remoting.server.HadoopConfigurationPropertyLoader;
-import org.jumbune.remoting.server.JumbuneAgent;
 import org.jumbune.remoting.server.jsch.ChannelReaderResponse;
 
 import com.jcraft.jsch.Channel;

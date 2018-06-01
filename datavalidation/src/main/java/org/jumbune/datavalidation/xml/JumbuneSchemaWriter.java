@@ -156,9 +156,9 @@ public class JumbuneSchemaWriter implements XSVisitor, XSSimpleTypeVisitor {
     }
 
     public void visit( XSSchemaSet s ) {
-        Iterator itr =  s.iterateSchema();
+        Iterator<XSSchema> itr =  s.iterateSchema();
         while(itr.hasNext()) {
-            schema((XSSchema)itr.next());
+            schema(itr.next());
             println();
         }
     }
@@ -185,31 +185,35 @@ public class JumbuneSchemaWriter implements XSVisitor, XSSimpleTypeVisitor {
          
           indent++;
 
-          Iterator itr;
+          Iterator<XSAttGroupDecl> itrAGD = s.iterateAttGroupDecls();
+          while (itrAGD.hasNext()) {
+        	  attGroupDecl(itrAGD.next());
+          }
 
-          itr = s.iterateAttGroupDecls();
-          while(itr.hasNext())
-              attGroupDecl( (XSAttGroupDecl)itr.next() );
+          Iterator<XSAttributeDecl> itrAD = s.iterateAttributeDecls();
+          while(itrAD.hasNext()) {
+        	  attributeDecl(itrAD.next());
+          }
 
-          itr = s.iterateAttributeDecls();
-          while(itr.hasNext())
-              attributeDecl( (XSAttributeDecl)itr.next() );
+          Iterator<XSComplexType> itrCT = s.iterateComplexTypes();
+          while(itrCT.hasNext()) {
+        	  complexType(itrCT.next());
+          }
+          
+          Iterator<XSElementDecl> itrED = s.iterateElementDecls();
+          while(itrED.hasNext()) {
+        	  elementDecl(itrED.next());
+          } 
+          
+          Iterator<XSModelGroupDecl> itrMGD = s.iterateModelGroupDecls();
+          while(itrMGD.hasNext()) {
+        	  modelGroupDecl(itrMGD.next()); 
+          }
 
-          itr = s.iterateComplexTypes();
-          while(itr.hasNext())
-              complexType( (XSComplexType)itr.next() );
-
-          itr = s.iterateElementDecls();
-          while(itr.hasNext())
-              elementDecl( (XSElementDecl)itr.next());
-
-          itr = s.iterateModelGroupDecls();
-          while(itr.hasNext())
-              modelGroupDecl( (XSModelGroupDecl)itr.next() );
-
-          itr = s.iterateSimpleTypes();
-          while(itr.hasNext())
-              simpleType( (XSSimpleType)itr.next() );
+          Iterator<XSSimpleType> itrST = s.iterateSimpleTypes();
+          while(itrST.hasNext()) {
+        	  simpleType(itrST.next());
+          }
 
           indent--;
           println("</schema>");
@@ -220,7 +224,7 @@ public class JumbuneSchemaWriter implements XSVisitor, XSSimpleTypeVisitor {
     }
 
     public void attGroupDecl( XSAttGroupDecl decl ) {
-        Iterator itr;
+        Iterator<?> itr;
 
         println(MessageFormat.format("<attGroup name=\"{0}\">", decl.getName()));
         indent++;
@@ -365,7 +369,7 @@ public class JumbuneSchemaWriter implements XSVisitor, XSSimpleTypeVisitor {
         if(baseType.isLocal())
             simpleType(baseType);
 
-        Iterator itr = type.iterateDeclaredFacets();
+        Iterator<XSFacet> itr = type.iterateDeclaredFacets();
         while(itr.hasNext())
             facet( (XSFacet)itr.next() );
 
@@ -493,7 +497,7 @@ public class JumbuneSchemaWriter implements XSVisitor, XSSimpleTypeVisitor {
     }
 
     private void dumpComplexTypeAttribute( XSComplexType type ) {
-        Iterator itr;
+        Iterator<?> itr;
 
         itr = type.iterateAttGroups();
         while(itr.hasNext())

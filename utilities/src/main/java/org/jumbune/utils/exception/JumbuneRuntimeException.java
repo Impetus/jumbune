@@ -131,18 +131,6 @@ public class JumbuneRuntimeException extends RuntimeException {
 		stackTrace = trimStackTrace(stackTraceArrayTmp);
 		throw unableToLoadFileException;
 	}
-	
-	/**
-	 * Throw parse exception.
-	 *
-	 * @param stackTraceArray the stack trace array
-	 * @return the jumbune runtime exception
-	 */
-	public static JumbuneRuntimeException throwParseException(StackTraceElement[] stackTraceArray){
-		StackTraceElement[] stackTraceArrayTmp = stackTraceArray;
-		stackTrace = trimStackTrace(stackTraceArrayTmp);
-		throw parseException;
-	}
 
 	/**
 	 * Typically throw when no such algorithm exception occur.
@@ -180,19 +168,6 @@ public class JumbuneRuntimeException extends RuntimeException {
 	}
 	
 	/**
-	 * Typically throw when class not found exception occur.
-	 *
-	 * @param stackTraceArray the stack trace array
-	 * @return the jumbune runtime exception
-	 */
-	public static JumbuneRuntimeException throwIllegalArgumentException(StackTraceElement[] stackTraceArray){
-		StackTraceElement[] stackTraceArrayTmp = stackTraceArray;
-		stackTrace = trimStackTrace(stackTraceArrayTmp);
-		throw illegalArgumentException;
-	}
-	
-	
-	/**
 	 * Typically thrown when known host exception occur.
 	 *
 	 * @param stackTraceArray the stack trace array
@@ -202,30 +177,6 @@ public class JumbuneRuntimeException extends RuntimeException {
 		StackTraceElement[] stackTraceArrayTmp = stackTraceArray;
 		stackTrace = trimStackTrace(stackTraceArrayTmp);
 		throw unKnownHostException;
-	}
-	
-	/**
-	 * Typically thrown when no such provider exception occur.
-	 *
-	 * @param stackTraceArray the stack trace array
-	 * @return the jumbune runtime exception
-	 */
-	public static JumbuneRuntimeException throwNoSuchProviderException(StackTraceElement [] stackTraceArray){
-		StackTraceElement[] stackTraceArrayTmp = stackTraceArray;
-		stackTrace = trimStackTrace(stackTraceArrayTmp);
-		throw noSuchProviderException;
-	}
-	
-	/**
-	 * Typically thrown when socket exception occur.
-	 *
-	 * @param stackTraceArray the stack trace array
-	 * @return the jumbune runtime exception
-	 */
-	public static JumbuneRuntimeException throwSocketException(StackTraceElement [] stackTraceArray){
-		StackTraceElement[] stackTraceArrayTmp = stackTraceArray;
-		stackTrace = trimStackTrace(stackTraceArrayTmp);
-		throw socketException;
 	}
 	
 	/**

@@ -51,9 +51,9 @@ public final class AdminConfigurationUtil {
 	private static final Logger LOGGER = LogManager.getLogger(AdminConfigurationUtil.class);
 
 	static {
-		confPath = System.getenv(ConfigurationConstants.JUMBUNE_ENV_VAR_NAME)
+		confPath = System.getenv(ConfigurationConstants.JUMBUNE_ENV_VAR_NAME) + File.separator
 				+ ConfigurationConstants.CLUSTERS_CONFIGURATION_DIR;
-		defaultConfPath = System.getenv(ConfigurationConstants.JUMBUNE_ENV_VAR_NAME)
+		defaultConfPath = System.getenv(ConfigurationConstants.JUMBUNE_ENV_VAR_NAME) + File.separator
 				+ ConfigurationConstants.DEFAULT_CONFIGURATION_DIR;
 		alertActionConfiguration = new ConcurrentHashMap<>();
 		alertConfiguration = new HashMap<>(2);
@@ -83,10 +83,6 @@ public final class AdminConfigurationUtil {
 
 	public static void deleteConfigurations(String clusterName) throws IOException {
 		FileUtils.forceDelete(new File(confPath + clusterName));
-	}
-
-	public static boolean isConfFileExists(String clusterName, String confFileName) {
-		return new File(confPath + clusterName + File.separator + confFileName).exists();
 	}
 	
 	private static String getJson(String clusterName, String confFileName) {
@@ -167,8 +163,11 @@ public final class AdminConfigurationUtil {
 		alertConf.setNonConfigurableAlerts(nonConfigurableAlerts);
 		
 		alertConf.setIndividualQueueAlerts(new HashMap<String, SeverityLevel>(1));
+		
 		alertConf.setUpdateInterval(20);
+		
 		alertConf.setHdfsDirPaths(new ArrayList<String>(1));
+		
 		return alertConf;
 	}
 	
@@ -233,7 +232,7 @@ public final class AdminConfigurationUtil {
 		BackgroundProcessConfiguration conf = new BackgroundProcessConfiguration();
 		conf.addProcess(ProcessType.QUEUE_UTILIZATION, false);
 		conf.addProcess(ProcessType.SYSTEM_METRICS, false);
-		conf.addProcess(ProcessType.WORKER_NODES_UPDATER, false);
+		conf.addProcess(ProcessType.WORKER_NODES_UPDATER, true);
 		return conf;
 	}
 	

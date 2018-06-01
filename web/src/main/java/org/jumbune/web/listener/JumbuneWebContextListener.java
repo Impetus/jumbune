@@ -7,8 +7,6 @@ import javax.servlet.ServletContextListener;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.web.process.BackgroundProcessManager;
 import org.w3c.dom.Document;
@@ -23,10 +21,6 @@ import org.xml.sax.SAXException;
  * @see JumbuneWebContextEvent
  */
 public class JumbuneWebContextListener implements ServletContextListener {
-
-	/** The Constant LOGGER. */
-	private static final Logger LOGGER = LogManager
-			.getLogger(JumbuneWebContextListener.class);
 
 	/** The Constant INSTRUMENTATION_ATTRIB. */
 	private static final String INSTRUMENTATION_ATTRIB = "mapred.tasktracker.instrumentation";

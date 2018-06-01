@@ -55,7 +55,7 @@ public class XmlDataValidationMapper extends Mapper<Object, Text, Text, XmlDVWB>
 	/* (non-Javadoc)
 	 * @see org.apache.hadoop.mapreduce.Mapper#setup(org.apache.hadoop.mapreduce.Mapper.Context)
 	 */
-	protected void setup(Mapper.Context context) throws IOException, InterruptedException {
+	protected void setup(Mapper<Object, Text, Text, XmlDVWB>.Context context) throws IOException, InterruptedException {
 		
 		super.setup(context);
 		
@@ -141,7 +141,8 @@ public class XmlDataValidationMapper extends Mapper<Object, Text, Text, XmlDVWB>
 				
 			}else{
 				
-			ArrayListWritable<XMLErrorWritable> arrayListWritable =  ((ArrayListWritable)mapErrorType.get(new Text(fieldValidationBean.getErrorType())));
+			ArrayListWritable<XMLErrorWritable> arrayListWritable =  ((ArrayListWritable)
+					mapErrorType.get(new Text(fieldValidationBean.getErrorType())));
 
 			XMLErrorWritable xmlErrorWritable = new XMLErrorWritable();
 			xmlErrorWritable.setFileName(new Text(fieldValidationBean.getFileName()));

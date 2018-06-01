@@ -24,8 +24,6 @@ import org.objectweb.asm.tree.VarInsnNode;
  * profiling
  */
 public class ProfileAdapter extends BaseAdapter {
-	private static final String SETTER_METHOD_PREFIX = "set";
-	private static final String GET_CONFIGURATION = "getConfiguration";
 	private static final Logger LOGGER = LogManager
 			.getLogger(ProfileAdapter.class);
 

@@ -11,10 +11,10 @@ import javax.management.ReflectionException;
 
 import org.jumbune.common.beans.cluster.Cluster;
 
-import org.jumbune.common.beans.Alert;
+import org.jumbune.common.beans.AlertInfo;
 
 public interface HAAlert {
 
-	List<Alert> getNameNodeStatus(Cluster cluster) throws AttributeNotFoundException, InstanceNotFoundException, IntrospectionException, MBeanException, ReflectionException, IOException;
+	List<AlertInfo> getNameNodeStatus(Cluster cluster) throws AttributeNotFoundException, InstanceNotFoundException, IntrospectionException, MBeanException, ReflectionException, IOException;
 	
 }

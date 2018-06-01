@@ -11,7 +11,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.beans.cluster.HadoopUsers;
-import org.jumbune.common.beans.cluster.NameNodes;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemoterUtility;
 import org.jumbune.remoting.common.command.CommandWritable;
@@ -92,7 +91,6 @@ public class CommandWritableBuilder {
 	 * @return
 	 */
 	public CommandWritableBuilder populate(Cluster cluster, String workerHost) {
-		NameNodes nameNodes = cluster.getNameNodes();
 		getCommandWritable().setAuthenticationRequired(true);
 		boolean isCommandForMaster = false;
 		

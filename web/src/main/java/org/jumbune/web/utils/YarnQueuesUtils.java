@@ -16,7 +16,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -27,14 +26,15 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.clusterprofiling.SchedulerService;
-import org.jumbune.clusterprofiling.beans.JobQueueBean;
-import org.jumbune.clusterprofiling.beans.QueueStats;
-import org.jumbune.clusterprofiling.yarn.ClusterAnalysisMetrics;
-import org.jumbune.clusterprofiling.yarn.beans.CapacitySchedulerQueueInfo;
-import org.jumbune.clusterprofiling.yarn.beans.ClusterMetrics;
-import org.jumbune.clusterprofiling.yarn.beans.FairSchedulerQueueInfo;
-import org.jumbune.clusterprofiling.yarn.beans.Scheduler;
+import org.jumbune.clusteranalysis.beans.ClusterMetrics;
+import org.jumbune.clusteranalysis.beans.JobQueueBean;
+import org.jumbune.clusteranalysis.queues.SchedulerService;
+import org.jumbune.clusteranalysis.queues.SchedulerUtil;
+import org.jumbune.clusteranalysis.queues.beans.CapacitySchedulerQueueInfo;
+import org.jumbune.clusteranalysis.queues.beans.FairSchedulerQueueInfo;
+import org.jumbune.clusteranalysis.queues.beans.QueueStats;
+import org.jumbune.clusteranalysis.queues.beans.Scheduler;
+import org.jumbune.clusteranalysis.yarn.ClusterAnalysisMetrics;
 import org.jumbune.common.beans.JobDetails;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.influxdb.InfluxDBUtil;
@@ -43,7 +43,6 @@ import org.jumbune.common.influxdb.InfluxDataWriter;
 import org.jumbune.common.influxdb.beans.InfluxDBConstants;
 import org.jumbune.common.influxdb.beans.Query;
 import org.jumbune.common.influxdb.beans.ResultSet;
-import org.jumbune.common.influxdb.beans.ResultSet.Result;
 import org.jumbune.common.influxdb.beans.ResultSet.Result.Series;
 import org.jumbune.common.utils.JobHistoryServerService;
 import org.jumbune.utils.conf.AdminConfigurationUtil;
@@ -58,11 +57,6 @@ import org.jumbune.web.services.ClusterAnalysisService;
 public class YarnQueuesUtils {
 
 	private final String _6H = "6h";
-	private final String ALL = "ALL";
-	private final String WITH_KEY_QUEUE_NAME = "\" WITH KEY = \"queueName\"";
-	private final String SHOW_TAG_VALUES_FROM = "SHOW TAG VALUES FROM \"";
-	private final String USER_NAME = "userName";
-	private final String _2F = "%.2f";
 	private final String MEAN = "mean";
 	private final String FAIR = "fair";
 	private final String CAPACITY = "capacity";
@@ -74,7 +68,6 @@ public class YarnQueuesUtils {
 	private final String USED_RESOURCES_V_CORES_PERCENT = "usedResourcesVCoresPercent";
 	private final String _30D = "30d";
 	private final String _1D = "1d";
-	private final String CUSTOM = "custom";
 	
 	private static volatile YarnQueuesUtils instance;
 
@@ -196,8 +189,8 @@ public class YarnQueuesUtils {
 	 * @throws ParseException
 	 * @throws Exception
 	 */
-	public Graph getQueueGraphFromInfluxdb(String clusterName, String stat, String duration,
-			String rangeFrom, String rangeTo) throws Exception {
+	public Graph getQueueGraphFromInfluxdb(String clusterName, boolean isFairScheduler,
+			String stat, String duration, String rangeFrom, String rangeTo) throws Exception {
 
 		InfluxDBConf configuration = AdminConfigurationUtil.getInfluxdbConfiguration(clusterName);
 		if (!InfluxDBUtil.isInfluxdbLive(configuration)) {
@@ -227,8 +220,7 @@ public class YarnQueuesUtils {
 		
 		query.addGroupByColumn(QUEUE_NAME);
 		
-		if (ClusterAnalysisService.fairSchedularCache
-				.isFairScheduler(cluster)) {
+		if (isFairScheduler) {
 			query.addTag(SCHEDULER_TYPE, FAIR);
 		} else {
 			query.addTag(SCHEDULER_TYPE, CAPACITY);
@@ -303,9 +295,9 @@ public class YarnQueuesUtils {
 		List<FairSchedulerQueueInfo> fairSchedulerQueues = null;
 		List<CapacitySchedulerQueueInfo> capacitySchedulerQueues = null;
 		if (scheduler.isFairScheduler()) {
-			fairSchedulerQueues = scheduler.getFairSchedulerLeafQueues();
+			fairSchedulerQueues = SchedulerUtil.getFairSchedulerLeafQueues(scheduler);
 		} else {
-			capacitySchedulerQueues = scheduler.getCapcitySchedulerLeafQueues();
+			capacitySchedulerQueues = SchedulerUtil.getCapcitySchedulerLeafQueues(scheduler);
 		}
 
 		List<Map<String, Object>> list = new ArrayList<>(seriesList.size());
@@ -377,25 +369,26 @@ public class YarnQueuesUtils {
 	 * @throws Exception
 	 */
 	public void persistUserQueueUtilizationData(List<JobQueueBean> list, String clusterName) throws Exception {
+		if (list.isEmpty()) {
+			return;
+		}
 		InfluxDBConf configuration = AdminConfigurationUtil.getInfluxdbConfiguration(clusterName);
 		if (!InfluxDBUtil.isInfluxdbLive(configuration)) {
 			return;
 		}
-		if (!list.isEmpty()) {
-			InfluxDataWriter writer = new InfluxDataWriter(configuration);
-			writer.setTimeUnit(TimeUnit.SECONDS);
-			writer.setTableName(WebConstants.USER_QUEUE_UTILIZATION);
-			writer.setTime(System.currentTimeMillis() / 1000);
-			for (JobQueueBean stats : list) {
-				writer.addTag(WebConstants.QUEUE_NAME,
-						stats.getQueueName().replaceAll(WebConstants.SPACE_REGEX, InfluxDBConstants.EMPTY_STRING));
-				writer.addTag(WebConstants.USER_NAME, stats.getUser());
-				writer.addTag(WebConstants.JOB_ID, stats.getJobId());
-				writer.addTag(WebConstants.EXECUTION_ENGINE, stats.getExecutionEngine());
-				writer.addColumn(WebConstants.USED_CORES, stats.getUsedCores());
-				writer.addColumn(WebConstants.USED_MEMORY, stats.getUsedMemory());
-				writer.writeData();
-			}
+		InfluxDataWriter writer = new InfluxDataWriter(configuration);
+		writer.setTimeUnit(TimeUnit.SECONDS);
+		writer.setTableName(WebConstants.USER_QUEUE_UTILIZATION);
+		writer.setTime(System.currentTimeMillis() / 1000);
+		for (JobQueueBean stats : list) {
+			writer.addTag(WebConstants.QUEUE_NAME,
+					stats.getQueueName().replaceAll(WebConstants.SPACE_REGEX, InfluxDBConstants.EMPTY_STRING));
+			writer.addTag(WebConstants.USER_NAME, stats.getUser());
+			writer.addTag(WebConstants.JOB_ID, stats.getJobId());
+			writer.addTag(WebConstants.EXECUTION_ENGINE, stats.getExecutionEngine());
+			writer.addColumn(WebConstants.USED_CORES, stats.getUsedCores());
+			writer.addColumn(WebConstants.USED_MEMORY, stats.getUsedMemory());
+			writer.writeData();
 		}
 	}
 
@@ -464,49 +457,6 @@ public class YarnQueuesUtils {
 		}
 		List<Map<String, Object>> finalOutput = parseDataForUserQueueUtilization(seriesList, metrics, rmCommunicator);
 		return finalOutput;
-	}
-	
-
-	private void parseDataForDetailedChargeBackQueueUtilization(List<Series> seriesList, double memoryCost, double vCoreCost,
-			String queueName, String executionEngine, List<Map<String, Object>> chargeBackList) {
-		
-		double totalCores ;
-		double totalMemory ;
-		double vCore = 0;
-		double memory = 0;
-		Map<String, Object> chargeBackMap = null ;
-		for (Series series : seriesList) {
-			totalCores = 0;
-			totalMemory = 0;
-			chargeBackMap = new HashMap<String, Object>(9);
-			for (List<String> row : series.getValues()) {
-				vCore = Double.parseDouble(row.get(1));
-				if (vCore >= 0) {
-					totalCores += vCore;
-				}
-				memory = Double.parseDouble(row.get(2));
-				if (memory >= 0) {
-					totalMemory += memory;
-				}
-			}
-			double memoryInGb = totalMemory / 1024.0;
-			double totalmemoryHours = Double.parseDouble(String.format(_2F, ((memoryInGb * 15.0) / 3600)));
-			double totalVcoreHours = Double.parseDouble(String.format(_2F, ((totalCores * 15.0) / 3600)));
-			double totalmemoryCost = totalmemoryHours * memoryCost;
-			double totalVCoresCost = totalVcoreHours * vCoreCost;
-			double totalCost = Double.parseDouble(String.format(_2F, (totalmemoryCost + totalVCoresCost)));
-			chargeBackMap.put(WebConstants.USER, series.getTags().get(WebConstants.USER_NAME));
-			chargeBackMap.put(WebConstants.QUEUE_NAME, queueName);
-			chargeBackMap.put(WebConstants.V_CORE_HOURS_USED, totalVcoreHours);
-			chargeBackMap.put(WebConstants.CONFIGURED_VCORE_COST, vCoreCost);
-			chargeBackMap.put(WebConstants.MEMORY_GB_HOURS_USED, totalmemoryHours);
-			chargeBackMap.put(WebConstants.CONFIGURED_MEMORY_COST, memoryCost);
-			chargeBackMap.put(WebConstants.TOTAL_COST, totalCost);
-			chargeBackMap.put(WebConstants.EXECUTION_ENGINE, executionEngine);
-			chargeBackMap.put(WebConstants.JOB_ID, series.getTags().get(WebConstants.JOB_ID));
-			chargeBackMap.put(WebConstants.JOB_NAME_1, series.getTags().get(WebConstants.JOB_NAME_1));
-			chargeBackList.add(chargeBackMap);
-		}
 	}		
 
 	private List<Map<String, Object>> parseDataForUserQueueUtilization(List<Series> seriesList,
@@ -582,182 +532,6 @@ public class YarnQueuesUtils {
 		 * "relativePercentUsage" : 19.6}, {"userName" : "user3",
 		 * "relativePercentUsage" : 40.0}]
 		 */
-		return finalOutput;
-	}
-
-	/**
-	 * This method extracts the queue name from USER_QUEUE_UTILIZATION .
-	 *
-	 * @param configuration
-	 *            the configuration
-	 * @return the list
-	 * @throws Exception
-	 *             the exception
-	 */
-	public List<String> extractQueueName(InfluxDBConf configuration) throws Exception {
-		Query query = new Query();
-		query.setCustomQuery(
-				SHOW_TAG_VALUES_FROM + WebConstants.USER_QUEUE_UTILIZATION + WITH_KEY_QUEUE_NAME);
-		InfluxDataReader reader = new InfluxDataReader(query, configuration);
-		ResultSet resultSet = reader.getResult();
-		List<String> list = new ArrayList<String>();
-		List<Result> resultsList = resultSet.getResults();
-		if (resultsList == null || resultsList.size() == 0) {
-			return list;
-		}
-		List<Series> seriesList = resultsList.get(0).getSeries();
-		if (seriesList == null || seriesList.size() == 0) {
-			return list;
-		}
-		List<List<String>> temp = seriesList.get(0).getValues();
-		if (temp == null) {
-			return list;
-		}
-		for (List<String> temp1 : temp) {
-			list.add(temp1.get(1));
-		}
-		return list;
-
-	}
-
-
-	/**
-	 * Parses the data for charge back queue utilization.
-	 *
-	 * @param seriesList
-	 *            the series list
-	 * @param memoryCost
-	 *            the memory cost
-	 * @param vCoreCost
-	 *            the v core cost
-	 * @param queueName
-	 *            the queue name
-	 * @param chargeBackList2 
-	 * @param string
-	 * @return the map
-	 * @throws ParseException
-	 *             the parse exception
-	 */
-	private void parseDataForChargeBackQueueUtilization(List<Series> seriesList, double memoryCost,
-			double vCoreCost, String queueName, String executionEngine, List<Map<String, Object>> chargeBackList) throws ParseException {
-
-		double totalCores = 0;
-		double totalMemory = 0;
-		double vCore = 0;
-		double memory = 0;
-		HashSet<String> userNames = new HashSet<String>();
-		Map<String, Object> chargeBackMap = new HashMap<String, Object>(7);
-		for (Series series : seriesList) {
-			userNames.add(series.getTags().get(USER_NAME));
-		}
-		for (String user : userNames) {
-			for (Series series : seriesList) {
-				if (user.equalsIgnoreCase(series.getTags().get(USER_NAME))) {
-					if (!chargeBackMap.containsValue(user)) {
-						totalCores = 0;
-						totalMemory = 0;
-						chargeBackMap = new HashMap<String, Object>(7);
-					}
-					for (List<String> row : series.getValues()) {
-						vCore = Double.parseDouble(row.get(1));
-						if (vCore >= 0) {
-							totalCores += vCore;
-						}
-						memory = Double.parseDouble(row.get(2));
-						if (memory >= 0) {
-							totalMemory += memory;
-						}
-					}
-					double memoryInGb = totalMemory / 1024.0;
-					double totalmemoryHours = Double.parseDouble(String.format(_2F, ((memoryInGb * 15.0) / 3600)));
-					double totalVcoreHours = Double.parseDouble(String.format(_2F, ((totalCores * 15.0) / 3600)));
-					double totalmemoryCost = totalmemoryHours * memoryCost;
-					double totalVCoresCost = totalVcoreHours * vCoreCost;
-					double totalCost = Double.parseDouble(String.format(_2F, (totalmemoryCost + totalVCoresCost)));
-					chargeBackMap.put(WebConstants.USER, user);
-					chargeBackMap.put(WebConstants.QUEUE_NAME, queueName);
-					chargeBackMap.put(WebConstants.V_CORE_HOURS_USED, totalVcoreHours);
-					chargeBackMap.put(WebConstants.CONFIGURED_VCORE_COST, vCoreCost);
-					chargeBackMap.put(WebConstants.MEMORY_GB_HOURS_USED, totalmemoryHours);
-					chargeBackMap.put(WebConstants.CONFIGURED_MEMORY_COST, memoryCost);
-					chargeBackMap.put(WebConstants.TOTAL_COST, totalCost);
-					chargeBackMap.put(WebConstants.EXECUTION_ENGINE, executionEngine);
-
-				}
-			}
-
-			chargeBackList.add(chargeBackMap);
-		}
-	}
-	
-	@SuppressWarnings("unchecked")
-	public Map<String, Object> convertDataChargeBackModelStructure(List<Map<String, Object>> chargeBackList) {
-		String user, queue, engine;
-		Double userCost, queueCost, cost;
-		Map<String, Object> finalOutput = new HashMap<>();
-		Map<String, Object> userMap, queuesDetails, queueMap, engineDetails;
-		
-		for (Map<String, Object> userQueueEngineData : chargeBackList) {
-			user = (String) userQueueEngineData.get(WebConstants.USER);
-			queue = (String) userQueueEngineData.get(WebConstants.QUEUE_NAME);
-			engine = (String) userQueueEngineData.get(WebConstants.EXECUTION_ENGINE);
-			if (engine.equals(WebConstants.SPARK)) {
-				engine = WebConstants.SPARK2;
-			}
-			if (engine.equals(WebConstants.MAPREDUCE)) {
-				engine = WebConstants.MAP_REDUCE;
-			}
-			
-			userMap = (Map<String, Object>) finalOutput.get(user);
-			if (userMap == null) {
-				userMap = new HashMap<>(2);
-				finalOutput.put(user, userMap);
-			}
-			
-			userCost = (Double) userMap.get(WebConstants.USER_COST);
-			if (userCost == null) {
-				userCost = new Double(0);
-			}
-			
-			queuesDetails = (Map<String, Object>) userMap.get(WebConstants.QUEUES_DETAILS);
-			if (queuesDetails == null) {
-				queuesDetails = new HashMap<>();
-				userMap.put(WebConstants.QUEUES_DETAILS, queuesDetails);
-			}
-			
-			queueMap = (Map<String, Object>) queuesDetails.get(queue);
-			if (queueMap == null) {
-				queueMap = new HashMap<>(2);
-				queuesDetails.put(queue, queueMap);
-			}
-			
-			queueCost = (Double) queueMap.get(WebConstants.QUEUE_COST);
-			
-			if (queueCost == null) {
-				queueCost = new Double(0);
-				
-			}
-			
-			engineDetails = (Map<String, Object>) queueMap.get(WebConstants.EXECUTION_ENGINE_DETAILS);
-			if (engineDetails == null) {
-				engineDetails = new HashMap<>(2);
-				queueMap.put(WebConstants.EXECUTION_ENGINE_DETAILS, engineDetails);
-			}
-			
-			userQueueEngineData.remove(WebConstants.USER);
-			userQueueEngineData.remove(WebConstants.QUEUE_NAME);
-			userQueueEngineData.remove(WebConstants.EXECUTION_ENGINE);
-			
-			cost = (Double) userQueueEngineData.get(WebConstants.TOTAL_COST);
-			queueCost += cost;
-			queueMap.put(WebConstants.QUEUE_COST, Double.parseDouble(String.format(_2F,queueCost)));
-			userCost += cost;
-			userMap.put(WebConstants.USER_COST, Double.parseDouble(String.format(_2F,userCost)));
-			
-			engineDetails.put(engine, userQueueEngineData);
-			
-		}
-		
 		return finalOutput;
 	}
 
@@ -851,9 +625,9 @@ public class YarnQueuesUtils {
 		if (statName.startsWith("usedResourcesMemoryPercent")) {
 			scheduler = schedulerService.fetchSchedulerInfo(cluster);
 			if (scheduler.isFairScheduler()) {
-				fairSchedulerQueues = scheduler.getFairSchedulerLeafQueues();
+				fairSchedulerQueues = SchedulerUtil.getFairSchedulerLeafQueues(scheduler);
 			} else {
-				capacitySchedulerQueues = scheduler.getCapcitySchedulerLeafQueues();
+				capacitySchedulerQueues = SchedulerUtil.getCapcitySchedulerLeafQueues(scheduler);
 				ClusterMetrics clusterMetrics = schedulerService.fetchClusterMetrics(cluster);
 				clusterCapacity = clusterMetrics.getTotalMB() ;
 			}

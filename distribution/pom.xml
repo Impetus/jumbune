@@ -16,12 +16,12 @@
 	<dependencies>
 			<dependency>
 				<groupId>org.jumbune</groupId>
-				<artifactId>remoting-jsch</artifactId>
+				<artifactId>jumbune-remoting-jsch</artifactId>
 				<version>${build.number}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
-				<artifactId>remoting-common</artifactId>
+				<artifactId>jumbune-remoting-common</artifactId>
 				<version>${build.number}</version>
 			</dependency>
 			<dependency>
@@ -208,7 +208,7 @@
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
-				<artifactId>jumbune-profiling</artifactId>
+				<artifactId>jumbune-cluster-monitoring</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
@@ -229,7 +229,7 @@
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
-				<artifactId>jumbune-cluster-profiling</artifactId>
+				<artifactId>jumbune-cluster-analysis</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
@@ -288,11 +288,6 @@
 				<groupId>org.slf4j</groupId>
 				<artifactId>slf4j-simple</artifactId>
 				<version>1.6.1</version>
-			</dependency>
-			<dependency>
-				<groupId>org.jumbune</groupId>
-				<artifactId>jumbune-rumen</artifactId>
-				<version>${project.version}</version>
 			</dependency>
 			<!-- jetty runner dependencies -->
      			<dependency>

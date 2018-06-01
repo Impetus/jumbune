@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.AlertInfo;
 import org.jumbune.utils.conf.beans.AlertAction;
 import org.jumbune.utils.conf.beans.SNMPTraps;
 import org.snmp4j.CommunityTarget;
@@ -20,8 +20,6 @@ import org.snmp4j.smi.OctetString;
 import org.snmp4j.smi.UdpAddress;
 import org.snmp4j.smi.VariableBinding;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
-
-import org.jumbune.common.beans.Alert;
 
 
 public class TrapSender implements AlertNotifier{
@@ -38,7 +36,7 @@ public class TrapSender implements AlertNotifier{
 	 * @param string
 	 */
 	@Override
-	public void sendNotification(List<Alert> notificationList, AlertAction alertAction,
+	public void sendNotification(List<AlertInfo> notificationList, AlertAction alertAction,
 			String clusterName) {
 		Snmp snmp = null;
 		try {

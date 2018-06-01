@@ -126,6 +126,11 @@ public class DataValidationMapper extends Mapper<Object, Text, Text, DataDiscrep
 		validateArray = gson.fromJson(validateMatrix, boolean[][].class);
 		keyPattern = new LRUCache<String, Pattern>(expectedNumOfFields) {
 
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = 8594885637377460020L;
+
 			@Override
 			protected boolean removeEldestEntry(java.util.Map.Entry<String, Pattern> eldest) {
 				if (size() > super.getCapacity()) {

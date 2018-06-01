@@ -31,8 +31,6 @@ import org.jumbune.common.influxdb.beans.TimeUtil;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.utils.conf.beans.InfluxDBConf;
 
-import com.google.gson.Gson;
-
 public class InfluxDataWriter {
 
 	private InfluxDBConf configuration;
@@ -99,7 +97,7 @@ public class InfluxDataWriter {
 			if (statusLine.getStatusCode() != 204) {
 				HttpEntity responseEntity = response.getEntity();
 				if (responseEntity != null) {
-					ResultSet resultSet = new Gson().fromJson(EntityUtils.toString(responseEntity), ResultSet.class);
+					ResultSet resultSet = Constants.gson.fromJson(EntityUtils.toString(responseEntity), ResultSet.class);
 					String error = resultSet.getError();
 					if (error != null && !error.isEmpty()) {
 						if (error.toLowerCase().contains("database not found")) {
@@ -181,53 +179,5 @@ public class InfluxDataWriter {
 		}
 		fields.put(columnName, value);
 	}
-	
-	/*
-	@Deprecated
-	// Can be used with influxdb version 9.1 or before, uses json protocol to write data
-	private void writeDataUsingJson() throws Exception {
-		if (tableName == null || tableName.isEmpty() || fields == null || fields.isEmpty()) {
-			throw new Exception(INSUFFICIENT_INFORMATION_TO_WRITE_DATA);
-		}
-		if (timeUnit == null) {
-			setTimeUnit(TimeUnit.SECONDS);
-		}
-		Point point = new Point(tableName);
-		point.setFields(fields);
-		point.setPrecision(TimeUtil.toTimePrecision(timeUnit));
-		point.setTime(time);
-		BatchPoints batchPoints = new BatchPoints();
-		batchPoints.addPoint(point);
-		batchPoints.setDatabase(configuration.getDatabase());
-		Gson gson = new Gson();
-		String json = gson.toJson(batchPoints);
-		String url = getURL();
-		// OkHttpClient -> jar is com.squareup.okhttp
-		OkHttpClient client = new OkHttpClient();
-		RequestBody body = RequestBody.create(MediaType.parse(APPLICATION_JSON_CHARSET_UTF_8), json);
-		Request request = new Request.Builder().url(url).post(body).build();
-		Response response = client.newCall(request).execute();
-
-		BufferedReader reader = null;
-		String line = EMPTY_STRING;
-		StringBuffer reponseJSON = new StringBuffer();
-		if (response != null) {
-			try {
-				reader = new BufferedReader(new InputStreamReader(response.body().byteStream()));
-				while ((line = reader.readLine()) != null) {
-					reponseJSON.append(line);
-				}
-				String temp = reponseJSON.toString();
-				if (!temp.trim().isEmpty()) {
-					throw new Exception(temp);
-				}
-			} finally {
-				if (reader != null) {
-					reader.close();
-				}
-			}
-		}
-	}
-	*/
 
 }

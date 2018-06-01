@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.utils.conf.AdminConfigurationUtil;
 import org.jumbune.utils.conf.ConfigurationConstants;
 import org.jumbune.utils.conf.beans.BackgroundProcessConfiguration;
@@ -48,7 +49,7 @@ public class BackgroundProcessManager {
 	 */
 	public void initiate() {
 
-		File configurationDir = new File(System.getenv(ConfigurationConstants.JUMBUNE_ENV_VAR_NAME)
+		File configurationDir = new File(JumbuneInfo.getHome()
 				+ ConfigurationConstants.CLUSTERS_CONFIGURATION_DIR);
 		if (!configurationDir.exists() || configurationDir.list() == null) {
 			return;

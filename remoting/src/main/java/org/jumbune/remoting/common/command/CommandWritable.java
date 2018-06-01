@@ -330,6 +330,11 @@ public class CommandWritable implements Serializable {
 		
 		public static class SwitchedIdentity implements Serializable{
 
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = 3731833931020878340L;
+
 			private String user;
 			
 			private String passwd;

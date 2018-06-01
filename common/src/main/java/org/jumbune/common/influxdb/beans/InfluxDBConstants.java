@@ -1,5 +1,9 @@
 package org.jumbune.common.influxdb.beans;
 
+import java.lang.reflect.Type;
+
+import com.google.gson.reflect.TypeToken;
+
 public interface InfluxDBConstants {
 
 	// Constants used in InfluxDataReader class
@@ -75,4 +79,7 @@ public interface InfluxDBConstants {
 	String SYSTEMSTATS_CPU = "systemStats.cpu.";
 	String SYSTEMSTATS_MEMORY = "systemStats.memory.";
 	String SYSTEMSTATS_OS = "systemStats.os.";
+	
+	Type resultSetType = new TypeToken<ResultSet>() {
+	}.getType();
 }

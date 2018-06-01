@@ -3,7 +3,6 @@ package org.jumbune.utils.yarn.communicators;
 
 import java.io.IOException;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -12,26 +11,17 @@ import org.apache.hadoop.mapreduce.v2.api.records.JobId;
 import org.apache.hadoop.mapreduce.v2.util.MRBuilderUtils;
 import org.apache.hadoop.yarn.api.ApplicationClientProtocol;
 import org.apache.hadoop.yarn.api.protocolrecords.ApplicationsRequestScope;
-import org.apache.hadoop.yarn.api.protocolrecords.GetApplicationAttemptReportRequest;
-import org.apache.hadoop.yarn.api.protocolrecords.GetApplicationReportRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.GetApplicationsRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.GetApplicationsResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.GetClusterMetricsRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.GetClusterNodesRequest;
-import org.apache.hadoop.yarn.api.protocolrecords.GetContainersRequest;
 import org.apache.hadoop.yarn.api.protocolrecords.GetQueueInfoRequest;
-import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
-import org.apache.hadoop.yarn.api.records.ApplicationAttemptReport;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
-import org.apache.hadoop.yarn.api.records.ContainerReport;
-import org.apache.hadoop.yarn.api.records.ContainerState;
 import org.apache.hadoop.yarn.api.records.NodeReport;
 import org.apache.hadoop.yarn.api.records.QueueInfo;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.exceptions.YarnException;
-import org.apache.hadoop.yarn.factories.RecordFactory;
-import org.apache.hadoop.yarn.factory.providers.RecordFactoryProvider;
 
 
 /**
@@ -91,18 +81,6 @@ public class RMCommunicator {
 	}
 	
 	/**
-	 * Get list of all applications known to RM according to the set of application type given.
-	 *@param set of application types
-	 * @return list of application report
-	 * @throws YarnException the yarn exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	public List<ApplicationReport> getApplications(Set<String> applicationTypes) throws YarnException, IOException{
-		return proxy.getApplications(GetApplicationsRequest.newInstance(applicationTypes))
-					.getApplicationList();
-	}
-	
-	/**
 	 * Get list of all applications known to RM according to time range provided.
 	 *@param set of application types
 	 * @return list of application report
@@ -137,46 +115,6 @@ public class RMCommunicator {
 		}
 		return runningAppsCache;
 	}
-
-	
-	/**
-	 * Get Application Report of Application which matches with Application Id.
-	 *
-	 * @param appId the app id
-	 * @return the application report by id
-	 * @throws YarnException the yarn exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	public ApplicationReport getApplicationReportById(ApplicationId appId) throws YarnException, IOException {
-		RecordFactory recordFactory = RecordFactoryProvider.getRecordFactory(null); 
-		GetApplicationReportRequest request = recordFactory.newRecordInstance(GetApplicationReportRequest.class);
-		request.setApplicationId(appId);
-		return proxy.getApplicationReport(request).getApplicationReport();
-		
-//		In case if above code wouldn't work
-//		List<ApplicationReport> applicationsReport = get All apps list 
-//		for (ApplicationReport report: applicationsReport) {
-//			
-//			if (appId.compareTo(report.getApplicationId())==0) {
-//				return report;
-//			}
-//		}
-	}	
-	
-	/**
-	 * Get Application Attempt Report for the given Application Report.
-	 *
-	 * @param report the report
-	 * @return the application attempt report
-	 * @throws YarnException the yarn exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	public ApplicationAttemptReport getApplicationAttemptReport(ApplicationReport report) throws YarnException, IOException{
-			return proxy.getApplicationAttemptReport(
-							GetApplicationAttemptReportRequest.newInstance(
-									report.getCurrentApplicationAttemptId()))
-						.getApplicationAttemptReport();
-	}
 	
 	/**
 	 * Get the Job Id for the given Application Report.
@@ -200,26 +138,6 @@ public class RMCommunicator {
 		return proxy.getClusterMetrics(GetClusterMetricsRequest.newInstance())
 					.getClusterMetrics()
 					.getNumNodeManagers();
-	}
-	
-	/**
-	 * Get the list of nodes completed the application attempt.
-	 *
-	 * @param applicationAttemptId the application attempt id
-	 * @return the nodes with completed attempt
-	 * @throws YarnException the yarn exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	public Set<String> getNodesWithCompletedAttempt(ApplicationAttemptId applicationAttemptId) throws YarnException, IOException{
-		Set<String> nodes = new HashSet<String>();
-		List<ContainerReport> containers = proxy.getContainers(GetContainersRequest.newInstance(applicationAttemptId))
-												.getContainerList();
-		for(ContainerReport container: containers){
-			if(ContainerState.COMPLETE.equals(container.getContainerState())){
-					nodes.add(container.getAssignedNode().getHost());
-			}
-		}
-		return nodes;
 	}
 
 	/**
@@ -247,19 +165,5 @@ public class RMCommunicator {
 		return proxy.getQueueInfo(GetQueueInfoRequest.newInstance(queueName, true , true, true))
 					.getQueueInfo();
 	}
-	
-	/**
-	 * Gets the container report.
-	 *
-	 * @param applicationAttemptId the application attempt id
-	 * @return the container report
-	 * @throws YarnException the yarn exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	public List<ContainerReport> getContainerReport (ApplicationAttemptId applicationAttemptId)throws YarnException, IOException{
-		return proxy.getContainers(GetContainersRequest.newInstance(applicationAttemptId))
-					.getContainerList();
-	}
-	 
 	
 }

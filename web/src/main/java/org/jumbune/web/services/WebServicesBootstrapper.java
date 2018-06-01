@@ -27,16 +27,11 @@ public class WebServicesBootstrapper extends Application {
 		 //jumbune resources/providers
 		 classes.add(ClusterOperationsService.class);
 		 classes.add(DVReportService.class);
-		 classes.add(ExportExcelService.class);
 		 classes.add(GatherScheduledJobResultService.class);
 		 classes.add(HomeService.class);
 		 classes.add(JobAnalysisService.class);
-		 classes.add(ProfilerService.class);
 		 classes.add(ResultService.class);
-		 classes.add(SaveJSONService.class);
 		 classes.add(SchedulerInfoService.class);
-		 classes.add(UploadJobJarService.class);
-		 classes.add(UploadService.class);
 		 classes.add(ValidateService.class);
 		 classes.add(XmlDVReportService.class);
 		 classes.add(AdminConfigurationService.class);

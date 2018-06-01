@@ -2,7 +2,7 @@ package org.jumbune.web.utils;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.clusterprofiling.SchedulerService;
+import org.jumbune.clusteranalysis.queues.SchedulerService;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.FileUtil;
@@ -10,6 +10,12 @@ import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.utils.LRUCache;
 import org.jumbune.web.services.ClusterAnalysisService;
 
+/**
+ * 
+ * FairSchedularEnabledCache checks whether fair scheduler is enable on a
+ * particular cluster or not key = clusterName value = boolean
+ *
+ */
 public class FairSchedularEnabledCache extends LRUCache<String, Boolean> {
 
 	private static final long serialVersionUID = 1L;

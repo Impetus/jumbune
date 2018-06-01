@@ -22,7 +22,6 @@ import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.StringUtil;
 
-import com.google.gson.Gson;
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
@@ -38,15 +37,14 @@ import com.jcraft.jsch.SftpException;
 public final class JobConfigUtil {
 	
 	/** The Constant CONSOLELOGGER. */
-	public static final Logger CONSOLELOGGER = LogManager
+	private static final Logger CONSOLELOGGER = LogManager
 			.getLogger("EventLogger");
 	
 	/** The Constant LOGGER. */
-	public static final Logger LOGGER = LogManager.getLogger(JobConfigUtil.class);
+	private static final Logger LOGGER = LogManager.getLogger(JobConfigUtil.class);
 
 	public static JumbuneRequest jumbuneRequest(InputStream is) {
-		Gson gson = new Gson();
-		return (JumbuneRequest) gson.fromJson(new InputStreamReader(is), JumbuneRequest.class);
+		return (JumbuneRequest) Constants.gson.fromJson(new InputStreamReader(is), JumbuneRequest.class);
 	}
 	
 	

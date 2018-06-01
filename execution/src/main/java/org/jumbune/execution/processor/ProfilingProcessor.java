@@ -2,8 +2,8 @@ package org.jumbune.execution.processor;
 
 import static org.jumbune.execution.utils.ExecutionConstants.MESSAGE_EXECUTION_YAML_COMMAND;
 import static org.jumbune.execution.utils.ExecutionConstants.MESSAGE_VALID_INPUT;
-import static org.jumbune.profiling.utils.ProfilerConstants.ERRORANDEXCEPTION;
-import static org.jumbune.profiling.utils.ProfilerConstants.PURE_PROFILING_EXCEPTION_DETAIL;
+import static org.jumbune.monitoring.utils.ProfilerConstants.ERRORANDEXCEPTION;
+import static org.jumbune.monitoring.utils.ProfilerConstants.PURE_PROFILING_EXCEPTION_DETAIL;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,40 +14,33 @@ import java.util.Scanner;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import org.jumbune.common.beans.Module;
 import org.jumbune.common.beans.Enable;
 import org.jumbune.common.beans.JumbuneInfo;
+import org.jumbune.common.beans.Module;
 import org.jumbune.common.beans.cluster.Cluster;
-import org.jumbune.common.beans.cluster.Workers;
 import org.jumbune.common.beans.profiling.JobOutput;
 import org.jumbune.common.job.Config;
+import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.common.utils.Constants;
+import org.jumbune.common.utils.ExtendedConstants;
 import org.jumbune.common.utils.FileUtil;
 import org.jumbune.common.utils.HadoopLogParser;
 import org.jumbune.common.utils.RemoteFileUtil;
 import org.jumbune.common.utils.ResourceUsageCollector;
-import org.jumbune.debugger.instrumentation.instrumenter.Instrumenter;
-import org.jumbune.debugger.instrumentation.instrumenter.PureJarInstrumenter;
-
-import org.jumbune.common.job.JobConfig;
-import org.jumbune.common.utils.ExtendedConstants;
+import org.jumbune.execution.beans.CommunityModule;
 import org.jumbune.execution.beans.Parameters;
 import org.jumbune.execution.traverse.JarTraversal;
 import org.jumbune.execution.utils.ExecutionConstants;
 import org.jumbune.execution.utils.ExecutionUtil;
 import org.jumbune.execution.utils.UserInputUtil;
-
-import org.jumbune.profiling.utils.HeapAllocStackTraceExclStrat;
-import org.jumbune.profiling.utils.ProfilerUtil;
+import org.jumbune.monitoring.utils.HeapAllocStackTraceExclStrat;
+import org.jumbune.monitoring.utils.ProfilerUtil;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
 import org.jumbune.utils.exception.JumbuneException;
 
-import org.jumbune.execution.beans.CommunityModule;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 /**
  * This processor class performs the execution of pure jar and profiling of the job.
@@ -97,8 +90,6 @@ public class ProfilingProcessor extends BaseProcessor {
 		checkJobClassesInJar(jarJobList);
 
 		String pureJarPath = jobConfig.getInputFile();
-		String hadoopType = FileUtil.getClusterInfoDetail(ExtendedConstants.HADOOP_TYPE);
-		
 
 		Enable runFromJumbune = jobConfig.getRunJobFromJumbune();
 		ResourceUsageCollector collector = new ResourceUsageCollector(jumbuneRequest);
@@ -106,32 +97,6 @@ public class ProfilingProcessor extends BaseProcessor {
 		JobOutput jobOutput = null;
 		String jobID = null;
 		try {
-			if (hadoopType.equalsIgnoreCase(ExtendedConstants.NON_YARN)) {
-					if (runFromJumbune.getEnumValue()) {
-					LOGGER.debug("Fired top command on Workers");
-					String receiveDir = fireTopOnSlaves(collector);
-
-					Map<String, Map<String, String>> jobsCounterMap = processHelper
-							.executeJar(pureJarPath, super.isCommandBased(),
-									jumbuneRequest, false);
-					jobID = getJobIdfromJobCountersMap(jobsCounterMap);
-
-					collector.shutTopCmdOnSlaves(receiveDir);
-					LOGGER.debug("Stopped top command on Workers");
-
-					jobOutput = getJobOutput(jobID.trim());
-					List<String> selectedHosts = collector
-							.getNodesForJob(jobOutput);
-					collector.processTopDumpFile(receiveDir, selectedHosts);
-					calcStatsFromLogConsolidationInfo(jobOutput, collector);
-					LOGGER.debug("Profiling final JSON [" + jobOutput + "]");
-				} else {
-					jobID = jobConfig.getExistingJobName();
-					// rumen processing
-					jobOutput = getJobOutput(jobID.trim());
-					collector.addPhaseResourceUsageForHistoricalJob(jobOutput, jobID);
-				}
-			} else {
 				if (runFromJumbune.getEnumValue()) {
 					LOGGER.debug("Fired top command on Workers");
 					String receiveDir = fireTopOnSlaves(collector);
@@ -150,7 +115,6 @@ public class ProfilingProcessor extends BaseProcessor {
 					jobID = jobConfig.getExistingJobName();
 					jobOutput = getJobOutput(jobID.trim());
 				}
-			}
 
 		} catch (IOException e) {
 			LOGGER.error("Error while executing pure jar.", e);

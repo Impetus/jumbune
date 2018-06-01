@@ -243,11 +243,7 @@ public class DataValidationReducer extends Reducer<Text, DataDiscrepanciesArrayW
 					fieldViolations, fieldMapWritable, fieldFileViolationsMap, dirtyTuple);
 		}
 	}
-
-	private void setActualLineNo(ViolationPersistenceBean bean) {	 
-		 bean.setLineNum(calculateActualLineNo(bean));    	
-	}
-
+	
 	/**
 	 * Calculate actual line no based on the total number of lines in each split.
 	 *
@@ -276,41 +272,6 @@ public class DataValidationReducer extends Reducer<Text, DataDiscrepanciesArrayW
 		return (int) (bean.getLineNum() + sum);
 	 
 	}
-	
-	/**
-	 * Insert element to violation list.
-	 * This method inserts a new item to the appropriate position in array of ViolationPersistenceBean.
-	 * A Position(to insert new item) is considered appropriate such that the array remains sorted by actual line number(line number of violation). 
-	 * @param arr the arr
-	 * @param element the element
-	 */
-	private void insertElementToViolationList(ViolationPersistenceBean arr[], ViolationPersistenceBean element) {
-		int indexToInsert = -1;
-		for (int i = 0; i < arr.length; i++) {
-			if(calculateActualLineNo(element) < calculateActualLineNo(arr[i])){
-        	   indexToInsert = i;
-        	   break;
-           }
-		}
-		insert(indexToInsert, arr, element);
-	}
-	
-	/**
-	 * Inserts the element to a specific position and advances by one the position of elements that follow.
-	 *
-	 * @param index the index
-	 * @param arr the arr
-	 * @param element the element
-	 */
-	private void insert(final int index, ViolationPersistenceBean arr[], ViolationPersistenceBean element) {	    
-		if(index == -1) return;
-		for (int i = arr.length - 1; i > index; i--) {
-			arr[i] = arr[i - 1];
-		}
-		arr[index] = element;
-	}
-	
-	
 	
 	private void writeViolations(String violatoinType, Context context, long totalViolations, IntWritable fieldNumber,
 			IntWritable fieldViolations, MapWritable mapWritable, Map<String, Integer> fileViolationsMap,

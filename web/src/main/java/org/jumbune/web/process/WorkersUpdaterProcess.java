@@ -6,26 +6,23 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Type;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.profiling.beans.JMXDeamons;
-import org.jumbune.profiling.utils.ProfilerJMXDump;
-
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.beans.cluster.ClusterDefinition;
 import org.jumbune.common.utils.JMXUtility;
+import org.jumbune.monitoring.beans.JMXDeamons;
+import org.jumbune.monitoring.utils.ProfilerJMXDump;
 import org.jumbune.web.services.ClusterAnalysisService;
 import org.jumbune.web.utils.StatsManager;
 import org.jumbune.web.utils.WebConstants;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 /**
  * It updates the worker nodes list in cluster json for AWS Spot Instances. It
@@ -182,12 +179,12 @@ public class WorkersUpdaterProcess extends Thread implements BackgroundProcess {
 		List<String> currentNodes = this.cluster.getWorkers().getHosts();
 		
 		// Checking if the nodes have been changed
-		if (! liveNodes.equals(currentNodes)) {
+		if (currentNodes != null && !currentNodes.isEmpty() && !liveNodes.equals(currentNodes)) {
 			
 			// Updating StatsManager class
 			StatsManager statsManager = StatsManager.getInstance();
 			for (String node : currentNodes) {
-				if ( !liveNodes.contains(node)) {
+				if (node != null && !node.trim().isEmpty() && !liveNodes.contains(node)) {
 					statsManager.removeNode(node);
 				}
 			}

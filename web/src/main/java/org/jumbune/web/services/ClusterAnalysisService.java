@@ -44,21 +44,22 @@ import org.apache.hadoop.yarn.api.records.ApplicationResourceUsageReport;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.clusterprofiling.SchedulerService;
-import org.jumbune.clusterprofiling.beans.JobQueueBean;
-import org.jumbune.clusterprofiling.beans.QueueStats;
-import org.jumbune.clusterprofiling.service.ClusterProfilingService;
-import org.jumbune.clusterprofiling.yarn.AlertGenerator;
-import org.jumbune.clusterprofiling.yarn.ClusterAnalysisMetrics;
-import org.jumbune.clusterprofiling.yarn.MajorCounters;
-import org.jumbune.clusterprofiling.yarn.QueueAlert;
-import org.jumbune.clusterprofiling.yarn.beans.CapacitySchedulerQueueInfo;
-import org.jumbune.clusterprofiling.yarn.beans.ClusterMetrics;
-import org.jumbune.clusterprofiling.yarn.beans.FairSchedulerQueueInfo;
-import org.jumbune.clusterprofiling.yarn.beans.Scheduler;
+import org.jumbune.clusteranalysis.beans.ClusterMetrics;
+import org.jumbune.clusteranalysis.beans.JobQueueBean;
+import org.jumbune.clusteranalysis.queues.SchedulerService;
+import org.jumbune.clusteranalysis.queues.SchedulerUtil;
+import org.jumbune.clusteranalysis.queues.beans.CapacitySchedulerQueueInfo;
+import org.jumbune.clusteranalysis.queues.beans.FairSchedulerQueueInfo;
+import org.jumbune.clusteranalysis.queues.beans.QueueStats;
+import org.jumbune.clusteranalysis.queues.beans.Scheduler;
+import org.jumbune.clusteranalysis.service.ClusterProfilingHelper;
+import org.jumbune.clusteranalysis.yarn.AlertGenerator;
+import org.jumbune.clusteranalysis.yarn.ClusterAnalysisMetrics;
+import org.jumbune.clusteranalysis.yarn.HighAvailabilityAlert;
+import org.jumbune.clusteranalysis.yarn.MajorCounters;
+import org.jumbune.common.alerts.Alerts;
 import org.jumbune.common.alerts.HAAlert;
-import org.jumbune.common.alerts.YarnAlert;
-import org.jumbune.common.beans.Alert;
+import org.jumbune.common.beans.AlertInfo;
 import org.jumbune.common.beans.EffCapUtilizationStats;
 import org.jumbune.common.beans.cluster.Cluster;
 import org.jumbune.common.beans.cluster.ClusterCache;
@@ -78,27 +79,25 @@ import org.jumbune.common.utils.ExtendedConstants;
 import org.jumbune.common.utils.FileUtil;
 import org.jumbune.common.utils.JMXUtility;
 import org.jumbune.common.utils.JobRequestUtil;
-import org.jumbune.profiling.beans.ClusterInfo;
-import org.jumbune.profiling.beans.JMXDeamons;
-import org.jumbune.profiling.beans.NodeInfo;
-import org.jumbune.profiling.beans.PerformanceStats;
-import org.jumbune.profiling.hprof.NodePerformance;
-import org.jumbune.profiling.service.ClusterViewServiceImpl;
-import org.jumbune.profiling.utils.ClusterMonitoringCategories;
-import org.jumbune.profiling.utils.HTFProfilingException;
-import org.jumbune.profiling.utils.ProfilerConstants;
-import org.jumbune.profiling.utils.ProfilerJMXDump;
-import org.jumbune.profiling.utils.ProfilerUtil;
-import org.jumbune.profiling.yarn.beans.YarnCategoryInfo;
+import org.jumbune.monitoring.beans.ClusterInfo;
+import org.jumbune.monitoring.beans.JMXDeamons;
+import org.jumbune.monitoring.beans.NodeInfo;
+import org.jumbune.monitoring.beans.NodePerformance;
+import org.jumbune.monitoring.beans.PerformanceStats;
+import org.jumbune.monitoring.service.ClusterViewService;
+import org.jumbune.monitoring.service.ClusterViewServiceImpl;
+import org.jumbune.monitoring.utils.ClusterMonitoringCategories;
+import org.jumbune.monitoring.utils.HTFProfilingException;
+import org.jumbune.monitoring.utils.ProfilerConstants;
+import org.jumbune.monitoring.utils.ProfilerJMXDump;
+import org.jumbune.monitoring.utils.ProfilerUtil;
+import org.jumbune.monitoring.yarn.beans.YarnCategoryInfo;
 import org.jumbune.utils.conf.AdminConfigurationUtil;
 import org.jumbune.utils.conf.beans.AlertAction;
 import org.jumbune.utils.conf.beans.AlertActionConfiguration;
-import org.jumbune.utils.conf.beans.AlertConfiguration;
-import org.jumbune.utils.conf.beans.AlertType;
 import org.jumbune.utils.conf.beans.InfluxDBConf;
 import org.jumbune.utils.conf.beans.ProcessType;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
-import org.jumbune.utils.yarn.communicators.MRCommunicator;
 import org.jumbune.utils.yarn.communicators.RMCommunicator;
 import org.jumbune.web.beans.AppFinishTimeComparator;
 import org.jumbune.web.beans.DataLoad;
@@ -121,33 +120,27 @@ import com.google.gson.reflect.TypeToken;
  * The Class ClusterAnalysisService.
  */
 @Path(WebConstants.CLUSTER_ANALYSIS_SERVICE_URL)
-public class ClusterAnalysisService{
+public class ClusterAnalysisService {
 
-	private List<Alert> saveAlerts;
+	private List<AlertInfo> saveAlerts;
 	
 	@Context
 	private HttpServletRequest servletRequest;
 	
-	private static YarnQueuesUtils yarnQueuesUtils;
-	
-	private static SchedulerService schedulerService;
-	
+	private static Alerts alerts;
 	private static BackgroundProcessManager processesManager;
-
 	private static ClusterAnalysisMetrics metrics;
-	
+	private static ClusterProfilingHelper clusterProfilingHelper;
+	private static SchedulerService schedulerService;
 	private static SessionUtils sessionUtils;
-	
-	private static AlertGenerator alertGenerator;
-	
-	private static YarnAlert yarnAlert;
-	
-	private static AppFinishTimeComparator appsComparator;
-	
-	private static JsonParser jsonParser;
-	
-	private static Type hmssType;
+	private static YarnQueuesUtils yarnQueuesUtils;
 
+	private static AppFinishTimeComparator appsComparator;
+	private static FairSchedularEnabledCache fairSchedularCache;
+	private static JsonParser jsonParser;
+	private static Set<String> mapreduceAppType;
+	private static Type hmssType;
+	
 	/**
 	 * It saves the most used Cluster in cache so that we don't have to read the
 	 * cluster file again and again. It is used by a lot of classes throughout
@@ -158,33 +151,23 @@ public class ClusterAnalysisService{
 	 */
 	public static ClusterCache cache = new ClusterCache(3);
 	
-	/**
-	 * FairSchedularEnabledCache checks whether fair scheduler is enable on a particular cluster or not
-	 * key = clusterName
-	 * value = boolean 
-	 */
-	public static FairSchedularEnabledCache fairSchedularCache;
-	
-	private static Set<String> mapreduceAppType;
-	
 	private static final Logger LOGGER;
 	
 	static {
-		alertGenerator = AlertGenerator.getInstance();
-		appsComparator = AppFinishTimeComparator.getInstance();
+		alerts = AlertGenerator.getInstance();
 		schedulerService = SchedulerService.getInstance();
 		metrics = ClusterAnalysisMetrics.getInstance();
 		processesManager = BackgroundProcessManager.getInstance();
 		sessionUtils = SessionUtils.getInstance();
-		yarnAlert = QueueAlert.getInstance();
 		yarnQueuesUtils = YarnQueuesUtils.getInstance();
+		clusterProfilingHelper = new ClusterProfilingHelper();
 		
+		appsComparator = AppFinishTimeComparator.getInstance();
 		fairSchedularCache = new FairSchedularEnabledCache(3);
 		jsonParser = new JsonParser();
 		mapreduceAppType = new HashSet<>(1);
 		mapreduceAppType.add("MAPREDUCE");
-		hmssType = new TypeToken<Map<String, YarnCategoryInfo>>() {
-		}.getType();
+		hmssType = new TypeToken<Map<String, YarnCategoryInfo>>() {}.getType();
 		LOGGER = LogManager.getLogger(ClusterAnalysisService.class);
 	}
 
@@ -230,14 +213,14 @@ public class ClusterAnalysisService{
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getAllClustersList() {
 		Set<String> clustersList = null;
-			clustersList = new HashSet<String>();
-			File clusterJsonFile = new File(getClusterJsonDir());
-			for (File file : clusterJsonFile.listFiles()) {
-				if(file.getName().endsWith(WebConstants.JSON_EXTENSION)){
-					clustersList.add(file.getName().replace(WebConstants.JSON_EXTENSION, ""));
-				}
+		clustersList = new HashSet<String>();
+		File clusterJsonFile = new File(getClusterJsonDir());
+		for (File file : clusterJsonFile.listFiles()) {
+			if(file.getName().endsWith(WebConstants.JSON_EXTENSION)){
+				clustersList.add(file.getName().replace(WebConstants.JSON_EXTENSION, ""));
 			}
-		
+		}
+
 		Map<String, String> map = new HashMap<String, String>(clustersList.size());
 		String hadoopDistribution = FileUtil.getClusterInfoDetail(Constants.HADOOP_DISTRIBUTION);
 		for (String clusterName : clustersList) {
@@ -404,7 +387,7 @@ public class ClusterAnalysisService{
 			String hadoopDistribution = FileUtil.getClusterInfoDetail(Constants.HADOOP_DISTRIBUTION);
 			// fetching data load distribution command based in case of mapr and jmx based in case of rest
 			if(Constants.MAPR.equalsIgnoreCase(hadoopDistribution) || Constants.EMRMAPR.equalsIgnoreCase(hadoopDistribution)){
-				ClusterViewServiceImpl cvsi = new ClusterViewServiceImpl(cache.getCluster(clusterName));
+				ClusterViewService cvsi = new ClusterViewServiceImpl(cache.getCluster(clusterName));
 				list = cvsi.getDataLoadAndDistributionDetails();
 			}else{
 				list = fetchDataLoadInformation(cache.getCluster(clusterName));
@@ -425,7 +408,7 @@ public class ClusterAnalysisService{
 			String hadoopDistribution = FileUtil.getClusterInfoDetail(Constants.HADOOP_DISTRIBUTION);
 			// fetching data load distribution command based in case of mapr and jmx based in case of rest
 			if(Constants.MAPR.equalsIgnoreCase(hadoopDistribution) || Constants.EMRMAPR.equalsIgnoreCase(hadoopDistribution)){
-				ClusterViewServiceImpl cvsi = new ClusterViewServiceImpl(cache.getCluster(clusterName));
+				ClusterViewService cvsi = new ClusterViewServiceImpl(cache.getCluster(clusterName));
 				list = cvsi.getDataLoadAndDistributionDetails();
 			}else{
 				list = fetchDataLoadInformation(cache.getCluster(clusterName));
@@ -520,123 +503,12 @@ public class ClusterAnalysisService{
 		
 		long newTime = System.currentTimeMillis();
 		long oldTime = lastCheckpoint == 0 ? newTime - 600000 : lastCheckpoint;
-		
+	
 		try {
+			
 			Cluster cluster = cache.getCluster(clusterName);
-			AlertConfiguration alertConf = AdminConfigurationUtil.getAlertConfiguration(clusterName); 
-			Map<AlertType, Boolean> nonConfigurableAlerts = alertConf.getNonConfigurableAlerts();
-
-			List<Alert> alertsList = new ArrayList<>();
-
-			String hadoopDistribution = FileUtil.getClusterInfoDetail(Constants.HADOOP_DISTRIBUTION);
-			Alert namenodeDownAlert = null;
-			if(!Constants.MAPR.equalsIgnoreCase(hadoopDistribution) && !Constants.EMRMAPR.equalsIgnoreCase(hadoopDistribution)){
-				namenodeDownAlert = alertGenerator.getNameNodeDownAlert(cluster);
-				if (namenodeDownAlert != null) {
-					alertsList.add(namenodeDownAlert);
-				} else {
-					//configurable UNDER_REPLICATED_BLOCKS
-					alertsList.addAll(alertGenerator.getUnderReplicatedBlockAlert(cluster));
-					//configurable HDFS_UTILIZATION
-					alertsList.addAll(alertGenerator.getHDFSSpaceUsageAlert(cluster));
-					if (nonConfigurableAlerts.get(AlertType.HADOOP_DAEMON_DOWN)) {
-						//non-configurable HADOOP_DAEMON_DOWN
-						LOGGER.debug("Checking for Node Down Alert");
-						alertsList.addAll(alertGenerator.getNodeDownAlert(cluster));
-					}
-				}
-				if (nonConfigurableAlerts.get(AlertType.HADOOP_DAEMON_DOWN)) {				
-					//non-configurable HADOOP_DAEMON_DOWN
-					alertsList.addAll(alertGenerator.getDataNodeDownAlert(cluster));
-				}
-				//configurable DISK_SPACE_UTILIZATION
-				alertsList.addAll(alertGenerator.getDiskSpaceUsageAlert(cluster));
-				
-				//non-configurable DN_VOLUME_FAILURE_CHECK
-				if(nonConfigurableAlerts.get(AlertType.DN_VOLUME_FAILURE_CHECK)) {
-					alertsList.addAll(alertGenerator.getDataNodeVolumeFailureAlert(cluster));
-				}
-			}
-			
-			//Added alert for max files  in a hdfs directory
-			AlertConfiguration alertConfiguration = AdminConfigurationUtil.getAlertConfiguration(clusterName);
-			if(!alertConfiguration.getHdfsDirPaths().isEmpty()){
-			alertsList.addAll(alertGenerator.getHDFSMaxFilesInDirAlert(cluster, alertConfiguration.getHdfsDirPaths()));
-			}
-
-			// fragmented files alert added for non-secured cluster and non-mapr cluster only
-//			if(!Constants.MAPR.equalsIgnoreCase(hadoopDistribution) && !Constants.EMRMAPR.equalsIgnoreCase(hadoopDistribution)){
-//				alertsList.addAll(alertGenerator.getFragmenedFilesAlert(cluster));
-//			}
-			
-			Alert resourceManagerDownAlert = null;
-			Alert historyServerDownAlert = null;
-			if(nonConfigurableAlerts.get(AlertType.HADOOP_DAEMON_DOWN)) {
-			//non-configurable HADOOP_DAEMON_DOWN : Check History server
-			
-				historyServerDownAlert = yarnAlert.getHistoryServerDownAlert(cluster);
-				if(historyServerDownAlert != null){
-					alertsList.add(historyServerDownAlert);
-				}
-				//non-configurable HADOOP_DAEMON_DOWN : Check Resource Manager
-				resourceManagerDownAlert = yarnAlert.getResourceManagerDownAlert(cluster);
-			}
-
-			if (resourceManagerDownAlert != null) {
-				alertsList.add(resourceManagerDownAlert);
-			} else {
-				if(nonConfigurableAlerts.get(AlertType.CLUSTER_TIME_DESYNC)) {
-					//non-configurable CLUSTER_TIME_DESYNC
-					alertsList.addAll(yarnAlert.getClusterTimeDesyncAlert(clusterName));
-				}
-				RMCommunicator rmCommunicator = sessionUtils.getRM(cluster, getSession());
-				//configurable QUEUE_UTILIZATION
-				alertsList.addAll(yarnAlert.getQueueUtilisationAlert(clusterName,
-						rmCommunicator));
-
-				if(nonConfigurableAlerts.get(AlertType.QUEUE_CHILD_CAPACITY_OVERFLOW)) {
-					//non-configurable QUEUE_CHILD_CAPACITY_OVERFLOW
-					alertsList.addAll(yarnAlert.getChildCapacityAlert(
-							rmCommunicator));
-				}
-				if(nonConfigurableAlerts.get(AlertType.MAP_REDUCE_APP_FAILURE)) {
-					//non-configurable MAP_REDUCE_APP_FAILURE 
-					alertsList.addAll(yarnAlert.getApplicationFailedAlert(
-							rmCommunicator, oldTime, newTime));
-				}
-				if(nonConfigurableAlerts.get(AlertType.CONTAINER_POOL_UTILIZATION)) {
-					//non-configurable CONTAINER_POOL_UTILIZATION
-					alertsList.addAll(yarnAlert.getContainerUtilizationAlert(cluster, 
-							rmCommunicator));
-				}
-				//non-configurable 
-				alertsList.addAll(yarnAlert.getEffectiveUtlilzationAlert(
-						cluster.getClusterName()));
-
-				if(nonConfigurableAlerts.get(AlertType.YARN_PROPERTY_CHECK)) {
-					//non-configurable YARN_PROPERTY_CHECK
-					alertsList.addAll(yarnAlert.checkYarnPropertySetCorrectly(cluster));
-				}
-				if(nonConfigurableAlerts.get(AlertType.NODE_UNHEALTHY)) {
-					//non-configurable NODE_UNHEALTHY
-					alertsList.addAll(yarnAlert.getNodeUnhealthyAlert(
-							cluster, rmCommunicator));
-				}
-			}
-			List<Alert> nmDownAlerts = null;
-			if (nonConfigurableAlerts.get(AlertType.HADOOP_DAEMON_DOWN)) {
-				//non-configurable HADOOP_DAEMON_DOWN : Check Node Managers
-				RMCommunicator rmCommunicator = sessionUtils.getRM(cluster, getSession());
-				nmDownAlerts = yarnAlert.getNodeManagerDownAlert(cluster,rmCommunicator);
-				alertsList.addAll(nmDownAlerts);
-			}
-			if( nonConfigurableAlerts.get(AlertType.RESOURCE_UTILIZATION_CHECK)
-					&& nmDownAlerts.size() != cluster.getWorkers().getHosts().size()) {
-				//non-configurable RESOURCE_UTILIZATION_CHECK
-				alertsList.addAll(yarnAlert.getResourceUtilizationAlert(cluster, nmDownAlerts));
-			}				
-			
-
+			RMCommunicator rmCommunicator = sessionUtils.getRM(cluster, getSession());
+			List<AlertInfo> alertsList = alerts.getAllAlerts(cluster, rmCommunicator, oldTime, newTime);
 			//Sending alert email and SNMP Traps
 			sendNotifications(alertsList, clusterName);
 			Map<String, Object> map = new HashMap<String, Object>(2);
@@ -647,6 +519,7 @@ public class ClusterAnalysisService{
 			LOGGER.error("Unable to get alerts", e);
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
 		}
+		
 	}
 
 	/**
@@ -657,15 +530,15 @@ public class ClusterAnalysisService{
 	 *            the alert list
 	 * @param clusterName
 	 */
-	private void sendNotifications(List<Alert> alertList, String clusterName) {
+	private void sendNotifications(List<AlertInfo> alertList, String clusterName) {
 
 		List<AlertAction> alertActions = null;
 		AlertActionConfiguration alertActionConfiguration = null;
 		AlertNotifier mailNotifier=new AlertMailSender();
 		AlertNotifier trapNotifier=new TrapSender();
 		AlertNotifier ticketNotifier = null;
-		List<Alert> notificationList=null;
-		List<Alert> notificationReminderList=null;
+		List<AlertInfo> notificationList=null;
+		List<AlertInfo> notificationReminderList=null;
 		try {
 			alertActionConfiguration = AdminConfigurationUtil.getAlertActionConfiguration(clusterName);
 			alertActions = alertActionConfiguration.getAlertActions();
@@ -676,10 +549,10 @@ public class ClusterAnalysisService{
 					notificationList=new ArrayList<>();
 					notificationReminderList=new ArrayList<>();
 					if (alertAction.getOccuringSinceHours() == 0) {
-						for (Alert alert : alertList) {
-							if (!(saveAlerts.contains(alert))
-									&& (alertAction.getAlertLevel().getLevel().equals(alert.getLevel()))) {
-								notificationList.add(alert);					
+						for (AlertInfo alertInfo : alertList) {
+							if (!(saveAlerts.contains(alertInfo))
+									&& (alertAction.getAlertLevel().getLevel().equals(alertInfo.getLevel()))) {
+								notificationList.add(alertInfo);					
 							}
 						}
 					} else {
@@ -706,22 +579,22 @@ public class ClusterAnalysisService{
 			LOGGER.error("Error while sending Alert Notifications - " + e.getMessage());
 		}
 		// adding new alerts to save Alerts List
-		for (Alert alert : alertList) {
-			if (!(saveAlerts.contains((alert)))) {
-				saveAlerts.add(alert);
+		for (AlertInfo alertInfo : alertList) {
+			if (!(saveAlerts.contains((alertInfo)))) {
+				saveAlerts.add(alertInfo);
 			}
 		}
 	}
 
-	private List<Alert> checkReminderAlertEmailAndTrap(AlertAction alertAction, List<Alert> alertList) {
+	private List<AlertInfo> checkReminderAlertEmailAndTrap(AlertAction alertAction, List<AlertInfo> alertList) {
 		SimpleDateFormat formatter = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
-		Iterator<Alert> saveAlertItr;
-		List<Alert> notificationList=new ArrayList<>();
+		Iterator<AlertInfo> saveAlertItr;
+		List<AlertInfo> notificationList=new ArrayList<>();
 			saveAlertItr = saveAlerts.iterator();
 			long occurringTimeHours = alertAction.getOccuringSinceHours().longValue();	
 				while (saveAlertItr.hasNext()) {
 					try {
-						Alert saveAlert = saveAlertItr.next();
+						AlertInfo saveAlert = saveAlertItr.next();
 						if (!(alertList.contains(saveAlert))) {
 							saveAlertItr.remove();
 						} else {
@@ -734,35 +607,11 @@ public class ClusterAnalysisService{
 							}
 						}
 					}
-			 catch (ParseException e) {
+					catch (ParseException e) {
 						LOGGER.error("Error while sending Reminder Alert Notifications - " + e.getMessage());
 					}
 				}	
 			return notificationList;
-	}
-
-	/**
-	 * Gets the high availability alert.
-	 *
-	 * @return the high availability alert
-	 */
-	@SuppressWarnings({ "unused", "rawtypes", "unchecked" })
-	private HAAlert getHighAvailabilityAlert() {
-		HAAlert hAAlert = null;
-		Class clazz = null;
-		Constructor cons = null;
-		String hadoopType = FileUtil.getClusterInfoDetail(ExtendedConstants.HADOOP_TYPE);
-		if (hadoopType.equalsIgnoreCase(ExtendedConstants.YARN)) {
-			try {
-				clazz = Class.forName(WebConstants.YARN_HIGH_AVAILABLITY_ALERT);
-				cons = clazz.getConstructor();
-				hAAlert = (HAAlert) cons.newInstance();
-			} catch (ReflectiveOperationException e) {
-				LOGGER.error(
-						JumbuneRuntimeException.throwClassNotFoundException(e.getStackTrace()));
-			}
-		}
-		return hAAlert;
 	}
 
 	/**
@@ -802,8 +651,8 @@ public class ClusterAnalysisService{
 			@QueryParam("jobID") String jobID) {
 		try {
 			Cluster cluster = cache.getCluster(clusterName);
-			ClusterProfilingService clusterProfilingService = getClusterProfilingService(cluster);
-			return Response.ok(Constants.gson.toJson(clusterProfilingService.getJobStats(cluster, jobID))).build();
+			return Response.ok(Constants.gson.toJson(
+					clusterProfilingHelper.getJobDetails(cluster, jobID))).build();
 		} catch (Exception e) {
 			LOGGER.error("Unable to get job output", e);
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
@@ -919,14 +768,14 @@ public class ClusterAnalysisService{
 				Scheduler scheduler = schedulerService.fetchSchedulerInfo(cluster);
 				
 				if (scheduler.isFairScheduler()) {
-					List<FairSchedulerQueueInfo> list = scheduler.getFairSchedulerLeafQueues();
+					List<FairSchedulerQueueInfo> list = SchedulerUtil.getFairSchedulerLeafQueues(scheduler);
 					if (!processesManager.getProcessesStatus(clusterName)
 							.get(ProcessType.QUEUE_UTILIZATION)) {
 						yarnQueuesUtils.persistFairSchedulerData(list, clusterName);
 					}
 					return Response.ok(Constants.gson.toJson(list)).build();
 				} else {
-					List<CapacitySchedulerQueueInfo> list = scheduler.getCapcitySchedulerLeafQueues();
+					List<CapacitySchedulerQueueInfo> list = SchedulerUtil.getCapcitySchedulerLeafQueues(scheduler);
 					if (!processesManager.getProcessesStatus(clusterName)
 							.get(ProcessType.QUEUE_UTILIZATION)) {
 						yarnQueuesUtils.persistCapacitySchedulerData(list, clusterName);
@@ -955,8 +804,8 @@ public class ClusterAnalysisService{
 			}
 			
 			try {
-					ClusterProfilingService clusterProfilingService = getClusterProfilingService(cluster);
-					List<QueueStats> list = clusterProfilingService.getQueueStats(cluster);
+					List<QueueStats> list = clusterProfilingHelper.getQueueStats(
+							clusterName, sessionUtils.getRM(cluster, getSession()));
 					return Response.ok(Constants.gson.toJson(yarnQueuesUtils.getAverageWaitingTime(cluster, list))).build();
 		
 				} catch (Exception e) {
@@ -1011,8 +860,8 @@ public class ClusterAnalysisService{
 	public Response getRackAwareStats(@PathParam(CLUSTER_NAME) String clusterName) {
 		try {
 			Cluster cluster = cache.getCluster(clusterName);
-			ClusterProfilingService clusterProfilingService = getClusterProfilingService(cluster);
-			return Response.ok(Constants.gson.toJson(clusterProfilingService.getRackAwareStats(cluster)))
+			return Response.ok(Constants.gson.toJson(clusterProfilingHelper.getRackAwareStats(
+						cluster, sessionUtils.getRM(cluster, getSession()))))
 					.build();
 
 		} catch (Exception e) {
@@ -1115,8 +964,8 @@ public class ClusterAnalysisService{
 	
 	private List<EffCapUtilizationStats> getJobsCapacityUtilization(
 			Cluster cluster, List<ApplicationReport> list, boolean toWrite) throws Exception {
-		ClusterProfilingService clusterProfilingService = getClusterProfilingService(cluster);
-		List<EffCapUtilizationStats> statsList = clusterProfilingService.getEffCapUtilizationStats(cluster, list);
+		List<EffCapUtilizationStats> statsList = clusterProfilingHelper.getEffCapUtilizationStats(
+				cluster, sessionUtils.getMR(cluster, getSession()), list);
 		
 		try {
 			persistJobDataToInfluxdb(statsList, cluster.getClusterName());
@@ -1218,9 +1067,9 @@ public class ClusterAnalysisService{
 	public Response getLiveContainerStats(@PathParam(CLUSTER_NAME) String clusterName) {
 		try {
 			Cluster cluster = cache.getCluster(clusterName);
-			ClusterProfilingService clusterProfilingService = getClusterProfilingService(cluster);
 			Map<String, Object> map = new HashMap<String, Object>(4);
-			map.put("launchableContainers", clusterProfilingService.getContainerStatus(cluster));
+			map.put("launchableContainers", clusterProfilingHelper.getContainerStatus(
+					cluster, sessionUtils.getRM(cluster, getSession())));
 			RMCommunicator rmCommunicator = sessionUtils.getRM(cluster, getSession());
 			map.put(WebConstants.RUNNING_CONTAINERS_KEY, metrics.getNumContainersRunning(rmCommunicator));
 			map.put(WebConstants.RUNNING_APPS_KEY, metrics.getNumApplicationsRunning(rmCommunicator));
@@ -1229,22 +1078,6 @@ public class ClusterAnalysisService{
 
 		} catch (Exception e) {
 			LOGGER.error("Unable to get live container stats", e);
-			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
-		}
-	}
-
-	@POST
-	@Path(WebConstants.CLUSTER_PROFILING + "/copyHistoryFile" + "/{clusterName}")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response copyHistoryFileStatus(@PathParam(CLUSTER_NAME) String clusterName) {
-		LOGGER.debug("Going to copy history file...");
-		try {
-			Cluster cluster = cache.getCluster(clusterName);
-			ClusterProfilingService clusterProfilingService = getClusterProfilingService(cluster);
-			clusterProfilingService.copyJobHistoryFile(cluster);
-			return Response.ok(Constants.gson.toJson(true)).build();
-		} catch (Exception e) {
-			LOGGER.error("Unable to copy history files", e);
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
 		}
 	}
@@ -1515,7 +1348,7 @@ public class ClusterAnalysisService{
 		try {
 			
 			Graph graph = yarnQueuesUtils.getQueueGraphFromInfluxdb(
-					clusterName, stat, duration, 
+					clusterName, fairSchedularCache.isFairScheduler(clusterName), stat, duration, 
 					rangeFrom, rangeTo);
 			
 			Graphs graphs = new Graphs(1);
@@ -1703,8 +1536,8 @@ public class ClusterAnalysisService{
 	public Response persistUserQueueUtilization(@PathParam(CLUSTER_NAME) String clusterName) {
 		try {
 			Cluster cluster = cache.getCluster(clusterName);
-			ClusterProfilingService clusterProfilingService = getClusterProfilingService(cluster);
-			List<JobQueueBean> jobQueueBeans = clusterProfilingService.getQueueUserStats(cluster);
+			List<JobQueueBean> jobQueueBeans = clusterProfilingHelper.getQueueUserStats(
+					cluster, sessionUtils.getRM(cluster, getSession()));
 			yarnQueuesUtils.persistUserQueueUtilizationData(jobQueueBeans,clusterName);
 			return Response.ok(Constants.gson.toJson(true)).build();
 		} catch (Exception e) {
@@ -1786,41 +1619,6 @@ public class ClusterAnalysisService{
 	}
 
 	/**
-	 * Gets the cluster profiling service.
-	 *
-	 * @param cluster
-	 *            the cluster
-	 * @return the cluster profiling service
-	 * @throws Exception 
-	 * @throws IllegalArgumentException 
-	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private ClusterProfilingService getClusterProfilingService(Cluster cluster) throws Exception {
-		ClusterProfilingService clusterProfilingService = null;
-		Class clazz = null;
-		Constructor cons = null;
-		String hadoopType = FileUtil.getClusterInfoDetail(ExtendedConstants.HADOOP_TYPE);
-		try {
-			if (hadoopType.equalsIgnoreCase(ExtendedConstants.NON_YARN)) {
-				clazz = Class.forName(WebConstants.NON_YARN_CLUSTER_PROFILING_SERVICE);
-				cons = clazz.getConstructor(Cluster.class);
-				clusterProfilingService = (ClusterProfilingService) cons.newInstance(cluster);
-			} else {
-				clazz = Class.forName(WebConstants.YARN_CLUSTER_PROFILING_SERVICE);
-				cons = clazz.getConstructor(RMCommunicator.class, MRCommunicator.class);
-				clusterProfilingService = (ClusterProfilingService) cons.newInstance(
-						sessionUtils.getRM(cluster, getSession()), sessionUtils.getMR(cluster, getSession()));
-			}
-			
-			
-		} catch (ReflectiveOperationException e) {
-			LOGGER.error("Unable to get  cluster profiling service", e);
-		}
-
-		return clusterProfilingService;
-	}
-
-	/**
 	 * return heat map json.
 	 *
 	 * @param cluster
@@ -1842,7 +1640,7 @@ public class ClusterAnalysisService{
 				|| generalSettings.trim().equals("{}")) {
 			generalSettings = WebConstants.DATA_CENTER_DEFAULT_CONFIG;
 		}
-		ClusterViewServiceImpl cvsi = new ClusterViewServiceImpl(cluster);
+		ClusterViewService cvsi = new ClusterViewServiceImpl(cluster);
 		List<PerformanceStats> perfStats = getPerfStatsFromJson(generalSettings);
 		return cvsi.getDataCenterDetails(perfStats);
 	}

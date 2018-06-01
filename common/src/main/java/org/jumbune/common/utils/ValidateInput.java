@@ -6,10 +6,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.text.MessageFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,10 +42,6 @@ public class ValidateInput {
 
 	private static final String HDFS_INPUT_PATH = "hdfsInputPath";
 
-	private static final String JOB_ID = "jobID";
-
-	private static final String CRON_EXPRESSION = "cronExpression";
-
 	private static final String FILE_PATH = "filePath";
 
 	/** The failed validation. */
@@ -56,10 +49,7 @@ public class ValidateInput {
 
 	/** The error messages. */
 	private ErrorMessageLoader errorMessages = null;
-
-	/** The j home. */
-	private String jumbuneHome = null;
-
+	
 	/** The Constant REPORT_FROM_CLUSTER. */
 	private static final String REPORT_FROM_CLUSTER = " dfsadmin -report | grep Name";
 
@@ -117,19 +107,6 @@ public class ValidateInput {
 		return jobInputErrors;
 	}
 
-	public List<String> validateClusterDetails(Cluster cluster) {
-		List<String> clusterErrors = new ArrayList<String>();
-
-		if (!isIPAdressValid(cluster.getNameNode())) {
-			clusterErrors.add(errorMessages.get(ErrorMessages.MASTER_HOST_IP));
-		}
-		if (!isAgentPrivateKeyOrPathValid(cluster)) {
-			clusterErrors.add(errorMessages.get(ErrorMessages.SSH_INVALID));
-		}
-		validateWorkersField(cluster, clusterErrors);
-		return clusterErrors;
-	}
-
 	public Map<String, String> checkJobNameAlreadyExists(String jobName) {
 		jobInputErrors = new HashMap<String, String>(2);
 		if (isJobNameAlreadyExists(jobName)) {
@@ -174,47 +151,6 @@ public class ValidateInput {
 			}
 		}
 		
-	}
-
-	private boolean isJobIdExists(String existingJobId, Cluster cluster) {
-		String response = RemotingUtil.fireCommandAsHadoopDistribution(cluster,
-				"job -status " + existingJobId, CommandType.HADOOP_JOB);
-		if (response.contains("Counters:")) {
-			return true;
-		} else {
-			return false;
-		}
-
-	}
-
-	/**
-	 * validate cron expression for scheduled jumbune job.
-	 *
-	 * @param config
-	 *            is a object of job config class
-	 */
-	private void validateTuningScheduleDate(String tuningScheduleDate) {
-
-		if (!isNullOrEmpty(tuningScheduleDate)
-				&& !isDateValidFormat("yyyy/MM/dd HH:mm", tuningScheduleDate)) {
-			jobInputErrors.put(CRON_EXPRESSION,
-					errorMessages.get(ExtendedErrorMessages.SCHEDULING_INVALID));
-		}
-
-	}
-
-	public boolean isDateValidFormat(String format, String value) {
-		Date date = null;
-		try {
-			SimpleDateFormat sdf = new SimpleDateFormat(format);
-			date = sdf.parse(value);
-			if (!value.equals(sdf.format(date))) {
-				date = null;
-			}
-		} catch (ParseException ex) {
-			return false;
-		}
-		return date != null;
 	}
 	
 	/**
@@ -479,26 +415,6 @@ public class ValidateInput {
 		} catch (Exception e) {
 			return false;
 		}
-	}
-
-	/**
-	 * check if a command is exist or not it returns true if it is exist import
-	 * 
-	 *
-	 * @param value
-	 *            the value
-	 * @param inputValue
-	 *            value which is to be tested
-	 * @return true if command exist already
-	 */
-	public Boolean checkCommand(int value, String inputValue) {
-		String[] commandArray = errorMessages.get(value).split("\\\n");
-		for (String string : commandArray) {
-			if (string.equals(string)) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	/**

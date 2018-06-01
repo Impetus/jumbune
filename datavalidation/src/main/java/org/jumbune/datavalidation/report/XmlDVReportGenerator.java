@@ -1,8 +1,5 @@
 package org.jumbune.datavalidation.report;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -32,8 +29,6 @@ public class XmlDVReportGenerator {
 	
 	/** The Constant INDIVIDUAL_VIOLATIONS. */
 	private static final String INDIVIDUAL_VIOLATIONS = "individualViolations";
-	
-	private static final Logger LOGGER = LogManager.getLogger(XmlDVReportGenerator.class);
 
 	/**
 	 * Generate data validation report.

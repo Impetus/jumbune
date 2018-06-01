@@ -41,8 +41,6 @@ import org.jumbune.web.beans.XmlDVReport;
 import org.jumbune.web.utils.WebConstants;
 import org.jumbune.web.utils.WebUtil;
 
-import com.google.gson.Gson;
-
 
 /**
  * For fetching data validation reports corresponding to a violation failed in a particular file.
@@ -315,8 +313,7 @@ public class XmlDVReportService{
 	 */
 	public JobConfig getJobConfig(FormDataMultiPart form) {
 		String jobConfigJSON = form.getField("jsonData").getValue();
-		Gson gson = new Gson();
-		JobConfig jobConfig = gson.fromJson(jobConfigJSON,
+		JobConfig jobConfig = Constants.gson.fromJson(jobConfigJSON,
 				JobConfig.class);
 		return jobConfig;
 	}

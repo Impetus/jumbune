@@ -29,8 +29,6 @@ import org.jumbune.remoting.common.RemotingMethodConstants;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
 
-import com.jcraft.jsch.UserInfo;
-
 /**
  * This class provides methods to collect or distribute files from to/from
  * master nodes.
@@ -51,8 +49,6 @@ public class RemoteFileUtil {
 	/** The Constant MKDIR_P_CMD. */
 	private static final String MKDIR_P_CMD = "mkdir -p ";
 
-	private static final String CHMOD_CMD = "chmod a+w ";
-
 	private static final String RM_CMD = "rm";
 
 	/** The Constant TOP_DUMP_FILE. */
@@ -65,40 +61,6 @@ public class RemoteFileUtil {
 	 */
 	public RemoteFileUtil() {
 	}
-
-	/**
-	 * <p>
-	 * Gets folder name from file name
-	 * </p>
-	 * .
-	 * 
-	 * @param file
-	 *            file name
-	 * @return folder name
-	 */
-	public String getFolderName(String file) {
-		String folderName = null;
-		int lastIndexOfDot = file.lastIndexOf('.');
-		int lastIndexOfSeparator = file.lastIndexOf('/');
-		if (lastIndexOfDot == -1) {
-			folderName = file;
-		} else if (lastIndexOfSeparator != -1) {
-			if (lastIndexOfSeparator > lastIndexOfDot) {
-				folderName = file;
-			} else {
-				folderName = file.substring(0, lastIndexOfSeparator);
-			}
-		}
-
-		return folderName;
-	}
-
-	/**
-
-
-	
-
-	
 
 	/**
 	 * Copy remote log files
@@ -291,97 +253,6 @@ public class RemoteFileUtil {
 			remoter.fireAndForgetCommand(builder.getCommandWritable());
 		}
 		remoter.close();
-	}
-
-	/**
-	 * <p>
-	 * UserInfo as required by the JSch library
-	 * </p>
-	 * .
-	 * 
-	 */
-	public static class JumbuneUserInfo implements UserInfo {
-
-		/**
-		 * gets the password
-		 */
-		public String getPassword() {
-			return null;
-		}
-
-		/**
-		 * set prompt YES/NO
-		 */
-		public boolean promptYesNo(String str) {
-			return true;
-		}
-
-		/**
-		 * gets the passphrase
-		 */
-		public String getPassphrase() {
-			return null;
-		}
-
-		/**
-		 * set the passphrase
-		 */
-		public boolean promptPassphrase(String message) {
-			return true;
-		}
-
-		/**
-		 * set password
-		 */
-		public boolean promptPassword(String message) {
-			return true;
-		}
-
-		/**
-		 * set the message
-		 */
-		public void showMessage(String message) {
-		}
-	}
-
-	/**
-	 * Gets the remote threads per core.
-	 *
-	 * @param loader
-	 *            the loader
-	 * @param coreOrThread
-	 *            the core or thread
-	 * @return the remote threads per core
-	 * @throws JumbuneException
-	 *             the hTF exception
-	 */
-	public static int getRemoteThreadsOrCore(JumbuneRequest jumbuneRequest, String coreOrThread)
-			throws JumbuneException {
-
-		JobConfig jobConfig = jumbuneRequest.getJobConfig();
-		Cluster cluster = jumbuneRequest.getCluster();
-
-		String command = "lscpu | grep " + coreOrThread;
-		Remoter remoter = RemotingUtil.getRemoter(cluster);
-
-		CommandWritableBuilder builder = new CommandWritableBuilder(cluster, null);
-		builder.addCommand(command, false, null, CommandType.FS);
-		String line = (String) remoter.fireCommandAndGetObjectResponse(builder
-				.getCommandWritable());
-		remoter.close();
-		if (line == null || "".equals(line.trim())) {
-			throw JumbuneRuntimeException.throwUnresponsiveIOException(
-					RemoteFileUtil.class.getName(), "getRemoteThreadsOrCore",
-					"", Constants.FOUR_HUNDERED_FIFTY_SEVEN);
-		}
-		line = line.split("\n")[0];
-		String[] array = line.split(":");
-		if (array.length != 2) {
-			throw JumbuneRuntimeException.throwUnresponsiveIOException(
-					RemoteFileUtil.class.getName(), "getRemoteThreadsOrCore",
-					"", Constants.FOUR_HUNDERED_SIXTY_ONE);
-		}
-		return Integer.parseInt(array[1].trim());
 	}
 
 	/**
@@ -852,41 +723,6 @@ public class RemoteFileUtil {
 		}
 		return listOfFiles.toString().substring(1, listOfFiles.toString().length()-1);
 		
-	}
-	
-	/**
-	 * Gets the remote threads per core.
-	 *
-	 * @param loader
-	 *            the loader
-	 * @param coreOrThread
-	 *            the core or thread
-	 * @return the remote threads per core
-	 * @throws JumbuneException
-	 *             the hTF exception
-	 */
-	public static int getRemoteThreadsOrCore(Cluster cluster, String coreOrThread, String host)
-			throws JumbuneException {
-
-		String command = "lscpu |grep " + coreOrThread + " && exit";
-		Remoter remoter = RemotingUtil.getRemoter(cluster);
-
-		CommandWritableBuilder builder = new CommandWritableBuilder(cluster, host);
-		builder.addCommand(command, false, null, CommandType.FS);
-		String line = (String) remoter.fireCommandAndGetObjectResponse(builder
-				.getCommandWritable());
-		if (line == null || "".equals(line.trim())) {
-			throw JumbuneRuntimeException.throwUnresponsiveIOException(
-					RemoteFileUtil.class.getName(), "getRemoteThreadsOrCore",
-					"", 1019);
-		}
-		String[] array = line.split(":");
-		if (array.length != 2) {
-			throw JumbuneRuntimeException.throwUnresponsiveIOException(
-					RemoteFileUtil.class.getName(), "getRemoteThreadsOrCore",
-					"", 1026);
-		}
-		return Integer.parseInt(array[1].trim());
 	}
 	
 }

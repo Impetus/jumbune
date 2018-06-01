@@ -2,7 +2,7 @@ package org.jumbune.web.beans;
 
 import java.util.List;
 
-import org.jumbune.profiling.hprof.NodePerformance;
+import org.jumbune.monitoring.beans.NodePerformance;
 
 public class DataLoad {
 	

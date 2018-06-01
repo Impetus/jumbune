@@ -9,7 +9,7 @@ import org.apache.logging.log4j.Logger;
 import org.jumbune.utils.conf.beans.AlertAction;
 import org.jumbune.utils.conf.beans.TicketConfiguration;
 
-import org.jumbune.common.beans.Alert;
+import org.jumbune.common.beans.AlertInfo;
 import org.jumbune.common.integration.notification.ticket.TicketClient;
 import org.jumbune.common.integration.notification.ticket.TicketClientImplBMC;
 
@@ -56,13 +56,13 @@ public class TicketingImpl implements AlertNotifier {
 	 * 
 	 */
 	@Override
-	public void sendNotification(List<Alert> notificationList, AlertAction alertAction, String clusterName) {
+	public void sendNotification(List<AlertInfo> notificationList, AlertAction alertAction, String clusterName) {
 			Map<String, Object> entryAttrib = null;
-			for (Alert alert : notificationList) {
+			for (AlertInfo alertInfo : notificationList) {
 				entryAttrib = new HashMap<>(3);
-				entryAttrib.put(ALERT_MESSAGE, alert.getMessage());
-				entryAttrib.put(AFFECTED_NODE, alert.getNodeIP());
-				entryAttrib.put(ALERT_LEVEL, alert.getLevel());
+				entryAttrib.put(ALERT_MESSAGE, alertInfo.getMessage());
+				entryAttrib.put(AFFECTED_NODE, alertInfo.getNodeIP());
+				entryAttrib.put(ALERT_LEVEL, alertInfo.getLevel());
 				ticketClient.createEntry(entryAttrib);
 
 		}

@@ -21,8 +21,6 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.JumbuneInfo;
-import org.jumbune.common.job.Config;
-import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
 
@@ -108,18 +106,6 @@ public final class FileUtil {
 			return properties.getProperty(propertyKey);
 	}
 	
-	/**
-	 * Utility method, this method extracts out the given property from the <Jumbune Home>/jobjars/jobname/cluster-configuration.properties file.
-	 * @param config
-	 * @param propertyKey
-	 * @return
-	 */
-	public static String getClusterDetail(Config config, String propertyKey){
-		JobConfig jobConfig = (JobConfig)config;
-		String expectedLocation = new StringBuilder().append(JumbuneInfo.getHome()).append(File.separator).append(Constants.JOB_JARS_LOC).append(jobConfig.getFormattedJumbuneJobName()).append("cluster-configuration.properties").toString();
-		return getPropertyFromFile(expectedLocation, propertyKey);
-	}
-
 	/**
 	 * Utility method, this method extracts out the given property from the <Jumbune Home>/configuration/clusterinfo properties.
 	 * @param propertyKey

@@ -6,10 +6,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.jumbune.common.beans.cluster.Cluster;
-import org.jumbune.profiling.beans.SystemStats;
-import org.jumbune.profiling.yarn.beans.YarnCategoryInfo;
-import org.jumbune.profiling.yarn.beans.YarnClusterWideInfo;
-import org.jumbune.profiling.yarn.beans.YarnWorkerJMXInfo;
+import org.jumbune.monitoring.beans.SystemStats;
+import org.jumbune.monitoring.yarn.beans.YarnCategoryInfo;
+import org.jumbune.monitoring.yarn.beans.YarnClusterWideInfo;
+import org.jumbune.monitoring.yarn.beans.YarnWorkerJMXInfo;
 import org.jumbune.utils.conf.AdminConfigurationUtil;
 import org.jumbune.utils.conf.beans.InfluxDBConf;
 

@@ -197,6 +197,10 @@ public final class DeployUtil {
 		prop.load(DeployUtil.class.getClassLoader().getResourceAsStream("distribution.properties"));
 		String distributionType = prop.getProperty("hadoop-distribution");
 		boolean isYarn = !distributionType.equalsIgnoreCase("Non-Yarn") ? true : false;
+		if (!isYarn) {
+			CONSOLE_LOGGER.info("Sorry, Jumbune doesn't support Non-Yarn based Hadoop distributions");
+			return;
+		}
 		Session session = null;
 		SCANNER = new Scanner(System.in);
 		try {

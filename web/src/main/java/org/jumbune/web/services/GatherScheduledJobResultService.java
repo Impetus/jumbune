@@ -20,13 +20,11 @@ import javax.ws.rs.core.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.job.Config;
-import org.jumbune.common.utils.Constants;
-import org.jumbune.utils.exception.JumbuneException;
-
-import com.google.gson.Gson;
 import org.jumbune.common.job.JobConfig;
+import org.jumbune.common.utils.Constants;
 import org.jumbune.common.utils.ExtendedConfigurationUtil;
 import org.jumbune.utils.exception.ExtendedErrorCodesAndMessages;
+import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.web.utils.WebConstants;
 import org.jumbune.web.utils.WebUtil;
 
@@ -90,9 +88,8 @@ public class GatherScheduledJobResultService {
     private static Object loadJob(String filePath) throws FileNotFoundException {
             InputStreamReader inputStreamReader = null;
             try {
-                    Gson gson = new Gson();
                     inputStreamReader  = new InputStreamReader(new FileInputStream(new File(filePath)));
-                    Config config = (Config)gson.fromJson(inputStreamReader, JobConfig.class);
+                    Config config = (Config)Constants.gson.fromJson(inputStreamReader, JobConfig.class);
                     return config;
             } finally {
                     if(inputStreamReader != null){

@@ -24,14 +24,6 @@ public final class JettyUtil {
 		
 	}
 	
-	/** The Constant CAT_CMD. */
-	private static final String CAT_CMD = "cat";
-	
-	/** The Constant PID_FILE. */
-	private static final String PID_FILE = "pid.txt";
-	
-	private static final String JSON_FILE = "/jsonInfo.ser";
-	
 	/**
 	 * Utility class for performing jetty operations.
 	 *

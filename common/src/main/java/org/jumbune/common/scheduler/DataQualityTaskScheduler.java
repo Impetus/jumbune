@@ -10,19 +10,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.TimeZone;
 import java.util.TreeMap;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,9 +42,6 @@ import com.google.gson.reflect.TypeToken;
  *
  */
 public class DataQualityTaskScheduler extends Scheduler {
-
-	/**  Represents one underscore *. */
-	private static final String ONE_UNDERSCORE = "1_";
 
 	/** The Constant SCHEDULED_JOB_JSON. */
 	/* Scheduled job json file name * */
@@ -166,29 +158,6 @@ public class DataQualityTaskScheduler extends Scheduler {
 				.append(jumbuneScheduleTaskCommand).append(NEW_LINE)
 				.append("#");
 		return jumbuneSchedulerdBuilder.toString();
-	}
-	
-	/**
-	 * Check time difference between browser and server time.
-	 *
-	 * @param sBrowserGMT the browser gmt
-	 * @param scheduledTime the scheduled time
-	 * @return the final date
-	 * @throws ParseException the parse exception
-	 */
-	private Date getFinalDate(String sBrowserGMT, String scheduledTime) throws ParseException {
-		
-	 	long browserGMT = Long.parseLong(sBrowserGMT);
-		Calendar mCalendar = new GregorianCalendar();  
-		TimeZone mTimeZone = mCalendar.getTimeZone();
-		int mGMTOffset = mTimeZone.getRawOffset();
-		long serverGMT = TimeUnit.MINUTES.convert(mGMTOffset, TimeUnit.MILLISECONDS);
-		
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
-				USER_DATE_PATTERN);
-		Date date = simpleDateFormat.parse(scheduledTime);
-		long finalTime = date.getTime() - (browserGMT - serverGMT);
-		return new Date(finalTime);
 	}
 
 	/**
@@ -632,8 +601,6 @@ public class DataQualityTaskScheduler extends Scheduler {
 	 */
 	public String getDataQualityTimeLineReport(JobConfig jobConfig,
 			String jobName) {
-		int interval = 0;
-		boolean avoidFirstIteration = false;
 		StringBuilder sb = new StringBuilder();
 		TreeMap<String, Map<String, String>> timeStamp = new TreeMap<String, Map<String, String>>(
 				new TimestampComparator());
@@ -652,7 +619,7 @@ public class DataQualityTaskScheduler extends Scheduler {
 		Properties prop = null;
 		try {
 			prop = getJobStatusFileInstance(jobConfig);
-			interval = Integer.parseInt(prop.getProperty(INTERVAL));
+			Integer.parseInt(prop.getProperty(INTERVAL));
 		} catch (JumbuneException je) {
 			LOGGER.error("properties file not found", je);
 		}

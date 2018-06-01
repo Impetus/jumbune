@@ -58,7 +58,7 @@
 				<include>${project.groupId}:jumbune-exec</include>
 				<include>${project.groupId}:jumbune-datavalidation</include>
 				<include>${project.groupId}:jumbune-debugger</include>
-				<include>${project.groupId}:jumbune-cluster-profiling</include>
+				<include>${project.groupId}:jumbune-cluster-analysis</include>
 			</includes>
 
 		</dependencySet>
@@ -85,9 +85,8 @@
 				<include>${project.groupId}:jumbune-common</include>
 				<include>${project.groupId}:jumbune-utils</include>
 				<include>${project.groupId}:jumbune-remoting:jar:${project.version}::</include>
-				<include>${project.groupId}:remoting-common:jar:${project.version}::</include>
-				<include>${project.groupId}:remoting-jsch:jar:${project.version}::</include>
-				<include>${project.groupId}:jumbune-rumen</include>
+				<include>${project.groupId}:jumbune-remoting-common:jar:${project.version}::</include>
+				<include>${project.groupId}:jumbune-remoting-jsch:jar:${project.version}::</include>
 				<include>io.netty:netty-handler:jar:4.0.20.Final</include>
 				<include>io.netty:netty-buffer:jar:4.0.20.Final</include>
 				<include>io.netty:netty-common:jar:4.0.20.Final</include>

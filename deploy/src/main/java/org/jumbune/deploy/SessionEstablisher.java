@@ -36,22 +36,18 @@ public final class SessionEstablisher {
 	public static final String WHERE_IS_HADOOP = "whereis hadoop";
 	private static byte[] bufs;
 	public static final String LS_PREFIX_PART = "ls ";
-	public static final String LS_POSTFIX_PART = " -Rl | grep ->";
 	public static final String LS_POSTFIX_COLON_PART = " -Rl | grep :";
 	private static final String HADOOP_VERSION_YARN_COMMAND = "bin/yarn version";
 	private static final String HADOOP_VERSION_NON_YARN_COMMAND = "bin/hadoop version";
 	public static final String LL_COMMAND = "ll /usr/bin/hadoop \n";
-	private Deployer deployerInstance;
+	
 	private static List<String> jars = new ArrayList<String>(2);
 	
 	static {
 		jars.add("/lib/log4j-api-2.1.jar");
 		jars.add("/lib/log4j-core-2.1.jar");
 	}
-	public SessionEstablisher(Deployer deployer){
-		this.deployerInstance = deployer;
-	}
-	
+
 	/**
 	 * method for establishing connection while authentication
 	 * @param username
@@ -291,7 +287,6 @@ public final class SessionEstablisher {
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	@SuppressWarnings("unused")
 	static String executeCommand(Session session, String command) throws JSchException, IOException {
 		InputStream in = null;
 		Channel channel = null;

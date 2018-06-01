@@ -48,20 +48,16 @@ import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.common.scheduler.DataQualityTaskScheduler;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.common.utils.Constants;
-import org.jumbune.common.utils.ExtendedConstants;
-import org.jumbune.common.utils.FileUtil;
 import org.jumbune.common.utils.JobConfigUtil;
 import org.jumbune.common.utils.JobRequestUtil;
 import org.jumbune.common.utils.RemotingUtil;
 import org.jumbune.common.utils.ValidateInput;
-import org.jumbune.profiling.utils.ProfilerConstants;
+import org.jumbune.monitoring.utils.ProfilerConstants;
 import org.jumbune.utils.beans.LogLevel;
 import org.jumbune.utils.exception.JumbuneException;
 import org.jumbune.utils.exception.JumbuneRuntimeException;
 import org.jumbune.web.utils.WebConstants;
 import org.jumbune.web.utils.WebUtil;
-
-import com.google.gson.Gson;
 
 /**
  * The Class JobAnalysisService.
@@ -190,7 +186,7 @@ public class JobAnalysisService{
 	 *            the job config
 	 */
 	private void modifyDebugParameters(JobConfig jobConfig) {
-		jobConfig.setPartitionerSampleInterval(Constants.FIFTY);
+		jobConfig.setPartitionerSampleInterval(50);
 		Map<String, LogLevel> logLevel = new HashMap<String, LogLevel>();
 		logLevel.put("ifblock", LogLevel.TRUE);
 		logLevel.put("switchcase", LogLevel.TRUE);
@@ -259,8 +255,6 @@ public class JobAnalysisService{
 			JobConfig jobConfig = (JobConfig) config;
 			String jsonDir = System.getenv("JUMBUNE_HOME") + WebConstants.JSON_REPO;
 
-			Gson gson = new Gson();
-
 			if (Enable.TRUE.equals(jobConfig.getEnableDataQualityTimeline())) {
 				jobConfig.setActivated(Feature.ANALYZE_DATA);
 				jsonDir = jsonDir + WebConstants.ANALYZE_DATA;
@@ -290,7 +284,7 @@ public class JobAnalysisService{
 				jsonDirectory.mkdirs();
 			}
 
-			String jsonData = gson.toJson(jobConfig, JobConfig.class);
+			String jsonData = Constants.gson.toJson(jobConfig, JobConfig.class);
 			jsonDir = jsonDir + WebConstants.JOB_REQUEST_JSON;
 			File file = new File(jsonDir);
 			bufferedWriter = new BufferedWriter(new FileWriter(file));
@@ -330,9 +324,7 @@ public class JobAnalysisService{
 
 		Cluster cluster = JobRequestUtil.getClusterByName(jobConfig.getOperatingCluster());
 		boolean isProfilingEnabled = jobConfig.getHadoopJobProfile().getEnumValue();
-		String hadoopType = FileUtil.getClusterInfoDetail(ExtendedConstants.HADOOP_TYPE);
-		boolean isYarnEnable = hadoopType.equalsIgnoreCase(ExtendedConstants.YARN);
-		checkAvailableNodes(cluster, isProfilingEnabled, isYarnEnable);
+		checkAvailableNodes(cluster, isProfilingEnabled);
 		writeUploadedFileToFileItem(jobConfig, form);
 
 		JumbuneRequest jumbuneRequest = new JumbuneRequest();
@@ -423,8 +415,7 @@ public class JobAnalysisService{
 	 */
 	public JobConfig getJobConfig(FormDataMultiPart form) {
 		String jobConfigJSON = form.getField("jsonData").getValue();
-		Gson gson = new Gson();
-		JobConfig jobConfig = gson.fromJson(jobConfigJSON,
+		JobConfig jobConfig = Constants.gson.fromJson(jobConfigJSON,
 				JobConfig.class);
 		return jobConfig;
 	}
@@ -444,8 +435,7 @@ public class JobAnalysisService{
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public void checkAvailableNodes(Cluster cluster, boolean isProfilingEnabled,
-			boolean isYarnEnable) throws IOException {
+	public void checkAvailableNodes(Cluster cluster, boolean isProfilingEnabled) throws IOException {
 
 		int dnPort = ProfilerConstants.DEFAULT_DN_PORT;
 		int wdPort = ProfilerConstants.DEFAULT_TT_PORT;
@@ -486,14 +476,12 @@ public class JobAnalysisService{
 
 				if (isDNAvailable) {
 					if (!isWorkerDaemonAvailable) {
-						message = isYarnEnable ? ProfilerConstants.NM_NOT_REACHABLE
-								: ProfilerConstants.TT_NOT_REACHABLE;
+						message = ProfilerConstants.NM_NOT_REACHABLE;
 						isNodeAvailable = false;
 					}
 				} else {
 					if (!isWorkerDaemonAvailable) {
-						message = isYarnEnable ? ProfilerConstants.DN_NM_NOT_REACHABLE
-								: ProfilerConstants.DN_TT_NOT_REACHABLE;
+						message = ProfilerConstants.DN_NM_NOT_REACHABLE;
 					} else {
 						message = ProfilerConstants.DN_NOT_REACHABLE;
 					}
@@ -545,9 +533,8 @@ public class JobAnalysisService{
 	@Path(WebConstants.JOB_HDFS_DETAILS)
 	@Produces({ MediaType.APPLICATION_JSON })
 	public Response getDqtDetails() throws IOException {
-		Gson gson = new Gson();
 		List<DqtViewBean> dqtViewBeans = ConfigurationUtil.getDqtViewDetails();
-		String dqtViewDetails = gson.toJson(dqtViewBeans);
+		String dqtViewDetails = Constants.gson.toJson(dqtViewBeans);
 		return Response.ok(dqtViewDetails).build();
 
 	}

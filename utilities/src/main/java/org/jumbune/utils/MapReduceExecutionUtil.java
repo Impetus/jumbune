@@ -16,7 +16,6 @@ import org.jumbune.utils.exception.ErrorCodesAndMessages;
  * used within an instance for various purpose of logging.
  * 
  */
-@SuppressWarnings("deprecation")
 public final class MapReduceExecutionUtil {
 	/** The logger */
 	private static final Logger LOGGER = LogManager

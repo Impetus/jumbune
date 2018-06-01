@@ -46,8 +46,6 @@ import org.jumbune.utils.exception.JumbuneRuntimeException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import com.google.gson.Gson;
-
 
 /**
  * This class implements utility methods being used in the framework.
@@ -59,7 +57,7 @@ import com.google.gson.Gson;
 public class ConfigurationUtil {
 	
 	/** The Constant LOGGER. */
-	public static final Logger LOGGER = LogManager.getLogger(ConfigurationUtil.class);
+	private static final Logger LOGGER = LogManager.getLogger(ConfigurationUtil.class);
 
 	
 	
@@ -489,7 +487,6 @@ public class ConfigurationUtil {
 	 * @return the dqt view details
 	 */
 	public static List<DqtViewBean> getDqtViewDetails() {
-		Gson gson = new Gson();
 		JobConfig jobConfig = null;
 		DqtViewBean dqtViewBean = null ;
 		List<DqtViewBean> dqtViewBeans = new ArrayList<DqtViewBean>();
@@ -514,7 +511,7 @@ public class ConfigurationUtil {
 						String json = null;
 						try {
 							json = FileUtil.readFileIntoString(file.toString());
-							jobConfig = gson.fromJson(json, JobConfig.class);
+							jobConfig = Constants.gson.fromJson(json, JobConfig.class);
 							dqtViewBean.setHdfsPath(jobConfig.getHdfsInputPath());
 							dqtViewBean.setJobName(jobConfig.getJumbuneJobName());
 							dqtViewBean.setOperatingCluster(jobConfig.getOperatingCluster());

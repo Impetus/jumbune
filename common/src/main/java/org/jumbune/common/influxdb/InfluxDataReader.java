@@ -3,19 +3,17 @@ package org.jumbune.common.influxdb;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.Type;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.jumbune.utils.conf.beans.InfluxDBConf;
-
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
+import org.jumbune.common.influxdb.beans.InfluxDBConstants;
 import org.jumbune.common.influxdb.beans.Query;
 import org.jumbune.common.influxdb.beans.ResultSet;
+import org.jumbune.common.utils.Constants;
+import org.jumbune.utils.conf.beans.InfluxDBConf;
 
 public class InfluxDataReader {
 
@@ -72,10 +70,8 @@ public class InfluxDataReader {
 
 	public ResultSet getResult() throws Exception {
 		String json = sendGetRequest();
-		Type type = new TypeToken<ResultSet>() {
-		}.getType();
-		Gson gson = new Gson();
-		return gson.fromJson(json, type);
+		
+		return Constants.gson.fromJson(json, InfluxDBConstants.resultSetType);
 	}
 
 }

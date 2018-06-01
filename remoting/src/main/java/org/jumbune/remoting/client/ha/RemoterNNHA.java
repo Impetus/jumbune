@@ -1,7 +1,6 @@
 package org.jumbune.remoting.client.ha;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.ConnectException;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -50,6 +49,8 @@ import io.netty.handler.codec.string.StringEncoder;
  * The Class Remoter.
  */
 public class RemoterNNHA implements Remoter {
+	
+	private String clusterName;
 
 	/** The logger. */
 	private static Logger logger = LogManager.getLogger(RemoterNNHA.class);
@@ -98,7 +99,7 @@ public class RemoterNNHA implements Remoter {
 			agentReceiveDirectory = jumbuneHome;
 		}
 		haConf = AdminConfigurationUtil.getHAConfiguration(clusterName);
-		
+		this.clusterName = clusterName;
 		AgentNode agent = null;
 		try {
 			 agent = ZKUtils.getLeaderAgentfromZK(zkHosts, haConf);
@@ -139,7 +140,7 @@ public class RemoterNNHA implements Remoter {
 		StringResponseHandler stringResponseHandler = new StringResponseHandler();
 		handlers.add(new StringDecoder());
 		handlers.add(stringResponseHandler);
-		NNStateListener nnListener = new NNStateListener(barrier, zkHosts);
+		NNStateListener nnListener = new NNStateListener(this.clusterName, barrier, zkHosts);
 		new Thread(nnListener).start();
 
 		try {
@@ -190,7 +191,7 @@ public class RemoterNNHA implements Remoter {
 		ArchiveDecoder decoder = new ArchiveDecoder(receiveDirectory);
 		handlers.add(new StringEncoder());
 		handlers.add(decoder);
-		NNStateListener nnListener = new NNStateListener(barrier, zkHosts);
+		NNStateListener nnListener = new NNStateListener(this.clusterName, barrier, zkHosts);
 		new Thread(nnListener).start();
 
 		try {
@@ -240,7 +241,7 @@ public class RemoterNNHA implements Remoter {
 		StringResponseHandler stringResponseHandler = new StringResponseHandler();
 		handlers.add(new StringDecoder());
 		handlers.add(stringResponseHandler);
-		NNStateListener nnListener = new NNStateListener(barrier, zkHosts);
+		NNStateListener nnListener = new NNStateListener(this.clusterName, barrier, zkHosts);
 		new Thread(nnListener).start();
 		try {
 		// sending barrier as channel attachment for dynamic integration of
@@ -290,7 +291,7 @@ public class RemoterNNHA implements Remoter {
 		LogFilesDecoder decoder = new LogFilesDecoder(receiveDirectory);
 		handlers.add(new StringEncoder());
 		handlers.add(decoder);
-		NNStateListener nnListener = new NNStateListener(barrier, zkHosts);
+		NNStateListener nnListener = new NNStateListener(this.clusterName, barrier, zkHosts);
 		new Thread(nnListener).start();
 
 		try {
@@ -341,7 +342,7 @@ public class RemoterNNHA implements Remoter {
 		StringResponseHandler stringResponseHandler = new StringResponseHandler();
 		handlers.add(new StringDecoder());
 		handlers.add(stringResponseHandler);
-		NNStateListener nnListener = new NNStateListener(barrier, zkHosts);
+		NNStateListener nnListener = new NNStateListener(this.clusterName, barrier, zkHosts);
 		new Thread(nnListener).start();
         
 		try {
@@ -380,9 +381,9 @@ public class RemoterNNHA implements Remoter {
 		} catch (ConnectException e) {
           logger.error(e.getMessage(), e); 
 		}
-		HAUtil.setActiveAgentHost(agent.getHost());
-		HAUtil.setActiveAgentPort(agent.getPort());
-		HAUtil.setActiveNNHost(ZKUtils.getActiveNNHost(zkHosts));
+		HAUtil.setActiveAgentHost(this.clusterName, agent.getHost());
+		HAUtil.setActiveAgentPort(this.clusterName, agent.getPort());
+		HAUtil.setActiveNNHost(this.clusterName, ZKUtils.getActiveNNHost(zkHosts));
 	}
 	
 	/**
@@ -391,7 +392,7 @@ public class RemoterNNHA implements Remoter {
 	 * @return true, if is NN changed
 	 */
 	private boolean isNNChanged() {
-		return !HAUtil.getActiveNNHost().equals(ZKUtils.getActiveNNHost(zkHosts));
+		return !HAUtil.getActiveNNHost(this.clusterName).equals(ZKUtils.getActiveNNHost(zkHosts));
 	}
 
 	/**
@@ -449,7 +450,7 @@ public class RemoterNNHA implements Remoter {
 			// send self destruct command to currently active agent so that it
 			// relinquishes leadership
 			shutdownAgent();
-			while (agent != null && HAUtil.compareAgent(agent.getHost(), agent.getPort())) {
+			while (agent != null && HAUtil.compareAgent(this.clusterName, agent.getHost(), agent.getPort())) {
 				logger.debug("Blocking till a new leader agent is elected...");
 				agent = ZKUtils.getLeaderAgentfromZK(zkHosts, haConf);
 				Thread.sleep(1 * 1000);
@@ -502,7 +503,7 @@ public class RemoterNNHA implements Remoter {
 		HeartbeatReceptionHandler hbHandler = new HeartbeatReceptionHandler();
 		handlers.add(hbHandler);
 		handlers.add(objectResponseHandler);
-		NNStateListener nnListener = new NNStateListener(barrier, zkHosts);
+		NNStateListener nnListener = new NNStateListener(this.clusterName, barrier, zkHosts);
 		new Thread(nnListener).start();
 		
 		CommandZNodesUtility czu = writeCommandToZK(commandWritable);
@@ -739,6 +740,8 @@ public class RemoterNNHA implements Remoter {
 	 */
 	private static class NNStateListener implements Runnable {
 
+		private String clusterName;
+		
 		/** The stop. */
 		private volatile boolean stop;
 
@@ -760,7 +763,8 @@ public class RemoterNNHA implements Remoter {
 		 * @param barrier the barrier
 		 * @param zkHosts the zk hosts
 		 */
-		public NNStateListener(CyclicBarrier barrier, String[] zkHosts) {
+		public NNStateListener(String clusterName, CyclicBarrier barrier, String[] zkHosts) {
+			this.clusterName = clusterName;
 			this.nnZnodeRetries = 2;
 			this.barrier = barrier;
 			this.zkHosts = zkHosts;
@@ -771,7 +775,7 @@ public class RemoterNNHA implements Remoter {
 		 */
 		@Override
 		public void run() {
-			String currentlyActiveNN = HAUtil.getActiveNNHost();
+			String currentlyActiveNN = HAUtil.getActiveNNHost(this.clusterName);
 			int failCount = 0;
 			while (!stop) {
 				if (!ZKUtils.getActiveNNHost(zkHosts).equals(currentlyActiveNN)) {

@@ -32,10 +32,6 @@ import org.jumbune.utils.beans.LogLevel;
  * This class is the bean for the json file.
  */
 public class JobConfig implements Config {
-	
-	/** The Constant CONSOLELOGGER. */
-	public static final Logger CONSOLELOGGER = LogManager
-			.getLogger("EventLogger");
 
 	/** The Constant logger. */
 	private static final Logger LOGGER = LogManager.getLogger(JobConfig.class);
