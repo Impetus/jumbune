@@ -18,7 +18,6 @@ import org.jumbune.common.utils.JMXUtility;
 import org.jumbune.monitoring.beans.JMXDeamons;
 import org.jumbune.monitoring.utils.ProfilerJMXDump;
 import org.jumbune.web.services.ClusterAnalysisService;
-import org.jumbune.web.utils.StatsManager;
 import org.jumbune.web.utils.WebConstants;
 
 import com.google.gson.Gson;
@@ -176,45 +175,46 @@ public class WorkersUpdaterProcess extends Thread implements BackgroundProcess {
 			liveNodes.add(e.getValue().get(INFO_ADDR).split(REGEX)[0]);
 		}
 		
+		if (liveNodes.isEmpty()) {
+			return;
+		}
+		
 		List<String> currentNodes = this.cluster.getWorkers().getHosts();
 		
-		// Checking if the nodes have been changed
-		if (currentNodes != null && !currentNodes.isEmpty() && !liveNodes.equals(currentNodes)) {
-			
-			// Updating StatsManager class
-			StatsManager statsManager = StatsManager.getInstance();
-			for (String node : currentNodes) {
-				if (node != null && !node.trim().isEmpty() && !liveNodes.contains(node)) {
-					statsManager.removeNode(node);
-				}
-			}
-			
-			// Update nodes list in cluster object
-			this.cluster.getWorkers().setHosts(liveNodes);
-			
-			// Update cluster object in ClusterAnalysisService class
-			ClusterAnalysisService.updateClusterCache(clusterName, this.cluster);
-			
-			// Creating path for saving cluster json where it has to be saved
-			String jsonFilePath = getClusterJsonDir() + File.separator + cluster.getClusterName() + WebConstants.JSON_EXTENSION;
-			
-			// Finally saving the updated cluster json
-			try {
-				PrintWriter out = new PrintWriter(jsonFilePath);
-				out.print(gson.toJson(this.cluster));
-				out.flush();
-				out.close();
-			} catch (IOException e) {
-				LOGGER.error("Unable to update cluster worker nodes", e.getMessage());
-				totalErrors++;
-			}
-			
-			if (this.cluster.isJmxPluginEnabled()) {
-				JMXUtility utility = new JMXUtility();
-				utility.sendJmxAgentToAllDaemons(cluster);
-				utility.establishConnectionToJmxAgent((ClusterDefinition) cluster);
-			}
+		if (currentNodes != null && areBothListsSame(currentNodes, liveNodes)) {
+			return;
 		}
+		
+		// Update nodes list in cluster object
+		this.cluster.getWorkers().setHosts(liveNodes);
+		
+		// Update cluster object in ClusterAnalysisService class
+		ClusterAnalysisService.updateClusterCache(clusterName, this.cluster);
+		
+		// Creating path for saving cluster json where it has to be saved
+		String jsonFilePath = getClusterJsonDir() + File.separator + cluster.getClusterName() 
+				+ WebConstants.JSON_EXTENSION;
+		
+		// Finally saving the updated cluster json
+		try {
+			PrintWriter out = new PrintWriter(jsonFilePath);
+			out.print(gson.toJson(this.cluster));
+			out.flush();
+			out.close();
+		} catch (IOException e) {
+			LOGGER.error("Unable to update cluster worker nodes", e.getMessage());
+			totalErrors++;
+		}
+		
+		if (this.cluster.isJmxPluginEnabled()) {
+			JMXUtility utility = new JMXUtility();
+			utility.sendJmxAgentToAllDaemons(cluster);
+			utility.establishConnectionToJmxAgent((ClusterDefinition) cluster);
+		}
+	}
+	
+	private boolean areBothListsSame(List<String> list1, List<String> list2) {
+		return list1.containsAll(list2) && list2.containsAll(list1);
 	}
 	
 	private String getClusterJsonDir() {

@@ -4,6 +4,7 @@ cluster-monitoring/.classpath
 cluster-monitoring/.project
 cluster-monitoring/.settings/
 cluster-monitoring/target/
+common/JumbuneLogs/
 common/.classpath
 common/.project
 common/.settings/
