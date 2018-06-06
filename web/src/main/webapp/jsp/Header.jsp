@@ -1,6 +1,6 @@
 <div id="headerBox">
 	<div class="logoBox">
-	<jsp:include page="Meta.jsp" />
+	<!-- <jsp:include page="Meta.jsp" /> -->
 		<a href="/Home"><img src="${pageContext.servletContext.contextPath}/skins/images/logo_text.png" alt="Jumbune Logo"/></a>
 	</div>
 
