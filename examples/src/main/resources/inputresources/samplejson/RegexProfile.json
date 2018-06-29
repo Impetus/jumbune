@@ -1,0 +1,101 @@
+{
+    "classpath": {
+        "jumbuneSupplied": null,
+        "userSupplied": {
+            "excludes": null,
+            "files": null,
+            "folders": null,
+            "source": -1
+        }
+    },
+    "clusterTuning": {
+        "availableMapTasks": 0,
+        "availableReduceTasks": 0,
+        "compressTheJobOutput": null,
+        "hadoopPerformance": null,
+        "incrementalInterval": null,
+        "isFairSchedulerEnabled": "TRUE",
+        "jobInputPath": null,
+        "objective": "REDUCE_TIME_OF_JOB_EXECUTION",
+        "outputFolder": null,
+        "useStandardWordCountJar": "FALSE"
+    },
+    "dataValidation": null,
+    "debugAnalysis": "FALSE",
+    "debuggerConf": {
+        "fieldSeparator": null,
+        "hDFSSourcePath": null,
+        "logLevel": {
+            "instrumentRegex": "FALSE",
+            "instrumentUserDefValidate": "TRUE"
+        },
+        "maxIfBlockNestingLevel": 0,
+        "recordSeparator": null,
+        "sampleToggle": null,
+        "useEntireWorkingSet": null
+    },
+    "distributedHDFSPath": null,
+    "doNotInstrument": null,
+    "enableDataValidation": "FALSE",
+    "enableSqoop": "FALSE",
+    "enableStaticJobProfiling": "TRUE",
+    "hadoopJobProfile": "TRUE",
+    "hdfsInputPath": null,
+    "includeClassJar": "TRUE",
+    "inputFile": "examples-regexprofiling-0.9-SNAPSHOT.jar",
+    "jobs": [
+        {
+            "jobClass": null,
+            "name": "RegexValidator",
+            "parameters": "/Jumbune/example/regex /Jumbune/example/output51 ^[^d].*"
+        }
+    ],
+    "jumbuneJobName": "RegexProfileSample",
+    "jumbuneScheduleTaskTiming": null,
+    "mapperSuperClasses": null,
+    "master": {
+        "agentPort": "5567",
+        "dsaFile": null,
+        "host": "192.168.49.74",
+        "jobTrackerJmxPort": "5680",
+        "location": null,
+        "nameNodeJmxPort": "5677",
+        "receiveDirectory": null,
+        "rsaFile": "/home/impadmin/.ssh/id_rsa",
+        "user": "impadmin"
+    },
+    "partitionerSampleInterval": 0,
+    "profilingParams": {
+        "dataNodeJmxPort": null,
+        "jobTrackerJmxPort": null,
+        "mapers": "0-1",
+        "masterJmxPort": null,
+        "reducers": "0-1",
+        "statsInterval": 5000,
+        "taskTrackerJmxPort": null
+    },
+    "rExecutePath": null,
+    "reducerSuperClasses": null,
+    "regexValidations": [],
+    "sJumbuneHome": "/home/impadmin/tmp/jHome/",
+    "selfTuning": "FALSE",
+    "slaveParam": {
+        "dataNodeJmxPort": "5679",
+        "taskTrackerJmxPort": "5678"
+    },
+    "slaves": [
+        {
+            "enableHostRange": null,
+            "hostRangeFromValue": null,
+            "hostRangeToValue": null,
+            "hosts": [
+                "192.168.49.74"
+            ],
+            "location": null,
+            "unavailableHosts": null,
+            "user": "impadmin"
+        }
+    ],
+    "sqoopBean": null,
+    "userValidations": []
+}

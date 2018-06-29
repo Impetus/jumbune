@@ -22,5 +22,23 @@ public interface RemotingMethodConstants {
 	
 	/** The convert host name to ip. */
 	String CONVERT_HOST_NAME_TO_IP="convertHostNameToIP";
+	
+	/** The send jumbune jmx agent to all nodes. */
+	String SEND_JUMBUNE_JMX_AGENT_TO_ALL_NODES = "sendJumbuneJmxServerToAllNodes";
+	
+	/** The process awk command to get max used memory. */
+	String PROCESS_AWK_COMMAND_TO_GET_MAX_USED_MEMORY = "getMaxUtilisationMemoryFromAwkCommand";
+
+	String EXECUTE_REMOTE_COMMAND_AS_SUDO = "executeRemoteCommandAsSudo";
+
+	String ESTABLISH_CONN_TO_JMX_AGENTS = "establishConnToJMXAgents";
+	
+	String GET_DAEMON_PROCESS_ID = "getDaemonProcessId";
+	
+	String SHUT_DOWN_JMX_AGENTS = "shutDownJMXAgents";
+	
+	String GET_HADOOP_CLUSTER_TIME_MILLIS = "getHadoopClusterTimeMillis";
+	
+	String RUN_SCP_ACROSS_NODES= "runScpAcrossNodes" ;
 
 }

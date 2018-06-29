@@ -1,0 +1,155 @@
+{
+    "ClusterProfiling": {
+        "queueStats": [
+            {
+                "queueName": "QueueStats", 
+                "currentCapacity": 14.2, 
+                "maximumCapacity": 55.2, 
+                "capacity": 12.03, 
+                "averageWaitingTime": 67.50
+            }, 
+            {
+                "queueName": "QueueStats1", 
+                "currentCapacity": 56, 
+                "maximumCapacity": 85.2, 
+                "capacity": 11.03, 
+                "averageWaitingTime": 85.25
+            },
+            {
+                "queueName": "QueueStats1", 
+                "currentCapacity": 30, 
+                "maximumCapacity": 40.2, 
+                "capacity": 18.03, 
+                "averageWaitingTime": 87.20
+            }
+        ], 
+        "rackAwareStats": {
+            "dataLocalJob": 2, 
+            "rackLocalJob": 12, 
+            "otherLocalJob": 12
+        },
+        "liveContainerStats": [
+            {
+                "capacity": "12",
+                "message": "Approx. mapper slots are available for the launch of memory size 512 MB"
+            },
+            {
+                "capacity": "14",
+                "message": "Approx. reducer slots are available for the launch of memory size 1024 MB"
+            }
+        ],
+        "effCapUtilizationStats": [
+            {
+                "allocatedMapMemory": 1234,
+                "usedMaxMapMemory": 55,
+                "allocatedReduceMemory": 432,
+                "usedMaxReduceMemory": 765,
+                "jobId": "432"
+            },
+            {
+                "allocatedMapMemory": 1234,
+                "usedMaxMapMemory": 78,
+                "allocatedReduceMemory": 42,
+                "usedMaxReduceMemory": 75,
+                "jobId": "854"
+            },
+            {
+                "allocatedMapMemory": 8542,
+                "usedMaxMapMemory": 85,
+                "allocatedReduceMemory": 874,
+                "usedMaxReduceMemory": 851,
+                "jobId": "896"
+            },
+            {
+                "allocatedMapMemory": 7452,
+                "usedMaxMapMemory": 62,
+                "allocatedReduceMemory": 875,
+                "usedMaxReduceMemory": 963,
+                "jobId": "8574"
+            },
+            {
+                "allocatedMapMemory": 2569,
+                "usedMaxMapMemory": 28,
+                "allocatedReduceMemory": 742,
+                "usedMaxReduceMemory": 896,
+                "jobId": "832"
+            },
+            {
+                "allocatedMapMemory": 8575,
+                "usedMaxMapMemory": 92,
+                "allocatedReduceMemory": 518,
+                "usedMaxReduceMemory": 765,
+                "jobId": "136"
+            }
+        ]
+    }, 
+    "HeatMap": {
+        "clusterId": "DC/127.0", 
+        "dataCenters": [
+            {
+                "id": "127.0", 
+                "clusterId": "DC/127.0", 
+                "racks": [
+                    {
+                        "rackId": "127.0.0", 
+                        "nodes": [
+                            {
+                                "nodeIp": "127.0.0.1", 
+                                "performance": "Bad"
+                            }, 
+                            {
+                                "nodeIp": "127.0.0.1", 
+                                "performance": "Bad"
+                            }
+                        ]
+                    }, 
+                    {
+                        "rackId": "127.0.0", 
+                        "nodes": [
+                            {
+                                "nodeIp": "127.0.0.1", 
+                                "performance": "Bad"
+                            }, 
+                            {
+                                "nodeIp": "127.0.0.1", 
+                                "performance": "Bad"
+                            }
+                        ]
+                    }
+                ]
+            }, 
+            {
+                "id": "127.0", 
+                "clusterId": "DC/127.0", 
+                "racks": [
+                    {
+                        "rackId": "127.0.0", 
+                        "nodes": [
+                            {
+                                "nodeIp": "127.0.0.1", 
+                                "performance": "Bad"
+                            }, 
+                            {
+                                "nodeIp": "127.0.0.1", 
+                                "performance": "Bad"
+                            }
+                        ]
+                    }, 
+                    {
+                        "rackId": "127.0.0", 
+                        "nodes": [
+                            {
+                                "nodeIp": "127.0.0.1", 
+                                "performance": "Bad"
+                            }, 
+                            {
+                                "nodeIp": "127.0.0.1", 
+                                "performance": "Bad"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    } 
+}

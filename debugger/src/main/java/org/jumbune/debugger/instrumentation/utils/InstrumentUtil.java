@@ -734,34 +734,35 @@ public final class InstrumentUtil {
 	 */
 	public static byte[] getBytesFromFile(File inputFile)
 			throws IOException {
-		InputStream inputStream = new FileInputStream(inputFile);
-		long length = inputFile.length();
+		try (InputStream inputStream = new FileInputStream(inputFile)) {
+			long length = inputFile.length();
 
-		// Create the byte array to hold the data
-		byte[] outputBytes = new byte[(int) length];
+			// Create the byte array to hold the data
+			byte[] outputBytes = new byte[(int) length];
 
-		// Read in the bytes
-		int offset = 0;
-		int numRead = 0;
-		if(offset < outputBytes.length){
-			numRead = inputStream.read(outputBytes, offset,
-					outputBytes.length - offset);
-			while(offset < outputBytes.length && numRead >= 0){
-				offset += numRead;
+			// Read in the bytes
+			int offset = 0;
+			int numRead = 0;
+			if(offset < outputBytes.length){
 				numRead = inputStream.read(outputBytes, offset,
 						outputBytes.length - offset);
+				while(offset < outputBytes.length && numRead >= 0){
+					offset += numRead;
+					numRead = inputStream.read(outputBytes, offset,
+							outputBytes.length - offset);
+				}
 			}
-		}
 
-		// Ensure all the bytes have been read in
-		if (offset < outputBytes.length) {
-			throw new IOException("Could not completely read file "
-					+ inputFile.getName());
-		}
+			// Ensure all the bytes have been read in
+			if (offset < outputBytes.length) {
+				throw new IOException("Could not completely read file "
+						+ inputFile.getName());
+			}
 
-		// Close the input stream and return bytes
-		inputStream.close();
-		return outputBytes;
+			// Close the input stream and return bytes
+			inputStream.close();
+			return outputBytes;
+		}
 	}
 
 	/**

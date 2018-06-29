@@ -1,0 +1,181 @@
+<div class="container" ng-init="dqtObj.scheduleJob='specifyTime';init()">
+	<div jumbune-header=""></div>
+	<div class="inner-container">
+		<div class="alert" ng-class="saveSuccess == true ?  'alert-success' : 'alert-danger'" ng-show="displayBlock">{{blockMessage}}</div>
+		<h2>Define Data Quality</h2>
+		<div class="col-md-12 tab-container main-container">
+			<p><strong>Note:</strong> Tab collects map-reduce job jar and dependent jar information.</p>
+			<form autocomplete="off" name="DqtForm" novalidate>
+				<div class="form-group row my-tool-tip">
+					<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Schedule Job</label>
+					<div>
+						<label class="option-label">
+							<input type="radio" name="optionsRadios" value="specifyTime" ng-model="dqtObj.scheduleJob">
+							<span>Specify Time</span></label>
+						<label class="option-label">
+							<input type="radio" name="optionsRadios" value="cronExpression" ng-model="dqtObj.scheduleJob">
+							<span>Cron Expression</span></label>
+					</div>
+				</div>
+				<div ng-show="dqtObj.scheduleJob =='specifyTime'">
+					<div class="form-group row my-tool-tip">
+						<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Repeat every
+							<s>*</s>
+						</label>
+						<div>
+							<select name="schedulingEvent" style="width:auto" name="schedulingEvent" ng-model="dqtObj.schedulingEvent" ng-change="resetInterval()" ng-required="dqtObj.scheduleJob=='specifyTime'">
+								<option value="" selected disabled>Select Scheduling Event</option>
+								<option value="MINUTE">Minute</option>
+								<option value="HOURLY">Hour</option>
+								<option value="DAILY">Day</option>
+							</select>&nbsp;
+							<select name="interval" style="width:auto" name="interval" ng-model="dqtObj.interval" ng-required="dqtObj.scheduleJob=='specifyTime'">
+								<option value="" selected disabled>Select Interval</option>
+								<option ng-repeat="num in repeatOptions[dqtObj.schedulingEvent]">{{num}}</option>
+							</select>
+						</div>
+					</div>
+					<div class="form-group row my-tool-tip" ng-show="dqtObj.schedulingEvent == 'DAILY'">
+						<label class="col-md-5" style="text-align:right;color:#747474;font-weight:300">Time
+							<s>*</s>
+						</label>
+						<div>
+							<!-- <input type="time" ng-model="dqtObj.time" class="clockpicker"/> -->
+							<div id="clockID" class="input-group clockpicker" data-placement="right" data-align="top" data-autoclose="true">
+							    <input type="text" class="form-control" ng-model="dqtObj.time" style="width:65px !important; border-radius:0px !important">
+							    <span class="input-group-addon" style="width:45px !important; border-radius:0px !important">
+							       <i class="fa fa-clock-o" aria-hidden="true"></i>
+							    </span>
+							</div>
+							<!-- <p class="input-group">
+						    <input type="text" class="form-control" time-picker="HH:mm" ng-model="dqtObj.time" is-open="isOpen"  />
+						    <span class="input-group-btn">
+						        <button type="button" class="btn btn-default" ng-click="openCalendar($event, prop)"><i class="fa fa-calendar"></i></button>
+						    </span>
+						</p> -->
+						</div>
+					</div>
+				</div>
+				<div class="form-group row my-tool-tip" ng-show="dqtObj.scheduleJob == 'cronExpression'">
+					<label style="text-align:right;color:#747474;font-weight:300" class="col-md-5">Cron Expression
+						<s>*</s>
+					</label>
+					<div>
+						<input type="text" name="cronExpression" ng-model="dqtObj.cronExpression" ng-required="dqtObj.scheduleJob=='cronExpression'" ng-class="{'has-error':(DqtForm.cronExpression.$invalid && !DqtForm.cronExpression.$pristine && DqtForm.cronExpression.blur) || (DqtForm.cronExpression.$invalid && submitForm)}">
+						<div class="error" ng-show="DqtForm.cronExpression.$dirty && DqtForm.cronExpression.$invalid">
+						<span class="col-md-5"></span>
+							<span class="error" ng-show="DqtForm.cronExpression.$error.required">Please enter cron expression value.</span>
+						</div>
+					</div>
+				</div>
+				<div class="form-group row my-tool-tip" ng-show="dqtObj.scheduleJob!=''">
+					<label style="text-align:right;color:#747474;font-weight:300" class="col-md-5">Tuple Record Separator
+						<s>*</s>
+					</label>
+					<div>
+						<input style="width: 50px" type="text" name="tupleRS" ng-model="dqtObj.tupleRS" required ng-class="{'has-error':(DqtForm.tupleRS.$invalid && !DqtForm.tupleRS.$pristine && DqtForm.tupleRS.blur) || (DqtForm.tupleRS.$invalid && submitForm)}">
+						<div class="error" ng-show="DqtForm.tupleRS.$dirty && DqtForm.tupleRS.$invalid">
+						<span class="col-md-5"></span>
+							<span class="error" ng-show="DqtForm.tupleRS.$error.required">Please enter tuple record separator value.</span>
+						</div>
+					</div>
+				</div>
+				<div class="form-group row my-tool-tip" ng-show="dqtObj.scheduleJob!=''">
+					<label style="text-align:right;color:#747474;font-weight:300" class="col-md-5">Tuple Field Separator
+						<s>*</s>
+					</label>
+					<div>
+						<input style="width: 50px" type="text" name="tupleFS" ng-model="dqtObj.tupleFS" required ng-class="{'has-error':(DqtForm.tupleFS.$invalid && !DqtForm.tupleFS.$pristine && DqtForm.tupleFS.blur) || (DqtForm.tupleFS.$invalid && submitForm)}">
+						<div class="error" ng-show="DqtForm.tupleFS.$dirty && DqtForm.tupleFS.$invalid">
+						<span class="col-md-5"></span>
+							<span class="error" ng-show="DqtForm.tupleFS.$error.required">Please enter tuple field separator value.</span>
+						</div>
+					</div>
+				</div>
+				<div class="form-group row my-tool-tip" ng-show="dqtObj.scheduleJob!=''">
+					<label style="text-align:right;color:#747474;font-weight:300" class="col-md-5">No. of Fields
+						<s>*</s>
+					</label>
+					<div>
+						<input style="width: 50px" type="text" name="fields" ng-model="fieldCount" class="num-input" ng-class="{'has-error': hasError('fields')}" required jumbune-only-digits jumbune-num-range-validate="{min:1, max:50}" />
+						<a ng-click="!hasError('fields') && generateFields()" data-grid="#/add-data-quality" href="javascript:void(0)">
+							<i class="fa fa-check  circle-icon green-icon" ng-class="{disable: hasError('fields')}"></i>
+						</a>
+						<div class="error" ng-show="hasError('fields')">
+						<span class="col-md-5"></span>
+							<span class="error">Please enter no of fields (1 - 50).</span>
+						</div>
+					</div>
+				</div>
+				<table class="table table-striped dtl-tbl">
+					<thead>
+						<tr>
+							<th><input style="margin-bottom: 3px;" type="checkbox" ng-model="selectAll.checkboxes" ng-change="checkAll()"/><span style="margin-left: 5px;">Enable Row</span></th>
+							<th>Field Number</th>
+							<th>Null Check</th>
+							<th>Field Type</th>
+							<th>RegEx</th>
+						</tr>
+					</thead>
+					<!-- <tbody>
+						<tr ng-repeat="arr in fieldArray">
+							<td>
+								<input type="checkbox" name="isEnableRow" ng-model="dqtObj.isEnableRow[arr]">
+							</td>
+							<td ng-model="fieldValidationRules[$index].fieldNumber">{{arr+1}}</td>
+							<td>
+								<select ng-disabled="!dqtObj.isEnableRow[arr]" ng-model="fieldValidationRules[$index].nullCheck" name="nullCheck" ng-options="o.value as o.label for o in dataProfilingOperandArr">
+									<option value="">Please Select</option>
+								</select>
+							</td>
+							<td>
+								<select ng-disabled="!dqtObj.isEnableRow[arr] || fieldValidationRules[$index].nullCheck == 'mustBeNull'" ng-model="fieldValidationRules[$index].dataType" name="dataType" ng-options="o.value as o.label for o in dataTypeArr">
+									<option value="">Please Select</option>
+									<option>int</option>
+									<option>float</option>
+									<option>long</option>
+									<option>double</option>
+								</select>
+							</td>
+							<td>
+								<input ng-disabled="!dqtObj.isEnableRow[arr] || fieldValidationRules[$index].nullCheck == 'mustBeNull'" type="text" name="reg" ng-model="fieldValidationRules[$index].regex">
+							</td>
+						</tr>
+					</tbody> -->
+					<tbody>
+                        <tr ng-repeat="field in fields track by $index">
+                            <td>
+                                <input type="checkbox" ng-model="field.enable" />
+                            </td>
+                            <td>
+                                <span ng-model="field.fieldNumber">{{field.fieldNumber}}</span> 
+                                  <!--  <span ng-model="dataValidationTab.fieldNumber[0] = $index+1">{{$index+1}}</span>  -->
+                            </td>
+                            <td>
+                                <!-- <select ng-disabled="!field.enable" ng-model="field.nullCheck" ng-options="nullCheck as nullCheck for nullCheck in dataValidationTab.nullCheckList"> -->
+                                <select ng-disabled="!field.enable" ng-model="field.nullCheck" ng-options="nullCheck.value as nullCheck.label for nullCheck in nullCheckList">
+                                    <option value="">Please Select</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select ng-disabled="!field.enable || field.nullCheck == 'mustBeNull'" ng-model="field.dataType" ng-options="fieldType.value as fieldType.label for fieldType in fieldTypeList">
+                                    <option value="">Please Select</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" ng-disabled="!field.enable || field.nullCheck == 'mustBeNull'" ng-model="field.regex"/>
+                            </td>
+                        </tr>
+                    </tbody>
+				</table>
+				<div class="textCenter">
+					<button type="button" class="btn btn-default btnLink" ng-click="cancel()">Cancel</button>
+					<button type="button" class="btn btn-default" ng-click="back()">Back</button>
+					<button type="submit" ng-disabled="!DqtForm.$valid" ng-click="save()" id="formDisableOneClick" class="btn btn-primary">Submit</button>
+				</div>
+			</form>
+		</div>
+		<div class="clear"></div>
+	</div>
+	<!-- info-holder -->
+</div>

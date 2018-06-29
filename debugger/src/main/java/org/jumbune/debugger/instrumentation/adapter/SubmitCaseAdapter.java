@@ -73,7 +73,7 @@ public class SubmitCaseAdapter extends BaseAdapter {
 					if (min.name.equals(EnumJobSubmitMethods.JOB_SUBMIT
 							.toString())) {
 
-						LOGGER.info(MessageFormat.format(
+						LOGGER.debug(MessageFormat.format(
 								InstrumentationMessageLoader
 										.getMessage(MessageConstants.JOB_SUBMISSION_FOUND),
 								getClassName() + "##" + mn.name));
@@ -82,7 +82,7 @@ public class SubmitCaseAdapter extends BaseAdapter {
 
 						if (min.owner.equals(EnumJobSubmitMethods.JOB_SUBMIT
 								.getOwner().getInternalName())) {
-							LOGGER.info(MessageFormat.format(
+							LOGGER.debug(MessageFormat.format(
 									InstrumentationMessageLoader
 											.getMessage(MessageConstants.LOG_OWNER_IS_JOB),
 									getClassName() + "##" + mn.name));

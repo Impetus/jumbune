@@ -13,10 +13,11 @@ import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.job.Config;
-import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.ConfigurationUtil;
 import org.jumbune.utils.exception.JumbuneException;
+import org.jumbune.utils.exception.JumbuneRuntimeException;
 
 /**
  * This class is used for creating new schedulers. This class provides various
@@ -31,15 +32,8 @@ public abstract class Scheduler {
 	private static final String NEW_LINE = "\n";
 	private static final Logger LOGGER = LogManager.getLogger(Scheduler.class);
 	private static final File CURRENT_DIR = new File(".");
-	private static final String JUMBUNE_HOME;
-
-	static {
-		JUMBUNE_HOME = (new StringBuilder()).append(JobConfig.getJumbuneHome())
-				.append(File.separator).toString();
-	}
 
 	protected Scheduler() {
-		
 	}
 
 	/**
@@ -96,13 +90,52 @@ public abstract class Scheduler {
 				try {
 					br.close();
 				} catch (IOException e) {
-					LOGGER.error("could not close the cron file input stream ",
-							e);
+					LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));
 					throw new JumbuneException(e.getMessage());
 				}
 			}
 		}
 	}
+	
+	
+	public void deleteJobResult(String directoryPath){
+		File filePath = new File(directoryPath);
+		if(filePath.isDirectory()){
+			 
+    		//directory is empty, then delete it
+    		if(filePath.list().length==0){
+    			
+    			filePath.delete();
+    		   
+    			
+    		}else{
+    			
+    		   //list all the directory contents
+        	   String files[] = filePath.list();
+     
+        	   for (String temp : files) {
+        	      //construct the file structure
+        	      File fileDelete = new File(filePath, temp);
+        	      //recursive deleyte
+        		 deleteJobResult(fileDelete.toString());
+        	   }
+        		
+        	   //check the directory again, if empty then delete it
+        	   if(filePath.list().length==0){
+        		   filePath.delete();
+        	    }
+    		}
+    		
+    	}else{
+    		//if file, then delete it
+    		filePath.delete();
+    		
+    	}
+    }
+			
+
+		
+	
 
 	/**
 	 * It will return the input stream of crontab file of the particular user.
@@ -128,11 +161,11 @@ public abstract class Scheduler {
 			}
 		}catch (InterruptedException e){
 			LOGGER.error(
-					"Unable to wait for command response  ", e);
+					JumbuneRuntimeException.throwInterruptedException(e.getStackTrace()));
 		}
 		catch (IOException e) {
 			LOGGER.error(
-					"Could not read original crontab file for modifying it ", e);
+					JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));
 		}
 		return null;
 	}
@@ -145,20 +178,22 @@ public abstract class Scheduler {
 	 */
 	protected void writeLatestCronTabToFile(String cronInfo) {
 		File jumbuneCronFile = new File((new StringBuilder())
-				.append(JUMBUNE_HOME).append("JumbuneModifiedCron").toString());
+				.append(JumbuneInfo.getHome()).append("JumbuneModifiedCron").toString());
 		BufferedWriter outobj = null;
 		try {
 			FileWriter fstream = new FileWriter(jumbuneCronFile);
 			outobj = new BufferedWriter(fstream);
 			outobj.write(cronInfo);
+			outobj.close();
 		} catch (IOException e) {
-			LOGGER.error("Error while write info to file ", e);
-		}finally{
+			LOGGER.error(
+					JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));
 			try {
 				if (outobj != null)
 					outobj.close();
 			} catch (IOException ioe) {
-				LOGGER.error("Unable to close the writable object connection ",ioe);
+				LOGGER.error(
+						JumbuneRuntimeException.throwUnresponsiveIOException(ioe.getStackTrace()));
 			}
 		}
 	}
@@ -170,7 +205,7 @@ public abstract class Scheduler {
 	protected void addUpdatedFileToCron() {
 		List<String> commandList = new ArrayList<String>();
 		commandList.add(CRONTAB_COMMAND);
-		commandList.add((new StringBuilder()).append(JUMBUNE_HOME)
+		commandList.add((new StringBuilder()).append(JumbuneInfo.getHome())
 				.append("JumbuneModifiedCron").toString());
 
 		ProcessBuilder launch = new ProcessBuilder();
@@ -179,7 +214,8 @@ public abstract class Scheduler {
 		try {
 			launch.start();
 		} catch (IOException e) {
-			LOGGER.error("Exception while updating cron file ", e);
+			LOGGER.error(
+					JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));
 		}
 	}
 
@@ -242,7 +278,8 @@ public abstract class Scheduler {
 			String scheduleJobScriptDestLoc) throws IOException,
 			JumbuneException {
 		// Copy the scheduling execute script in this folder
-		InputStream schedulingScriptIS = new FileInputStream(new File(scriptPath));
+		InputStream schedulingScriptIS = new FileInputStream(new File(
+				(String) (scriptPath)));
 
 		InputStreamReader isReader = new InputStreamReader(schedulingScriptIS);
 		BufferedReader br = new BufferedReader(isReader);
@@ -259,22 +296,18 @@ public abstract class Scheduler {
 					schedulerScripBuilder.append(textinLine);
 					schedulerScripBuilder.append(NEW_LINE);
 				} catch (IOException e1) {
-					LOGGER.error("Unable to read executionScript file from source ",e1);
+					LOGGER.error(
+							JumbuneRuntimeException.throwUnresponsiveIOException(e1.getStackTrace()));
 				}
 			}
 		} finally {
 			if (br != null) {
-				try{
-					br.close();
-				}catch(IOException ex){
-					LOGGER.error("Unable to read executionScript file from source ",ex);
-				}
+				br.close();
 			}
 		}
 		String scriptWord = schedulerScripBuilder.toString().replaceAll(
-				"<JUMBUNE.HOME>", JobConfig.getJumbuneHome());
+				"<JUMBUNE.HOME>", JumbuneInfo.getHome());
 		String javaHome = System.getenv("JAVA_HOME");
-		LOGGER.info("java home " + javaHome);
 		scriptWord = scriptWord.replaceAll("<JAVA.HOME>", javaHome);
 
 		ConfigurationUtil.writeToFile(scheduleJobScriptDestLoc, scriptWord,

@@ -1,47 +1,42 @@
 package org.jumbune.remoting.common;
 
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
 import java.security.Key;
-import java.security.NoSuchAlgorithmException;
-
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.xml.bind.DatatypeConverter;
 
 public class StringUtil {
 
 	static byte[] encodedKey = {-104, 0, 40, 61, -100, -9, -66, -103, 109, -1, -39, -43, 90, 42, 110, 47};
 	
-	public static String getEncrypted(String plainText) {
-		Cipher cipher = null;
-	    byte[] encryptedTextBytes = null;
+	public static String getEncrypted(String plainText) throws Exception{
 		try {
-			cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+			if(plainText == null || plainText.length()==0){
+				throw new Exception("Found unacceptable text which trying to encrypt");
+			}
+			Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
 			cipher.init(Cipher.ENCRYPT_MODE, new CustomKey());
-			encryptedTextBytes = cipher.doFinal(plainText.getBytes("UTF-8"));
-		} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException | UnsupportedEncodingException e1) {
-			e1.printStackTrace();
-		}        
-	    return DatatypeConverter.printBase64Binary(encryptedTextBytes);
+			byte[] encryptedTextBytes = cipher.doFinal(plainText.getBytes("UTF-8"));      
+			return DatatypeConverter.printBase64Binary(encryptedTextBytes);
+		} catch (Exception e) {
+			throw new Exception("Can't convert plaintext to encryptedtext", e);
+		}
 	}
 
-	public static String getPlain(String encryptedText) {
-		byte[] encryptedTextBytes = DatatypeConverter.parseBase64Binary(encryptedText);
-	    Cipher cipher;
-	    byte[] decryptedTextBytes = null;
+	public static String getPlain(String encryptedText) throws Exception{
 		try {
-			cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-	       
-	    cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-	    cipher.init(Cipher.DECRYPT_MODE, new CustomKey());
-	    decryptedTextBytes = cipher.doFinal(encryptedTextBytes);
-		} catch (NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException | InvalidKeyException e) {
-			e.printStackTrace();
-		}	    
-	    return new String(decryptedTextBytes);	
+			if(encryptedText == null || encryptedText.length()==0){
+				throw new Exception("Found unacceptable text which trying to decrypt");
+			}
+			byte[] encryptedTextBytes = DatatypeConverter.parseBase64Binary(encryptedText);
+			Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+			cipher.init(Cipher.DECRYPT_MODE, new CustomKey());
+			byte[] decryptedTextBytes = cipher.doFinal(encryptedTextBytes);	    
+			return new String(decryptedTextBytes);
+		} catch (javax.crypto.IllegalBlockSizeException e) {
+			throw new Exception("Invalid encrypted text", e);
+		} catch (Exception e) {
+			throw new Exception("Can't convert encryptedtext to plaintext", e);
+		}
 	}
 
 	public static boolean emptyOrNull(String str){

@@ -1,0 +1,44 @@
+<div ng-controller="dataValidationControllerJSON"  class="container">
+    <div jumbune-header=""></div>
+    <form name="myForm">
+    <div class="inner-container debugger-tab">
+        <h2>JSON Validation</h2>
+                <div class="table-responsive ddv-table">
+                <table class="table table-striped dtl-tbl">
+
+                    <thead>
+                        <tr>
+                            <th>Key{{jsonData}}</th>
+                            <th>Data Type</th>
+                            <th>Null Check</th>
+                            <th>RegEx</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                    <tr>
+                        <tr ng-repeat="object in custom11">
+                            <td>
+                                {{object.key}}
+                            </td>
+                            <td>
+                                {{object.dataType}}
+                            </td>
+                            <td>
+                               <select ng-model="object.nullCheck" ng-options="nullCheck.value as nullCheck.label for nullCheck in nullCheckList">
+                                    <option value="">Please Select</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input name="regex" type="text" ng-disabled="object.nullCheck == 'canBeNull'" ng-model="object.regex"/>
+                            </td>
+                        </tr>
+                    </tbody> 
+                </table>
+                  <div jumbune-widget-form-buttons-three disable="myForm.$valid" cancel="cancel()" back="back()" next="next()"></div>
+            </div> 
+        
+        <div class="clear"></div>
+    </div>
+    </form>
+</div>

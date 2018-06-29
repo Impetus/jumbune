@@ -5,14 +5,12 @@
 	<parent>
 		<artifactId>jumbune</artifactId>
 		<groupId>org.jumbune</groupId>
-		<version>1.5.2-SNAPSHOT</version>
-		<relativePath>../pom.xml</relativePath>
+		<version>2.0</version>
 	</parent>
 
 	<groupId>org.jumbune</groupId>
 	<artifactId>jumbune-remoting</artifactId>
 	<version>${project.parent.version}</version>
-
 	<name>remoting</name>
 	<url>http://maven.apache.org</url>
 
@@ -20,31 +18,36 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 	<dependencies>
+ 	  	<dependency>
+			<groupId>org.jumbune</groupId>
+			<artifactId>jumbune-utils</artifactId>
+			<version>${build.number}</version>
+		</dependency>
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-handler</artifactId>
-			<version>4.0.20.Final</version>
+			<version>4.0.32.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-buffer</artifactId>
-			<version>4.0.20.Final</version>
+			<version>4.0.32.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-common</artifactId>
-			<version>4.0.20.Final</version>
+			<version>4.0.32.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-codec</artifactId>
-			<version>4.0.20.Final</version>
+			<version>4.0.32.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-transport</artifactId>
-			<version>4.0.20.Final</version>
-		</dependency>		
+			<version>4.0.32.Final</version>
+		</dependency>
 		<dependency>
 			<groupId>org.easymock</groupId>
 			<artifactId>easymock</artifactId>
@@ -56,13 +59,81 @@
 			<artifactId>jsch</artifactId>
 			<version>0.1.51</version>
 		</dependency>
-		</dependencies>
+		<dependency>
+			<groupId>commons-cli</groupId>
+			<artifactId>commons-cli</artifactId>
+			<version>1.4</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.curator</groupId>
+			<artifactId>curator-recipes</artifactId>
+			<version>2.9.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.curator</groupId>
+			<artifactId>curator-client</artifactId>
+			<version>2.9.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.curator</groupId>
+			<artifactId>curator-framework</artifactId>
+			<version>2.9.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>18.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.zookeeper</groupId>
+			<artifactId>zookeeper</artifactId>
+			<version>3.4.6</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+ 			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.google.protobuf</groupId>
+			<artifactId>protobuf-java</artifactId>
+			<version>2.5.0</version>
+					 <exclusions>
+						<exclusion>
+							<groupId>*</groupId>
+							<artifactId>*</artifactId>
+						</exclusion>
+					</exclusions>
+			</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>1.6.1</version>
+		</dependency>
 
+		<dependency>
+			<groupId>org.jumbune</groupId>
+			<artifactId>jumbune-remoting-jsch</artifactId>
+			<version>${build.number}</version>
+		</dependency>
+			<dependency>
+			<groupId>org.jumbune</groupId>
+			<artifactId>jumbune-remoting-common</artifactId>
+			<version>${build.number}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sun</groupId>
+			<artifactId>tools</artifactId>
+			<version>1.7</version>
+			<scope>system</scope>
+			<systemPath>${java.home}/../lib/tools.jar</systemPath>
+		</dependency>
+	</dependencies>
 	<build>
 		<plugins>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
-				<version>2.3</version>
+				<version>2.5</version>
 				<executions>
 					<execution>
 						<phase>prepare-package</phase>
@@ -76,17 +147,12 @@
 									<mainClass>org.jumbune.remoting.server.JumbuneAgent</mainClass>
 								</manifest>
 							</archive>
-
-
 							<!-- The filename of the assembled distribution file defualt ${project.build.finalName} -->
-
 							<appendAssemblyId>true</appendAssemblyId>
 							<!-- A list of descriptor files path to generate from -->
 							<descriptors>
 								<descriptor>remotingassembly.xml</descriptor>
-
 							</descriptors>
-
 						</configuration>
 					</execution>
 				</executions>
@@ -102,10 +168,8 @@
 						</goals>
 						<configuration>
 							<includes>
-								<include>org/jumbune/remoting/codecs**/*</include>
-								<include>org/jumbune/remoting/writable**/*</include>
 								<include>org/jumbune/remoting/client**/**/*</include>
-								<include>org/jumbune/remoting/common**/*</include>
+								<include>org/jumbune/remoting/jmx**/**</include>
 							</includes>
 						</configuration>
 					</execution>
@@ -117,24 +181,24 @@
 			<directory>src/main/resources</directory>
 			<filtering>true</filtering>
 		  </resource>
-	</resources>
+		</resources>
 	</build>
-	
+
 	<profiles>
 		<profile>
 			  <id>yarn</id>
 			  <properties>
 				<distribution>Yarn</distribution>
 			  </properties>
-		</profile>	
+		</profile>
 		<profile>
 			  <id>default</id>
 			<activation>
 				<activeByDefault>true</activeByDefault>
-			</activation>			  
+			</activation>
 			  <properties>
 				<distribution>Non-Yarn</distribution>
 			  </properties>
-		</profile>	    
+		</profile>
 	</profiles>
 </project>

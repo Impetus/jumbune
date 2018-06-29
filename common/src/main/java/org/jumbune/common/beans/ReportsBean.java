@@ -171,7 +171,6 @@ public class ReportsBean {
 	 *
 	 * @return the all completed reports
 	 */
-	@SuppressWarnings("unchecked")
 	public Map<String, String> getAllCompletedReports() {
 		Map<String, String> returnMap = new HashMap<String, String>();
 

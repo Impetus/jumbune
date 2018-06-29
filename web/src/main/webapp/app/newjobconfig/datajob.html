@@ -1,0 +1,69 @@
+<div class="container" ng-init="init()">
+		<header id="header" class="clearfix">
+			<div class="clearfix">
+				<strong class="logo"><a href="index.html"><img src="assets/images/logo.png" alt="image"></a></strong>
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+						<span class="sr-only">Toggle navigation</span>
+					</button>
+				</div>
+				<nav class="main-nav collapse navbar-collapse" id="bs-example-navbar-collapse-1"></nav><!-- main-nav -->
+			</div>
+		</header><!-- header -->
+		<div class="inner-container">
+			<h2>Data & Job Widget</h2>
+			<div class="col-md-12 main-container inner-container datajob">
+				<div class="row">
+					<div class="col-md-12" style="border-right: 1px solid rgba(0,0,0,.08);">
+						<table class="frm-tbl custom-tbl" style="width:100%">
+							<colgroup>
+								<col width="35%">
+								<col width="65%">
+							</colgroup>
+							<tbody>
+								
+							</tbody>
+						</table>
+						<div class="clear"></div>
+					</div>
+					<div class="col-md-12">
+						<table class="frm-tbl">
+							<tbody>
+								<tr ng-repeat="jcm in jobConfigMethods">
+									<td colspan="2">
+										<label class="option-label">
+											<input ng-click="getJobConfigMethod($index, $event.target.checked)" type="checkbox" ng-model="jcm.visible"/>
+											<span>{{jcm.name}}</span>
+										</label>
+									</td>
+								</tr>
+								<!-- <tr>
+									<td colspan="2"><label class="option-label"><input type="checkbox" ng-model="dataValidation" ng-click="enableControl($event.target.checked, 'ddv')" /><span>Data Validation</span></label></td>
+									
+								</tr> -->
+								<tr ng-show="dataQualities.length">
+									<td><label class="option-label"><input type="checkbox" ng-model="dataQuality"  ng-click="enableControl($event.target.checked, 'dq')" /><span>View Data Quality</span></label></td>
+										<td><select ng-model="dataQualityVal" ng-disabled="!dataQuality" ng-options="dqs.name as dqs.name for dqs in dataQualities">
+											<option value="">Please Select</option>
+										</select></td>
+								</tr>
+								<tr ng-show="dataProfilers.length">
+									<td><label class="option-label"><input type="checkbox" ng-model="dataProfiler" ng-click="enableControl($event.target.checked, 'dp')"/><span>View Data Profiler</span>
+										</label></td>
+										<td><select ng-model="dataProfilerVal" ng-disabled="!dataProfiler" ng-options="dps.name as dps.name for dps in dataProfilers">
+											<option value="">Please Select</option>
+										</select></td>
+									
+								</tr>
+							</tbody>
+						</table>
+						<div class="txt-rgt">
+							<button type="button" class="btn btn-default"  ng-click="cancel()">Back</button>
+							<button type="button" class="btn btn-primary"  ng-disabled="disableNextButton()" ng-click="goToJobWidget()">Next</button>
+						</div>
+						</div>
+					</div>
+					
+				</div>
+		</div>
+	</div>

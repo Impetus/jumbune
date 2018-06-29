@@ -24,7 +24,6 @@ public interface UtilitiesConstants {
 	String JUMBUNE_PROPERTY_RESOURCE = "jumbune-hadoop.properties";
 	String JUMBUNE_LOG_PATH_PROPERTY = "jumbuneLogPath";
 	String TYPE_FIELD = "Type";
-	String TOTAL_VIOLATION_FIELD = "TotoalViolation";
 	String NULL_CHECK = "Null Check";
 	String REGEX = "Regex";
 	String DATA_TYPE = "Data Type";

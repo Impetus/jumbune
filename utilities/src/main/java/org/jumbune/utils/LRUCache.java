@@ -29,7 +29,7 @@ public abstract class LRUCache<K, V> extends LinkedHashMap<K, V> {
     * @param cacheCapacity
     */	
 	public LRUCache(int capacity) {
-		super();
+		super(capacity,  0.75f, true);
 		this.capacity = capacity;
 	}
 	

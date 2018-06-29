@@ -6,8 +6,8 @@ public enum CommunityModule implements Module{
 
 	DATA_QUALITY(0),
 	PROFILING(1),
-	DEBUG_ANALYSER(2);
-	
+	DEBUG_ANALYSER(2),
+	CLUSTER_PROFILING(3);
 	
 	private int enumValue;
   

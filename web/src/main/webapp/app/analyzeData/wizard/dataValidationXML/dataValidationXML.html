@@ -1,0 +1,60 @@
+<div ng-controller="dataValidationControllerXML"  class="container">
+    <div jumbune-header=""></div>
+    <form name="myForm">
+    <div class="inner-container debugger-tab">
+        <h2>Add XML Constraints</h2>
+        <!--  <table class="frm-tbl">
+                <tbody>
+                    <tr>
+                        <td  width="55%"><label class="fieldLabel">HDFS Input Path<s>*</s></label></td>
+                        <td><input type="text" class="validate" name="hdfsInputPath" ng-model="hdfsInputPath" required/>
+                             <div class="error">
+                                <span class="error" ng-show="errorMessageShow">{{errorMessage}}</span>
+                            </div> 
+                        </td>
+                    </tr>
+                </tbody>
+            </table> -->
+                <div class="table-responsive ddv-table">
+                <table class="table table-striped dtl-tbl">
+                    <thead>
+                        <tr>
+                            <th>Xml Element</th>
+                             <th>Null Check</th>
+                            <th>RegEx</th>
+                            <th>Add Element</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                    
+                       <!--  <tr ng-repeat="object in custom11"> -->
+                       <tr ng-repeat="key in workerNodeHostArrCount  track by $index">
+                            <!-- <td><label class="fieldLabel">Xml Elemenet Name<s>*</s></label></td> -->
+                        <td><input type="text" class="validate" name="hdfsInputPath" placeholder="Xml Element Name" ng-model="workerNodeHostArrCount[$index].elementName"/>
+                        </td>
+                            <td>
+                               <select ng-model="workerNodeHostArrCount[$index].nullCheck" ng-options="nullCheck.value as nullCheck.label for nullCheck in nullCheckList">
+                                    <option value="">Please Select</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input name="regex" type="text" ng-disabled="workerNodeHostArrCount[$index].nullCheck == 'canBeNull'" ng-model="workerNodeHostArrCount[$index].regex"/>
+                            </td>
+                            <td><i ng-click="addWorkerNodeHost();" class="fa fa-plus circle-icon green-icon" ng-show="(!$index)"></i>
+                                                              <i class="fa fa-minus circle-icon red-icon" ng-click="removeWorkerNodeHost($index)" ng-show="$index"></i></td>
+                        </tr>
+                    </tbody> 
+                </table>
+                  
+                  <div class='textCenter'>
+                    <button type='button' class='btn btn-default btnLink' ng-click='cancel()'>Cancel</button>
+                    <button type='button' class='btn btn-default' ng-click='back()'>Back</button>
+                    <button type='button' class='btn btn-primary' ng-click='next()'>Submit</button>
+                </div>
+            </div> 
+        
+        <div class="clear"></div>
+    </div>
+    </form>
+</div>

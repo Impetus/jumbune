@@ -171,21 +171,17 @@
 				.text(yTipCnt*10);
 			yTipCnt++;
 		}
+		
 		xAxis.append("line")
 				.attr("x1", 0).attr("y1", 0).attr("x2", jvmConfig.svgW).attr("y2", 0)
 				.style("stroke", "#888").style("stroke-width", "0.5");
 		var tipCnt=0;
-		$.each(data.graphData.memUsage, function(tipKey, tipObj) {
+		$.each(data.graphData.cpuUsage, function(tipKey, tipObj) {
 			tipCnt++;
 		});
-		if(jvmGraph.getObjectSize(data.graphData.cpuUsage)>0){
-			var newTipCount = tipCnt;
-		}else{
-			var newTipCount = tipCnt*2;
-		}
-		var xLblDiff = jvmConfig.totalTime/newTipCount;
-		var j=1;	
-		for (; j<=newTipCount; j++) {
+		var xLblDiff = jvmConfig.totalTime/tipCnt;
+		var j=1;
+		for (; j<=tipCnt; j++) {
 			var tipPosPerc = (xLblDiff*100)/jvmConfig.totalTime;
 			var actTipPos = (tipPosPerc*jvmConfig.svgW)/100;
 			xAxis.append("line")
@@ -198,13 +194,6 @@
 				.style("font-size", "11px")
 				.text( Math.floor(xLblDiff*j) );
 		}
-	};
-	jvmGraph.getObjectSize = function(obj){
-	    var size = 0, key;
-	    for (key in obj) {
-	        if (obj.hasOwnProperty(key)) size++;
-	    }
-	    return size;
 	};
 	jvmGraph.showTooltip = function(tContent,tXpos,tYpos) {
 		//console.log(tContent+" X "+tXpos+" y "+tYpos);		
@@ -238,51 +227,33 @@
 	};
 	jvmGraph.createJVMCPULines = function(cpuObj, data) {
 		var yPoints = [];
-		var xPoints = [];
 		var tipCnt=0;
 		$.each(data.graphData.cpuUsage, function(tipKey, tipVal) {
 			yPoints.push(tipVal);
-			xPoints.push(parseFloat(tipKey));
 			tipCnt++;
 		});
-		createJVMLines(cpuObj, yPoints, tipCnt, jvmConfig.lineColors[0], xPoints, true);
+		createJVMLines(cpuObj, yPoints, tipCnt, jvmConfig.lineColors[0]);
 	};
 	
 	jvmGraph.createJVMMemoryLines = function(memoryObj, data) {
 		var yPoints = [];
-		var xPoints = [];
 		var tipCnt=0;
-		/*
-		Updating object refrence
-		*/		
 		$.each(data.graphData.memUsage, function(tipKey, tipVal) {
 			yPoints.push(tipVal);
-			xPoints.push(parseFloat(tipKey));
 			tipCnt++;
 		});
-		createJVMLines(memoryObj, yPoints, tipCnt, jvmConfig.lineColors[1], xPoints, true);
+		createJVMLines(memoryObj, yPoints, tipCnt, jvmConfig.lineColors[1]);
 	};
 	
-	jvmGraph.createJVMLines = function(obj, yPoints, tipCnt, fillColor, xPoints, flag) {
+	jvmGraph.createJVMLines = function(obj, yPoints, tipCnt, fillColor) {
 		var xLblDiff = jvmConfig.totalTime/tipCnt;
-		var pathD="";
+		var pathD=""; 
 		var j=1;
 		for (; j<=tipCnt; j++) {
-			if(typeof flag !=='undefined'){
-				var x1Perc = (xLblDiff*100)/jvmConfig.totalTime;
-//				x = (((x1Perc*jvmConfig.svgW)/100)*j)-(x1Perc);
-				/*
-				Changing the logic for plotting points on x-axis
-				*/
-				x = (jvmConfig.svgW/jvmConfig.totalTime)*(xPoints[j-1]);
-				y = (jvmConfig.svgWrapH*(100-yPoints[j-1]))/100;
-			}else{
-				var x1Perc = (xLblDiff*100)/jvmConfig.totalTime;
-				x = ((x1Perc*jvmConfig.svgW)/100)*j;
-				y = (jvmConfig.svgWrapH*(100-yPoints[j-1]))/100;
-			}
-
-		
+			var x1Perc = (xLblDiff*100)/jvmConfig.totalTime;
+			x = ((x1Perc*jvmConfig.svgW)/100)*j;
+			y = (jvmConfig.svgWrapH*(100-yPoints[j-1]))/100;
+			
 			if ( j == 1 ) {
 				pathD += "M" + x + "," + y;
 			} else {

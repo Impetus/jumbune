@@ -1,49 +1,67 @@
 package org.jumbune.remoting.server;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.TooLongFrameException;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
+import java.net.SocketException;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.remoting.common.CommandType;
-import org.jumbune.remoting.common.JschUtil;
-import org.jumbune.remoting.common.RemoterUtility;
 import org.jumbune.remoting.common.RemotingConstants;
-import org.jumbune.remoting.writable.CommandWritable;
-import org.jumbune.remoting.writable.CommandWritable.Command;
+import org.jumbune.remoting.common.RemotingMethodInvocationUtil;
+import org.jumbune.remoting.common.command.CommandWritable;
+import org.jumbune.remoting.common.command.CommandWritable.Command;
+import org.jumbune.remoting.server.invocations.CommandAsObjectResponserMethods;
+import org.jumbune.remoting.server.jsch.ChannelReaderResponse;
+import org.jumbune.remoting.server.jsch.JschExecutor;
 
-import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
+
 
 /**
  * The Class CommandAsObjectResponser.
  */
-public class CommandAsObjectResponser extends SimpleChannelInboundHandler<CommandWritable> {
+public class CommandAsObjectResponser extends AbstractCommandHandler {
 
-	private static final String HADOOP_JOB_COMPLETED = "Hadoop#Job@Completed......";
-	private static final String DONE_VERSION_1 = "done/version-1";
 	/** The logger. */
 	private static final Logger LOGGER = LogManager.getLogger(CommandAsObjectResponser.class);
-	private static final String LOG_DIR_SUFFIX = "000000";
 	
+	/** The Constant SINGLE_QUOTE. */
+	private static final String SINGLE_QUOTE = "'";
+	
+	/** The Constant LOGOUT. */
+	private static final String LOGOUT = "logout";	
+	
+	/** The Constant CPU_USAGE_COMMAND. */
+	private static final String CPU_USAGE_COMMAND = "top -d 0.8 -b -n 2 |grep ^Cpu && exit";
 
+	/** The Constant CPU_USAGE_COMMAND_WITHOUT_CARET. */
+	private static final String CPU_USAGE_COMMAND_WITHOUT_CARET = "top -d 0.8 -b -n 2 |grep Cpu && exit";
+
+	/** The Constant CPU_DETAILS_COMMAND. */
+	private static final String CPU_DETAILS_COMMAND = "cat /proc/cpuinfo && exit";
+	
+	/** The Constant VMSTAT_COMMAND. */
+	private static final String VMSTAT_COMMAND = "vmstat -s && exit";
+	
+	/** The Constant THP_COMMAND. */
+	private static final String THP_COMMAND = "/sys/kernel/mm/transparent_hugepage/enabled";
+	
+	/** The Constant VMSWAPINESS_COMMAND. */
+	private static final String VMSWAPINESS_COMMAND = "/etc/sysctl.conf";
+	
+	/** The Constant SELINUX_COMMAND. */
+	private static final String SELINUX_COMMAND = "/etc/selinux/config";
+
+	private static final CharSequence FOR_FILE_IN_$_LS_D_1 = "for FILE in $(shopt -s nocaseglob;ls -1";
+	
+	/* (non-Javadoc)
+	 * @see org.jumbune.remoting.server.AbstractCommandHandler#channelRead0(io.netty.channel.ChannelHandlerContext, org.jumbune.remoting.common.command.CommandWritable;)
+	 */
 	@Override
 	protected void channelRead0(io.netty.channel.ChannelHandlerContext ctx,
 			CommandWritable msg) throws Exception {
@@ -57,551 +75,407 @@ public class CommandAsObjectResponser extends SimpleChannelInboundHandler<Comman
 
 	/**
 	 * Perform action.
-	 * 
-	 * @param command
-	 *            the command
+	 *
+	 * @param commandWritable the command writable
 	 * @return the object
-	 * @throws JSchException
-	 *             the j sch exception
-	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
+	 * @throws JSchException             the JSch exception
+	 * @throws IOException             Signals that an I/O exception has occurred.
 	 */
 	private Object performAction(final CommandWritable commandWritable) throws JSchException, IOException {
-		LOGGER.debug("going to perform action");
 		List<Command> commandList = commandWritable.getBatchedCommands();
-		HadoopConfigurationPropertyLoader hcpl = HadoopConfigurationPropertyLoader.getInstance();
-		for(Command command : commandList){
-			String commandString = command.getCommandString();
+		for(Command currentCommand : commandList){
+			String commandString = currentCommand.getCommandString();
+			//Echo Handling
 			String[] commandStringSplits = commandString.split("\\s+");
 			if(commandStringSplits[0].startsWith("echo")){
-				switch (commandStringSplits[1]){
-				case "$HADOOP_HOME":
-					return hcpl.getHadoopHome();
-				case "$AGENT_HOME":
-					String agentHomeDir = System.getenv("AGENT_HOME");
-					agentHomeDir = agentHomeDir.endsWith(File.separator) ? agentHomeDir:agentHomeDir+File.separator;
-					return agentHomeDir;
-				}
+				return handleResponsiveEcho(commandWritable, currentCommand, commandStringSplits[1]);
+			}		
+			
+			replaceSymbolsWithConfigurationVariable(currentCommand);
+			// Command string containing 'free -m' with Jsch ShellChannel
+			if(commandString.contains("free -m")){
+				return handleResponsiveFree(commandWritable, currentCommand);
 			}
-			command.setCommandString(replaceSymbolsWithConfigurationVariable(command.getCommandString()));
-			List<String> parameters = command.getParams();
-			if(parameters!=null){
-				for(int i =0; i<parameters.size(); i++){
-					String mayBeReplacedParam = replaceSymbolsWithConfigurationVariable(parameters.get(i));
-					parameters.set(i, mayBeReplacedParam);
-				}
+			// Command string starting with awk '/container-id with Jsch ShellChannel
+			if(commandString.contains(FOR_FILE_IN_$_LS_D_1)){
+				return handleResponsiveAwkContainer(commandWritable, currentCommand);
+			}
+			if(commandString.contains(CPU_USAGE_COMMAND) || commandString.contains(CPU_USAGE_COMMAND_WITHOUT_CARET) || commandString.equalsIgnoreCase("lscpu |grep Core && exit")
+				|| commandString.equalsIgnoreCase("lscpu |grep Thread && exit") || commandString.equalsIgnoreCase("lscpu |grep Socket && exit") 
+				||commandString.contains(THP_COMMAND) || commandString.contains(VMSWAPINESS_COMMAND) || commandString.contains(SELINUX_COMMAND)) {
+				return handleCpuUsageCommand(commandWritable, currentCommand);
+			} 
+			if(commandString.contains(CPU_DETAILS_COMMAND) || commandString.contains(VMSTAT_COMMAND)) {
+				return executeWithShell(commandWritable, currentCommand);
+			}
+			//Execute Debugger and User Jobs 
+			if(currentCommand.isHasParams() && currentCommand.getCommandString().contains("instrument")){
+				String[] commands = currentCommand.getCommandString().split(RemotingConstants.REGEX_FOR_PIPE_DELIMITED);
+				checkexpectedTwoParams(commands);
+				String[] params = new String[currentCommand.getParams().size()];
+				currentCommand.getParams().toArray(params);
+				return appendAbsolutePathAndExecuteJob(commandWritable, currentCommand, params, commands[0]);	
 			}
 			
-			java.lang.reflect.Method method = null;
-			Class<?> commandAsObjectResponser = null;
-			// checks if command is in the form of a method to be executed.
-			if (commandWritable.getMethodToBeInvoked() != null) {
-				try { // invoking different methods by reflection. Method name
-						// is set in CommandWritable bean.
-					commandAsObjectResponser = Class
-							.forName(CommandAsObjectResponser.class.getName());
-					method = commandAsObjectResponser.getDeclaredMethod(
-							commandWritable.getMethodToBeInvoked(),
-							Command.class);
-
-					Object object = (Object) method.invoke(
-							commandAsObjectResponser.newInstance(), command);
-					return object;
-				} catch (ReflectiveOperationException exception) {
-					LOGGER.error("Unable to invoke method: " + method.getName()
-							+ " due to " + exception.getCause());
-
-				}
-
-			}			else{
-				if (commandWritable.isAuthenticationRequired()) {
-					// execute with jsch
-					return executeCommandWithJsch(commandWritable, command);
-					
-				}else if (command.isHasParams()) {
-					String[] commands = command.getCommandString().split(RemotingConstants.REGEX_FOR_PIPE_DELIMITED);
-					checkValidParams(commands);
-					String[] params = (String[]) command.getParams().toArray();
-					return this.executeCommand(params, commands[1], commands[2]);
-				}else {
-					//execute with process builder
-					return execute(command.getCommandString().split(RemotingConstants.SINGLE_SPACE));
-				}
+			//Execute Data Validation and User Jobs 
+			if(currentCommand.isHasParams()  && !currentCommand.getCommandString().contains("instrument")){
+				String[] commands = currentCommand.getCommandString().split(RemotingConstants.REGEX_FOR_PIPE_DELIMITED);
+				checkexpectedTwoParams(commands);
+				String[] params = new String[currentCommand.getParams().size()];
+				currentCommand.getParams().toArray(params);
+				return executeJob(commandWritable, currentCommand, params, commands[0]);
+			
 			}
+			//execute remaining unfiltered commands
+			return invokeExecutor(commandWritable, currentCommand);
 		}
 		LOGGER.debug("returning back default");
 		return commandWritable;
 	}
 
-	private String replaceSymbolsWithConfigurationVariable(String commandString) {
-		String agentHome = System.getenv(RemotingConstants.AGENT_HOME);
-		agentHome = agentHome.endsWith(File.separator) ? agentHome : agentHome + File.separator;
+	/**
+	 * Execute with shell.
+	 *
+	 * @param commandWritable the command writable
+	 * @param command the command
+	 * @return the object
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	private Object executeWithShell(CommandWritable commandWritable, Command command) throws IOException {
+		JschExecutor jschExecutor = new JschExecutor();
+		Session session = jschExecutor.getSession(commandWritable, command);
+		ChannelReaderResponse channelReaderResponse = jschExecutor.executeResponsiveShellJsch(session, command);	
+		String response = getStringFromReader((BufferedReader)channelReaderResponse.getReader());
+		channelReaderResponse.getReader().close();
+		jschExecutor.closeChannel(channelReaderResponse.getChannel());
+		jschExecutor.closeSession(session);
+		LOGGER.info("Jsch Shell - Command [" +command.getCommandString()+"] returned with exit code " + channelReaderResponse.getExitCode());
+		if(channelReaderResponse.getExitCode()!=0 && !command.getCommandString().endsWith("&& exit")){
+			LOGGER.debug("Jsch Shell - Command [" +command.getCommandString()+"] exited with unexpected code, returned response "+response);
+		}		
+		return response;
+	}
 
+	/**
+	 * Handle cpu usage command.
+	 *
+	 * @param commandWritable the command writable
+	 * @param command the command
+	 * @return the object
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	private Object handleCpuUsageCommand(CommandWritable commandWritable, Command command) throws IOException {
+		JschExecutor jschExecutor = new JschExecutor();
+		Session session = jschExecutor.getSession(commandWritable, command);
+		ChannelReaderResponse channelReaderResponse = jschExecutor.executeResponsiveShellJsch(session, command);
+		String lineBeforeLogout = "";
+		try (BufferedReader br = (BufferedReader)channelReaderResponse.getReader()) {
+			for (String line = br.readLine(); br != null && line != null; line = br.readLine()) {
+				if(!line.equals(LOGOUT)) {
+					lineBeforeLogout = line;
+				}
+			}
+		} catch (IOException e) {
+			LOGGER.error(e.getMessage(), e);
+		}finally{
+		channelReaderResponse.getReader().close();
+		}
+		jschExecutor.closeChannel(channelReaderResponse.getChannel());
+		jschExecutor.closeSession(session);
+		return lineBeforeLogout;
+	}
+
+	/**
+	 * Append absolute path and execute job.
+	 *
+	 * @param commandWritable the command writable
+	 * @param currentCommand the current command
+	 * @param commandWithParams the command with params
+	 * @param jarLocation the jar location
+	 * @return the object
+	 * @throws JSchException the jsch exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	private Object appendAbsolutePathAndExecuteJob(CommandWritable commandWritable,
+			Command currentCommand, String[] commandWithParams, String jarLocation) throws JSchException, IOException {
+		String agentHome = JumbuneAgent.getAgentDirPath();
+		String jobJarAbsolutePath = agentHome + jarLocation;
+		File fileLoc = new File(jobJarAbsolutePath);						
+		String[] fileList = fileLoc.list();
+		String jarName = null;
+		for (String filename : fileList) {
+			if(filename.contains(".jar")){
+				jarName = filename;
+				break;
+			}
+		}
+		commandWithParams[2] = jobJarAbsolutePath + "/" + jarName;
+		return executeJob(commandWritable, currentCommand, commandWithParams, jarLocation);
+	}
+
+	/**
+	 * Execute job.
+	 *
+	 * @param commandWritable the command writable
+	 * @param currentCommand the current command
+	 * @param commandWithParams the command with params
+	 * @param jarLocation the jar location
+	 * @return the object
+	 * @throws JSchException the j sch exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	private Object executeJob(CommandWritable commandWritable,
+			Command currentCommand, String[] commandWithParams, String jarLocation) throws JSchException, IOException {
+		StringBuilder compositeCommandString = new StringBuilder();
+		for(String str: commandWithParams){
+			if(str.trim().startsWith("-D")){
+				compositeCommandString.append(str).append(RemotingConstants.SINGLE_SPACE);
+			}else{
+				compositeCommandString.append(SINGLE_QUOTE).append(str).append(SINGLE_QUOTE).append(RemotingConstants.SINGLE_SPACE);
+			}
+		}
+		currentCommand.setCommandString(compositeCommandString.toString());
+		String response = (String) invokeExecutor(commandWritable, currentCommand);
+		return response;
+	}
+		
+
+	protected String handleResponsiveGrep(){
+		return null;
+	}
+
+	protected String handleResponsiveTop(){
+		return null;
+	}
+	
+	protected String handleResponsiveValidationJar(){
+		return null;		
+	}
+	
+	/**
+	 * Handle responsive echo.
+	 *
+	 * @param commandWritable the command writable
+	 * @param command the command
+	 * @param commandSplitString the command split string
+	 * @return the string
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	protected String handleResponsiveEcho(CommandWritable commandWritable, Command command, String commandSplitString) throws IOException{
 		HadoopConfigurationPropertyLoader hcpl = HadoopConfigurationPropertyLoader.getInstance();
-		commandString = commandString.replaceAll("HADOOP_HOME", hcpl.getHadoopHome());
-		commandString = commandString.replaceAll("AGENT_HOME", agentHome);
-		return commandString;
+		    if(commandSplitString == null){
+				LOGGER.warn("Handled an unexpected echo command, received null after echo.");
+				return null;
+		    }
+			switch (commandSplitString){
+			case "$HADOOP_HOME":
+				LOGGER.debug("Sending back short circuit response for echo $HADOOP_HOME AS ["+hcpl.getHadoopHome()+"]");
+				return hcpl.getHadoopHome();
+			case "$AGENT_HOME":
+				String agentHomeDir = JumbuneAgent.getAgentDirPath();
+				agentHomeDir = agentHomeDir.endsWith(File.separator) ? agentHomeDir:agentHomeDir+File.separator;
+				LOGGER.debug("Sending back short circuit response for echo $AGENT_HOME AS ["+agentHomeDir+"]");
+				return agentHomeDir;
+			case "$HADOOP_CONF_DIR":
+				String lineBreaker = "echo $HADOOP_CONF_DIR";
+				JschExecutor jschExecutor = new JschExecutor();
+				Session session = jschExecutor.getSession(commandWritable, command);
+				ChannelReaderResponse channelReaderResponse = jschExecutor.executeResponsiveShellJsch(session, command);
+				BufferedReader reader = (BufferedReader)channelReaderResponse.getReader();
+				String response;
+				StringBuilder stringBuilder;
+				try{
+					stringBuilder = new StringBuilder();
+					String line = "";
+					while ((line = reader.readLine()) != null) {
+						stringBuilder.append(line + System.lineSeparator());
+						if (line.contains(lineBreaker)) {
+							stringBuilder = new StringBuilder(line);
+							break;
+						}
+					}
+				}finally{
+					if(reader!=null){
+						reader.close();
+					}
+				}
+				response = stringBuilder.toString();				
+				jschExecutor.closeChannel(channelReaderResponse.getChannel());
+				jschExecutor.closeSession(session);
+				return response;
+			case "$SPARK_CONF_DIR" :
+				String lineBr = "spark";
+				JschExecutor jschExe = new JschExecutor();
+				Session sess = jschExe.getSession(commandWritable, command);
+				ChannelReaderResponse channelReaderRes = jschExe.executeResponsiveShellJsch(sess, command);
+				BufferedReader bufferedReader = (BufferedReader)channelReaderRes.getReader();
+				String commandResponse;
+				StringBuilder strBuilder;
+				try{
+					strBuilder = new StringBuilder();
+					String line = "";
+					while ((line = bufferedReader.readLine()) != null) {
+						strBuilder.append(line + System.lineSeparator());
+						if (line.contains(lineBr)) {
+							strBuilder = new StringBuilder(line);
+							break;
+						}
+					}
+				}finally{
+					if(bufferedReader!=null){
+						bufferedReader.close();
+					}
+				}
+				commandResponse = strBuilder.toString();				
+				jschExe.closeChannel(channelReaderRes.getChannel());
+				jschExe.closeSession(sess);
+				return commandResponse;
+				
+			default:
+				LOGGER.warn("Handled an unknown echo command");
+				return null;
+			}
 	}
 
-	private void checkValidParams(String[] commands) {
-		if (commands.length != RemotingConstants.THREE) {
-			throw new IllegalArgumentException("Invalid params received from Remoter!!!");
+	/**
+	 * Handle responsive free.
+	 *
+	 * @param commandWritable the command writable
+	 * @param command the command
+	 * @return the string
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	protected String handleResponsiveFree(CommandWritable commandWritable, Command command) throws IOException{
+		JschExecutor jschExecutor = new JschExecutor();
+		Session session = jschExecutor.getSession(commandWritable, command);
+		ChannelReaderResponse channelReaderResponse = jschExecutor.executeResponsiveShellJsch(session, command);
+		String lineBreaker = "Swap:";
+		String response =  getFreeStringFromReader((BufferedReader)channelReaderResponse.getReader(), lineBreaker);
+		channelReaderResponse.getReader().close();
+		jschExecutor.closeChannel(channelReaderResponse.getChannel());
+		jschExecutor.closeSession(session);
+		LOGGER.info("Jsch Shell - Command [" +command.getCommandString()+"] returned with response code - " + channelReaderResponse.getExitCode());
+		//logging response for all non zero terminations, except commands ending with '&& exit', which always returns -1
+		if(channelReaderResponse.getExitCode()!=0 && !command.getCommandString().endsWith("&& exit")){
+			LOGGER.debug("Jsch Shell - Command [" +command.getCommandString()+"] exited with unexpected code, response - " + response);
 		}
+		return response;	
+	}
+	
+	/**
+	 * Handle responsive awk container.
+	 *
+	 * @param commandWritable the command writable
+	 * @param command the command
+	 * @return the string
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	protected String handleResponsiveAwkContainer(CommandWritable commandWritable, Command command) throws IOException{
+		JschExecutor jschExecutor = new JschExecutor();
+		Session session = jschExecutor.getSession(commandWritable, command);
+		ChannelReaderResponse channelReaderResponse = jschExecutor.executeResponsiveShellJsch(session, command);
+		String line = null;
+		StringBuilder stringBuilder = new StringBuilder("");
+		try (BufferedReader reader = (BufferedReader)channelReaderResponse.getReader()) {
+			stringBuilder = new StringBuilder();
+			while ((line = reader.readLine()) != null) {
+				if (line.contains(LOGOUT)) {
+					break;
+				}
+				if (line.contains("KB") || line.contains("MB") || line.contains("GB")
+						|| line.contains("TB") || line.contains("PB")) {			
+					
+					int totalSpaces = line.length() - line.replaceAll(" ", "").length();
+					if (totalSpaces != 3 || !line.split(" ")[0].matches("[-+]?\\d*\\.?\\d+")) {
+						continue;
+					}
+					stringBuilder = new StringBuilder(line);					
+					break;
+				}
+			}
+		}
+		jschExecutor.closeChannel(channelReaderResponse.getChannel());
+		jschExecutor.closeSession(session);
+		return stringBuilder.toString();
+	}
+	
+
+	/**
+	 * Invoke executor.
+	 *
+	 * @param commandWritable the command writable
+	 * @param command the command
+	 * @return the object
+	 * @throws SocketException the socket exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws JSchException the j sch exception
+	 */
+	private Object invokeExecutor(CommandWritable commandWritable, Command command) throws SocketException, IOException, JSchException{
+		// Reflective method invocation
+		if (commandWritable.getMethodToBeInvoked() != null) {		
+			try {
+				return RemotingMethodInvocationUtil.invokeMethodFromRemotingMethodConstants(commandWritable, command, CommandAsObjectResponserMethods.class);
+			}catch(ReflectiveOperationException e){
+				LOGGER.error("Unable to execute method "+ commandWritable.getMethodToBeInvoked(), e.getCause());	
+			}			
+		} else if(getNameNodeHost().equals(getCurrentMachineEndpoint()) || getNameNodeHost().equals(InetAddress.getLocalHost().getHostName())){
+			try {
+				if(commandWritable.isCommandForMaster()){
+					LOGGER.debug("NameNode and JumbuneAgent are on same node and command is for master, executing with Runtime ["+command.getCommandString()+"]");
+					return executeCommandWithRuntime(command);
+				}
+			} catch (InterruptedException e) {
+				LOGGER.error("Exception occured while executing the process (launched by runtime) to finish.");
+			}
+		}
+		JschExecutor jschExecutor = new JschExecutor();
+		Session session = jschExecutor.getSession(commandWritable, command);
+		ChannelReaderResponse channelReaderResponse = jschExecutor.executeResponsiveExecJsch(session, command);
+		String response = getStringFromReader((BufferedReader)channelReaderResponse.getReader());
+		if(channelReaderResponse.getReader()!=null){
+			channelReaderResponse.getReader().close();
+		}
+		jschExecutor.closeChannel(channelReaderResponse.getChannel());
+		jschExecutor.closeSession(session);
+		LOGGER.info("JSch Exec - Executed command with JSch[" + command.getCommandString() +"], exit code - " + channelReaderResponse.getExitCode());
+		if(channelReaderResponse.getExitCode()!=0){
+			LOGGER.debug("JSch Exec - command [" + command.getCommandString() +"], exited with unexpected code, response - " + response);
+		}
+		return response;
 	}
 
-	private List<String> processGetFiles(Command command) {
-		File file = new File(command.getCommandString().trim());
-		if (!file.isDirectory()) {
-			throw new  IllegalArgumentException("Not a directory!!!");
+	/**
+	 * Command expected to be invoked from sudo agent runtime.
+	 * Typically command's with user, fs, mapred, yarn and hdfs user switch can be invoked. 
+	 * This method should be invoked only when Active NN & Active Jumbune Agent are on the same host
+	 *
+	 * @param command the command
+	 * @return the string
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws InterruptedException the interrupted exception
+	 */
+	private String executeCommandWithRuntime(Command command) throws IOException, InterruptedException{
+		String commandString = command.getCommandString();
+		Process process = executeCommandWithRuntime0(command);
+		String response = null;
+		response = getProcessOutput(process);		
+		LOGGER.info("Runtime - Executed command [" + commandString +"], exit code - " + process.exitValue());
+		if(process.exitValue()!=0){
+			LOGGER.debug("Runtime - command [" + commandString +"], exited with unexpected code, response - " + response);
 		}
-		return Arrays.asList(file.list());
+		return response;
 	}
 
 	/**
 	 * Execute command with param.
-	 * 
-	 * @param commandWritable
-	 *            the message
-	 * @param command2 
+	 *
+	 * @param commands the commands
 	 * @return the object
-	 * @throws JSchException
-	 *             the j sch exception
-	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
 	 */
-	private Object executeCommandWithJsch(final CommandWritable commandWritable, Command commandObj) throws JSchException, IOException {
-
-		String sReturnValue = null;
-		Session session = null;
-		CommandType commandType = commandWritable.getCommandType();
-		try {
-			String lineBreaker = null;
-			String command = commandObj.getCommandString();
-			String user = commandWritable.getUsername();
-			String rsaFile = commandWritable.getRsaFilePath();
-			String dsaFile = commandWritable.getDsaFilePath();
-			String host = commandWritable.getMasterHostname();
-			if (host == null) {
-				host = commandWritable.getSlaveHost();
-			}
-			session = JschUtil.createSession(user, host, rsaFile, dsaFile, commandType);
-			if ((lineBreaker = extractLineBreaker(command)) != null) {
-				sReturnValue = JschUtil.executeCommandUsingShell(session, command + RemotingConstants.DOUBLE_NEWLINE, lineBreaker);
-			} else {
-				Channel ch = JschUtil.getChannelWithResponse(session, command);
-				InputStream in = ch.getInputStream();
-				ch.connect();
-				sReturnValue = convertToString(in);
-			}
-		} finally {
-			if (session != null) {
-				session.disconnect();
-			}
+	private void checkexpectedTwoParams(String[] commands) {
+		if (commands.length != RemotingConstants.TWO) {
+			throw new IllegalArgumentException("Invalid params received from Remoter!!!");
 		}
-		LOGGER.debug("command response :: [" + sReturnValue + "]");
-		return sReturnValue;
 	}
 
-	/***
-	 * This command find out the stop word from the given command.
-	 * 
-	 * @param command
-	 * @return stop word for the command
-	 */
-	private String extractLineBreaker(String command) {
-		String lineBreaker = null;
-		if (command.contains("echo $AGENT")) {
-			lineBreaker = "echo $AGENT_HOME";
-		} else if (command.contains("echo $HADOOP_CONF_DIR")) {
-			lineBreaker = "echo $HADOOP_CONF_DIR";
-		} else if (command.contains("echo $HADOOP")) {
-			lineBreaker = "echo $HADOOP_HOME";
-		} else if (command.contains("free -m")) {
-			lineBreaker = "Swap:";
-		}
-		return lineBreaker;
-	}
-
-	/***
-	 * This method takes command for data validation at agent side and execute it.
-	 * 
-	 * @param message
-	 * @return
-	 */
-	private String processJob(String message, String agentHome) throws IOException{
-		String msgToExec = message.replaceAll("AGENT_HOME", agentHome);
-		msgToExec = msgToExec.replaceAll("HADOOP_HOME", RemoterUtility.getHadoopHome());
-		return executeJob(msgToExec.split(" "));
-	}
-
-
-
-	private String processDBOptSteps(Command command) throws IOException {
-		String commandString=command.getCommandString();
-		String arr[] = commandString.split("[-]");
-		String absLocation = arr[2];
-		String response = JschUtil.execSlaveCleanUpTask(new String[] { "ssh", arr[1], "ls", "-1", absLocation }, null);
-		String[] s = response.split("\n");
-		for (String string : s) {
-			if (!string.contains("mrChain")) {
-				response = JschUtil.execSlaveCleanUpTask(new String[] { "ssh", arr[1], "zip", "-j", absLocation + string + ".zip",
-						absLocation + string }, null);
-				JschUtil.execSlaveCleanUpTask(new String[] { "ssh", arr[1], "rm", absLocation + string }, null);
-			}
-		}
-		LOGGER.info("Cleaned Debugger log files on slaves");
-		return "Done";
-	}
-
-
-	/**
-	 * Execute command in remote machine.
-	 * 
-	 * @param commands
-	 *            array of command to be execute on the remote machine
-	 * @return the string response of the command in string format
-	 */
-	private static String execute(String... commands) throws IOException{
-		ProcessBuilder processBuilder = new ProcessBuilder(commands);
-		String agentHome = System.getenv(RemotingConstants.AGENT_HOME);
-		processBuilder.directory(new File(agentHome));
-		processBuilder.redirectErrorStream(true);
-		Process process = null;
-		InputStream inputStream = null;
-		BufferedReader bufferedReader = null;
-		StringBuilder stringBuilder = new StringBuilder();
-		try {
-			process = processBuilder.start();
-			inputStream = process.getInputStream();
-			if (inputStream != null) {
-				bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-				String line = bufferedReader.readLine();
-				while (line != null) {
-					stringBuilder.append(line).append(RemotingConstants.NEW_LINE);
-					line = bufferedReader.readLine();
-				}
-			}
-		}  finally {
-				if (bufferedReader != null) {
-					bufferedReader.close();
-				}
-		}
-		LOGGER.debug("Executed command ["+Arrays.toString(commands) +"], sending back response ["+stringBuilder.toString()+"]");
-		return stringBuilder.toString();
-	}
-
-	/**
-	 * Execute.
-	 * 
-	 * @param commandWithParams
-	 *            the commands
-	 * @param jarLocation
-	 *            the jar location
-	 * @param dirLocation
-	 *            the dir location
-	 * @return the string
-	 */
-	private String executeCommand(String[] commandWithParams, String jarLocation, String dirLocation) throws IOException{
-		String agentHome = System.getenv(RemotingConstants.AGENT_HOME);
-		if (!agentHome.endsWith(File.separator)) {
-			agentHome += File.separator;
-		}
-/*		String hadoopHome=RemoterUtility.getHadoopHome();
-		for(int i=0;i<commandWithParams.length;i++){
-			commandWithParams[i]=commandWithParams[i].replaceAll("AGENT_HOME", agentHome);
-			commandWithParams[i]=commandWithParams[i].replaceAll("HADOOP_HOME", hadoopHome);	
-		}
-*/		String jobJarAbsolutePath = agentHome + jarLocation;
-		File fileLoc = new File(jobJarAbsolutePath);
-		if(!commandWithParams[2].contains(RemotingConstants.DATA_VALIDATION_JAR)){
-			String[] fileList = fileLoc.list();
-			String jarName = null;
-			for (String filename : fileList) {
-				if(filename.contains(".jar")){
-					jarName = filename;
-					break;
-				}
-			}
-			commandWithParams[2] = jobJarAbsolutePath + "/" + jarName;
-		}
-		ProcessBuilder pb = new ProcessBuilder(commandWithParams);
-		File loc = new File(agentHome + dirLocation);
-		if (!loc.exists()) {
-			loc.mkdir();
-		}	
-		pb.directory(loc);
-		pb.redirectErrorStream(true);
-		Process p = null;
-		InputStream is = null;
-		BufferedReader br = null;
-		StringBuilder sb = new StringBuilder();
-		try {
-			p = pb.start();
-			is = p.getInputStream();
-			if (is != null) {
-				sb.append(convertToString(is,dirLocation));
-			}
-		} finally {
-				if (br != null) {
-					br.close();
-				}
-		}
-		LOGGER.debug("Executed command ["+Arrays.toString(commandWithParams) +"], sending back response ["+sb.toString()+"]");
-		return sb.toString();
-		
-	}
-
-	private String executeJob(String[] commands) throws IOException {
-		String hadoopHome = System.getenv("HADOOP_HOME");
-		ProcessBuilder processBuilder = new ProcessBuilder(commands);
-		processBuilder.directory(new File(hadoopHome));
-		processBuilder.redirectErrorStream(true);
-		Process p = null;
-		InputStream is = null;
-		BufferedReader br = null;
-		StringBuilder sb = new StringBuilder();
-		try {
-			p = processBuilder.start();
-			is = p.getInputStream();
-			if (is != null) {
-				sb.append(convertToString(is));
-			}
-		}finally {
-				if (br != null) {
-					br.close();
-				}
-		}
-		LOGGER.debug("Received Command - "+Arrays.toString(commands));
-		LOGGER.debug("Executed command response "+sb);
-		return sb.toString();
-	}
-
-
-
-	/**
-	 * takes inputsteam and convert into the string format.
-	 * 
-	 * @param in
-	 *            the input stream which user wants to convert
-	 * @return the string
-	 * 
-	 * @throws IOException
-	 */
-	private String convertToString(InputStream in) throws IOException {
-
-		StringBuilder sb = new StringBuilder();
-		if (in != null) {
-			try {
-				int charByte;
-				while ((charByte = in.read()) != -1) {
-					sb.append((char) charByte);
-				}
-			} catch (IOException e) {
-				LOGGER.error(e.getMessage(), e);
-			} finally {
-				if (in != null) {
-					in.close();
-				}
-			}
-		}
-		return sb.toString();
-	}
-	/**
-	 * takes inputsteam and convert into the string format.
-	 * 
-	 * @param in
-	 *            the input stream which user wants to convert
-	 * @return the string
-	 * 
-	 * @throws IOException
-	 */
-	private String convertToString(InputStream in,String jobDirectory) throws IOException {
-		String agentHome = System.getenv(RemotingConstants.AGENT_HOME);
-		if (!agentHome.endsWith("/")) {
-			agentHome += "/";
-		}
-		String [] jobDirs=jobDirectory.split("/");
-		String jobJarAbsolutePath = agentHome + jobDirs[0]+"/"+jobDirs[1]+"/executedHadoopJob.info";
-		StringBuilder sb = new StringBuilder();
-		BufferedReader bufferReader=new BufferedReader(new InputStreamReader(in));
-		String line=null;
-		File file =new File(jobJarAbsolutePath);
-		if(file.exists()){
-			file.delete();
-		}
-		FileWriter fileWriter=new FileWriter(file,true);
-		BufferedWriter bw=new BufferedWriter(fileWriter);
-		try{
-		while((line=bufferReader.readLine())!=null){
-			sb.append(line+"\n");
-			bw.write(line+"\n");
-			bw.flush();	
-		}
-		bw.write(HADOOP_JOB_COMPLETED);
-		bw.flush();
-		}catch(IOException io){
-			LOGGER.error(io);
-		}finally{
-			if(bw!=null){
-				bw.close();
-			}
-			if(bufferReader!=null){
-				bufferReader.close();
-			}
-		}
-		return sb.toString();
-	}
-
-	/**
-	 * Gets the job history file given a job Id
-	 * 
-	 * @param jobID
-	 * @param jobHistoryDir
-	 * @return
-	 */
-	private String getJobHistoryFilefromJobID(Command command) {
-		String[] strArr = command.getCommandString().split(RemotingConstants.SINGLE_SPACE);
-		String jobID=strArr[0];
-		String jobHistoryDir=strArr[1];
-		long timestamp = 0, latestTimestamp = 0;
-		String name, jobDir = null, jobHistoryFile = null;
-		File file = new File(jobHistoryDir);
-		String[] nameAttribs;
-		File[] files = file.listFiles();
-		List<File> fileList = Arrays.asList(files);
-
-		// check if need to modify path.Not required for older versions of hadoop.
-		if (jobHistoryDir.contains(DONE_VERSION_1)) {
-			for (File f : fileList) {
-				name = f.getName();
-				nameAttribs = name.split("_");
-				timestamp = Long.parseLong(nameAttribs[nameAttribs.length - 1]);
-				if (timestamp > latestTimestamp) {
-					latestTimestamp = timestamp;
-					jobDir = name;
-				}
-			}
-			DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-			Date date = new Date();
-			String currentDate = dateFormat.format(date);
-			String[] dateArr = currentDate.split("-");
-			// preparing the absolute path to job history log file
-			StringBuffer sb = new StringBuffer(jobHistoryDir);
-			sb.append(File.separator).append(jobDir).append(File.separator).append(dateArr[0]).append(File.separator).append(dateArr[1])
-					.append(File.separator).append(dateArr[2]).append(File.separator).append(LOG_DIR_SUFFIX);
-			file = new File(sb.toString());
-			files = file.listFiles();
-			fileList = Arrays.asList(files);
-			jobHistoryFile = iterateFileListAndGetAbsolutePath(fileList, jobID);
-
-		} else {
-			jobHistoryFile = iterateFileListAndGetAbsolutePath(fileList, jobID);
-		}
-		return jobHistoryFile;
-	}
-	
-	/**
-	 * Gets the config file given a job Id
-	 * 
-	 * @param jobID
-	 * @param jobHistoryDir
-	 * @return
-	 */
-	private String getHadoopConfigFilefromJobID(Command command) {
-		String[] strTmp = command.getCommandString().split(RemotingConstants.SINGLE_SPACE);
-		String jobID=strTmp[0];
-		String jobHistoryDir=strTmp[1];
-		long timestamp = 0, latestTimestamp = 0;
-		String name, jobDir = null, configFile = null;
-		File file = new File(jobHistoryDir);
-		String[] nameAttribs;
-		File[] files = file.listFiles();
-		List<File> fileList = Arrays.asList(files);
-
-		// check if need to modify path.Not required for older versions of hadoop.
-		if (jobHistoryDir.contains(DONE_VERSION_1)) {
-			for (File f : fileList) {
-				name = f.getName();
-				nameAttribs = name.split("_");
-				timestamp = Long.parseLong(nameAttribs[nameAttribs.length - 1]);
-				if (timestamp > latestTimestamp) {
-					latestTimestamp = timestamp;
-					jobDir = name;
-				}
-			}
-			DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-			Date date = new Date();
-			String currentDate = dateFormat.format(date);
-			String[] dateArr = currentDate.split("-");
-			// preparing the absolute path to job history log file
-			StringBuffer sb = new StringBuffer(jobHistoryDir);
-			sb.append(File.separator).append(jobDir).append(File.separator).append(dateArr[0]).append(File.separator).append(dateArr[1])
-					.append(File.separator).append(dateArr[2]).append(File.separator).append(LOG_DIR_SUFFIX);
-			file = new File(sb.toString());
-			files = file.listFiles();
-			fileList = Arrays.asList(files);
-			configFile = iterateFileListAndGetConfigFile(fileList, jobID);
-
-		} else {
-			configFile = iterateFileListAndGetConfigFile(fileList, jobID);
-		}
-		return configFile;
-	}
-
-	/***
-	 * This method iterate over list of files and return absolute path of specific file which having desired JOBID.
-	 * @param fileList
-	 * @param jobID
-	 * @return
-	 */
-	private String iterateFileListAndGetAbsolutePath(List<File> fileList, String jobID) {
-		String fileName = null;
-		for (File f : fileList) {
-			fileName = f.getName();
-			if ((fileName.contains(jobID)) && (!fileName.endsWith("crc")) && (!fileName.endsWith("xml"))) {
-				return f.getAbsolutePath();
-			}
-		}
-		return null;
-
-	}
-	
-	/***
-	 * This method iterate over list of files and return absolute path of config file which having desired JOBID.
-	 * @param fileList
-	 * @param jobID
-	 * @return
-	 */
-	private String iterateFileListAndGetConfigFile(List<File> fileList, String jobID) {
-		String fileName = null;
-		for (File f : fileList) {
-			fileName = f.getName();
-			if ((fileName.contains(jobID)) && fileName.endsWith("xml")) {
-				return f.getAbsolutePath();
-			}
-		}
-		return null;
-
-	}
-
-	private String convertHostNameToIP(Command command) throws UnknownHostException {
-		String hostName=command.getCommandString();
-		InetAddress addr = InetAddress.getByName(hostName);
-		return addr.getHostAddress();
-	}
-
-	@Override
-	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
-	    throws Exception {
-	  io.netty.channel.Channel ch = ctx.channel();
-	  if (cause instanceof TooLongFrameException) {
-		  LOGGER.error("Corrupted fram recieved from: " + ch.remoteAddress());
-	    return;
-	  }
-
-	  if (ch.isActive()) {
-	    LOGGER.error("Internal Server Error",cause);
-	  }
-	}
-	
 }

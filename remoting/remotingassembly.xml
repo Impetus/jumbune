@@ -7,23 +7,48 @@
 		<format>jar</format>
 	</formats>
 	<includeBaseDirectory>false</includeBaseDirectory>
+
+	<fileSets>
+		<fileSet>
+			<directory>src/main/java/org/jumbune/remoting/jmx/server</directory>
+			<outputDirectory>lib</outputDirectory>
+			<includes>
+				<include>jumbune*jmx*.jar</include>
+			</includes>
+			<lineEnding>unix</lineEnding>
+			<fileMode>0777</fileMode>
+		</fileSet>
+	</fileSets>
+
 	<dependencySets>
 		<dependencySet>
 			<outputDirectory>/</outputDirectory>
 			<unpack>true</unpack>
 			<useTransitiveDependencies>false</useTransitiveDependencies>
 			<includes>
-				
+			   <include>org.jumbune:jumbune-remoting-jsch:jar:2.0</include>
+			   <include>org.jumbune:jumbune-remoting-common:jar:2.0</include>
 				<include>org.apache.logging.log4j:log4j-api:jar:2.1</include>
 				<include>org.apache.logging.log4j:log4j-core:jar:2.1</include>
-				<include>io.netty:netty-handler:jar:4.0.20.Final</include>
-				<include>io.netty:netty-buffer:jar:4.0.20.Final</include>
-				<include>io.netty:netty-common:jar:4.0.20.Final</include>
-				<include>io.netty:netty-codec:jar:4.0.20.Final</include>
-				<include>io.netty:netty-transport:jar:4.0.20.Final</include>
+				<include>io.netty:netty-handler:jar:4.0.32.Final</include>
+				<include>io.netty:netty-buffer:jar:4.0.32.Final</include>
+				<include>io.netty:netty-common:jar:4.0.32.Final</include>
+				<include>io.netty:netty-codec:jar:4.0.32.Final</include>
+				<include>io.netty:netty-transport:jar:4.0.32.Final</include>
 				<include>com.jcraft:jsch:jar:0.1.51</include>
-				</includes>
-
+				<include>org.apache.zookeeper:zookeeper:jar:3.4.6</include>
+				<include>org.slf4j:slf4j-api:jar:1.7.5</include>
+				<include>org.slf4j:slf4j-log4j12:jar:1.7.5</include>
+				<include>org.slf4j:slf4j-simple</include>
+				<include>org.apache.curator:curator-recipes:jar:2.9.0</include>
+				<include>org.apache.curator:curator-client:jar:2.9.0</include>
+				<include>org.apache.curator:curator-framework:jar:2.9.0</include>
+				<include>com.google.protobuf:protobuf-java</include>
+				<include>com.google.code.gson:gson</include>
+				<include>com.google.guava:guava:jar:18.0</include>
+				<include>commons-cli:commons-cli:jar:1.4</include>
+			</includes>
+			<useProjectArtifact>true</useProjectArtifact>
 		</dependencySet>
 		<dependencySet>
 			<useTransitiveDependencies>false</useTransitiveDependencies>
@@ -32,11 +57,12 @@
 			<unpackOptions>
 				<includes>
 					<include>org/jumbune/remoting/writable**/*</include>
-					<include>org/jumbune/remoting/server**/*</include>
-					<include>org/jumbune/remoting/common**/*</include>
-					<include>org/jumbune/remoting/codecs**/*</include>
+					<!-- <include>org/jumbune/remoting/server**/*</include>-->
+					<include>org/jumbune/remoting/server**/**</include>
+					<include>org/jumbune/remoting/jmx**/**</include>
 					<include>log4j2.xml</include>
 					<include>distribution.properties</include>
+					<include>ha_conf.properties</include>
 				</includes>
 			</unpackOptions>
 		</dependencySet>
@@ -44,15 +70,10 @@
 			<outputDirectory>/</outputDirectory>
 			<unpack>true</unpack>
 			<useTransitiveDependencies>false</useTransitiveDependencies>
-
 			<includes>
 				<include>${project.groupId}:jumbune-utils</include>
 
 			</includes>
-
 		</dependencySet>
-		
-
-
 	</dependencySets>
 </assembly>

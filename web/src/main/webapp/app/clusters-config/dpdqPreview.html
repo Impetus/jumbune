@@ -1,0 +1,23 @@
+<div class="container" ng-init="DPDQPreviewController.init()">
+	<div jumbune-header=""></div>
+	<div class="inner-container">
+        
+	    <h2>Preview</h2>
+        <div class="col-md-12 main-container inner-container">
+            
+
+            <div class="row">
+                <div class="col-md-12" ng-repeat="dsDetails in DPDQPreviewController.dataSuiteDetails">
+                    <div class="col-md-12">Name: {{dsDetails.name}}</div>
+                    <div class="col-md-12" ng-if="dsDetails.isCriteriaBased != ''">Is criteria based: {{dsDetails.isCriteriaBased}}</div>
+                    <div class="col-md-12">{{dsDetails.enableFieldLabel}} is enabled</div>
+                </div>
+            </div>
+            
+            <div class="txt-rgt fixed-btn">
+                <button type="button"  class="btn btn-primary" ng-click="DPDQPreviewController.saveJob()">Save JSON</button>
+                <button type="button"  class="btn btn-primary" ng-click="DPDQPreviewController.runJob()">Run</button>
+            </div>
+        </div>
+	</div><!-- info-holder -->
+</div>

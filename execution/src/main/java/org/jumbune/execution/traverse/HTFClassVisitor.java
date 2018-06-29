@@ -13,6 +13,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 /**
+ * @author sasomani
  */
 public class HTFClassVisitor extends ClassVisitor {
 	private static Logger logger = LogManager.getLogger("launcher");
@@ -21,11 +22,6 @@ public class HTFClassVisitor extends ClassVisitor {
 	private static final char DOT = '.';
 	private String className;
 
-	/**
-	 * public constructor
-	 * @param api
-	 * @param cv
-	 */
 	public HTFClassVisitor(int api, ClassVisitor cv) {
 		super(api, cv);
 	}
@@ -62,23 +58,17 @@ public class HTFClassVisitor extends ClassVisitor {
 				&& access == Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC
 				&& desc.equals("([Ljava/lang/String;)V")) {
 			className = className.replace(FULLY_QUALIFIED_CLASS_SEPARATOR, DOT);
-			logger.debug("Driver class [" + className+"]");
+			logger.debug("Job class  : " + className);
 			jobClassList.add(className);
 		}
 		return cv.visitMethod(access, name, desc, signature, exceptions);
 	}
 
-	/**
-	 * visit end
-	 */
+	// visitEnd
 	public void visitEnd() {
 		cv.visitEnd();
 	}
 
-	/**
-	 * gets job class list
-	 * @return
-	 */
 	public List<String> getJobClassList() {
 		return jobClassList;
 	}

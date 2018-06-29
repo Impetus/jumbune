@@ -45,7 +45,7 @@ public class ChainedTaskClassAdapter extends BaseAdapter {
 	@Override
 	public MethodVisitor visitMethod(int access, String name, String desc,
 			String signature, String[] exceptions) {
-		logger.info(MessageFormat.format(InstrumentationMessageLoader
+		logger.debug(MessageFormat.format(InstrumentationMessageLoader
 				.getMessage(MessageConstants.LOG_INSTRUMENTING_METHOD),
 				getClassName() + "##" + name));
 		MethodVisitor mv = super.visitMethod(access, name, desc, signature,

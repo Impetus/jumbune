@@ -62,7 +62,7 @@ public class JobAdapter extends BaseAdapter {
 			InsnList insnList = mn.instructions;
 			AbstractInsnNode[] insnArr = insnList.toArray();
 
-			LOGGER.info(MessageFormat.format(InstrumentationMessageLoader
+			LOGGER.debug(MessageFormat.format(InstrumentationMessageLoader
 					.getMessage(MessageConstants.LOG_INSTRUMENTING_METHOD),
 					getClassName() + "##" + mn.name));
 			// traversing in reverse order as job submission comes at the end of
@@ -74,7 +74,7 @@ public class JobAdapter extends BaseAdapter {
 					// finding job submission
 					if (InstrumentUtil.isJobSubmissionMethod(min)) {
 
-						LOGGER.info(MessageFormat.format(
+						LOGGER.debug(MessageFormat.format(
 								InstrumentationMessageLoader
 										.getMessage(MessageConstants.JOB_SUBMISSION_FOUND),
 								getClassName()));
@@ -82,7 +82,7 @@ public class JobAdapter extends BaseAdapter {
 						// validating if the owner is mapreduce.Job or JobClient
 						if (InstrumentUtil.isOwnerJob(min)) {
 
-							LOGGER.info(MessageFormat.format(
+							LOGGER.debug(MessageFormat.format(
 									InstrumentationMessageLoader
 											.getMessage(MessageConstants.LOG_OWNER_IS_JOB),
 									getClassName()));
@@ -185,7 +185,7 @@ public class JobAdapter extends BaseAdapter {
 	 * @return Instructions
 	 */
 	private InsnList addClasspath(int jobVariableIndex, Type type) {
-		LOGGER.info("passed class name in addClasspath is "
+		LOGGER.debug("passed class name in addClasspath is "
 				+ type.getInternalName());
 
 		List<List<String>> jarsAndResources = FileUtil
@@ -220,7 +220,7 @@ public class JobAdapter extends BaseAdapter {
 	 */
 	private InsnList modifyOutputPath(int jobVariableIndex, Type type) {
 
-		LOGGER.info("passed class name in modifyOutputPath is "
+		LOGGER.debug("passed class name in modifyOutputPath is "
 				+ type.getInternalName());
 		InsnList il = new InsnList();
 		il.add(new LabelNode());

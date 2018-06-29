@@ -13,7 +13,7 @@ import javax.xml.bind.DatatypeConverter;
 
 public class StringUtil {
 
-	static byte[] encodedKey = {-104, 0, 40, 61, -100, -9, -66, -103, 109, -1, -39, -43, 90, 42, 110, 47};
+	private static byte[] encodedKey = {-104, 0, 40, 61, -100, -9, -66, -103, 109, -1, -39, -43, 90, 42, 110, 47};
 	
 	public static String getEncrypted(String plainText) {
 		Cipher cipher = null;
@@ -42,10 +42,6 @@ public class StringUtil {
 			e.printStackTrace();
 		}	    
 	    return new String(decryptedTextBytes);	
-	}
-
-	public static boolean emptyOrNull(String str){
-		return str==null?true:(str.trim().length()==0?true:false);
 	}
     
     private static class CustomKey implements Key{

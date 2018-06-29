@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Comparator;
 import java.util.Date;
@@ -24,15 +23,18 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.DataQualityTimeLineConfig;
 import org.jumbune.common.beans.Enable;
+import org.jumbune.common.beans.JumbuneInfo;
+import org.jumbune.common.beans.SchedulingEvent;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
 import org.jumbune.common.utils.ConfigurationUtil;
-import org.jumbune.common.utils.CronGenerator;
-import org.jumbune.common.utils.ValidateInput;
+import org.jumbune.common.utils.Constants;
+import org.jumbune.common.utils.JobConfigUtil;
 import org.jumbune.utils.exception.JumbuneException;
+import org.jumbune.utils.exception.JumbuneRuntimeException;
 
-import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+
 
 /**
  * Executes and schedules DataQuality Timeline job in timely basis. Contains
@@ -41,52 +43,62 @@ import com.google.gson.reflect.TypeToken;
  */
 public class DataQualityTaskScheduler extends Scheduler {
 
-	/** Represents one underscore **/
-	private static final String ONE_UNDERSCORE = "1_";
-
+	/** The Constant SCHEDULED_JOB_JSON. */
 	/* Scheduled job json file name * */
 	private static final String SCHEDULED_JOB_JSON = "scheduledJob.json";
 
+	/** The Constant SIMPLE_DATE_FORMAT. */
 	/* Date fomat DDMMYYY */
 	private static final String SIMPLE_DATE_FORMAT = "yyyy_MM_dd";
 
+	/** The Constant INTERVAL. */
 	/* Interval */
 	private static final String INTERVAL = "INTERVAL";
 
+	/** The Constant EXEC_DIR. */
 	/* Execution script parent directory name */
 	private static final String EXEC_DIR = "bin" + File.separator;
 
+	/** The Constant SPACE. */
 	/* White space */
 	private static final String SPACE = " ";
 
+	/** The Constant SCHEDULER_SCRIPT. */
 	/* Script name for executing scheduled job */
-	private static final String SCHEDULER_SCRIPT = "runScheduler.sh";
+	private static final String SCHEDULER_SCRIPT = "runDqtScheduler.sh";
 
+	/** The Constant USER_DATE_PATTERN. */
 	/* User date format* */
-	private static final String USER_DATE_PATTERN = "HH:mm:SS MM/dd/yyyy";
+	private static final String USER_DATE_PATTERN = "yyyy/MM/dd HH:mm" ;
 
+	/** The Constant SCHEDULED. */
 	/* Scheduled */
 	private static final String SCHEDULED = "Scheduled";
 
+	/** The Constant JOBSTATUS. */
 	/* Jobstatus file name */
 	private static final String JOBSTATUS = "jobstatus";
 
+	/** The Constant SCHEDULED_JOB. */
 	/* Scheduled directory name */
 	private static final String SCHEDULED_JOB = "ScheduledJobs";
 
+	/** The Constant INCREMENTAL_DQ_JOB. */
 	/* directory name for residing incremental DataQualityTimline job */
 	private static final String INCREMENTAL_DQ_JOB = "IncrementalDQJobs";
-
-	/* Jumbune home */
-	private static final String JUMBUNE_HOME = JobConfig.getJumbuneHome()
-			+ File.separator;
+	
+	/** The Constant NEW_LINE. */
 	/* New line */
 	private static final String NEW_LINE = "\n";
 
+	/** The Constant LOGGER. */
 	/* Logger */
 	private static final Logger LOGGER = LogManager
 			.getLogger(DataQualityTaskScheduler.class);
 
+	/* (non-Javadoc)
+	 * @see org.jumbune.common.scheduler.Scheduler#scheduleJob(org.jumbune.common.job.Config)
+	 */
 	@Override
 	public void scheduleJob(Config config) throws JumbuneException {
 		JobConfig jobConfig = null;
@@ -97,7 +109,7 @@ public class DataQualityTaskScheduler extends Scheduler {
 			DataQualityTimeLineConfig dqtl = jobConfig.getDataQualityTimeLineConfig();
 			String scheduledJobLocation = getScheduledJobLocation(jobConfig);
 			copyResourcesForScheduling(jobConfig, scheduledJobLocation);
-			if (ValidateInput.isEnable(dqtl.getEnableCronExpression())) {
+			if (dqtl.getScheduleJob().equalsIgnoreCase("cronExpression")) {
 				cronExpression = dqtl.getCronExpression();
 			} else {
 				cronExpression = getCronExpressionFromUserInput(dqtl);
@@ -111,17 +123,17 @@ public class DataQualityTaskScheduler extends Scheduler {
 					cronExpression, schedluedScriptPath));
 			addUpdatedFileToCron();
 			writeLatestCronTabToFile(updatedCronInfoBuilder.toString());
-			copyExecutionScriptToDestFolder(JUMBUNE_HOME + EXEC_DIR
+			copyExecutionScriptToDestFolder(JumbuneInfo.getHome() + EXEC_DIR
 					+ SCHEDULER_SCRIPT, schedluedScriptPath);
 		} catch (Exception e) {
 			LOGGER.error("Unable to schedule DataQuality Job ", e);
 			throw new JumbuneException(e.getMessage());
 		}finally{
-			if(cronInputStream != null){
+			if( cronInputStream != null){
 				try {
 					cronInputStream.close();
 				} catch (IOException e) {
-					LOGGER.error("Failed to close cron input stream", e);
+					LOGGER.error("Failed to close Cron input stream ", e);
 				}
 			}
 		}
@@ -148,46 +160,71 @@ public class DataQualityTaskScheduler extends Scheduler {
 		return jumbuneSchedulerdBuilder.toString();
 	}
 
+	/**
+	 * Gets the cron expression from user input.
+	 *
+	 * @param dataQualityScheduler the data quality scheduler
+	 * @return the cron expression from user input
+	 * @throws Exception
+	 */
 	private String getCronExpressionFromUserInput(
-			DataQualityTimeLineConfig dataQualityScheduler) throws ParseException {
-		String cronExpression = null;
-		String textdate = dataQualityScheduler.getTime();
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
-				USER_DATE_PATTERN);
-		Date date = simpleDateFormat.parse(textdate);
-		CronGenerator cronGenerator = new CronGenerator(date);
-		if (dataQualityScheduler.getInterval() > 1) {
-			cronExpression = cronGenerator.generateCronExpression(
-					dataQualityScheduler.getSchedulingEvent(),
-					dataQualityScheduler.getInterval());
-		} else {
-			cronExpression = cronGenerator
-					.generateCronExpression(dataQualityScheduler
-							.getSchedulingEvent());
+			DataQualityTimeLineConfig dataQualityScheduler) throws Exception {
+
+		return generateCronExpression(dataQualityScheduler.getSchedulingEvent(),
+				dataQualityScheduler.getInterval(), dataQualityScheduler.getTime());
+	}
+	
+	public String generateCronExpression(SchedulingEvent schedulingEvent, Integer interval, String time) throws Exception{
+		String WHITE_SPACE = " ";
+		switch (schedulingEvent) {
+		case MINUTE:
+			return "*/"+ interval + " * * * *";
+		case HOURLY:
+			return "0 */" + interval + " * * *";
+		case DAILY:
+			int hours = Integer.parseInt(time.split(":")[0]);
+			int minutes = Integer.parseInt(time.split(":")[1]);
+			return new StringBuilder().append(minutes).append(WHITE_SPACE)
+					.append(hours).append(WHITE_SPACE).append("*/")
+					.append(interval).append(" * *").toString();
+		default:
+			break;
 		}
-		return cronExpression;
+		throw new Exception("Insufficient Data");
 	}
 
+	/**
+	 * Copy resources for scheduling.
+	 *
+	 * @param config the config
+	 * @param scheduledJobLoc the scheduled job loc
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
 	private void copyResourcesForScheduling(Config config,
 			String scheduledJobLoc) throws IOException {
 		JobConfig jobConfig = (JobConfig) config;
 		updateJobStatus(scheduledJobLoc);
 		JobConfig clonedJobConfig = disableOtherModulesIfEnabled(jobConfig);
 		writeConfigurationInScheduledJobDirectory(clonedJobConfig);
-		LOGGER.info("Scheduled job resources have been copied successfully");
+		LOGGER.debug("Scheduled job resources have been copied successfully");
 	}
 
+	/**
+	 * Disable other modules if enabled.
+	 *
+	 * @param jobConfig the job config
+	 * @return the job config
+	 */
 	private JobConfig disableOtherModulesIfEnabled(JobConfig jobConfig) {
-		Gson gson = new Gson();
-		String configJson = gson.toJson(jobConfig, JobConfig.class);
-		JobConfig clonedJobConfig = gson.fromJson(configJson, JobConfig.class);
-		if (ValidateInput.isEnable(clonedJobConfig.getDebugAnalysis())) {
+		String configJson = Constants.gson.toJson(jobConfig, JobConfig.class);
+		JobConfig clonedJobConfig = Constants.gson.fromJson(configJson, JobConfig.class);
+		if (JobConfigUtil.isEnable(clonedJobConfig.getDebugAnalysis())) {
 			clonedJobConfig.setDebugAnalysis(Enable.FALSE);
 		}
-		if (ValidateInput.isEnable(clonedJobConfig.getEnableDataProfiling())) {
+		if (JobConfigUtil.isEnable(clonedJobConfig.getEnableDataProfiling())) {
 			clonedJobConfig.setEnableDataProfiling(Enable.FALSE);
 		}
-		if (ValidateInput.isEnable(jobConfig.getEnableStaticJobProfiling())) {
+		if (JobConfigUtil.isEnable(jobConfig.getEnableStaticJobProfiling())) {
 			clonedJobConfig.setEnableStaticJobProfiling(Enable.FALSE);
 		}
 		if (clonedJobConfig.getInputFile() != null) {
@@ -195,11 +232,16 @@ public class DataQualityTaskScheduler extends Scheduler {
 		}
 		return clonedJobConfig;
 	}
+	
 
+	/**
+	 * Write configuration in scheduled job directory.
+	 *
+	 * @param config the config
+	 */
 	private void writeConfigurationInScheduledJobDirectory(Config config) {
-		Gson gson = new Gson();
 		JobConfig jobConfig = (JobConfig) config;
-		String json = gson.toJson(jobConfig, JobConfig.class);
+		String json = Constants.gson.toJson(jobConfig, JobConfig.class);
 		File file = null;
 		FileWriter fileWriter = null;
 		try {
@@ -224,6 +266,11 @@ public class DataQualityTaskScheduler extends Scheduler {
 
 	}
 
+	/**
+	 * Update job status.
+	 *
+	 * @param scheduledJobLocation the scheduled job location
+	 */
 	private void updateJobStatus(String scheduledJobLocation) {
 		Properties prop = new Properties();
 		OutputStream os = null;
@@ -247,17 +294,17 @@ public class DataQualityTaskScheduler extends Scheduler {
 		}
 	}
 
-	/***
-	 * Finds DataTimeline Scheduled job jobstatus file location
-	 * 
-	 * @param config
+	/**
+	 * *
+	 * Finds DataTimeline Scheduled job jobstatus file location.
+	 *
+	 * @param config the config
 	 * @return jobstatus file path of current job.
 	 */
 	public String getScheduledJobLocation(Config config) {
 		JobConfig jobConfig = (JobConfig) config;
 		String jobName = jobConfig.getJumbuneJobName();
-		String scheduledJobDirectory = JobConfig.getJumbuneHome()
-				+ File.separator + SCHEDULED_JOB + File.separator
+		String scheduledJobDirectory = JumbuneInfo.getHome() + SCHEDULED_JOB + File.separator
 				+ INCREMENTAL_DQ_JOB + File.separator + jobName
 				+ File.separator;
 		File file = new File(scheduledJobDirectory);
@@ -267,12 +314,13 @@ public class DataQualityTaskScheduler extends Scheduler {
 		return scheduledJobDirectory;
 	}
 
-	/***
-	 * Checks whether the job is scheduled or not
-	 * 
-	 * @param config
+	/**
+	 * *
+	 * Checks whether the job is scheduled or not.
+	 *
+	 * @param config the config
 	 * @return true if job is scheduled otherwise return false
-	 * @throws JumbuneException
+	 * @throws JumbuneException the jumbune exception
 	 */
 	public boolean isJobAlreadyScheduled(Config config) throws JumbuneException {
 		JobConfig jobConfig = (JobConfig) config;
@@ -286,6 +334,13 @@ public class DataQualityTaskScheduler extends Scheduler {
 		return false;
 	}
 
+	/**
+	 * Gets the job status file instance.
+	 *
+	 * @param config the config
+	 * @return the job status file instance
+	 * @throws JumbuneException the jumbune exception
+	 */
 	private Properties getJobStatusFileInstance(Config config)
 			throws JumbuneException {
 		JobConfig jobConfig = (JobConfig) config;
@@ -303,6 +358,13 @@ public class DataQualityTaskScheduler extends Scheduler {
 		return null;
 	}
 
+	/**
+	 * Read property instance.
+	 *
+	 * @param file the file
+	 * @return the properties
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
 	private Properties readPropertyInstance(File file) throws IOException {
 		Properties prop = new Properties();
 		FileReader fileReader = null;
@@ -310,14 +372,10 @@ public class DataQualityTaskScheduler extends Scheduler {
 			fileReader = new FileReader(file);
 			prop.load(fileReader);
 		} catch (IOException e) {
-			LOGGER.error("Could not read the file ", e);
+			LOGGER.error(JumbuneRuntimeException.throwFileNotLoadedException(e.getStackTrace()));
 		} finally {
 			if (fileReader != null) {
-				try{
-					fileReader.close();
-				}catch(IOException ex){
-					LOGGER.error("exception occured while closing properties file",ex);
-				}
+				fileReader.close();
 			}
 		}
 		return prop;
@@ -326,13 +384,11 @@ public class DataQualityTaskScheduler extends Scheduler {
 	/**
 	 * Saves DataQuality Timeline scheduled job result in Jumbune installation
 	 * directory.
-	 * 
-	 * @param config
-	 *            YamlConfig
-	 * @param report
-	 *            DataQuality Timeline report
-	 * @throws JumbuneException
-	 * @throws IOException
+	 *
+	 * @param config            YamlConfig
+	 * @param report            DataQuality Timeline report
+	 * @throws JumbuneException the jumbune exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public void saveScheduledJobResult(Config config, String report)
 			throws JumbuneException, IOException {
@@ -351,6 +407,13 @@ public class DataQualityTaskScheduler extends Scheduler {
 
 	}
 
+	/**
+	 * Update job status file interval.
+	 *
+	 * @param config the config
+	 * @param interval the interval
+	 * @throws JumbuneException the jumbune exception
+	 */
 	private void updateJobStatusFileInterval(Config config, int interval)
 			throws JumbuneException {
 		Properties prop = getJobStatusFileInstance(config);
@@ -369,37 +432,38 @@ public class DataQualityTaskScheduler extends Scheduler {
 		}
 	}
 
+	/**
+	 * Save property file.
+	 *
+	 * @param prop the prop
+	 * @param location the location
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
 	private void savePropertyFile(Properties prop, String location)
 			throws IOException {
 		FileWriter fw = null;
 		try {
 			fw = new FileWriter(location);
+			long currentTime = System.currentTimeMillis();
+			prop.setProperty("lastExecutedTime", Long.toString(currentTime));
 			prop.store(fw,
-					"Updated Interval time [" + System.currentTimeMillis()
+					"Updated Interval time [" + currentTime
 							+ "]");
 		} finally {
 			if (fw != null) {
-				try{
-					fw.close();
-				}catch(IOException ex){
-					LOGGER.error("exception occured while closing properties file",ex);
-				}
+				fw.close();
 			}
 		}
 	}
 
 	/**
 	 * It Saves result of dataQuality Timeline job result.
-	 * 
-	 * @param scheduledJobLocation
-	 *            location of scheduled Jumbune DataQuality Timline job
-	 * @param dataQualityTaskSchedular
-	 *            {@link DataQualityTaskScheduler}
-	 * @param jobConfig
-	 *            JobConfig
-	 * @param dvReport
-	 *            report of DataQualityTimeLine job
-	 * @throws JumbuneException
+	 *
+	 * @param scheduledJobLocation            location of scheduled Jumbune DataQuality Timline job
+	 * @param dataQualityTaskSchedular            {@link DataQualityTaskScheduler}
+	 * @param jobConfig            JobConfig
+	 * @param dvReport            report of DataQualityTimeLine job
+	 * @throws JumbuneException the jumbune exception
 	 */
 	public void persistDataQualityReport(String scheduledJobLocation,
 			DataQualityTaskScheduler dataQualityTaskSchedular,
@@ -428,39 +492,46 @@ public class DataQualityTaskScheduler extends Scheduler {
 
 	/**
 	 * This method generates DataQualityTimeline report in a formatted way.
-	 * 
-	 * @param dvReport
-	 *            dataQuality job result json.
-	 * @param loader
-	 *            YamlLoader
+	 *
+	 * @param dvReport            dataQuality job result json.
+	 * @param config the config
+	 * @param isDataQualityReportEmpty the is data quality report empty
 	 * @return String DataQuality Timeline report in json format.
 	 */
 	public String generateDataQualityReport(String dvReport, Config config,
-			boolean isDataQualityReportEmpty) {
+			boolean isDataQualityReportEmpty , Date launchTime) {
 		JobConfig jobConfig = (JobConfig) config;
 		Map<String, String> dataQualityReport = new HashMap<String, String>();
 		Map<String, Map<String, String>> dqrWrapper = new HashMap<String, Map<String, String>>();
 		if (!isDataQualityReportEmpty) {
-			Integer totalTupleProcessed = getTupleResult(config, 1);
-			Integer cleanTuple = getTupleResult(config, 2);
+			Integer totalTupleProcessed = 0, cleanTuple = 0;
+			if(Enable.TRUE.equals(jobConfig.getEnableDataValidation()) || Enable.TRUE.equals(jobConfig.getEnableDataQualityTimeline())){
+			totalTupleProcessed = getTupleResult(config, 1, Constants.CONSOLIDATED_DV_LOC);
+			cleanTuple = getTupleResult(config, 2, Constants.CONSOLIDATED_DV_LOC);
+			}else if(Enable.TRUE.equals(jobConfig.getEnableJsonDataValidation())){
+				totalTupleProcessed = getTupleResult(config, 1, Constants.CONSOLIDATED_JSON_DV_LOC);
+				cleanTuple = getTupleResult(config, 2, Constants.CONSOLIDATED_JSON_DV_LOC);
+			}else{
+				totalTupleProcessed = getTupleResult(config, 1, Constants.CONSOLIDATED_XML_DV_LOC);
+				cleanTuple = getTupleResult(config, 2, Constants.CONSOLIDATED_XML_DV_LOC);
+			}
 			populateDataTimeLineValues(dataQualityReport, totalTupleProcessed,
 					cleanTuple, dvReport);
 		} else {
 			populateDataTimeLineValues(dataQualityReport, 0, 0, "{}");
 		}
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
-				USER_DATE_PATTERN);
-		Date date = null;
-		try {
-			date = simpleDateFormat.parse(jobConfig.getDataQualityTimeLineConfig()
-					.getTime());
-		} catch (ParseException pe) {
-			LOGGER.error("Unable to parse date format", pe);
-		}
-		dqrWrapper.put(new Long(date.getTime()).toString(), dataQualityReport);
-		return new Gson().toJson(dqrWrapper);
+		dqrWrapper.put(new Long(launchTime.getTime()).toString(), dataQualityReport);
+		return Constants.gson.toJson(dqrWrapper);
 	}
 
+	/**
+	 * Populate data time line values.
+	 *
+	 * @param dataQualityReport the data quality report
+	 * @param totalTupleProcessed the total tuple processed
+	 * @param cleanTuple the clean tuple
+	 * @param dvReport the dv report
+	 */
 	private void populateDataTimeLineValues(
 			Map<String, String> dataQualityReport, Integer totalTupleProcessed,
 			Integer cleanTuple, String dvReport) {
@@ -470,13 +541,19 @@ public class DataQualityTaskScheduler extends Scheduler {
 		dataQualityReport.put("cleanTuple", cleanTuple.toString());
 	}
 
-	private Integer getTupleResult(Config config, int lineToget) {
+	/**
+	 * Gets the tuple result.
+	 *
+	 * @param config the config
+	 * @param lineToget the line toget
+	 * @return the tuple result
+	 */
+	private Integer getTupleResult(Config config, int lineToget, String dvName) {
 		JobConfig jobConfig = (JobConfig) config;
 		StringBuilder sb = new StringBuilder();
-		String tupleDirectory = sb.append(JobConfig.getJumbuneHome())
-				.append(File.separator).append("jobJars")
+		String tupleDirectory = sb.append(JumbuneInfo.getHome()).append(Constants.JOB_JARS_LOC)
 				.append(File.separator).append(jobConfig.getJumbuneJobName())
-				.append(File.separator).append("dv").append(File.separator)
+				.append(File.separator).append(dvName).append(File.separator)
 				.append("tuple").toString();
 		File dir = new File(tupleDirectory);
 		File[] tuples = dir.listFiles();
@@ -497,20 +574,21 @@ public class DataQualityTaskScheduler extends Scheduler {
 					count++;
 				}
 			} catch (IOException e) {
-				LOGGER.error("error while reading file", e);
+				LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));
 			} finally {
 				if (br != null) {
 					try {
 						br.close();
 					} catch (IOException ioe) {
-						LOGGER.error("Unable to close connection ", ioe);
+						LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(ioe.getStackTrace()));
 					}
 				}
 			}
 		}
 		return totalTupleProcessed;
 	}
-
+	
+	
 	/**
 	 * This method collects all previous scheduled DataQualityTimeline job
 	 * results by jobname.
@@ -523,14 +601,10 @@ public class DataQualityTaskScheduler extends Scheduler {
 	 */
 	public String getDataQualityTimeLineReport(JobConfig jobConfig,
 			String jobName) {
-		Gson gson = new Gson();
-		int interval = 0;
-		boolean avoidFirstIteration = false;
 		StringBuilder sb = new StringBuilder();
 		TreeMap<String, Map<String, String>> timeStamp = new TreeMap<String, Map<String, String>>(
 				new TimestampComparator());
-		String directoryPath = sb.append(JobConfig.getJumbuneHome())
-				.append(File.separator).append(SCHEDULED_JOB)
+		String directoryPath = sb.append(JumbuneInfo.getHome()).append(SCHEDULED_JOB)
 				.append(File.separator).append(INCREMENTAL_DQ_JOB)
 				.append(File.separator).append(jobName).append(File.separator)
 				.toString();
@@ -545,10 +619,7 @@ public class DataQualityTaskScheduler extends Scheduler {
 		Properties prop = null;
 		try {
 			prop = getJobStatusFileInstance(jobConfig);
-			interval = Integer.parseInt(prop.getProperty(INTERVAL));
-			if (interval > 1) {
-				avoidFirstIteration = true;
-			}
+			Integer.parseInt(prop.getProperty(INTERVAL));
 		} catch (JumbuneException je) {
 			LOGGER.error("properties file not found", je);
 		}
@@ -556,12 +627,8 @@ public class DataQualityTaskScheduler extends Scheduler {
 		sb.setLength(0);
 		sb = new StringBuilder();
 		for (String jobResult : directories) {
-			if (jobResult.startsWith(ONE_UNDERSCORE) && avoidFirstIteration) {
-				continue;
-			}
 			if (!jobResult.equals("bin")) {
-				file = new File(sb.append(JobConfig.getJumbuneHome())
-						.append(File.separator).append(SCHEDULED_JOB)
+				file = new File(sb.append(JumbuneInfo.getHome()).append(SCHEDULED_JOB)
 						.append(File.separator).append(INCREMENTAL_DQ_JOB)
 						.append(File.separator).append(jobName)
 						.append(File.separator).append(jobResult)
@@ -578,7 +645,7 @@ public class DataQualityTaskScheduler extends Scheduler {
 					line = stringBuilder.toString().trim();
 					Type type = new TypeToken<Map<String, Map<String, String>>>() {
 					}.getType();
-					Map<String, Map<String, String>> scheduleJobResult = gson
+					Map<String, Map<String, String>> scheduleJobResult = Constants.gson
 							.fromJson(line, type);
 					for (Entry<String, Map<String, String>> map : scheduleJobResult
 							.entrySet()) {
@@ -593,7 +660,7 @@ public class DataQualityTaskScheduler extends Scheduler {
 						try {
 							br.close();
 						} catch (IOException er) {
-							LOGGER.error("Unable to close reader", er);
+							LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(er.getStackTrace()));
 						}
 					}
 
@@ -602,16 +669,19 @@ public class DataQualityTaskScheduler extends Scheduler {
 			}
 
 		}
-		return gson.toJson(timeStamp);
+		return Constants.gson.toJson(timeStamp);
 
 	}
-
+	
 	/**
 	 * This class is used for comparing timestamp.
 	 *
 	 */
 	class TimestampComparator implements Comparator<String> {
 
+		/* (non-Javadoc)
+		 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
+		 */
 		@Override
 		public int compare(String firstTimeStamp, String secondTimestamp) {
 			long date_one = 0l;

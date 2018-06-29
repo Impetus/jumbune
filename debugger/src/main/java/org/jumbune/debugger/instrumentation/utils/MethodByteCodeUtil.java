@@ -7,7 +7,7 @@ import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jumbune.common.beans.InstructionsBean;
+import org.jumbune.debugger.log.processing.InstructionsBean;
 import org.jumbune.utils.exception.ErrorCodesAndMessages;
 import org.jumbune.utils.exception.JumbuneException;
 import org.objectweb.asm.Opcodes;

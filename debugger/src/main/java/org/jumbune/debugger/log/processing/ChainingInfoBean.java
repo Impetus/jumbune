@@ -72,7 +72,6 @@ public class ChainingInfoBean {
 		return "ChainingInfoBean [name=" + name + ", inputKeys=" + inputKeys
 				+ ", contextWrites=" + contextWrites + "]";
 	}
-	
-	
 
+	
 }

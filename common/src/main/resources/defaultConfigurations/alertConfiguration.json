@@ -1,0 +1,34 @@
+{
+    "configurableAlerts": {
+        "HDFS_UTILIZATION": {
+            "warningLevel": 60, 
+            "criticalLevel": 80
+        }, 
+        "QUEUE_UTILIZATION": {
+            "warningLevel": 60, 
+            "criticalLevel": 80
+        }, 
+        "UNDER_REPLICATED_BLOCKS": {
+            "warningLevel": 60, 
+            "criticalLevel": 80
+        }, 
+        "DISK_SPACE_UTILIZATION": {
+            "warningLevel": 60, 
+            "criticalLevel": 80
+        }
+    }, 
+    "nonConfigurableAlerts": {
+        "CLUSTER_TIME_DESYNC": true, 
+        "MAP_REDUCE_APP_FAILURE": true, 
+        "DN_VOLUME_FAILURE_CHECK": true, 
+        "HADOOP_DAEMON_DOWN": true, 
+        "CONTAINER_POOL_UTILIZATION": true, 
+        "YARN_PROPERTY_CHECK": true, 
+        "EXCESSIVE_RESOURCE_ALLOCATION": true, 
+        "RESOURCE_UTILIZATION_CHECK": true, 
+        "NODE_UNHEALTHY": true, 
+        "QUEUE_CHILD_CAPACITY_OVERFLOW": true
+    },
+    "individualQueueAlerts" : {},
+    "updateInterval" : 20
+}

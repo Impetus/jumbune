@@ -10,11 +10,10 @@ import static org.jumbune.utils.UtilitiesConstants.SEPARATOR_COMMA;
 import static org.jumbune.utils.UtilitiesConstants.SEPARATOR_UNDERSCORE;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 
 
 
@@ -26,14 +25,13 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.google.gson.Gson;
+import org.jumbune.utils.exception.JumbuneRuntimeException;
 
 
 /**
  * This class provides util methods to deal with map reduce jobs
  * 
  */
-@SuppressWarnings("deprecation")
 public final class JobUtil {
 	/** The LOGGER. */
 	private static final Logger LOGGER = LogManager.getLogger(JobUtil.class);
@@ -47,7 +45,7 @@ public final class JobUtil {
 			+ "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
 			+ "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
 
-	private static final String FILESYSTEM_LOC_PATTERN = "(/[a-zA-Z0-9_ -]+\\s*)+(/)?(\\*)?(\\*\\.(log)?\\*)?(\\.\\*)?(\\.json)?";
+	private static final String FILESYSTEM_LOC_PATTERN = ".*";
 
 	private static final char STARTER = '<';
 	private static final char CLOSER = '>';
@@ -366,7 +364,7 @@ public final class JobUtil {
 				LOGGER.debug("Modifying input path changed to: "+ sampledDataPath);
 				FileInputFormat.setInputPaths(job, new Path(sampledDataPath));
 			} catch (IOException e) {
-				LOGGER.error(e);
+				LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));
 			}
 		}
 

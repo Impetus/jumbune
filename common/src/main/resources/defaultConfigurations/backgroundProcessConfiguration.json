@@ -1,0 +1,7 @@
+{
+	"processMap" : {
+		"QUEUE_UTILIZATION"     : false,
+		"SYSTEM_METRICS"        : false,
+		"WORKER_NODES_UPDATER"  : true
+	}
+}

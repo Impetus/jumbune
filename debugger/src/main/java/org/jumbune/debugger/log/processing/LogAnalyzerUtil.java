@@ -310,7 +310,7 @@ public class LogAnalyzerUtil {
 			LOGGER.error("Exception while creating the Json object with appended Debugger Summary",e);
 			jsonFromReport = gson.toJson(debugAnalysisMap);
 		}
-		LOGGER.info("Completed debugger log processing");
+		LOGGER.debug("Completed debugger log processing");
 		return jsonFromReport;
 	}
 

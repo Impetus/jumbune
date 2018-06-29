@@ -55,7 +55,7 @@ public class MainAdapter extends BaseAdapter {
 					&& Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC == mn.access
 					&& Type.getMethodDescriptor(Type.VOID_TYPE,
 							TYPE_STRING_ARRAY).equals(mn.desc)) {
-				LOGGER.info(MessageFormat.format(InstrumentationMessageLoader
+				LOGGER.debug(MessageFormat.format(InstrumentationMessageLoader
 						.getMessage(MessageConstants.MAIN_METHOD_FOUND),
 						getClassName()));
 

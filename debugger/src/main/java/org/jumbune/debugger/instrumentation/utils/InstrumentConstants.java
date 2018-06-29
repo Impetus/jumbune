@@ -36,7 +36,6 @@ import org.objectweb.asm.Type;
 /**
  * This is interface for constants used in instrument module.
  */
-@SuppressWarnings("deprecation")
 public interface InstrumentConstants {
 	String CLASSNAME_CLASS_HAS_BEEN_INSTRUMENTED = Type.getInternalName(Instrumented.class);
 	String CLASSNAME_MAPPER_CONTEXT = Type.getInternalName(Mapper.Context.class);
@@ -196,10 +195,10 @@ public interface InstrumentConstants {
 	String VALIDATION_MESSAGE = "Validating";
 	String CLASS_FILE_EXTENSION = ".class";
 	String PROFILE_TASK = "mapred.task.profile";
-	String PROFILE_PARAMS = "mapred.task.profile.params";
+/*	String PROFILE_PARAMS = "mapred.task.profile.params";
 	String PROFILE_MAPS = "mapred.task.profile.maps";
 	String PROFILE_REDUCES = "mapred.task.profile.reduces";
-
+*/
 	String JOB_CLIENT = "jobClient";
 	String JOB_INFO = "info";
 	String JOB_CONF = "conf";

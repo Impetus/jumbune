@@ -2,21 +2,10 @@ package org.jumbune.dataprofiling;
 
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.TreeSet;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.Date;
-import java.util.SortedSet;
 import java.lang.reflect.Type;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -29,27 +18,20 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
-import org.jumbune.dataprofiling.DataProfNoCriteriaMapper;
-import org.jumbune.dataprofiling.DataProfNoCriteriaReducer;
-import org.jumbune.dataprofiling.utils.DataProfilingConstants;
-import org.jumbune.datavalidation.DataValidationInputFormat;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.DataProfilingBean;
+import org.jumbune.common.utils.FileUtil;
+import org.jumbune.dataprofiling.utils.DataProfilingConstants;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import com.google.gson.reflect.TypeToken;
 
-public class DataProfNoCriteriaJobExecutor {
-	
-	
+public class DataProfNoCriteriaJobExecutor {	
 	
 	/** The Constant LOGGER. */
-	private static final Logger LOGGER = LogManager.getLogger(DataProfNoCriteriaJobExecutor.class);
-	
+	private static final Logger LOGGER = LogManager.getLogger(DataProfNoCriteriaJobExecutor.class);	
 	
 	/***
 	 * main method for job execution
@@ -59,17 +41,22 @@ public class DataProfNoCriteriaJobExecutor {
 
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-		LOGGER.info("Data Profiling job values respectively ["+otherArgs[0]+"], "+
+		LOGGER.debug("Data Profiling job values respectively ["+otherArgs[0]+"], "+
 				 otherArgs[1]);
 		StringBuilder sb = new StringBuilder();
-		for (int i = 1; i < otherArgs.length; i++) {
-			LOGGER.info("other arguments" + otherArgs[i]);
+		
+		int dynamicArgs = 0;		
+		dynamicArgs = ((otherArgs.length)-1);
+		
+		for (int i = dynamicArgs; i < otherArgs.length; i++) {
+			LOGGER.debug("other arguments" + otherArgs[i]);
 			sb.append(otherArgs[i]);
 		}
+		
 		String outputPath = DataProfilingConstants.OUTPUT_DIR_PATH + new Date().getTime();
 		String inputPath = otherArgs[0].replace(" ", "");
 		String dpBeanString = sb.toString();
-		LOGGER.info("Received dpBean value [" + dpBeanString+"]");
+		LOGGER.debug("Received dpBean value [" + dpBeanString+"]");
 		Gson gson = new Gson();
 		Type type = new TypeToken<DataProfilingBean>() {
 		}.getType();
@@ -78,6 +65,8 @@ public class DataProfNoCriteriaJobExecutor {
 		String recordSeparator = dataProfilingBean.getRecordSeparator();
 		conf.set(DataProfilingConstants.DATA_PROFILING_BEAN, dpBeanString);
 		conf.set(DataProfilingConstants.RECORD_SEPARATOR, recordSeparator);
+		
+		conf.set(DataProfilingConstants.TEXTINPUTFORMAT_RECORD_DELIMITER, recordSeparator);
 
 		Job job = new Job(conf, DataProfilingConstants.JOB_NAME);
 
@@ -87,11 +76,15 @@ public class DataProfNoCriteriaJobExecutor {
 		job.setOutputValueClass(IntWritable.class);
 		
 		job.setMapperClass(DataProfNoCriteriaMapper.class);
+		job.setCombinerClass(DataProfNoCriteriaReducer.class);
 		job.setReducerClass(DataProfNoCriteriaReducer.class);
 		
-		job.setInputFormatClass(DataValidationInputFormat.class);
+		job.setInputFormatClass(TextInputFormat.class);
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
-		DataValidationInputFormat.setInputPaths(job, inputPath);
+		
+    	Path[] inputPaths = FileUtil.getAllNestedFilePath(job, inputPath);		
+		
+		TextInputFormat.setInputPaths(job, inputPaths);
 		SequenceFileOutputFormat.setOutputPath(job, new Path(outputPath));
 		
 		job.waitForCompletion(true);
@@ -101,12 +94,10 @@ public class DataProfNoCriteriaJobExecutor {
 
 		final String jsonString = dpReportGson.toJson(sortedMap);
 		LOGGER.info(DataProfilingConstants.DATA_PROFILING_REPORT + jsonString);
-
 	}
 
 	private static  Map<String, Integer> readJobOutputFromHdfs(Configuration configuration,
-			String outputPath) throws IOException {
-		
+			String outputPath) throws IOException {		
 		
 		FileSystem fs = FileSystem.get(configuration);
 		Path inFile = new Path(outputPath);
@@ -115,7 +106,7 @@ public class DataProfNoCriteriaJobExecutor {
 		Text key = null;
 		IntWritable value = null;
 		SequenceFile.Reader reader = null;
-		Map<String, Integer> dataValueMap = new HashMap<String, Integer>();
+		Map<String, Integer> dataValueMap = new LinkedHashMap<String, Integer>();
 		for (FileStatus status : fss) {
 			path = status.getPath();
 			if (!((path.getName().equals("_SUCCESS")) || (path.getName()
@@ -129,45 +120,6 @@ public class DataProfNoCriteriaJobExecutor {
 			reader.close();
 			}
 		}
-		SortedSet < Map.Entry < String, Integer >> sortedEntries = getValueSortedMap(dataValueMap);
-		dataValueMap = getMap(sortedEntries, 1000);
-		return dataValueMap;
-	
+		return dataValueMap;	
 	}
-	
-	private static < String, Integer extends Comparable <? extends Integer >> SortedSet < Map.Entry < String, Integer >> getValueSortedMap(
-			Map < String, Integer > dataValueMap) {
-				SortedSet < Map.Entry < String, Integer >> sortedEntries = new TreeSet < Map.Entry < String, Integer >> (
-				new Comparator < Map.Entry < String, Integer >> () {@Override
-					public int compare(Map.Entry < String, Integer > entry1,
-					Map.Entry < String, Integer > entry2) {
-						int x =  (java.lang.Integer) entry1.getValue();
-						int y =  (java.lang.Integer) entry2.getValue();
-						if (x >= y) {
-							return -1;
-						} else {
-							return 1;
-						}
-					}
-				});
-				sortedEntries.addAll(dataValueMap.entrySet());
-				return sortedEntries;
-			}
-			
-	private static Map<String, Integer> getMap(SortedSet < Map.Entry < String, Integer >> setList, int limit) {
-				Map<String, Integer> map = new LinkedHashMap<String, Integer>();
-				Iterator<Entry<String, Integer>> it = setList.iterator();
-				int i = 0;
-				while (it.hasNext() && i < limit) {
-					i++;
-					Entry<String, Integer> e = it.next();
-					map.put(e.getKey(), e.getValue());
-				}
-				return map;
-			}
-	
-
-	
 }
-
-

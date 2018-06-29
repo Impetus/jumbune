@@ -15,6 +15,7 @@ import java.util.zip.ZipOutputStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.JumbuneInfo;
 import org.jumbune.common.beans.Validation;
 import org.jumbune.common.utils.ClasspathUtil;
 import org.jumbune.common.utils.ConfigurationUtil;
@@ -69,16 +70,16 @@ public class JarInstrumenter extends Instrumenter {
 
 	public List<String> userDefValidationsClasses = new ArrayList<String>();
 	public List<String> regexValidationsClasses = new ArrayList<String>();
-
+	private String workerLogLocation;
 	/**
 	 * <p>
 	 * Create a new instance of JarInstrumenter.
 	 * </p>
-	 */	public JarInstrumenter(Config config) {
-		super(config);
-
-		env = new Environment();
-	}
+	 */	public JarInstrumenter(Config config, String workerLogLocation) {
+		 super(config);
+		 env = new Environment();
+		 this.workerLogLocation = workerLogLocation;
+	 }
 
 	/**
 	 * This method instruments a jar file. The source and destination files are
@@ -98,7 +99,7 @@ public class JarInstrumenter extends Instrumenter {
 	private void createSymbolTableFile(Config config , Environment env) throws IOException {
 		FileWriter fw = null;
 		try {
-			JobConfig jobConfig = (JobConfig)config;
+			JobConfig jobConfig = (JobConfig) config;
 			String absFilePath = jobConfig.getJumbuneJobLoc()+"/logs/symbolTable.log";
 			fw = new FileWriter(absFilePath);
 			Map<String,String> map = env.getSymbolTable();
@@ -265,7 +266,7 @@ public class JarInstrumenter extends Instrumenter {
 		if (InstrumentConfig.INSTRUMENT_MAPREDUCE_EXECUTION) {
 			cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 			instrumentBytesTmp = InstrumentUtil.instrumentBytes(instrumentBytesTmp,
-					new ConfigureMapReduceAdapter(getConfig(), cw,env), cw);
+					new ConfigureMapReduceAdapter(getConfig(), cw,env, workerLogLocation), cw);
 		}
 
 		//add logging only if validations are enabled on a particular class. 
@@ -349,18 +350,19 @@ public class JarInstrumenter extends Instrumenter {
 		// adding util classes to the jar file
 		ZipEntry xmlFileEntry = new ZipEntry(LOG4J_CONF_FILE);
 		zos.putNextEntry(xmlFileEntry);
-		String filePath = JobConfig.getJumbuneHome() + LOG4J_FILE_PATH;
+		String filePath = JumbuneInfo.getHome() + LOG4J_FILE_PATH;
 		byte[] buffer = new byte[InstrumentConstants.FOUR_ZERO_NINE_SIX];
-		InputStream is = new FileInputStream(filePath);
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		int read = 0;
-		while ((read = is.read(buffer)) != -1) {
-			baos.write(buffer, 0, read);
-		}
-		zos.write(baos.toByteArray());
-		zos.closeEntry();
+		try (InputStream is = new FileInputStream(filePath)) {
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			int read = 0;
+			while ((read = is.read(buffer)) != -1) {
+				baos.write(buffer, 0, read);
+			}
+			zos.write(baos.toByteArray());
+			zos.closeEntry();
 
-		addUtilClasses(getConfig(), zos);
+			addUtilClasses(getConfig(), zos);
+		}
 	} 
 	/**
 	 * <p>

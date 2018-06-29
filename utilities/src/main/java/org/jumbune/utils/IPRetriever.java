@@ -8,6 +8,7 @@ import java.net.UnknownHostException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.utils.exception.JumbuneRuntimeException;
 
 /**
  * This class has util methods to give IP and host on which current jvm is
@@ -31,7 +32,7 @@ public final class IPRetriever {
 			InetAddress addr = InetAddress.getLocalHost();
 			return addr.getHostAddress();
 		} catch (UnknownHostException e) {
-			LOGGER.error(e.getMessage());
+			LOGGER.error(JumbuneRuntimeException.throwUnKnownHostException(e.getStackTrace()));
 		}
 		return null;
 	}
@@ -57,7 +58,7 @@ public final class IPRetriever {
 			InetAddress addr = InetAddress.getLocalHost();
 			return addr.getHostName();
 		} catch (UnknownHostException e) {
-			LOGGER.error(e.getMessage());
+			LOGGER.error(JumbuneRuntimeException.throwUnKnownHostException(e.getStackTrace()));
 		}
 		return null;
 	}

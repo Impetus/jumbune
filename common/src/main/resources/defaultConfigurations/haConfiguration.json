@@ -1,0 +1,8 @@
+{
+	"heartBeatMillis" : 5000,
+	"thresholdBeatsToMiss" : 4,
+	"numRetriesAgentConn" : 10,
+	"agentConnMillis" : 5000,
+	"numRetriesRemoterApis" : 3,
+	"commandLogDir" : ""
+}

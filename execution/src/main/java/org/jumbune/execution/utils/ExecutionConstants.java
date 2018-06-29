@@ -8,17 +8,11 @@ package org.jumbune.execution.utils;
  * 
  */
 public interface ExecutionConstants {
-	int EXECUTION_TYPE_SEQUENTIAL = 1000;
-	int EXECUTION_TYPE_CONCURRENT = 1001;
 	int MESSAGE_INFO_CHANGE_QUESTION = 1004;
 	int MESSAGE_LOG_LEVEL = 1005;
 	int MESSAGE_ALLOWED_LOG_LEVEL = 1009;
-	int MESSAGE_EXECUTION_TYPE = 1011;
-	int MESSAGE_YAML_PATH = 1007;
 	int MESSAGE_EXECUTION_YAML_COMMAND = 1008;
-	int MESSAGE_FILE_PATH_FORMAT_NOT_CORRECT = 1013;
 	int MESSAGE_COULD_NOT_EXECUTE_JOB = 1014;
-	int MESSAGE_JOBS_NOT_MATCH = 1015;
 	int MESSAGE_JOB_CLASS_NAME = 1016;
 	int MESSAGE_JOB_PARAMETERS = 1017;
 	int MESSAGE_MORE_JOBS = 1018;
@@ -27,8 +21,6 @@ public interface ExecutionConstants {
 	int MESSAGE_EXCLUDE_JOBS = 1030;
 	int MESSAGE_ENTER_INDEX = 1040;
 
-	String DEFAULT_JAR_EXECUTION_TYPE = "s";
-	String COUNTER_SEPARATOR = ":";
 	String COMMA = ",";
 	String TEMP_DIR = "tmp";
 	String TOKEN_FILE = "/jumbuneState.txt";
@@ -71,14 +63,9 @@ public interface ExecutionConstants {
 	String CAMELCASE_REDUCE_INPUT_RECORDS = "Reduce Input Records";
 
 	String RUNNING_JOB = "Running job: ";
-	String YARN_RUNNING_JOB = "mapreduce.Job:";
 	String COUNTERS = "Counters:";
 	String MAPRED_JOBCLIENT = "mapred.JobClient:";
-	String MAPRED_YARN_JOBCLIENT = "mapred.job:";
-	String DV_DOUBLE_HASH = "DV##";
 	int TEN = 10;
 	int THREE = 3 ;
-	
-	String TOPTXTFILE = "/top.txt";
 
 }

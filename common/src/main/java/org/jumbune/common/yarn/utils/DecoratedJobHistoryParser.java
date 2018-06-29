@@ -1,7 +1,6 @@
 package org.jumbune.common.yarn.utils;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -129,13 +128,6 @@ public class DecoratedJobHistoryParser extends JobHistoryParser {
 		public AdditionalTaskInfo() {
 			cpuUsages = new int[] {};
 			physicalMemInKBs = new int[] {};
-			}
-
-		public void printAll() {
-			System.out.println("Task Type:"+taskType.name());
-			System.out.println("CPU Usages []:"+Arrays.toString(cpuUsages));
-			System.out.println("Physical Mem(KB) []:"+Arrays.toString(physicalMemInKBs));
-			
 		}
 		
 		public int[] getCpuUages() {

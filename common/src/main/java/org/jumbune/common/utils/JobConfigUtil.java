@@ -1,24 +1,33 @@
 package org.jumbune.common.utils;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.List;
+import java.util.Properties;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.ClasspathElement;
-import org.jumbune.common.beans.LogConsolidationInfo;
-import org.jumbune.common.beans.Master;
-import org.jumbune.common.beans.Slave;
+import org.jumbune.common.beans.Enable;
+import org.jumbune.common.beans.JumbuneInfo;
+import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.beans.cluster.Workers;
 import org.jumbune.common.job.Config;
 import org.jumbune.common.job.JobConfig;
+import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.remoting.client.Remoter;
 import org.jumbune.remoting.common.CommandType;
-import com.google.gson.Gson;
+import org.jumbune.remoting.common.StringUtil;
 
+import com.jcraft.jsch.Channel;
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
+import com.jcraft.jsch.SftpException;
 
 
 
@@ -28,31 +37,14 @@ import com.jcraft.jsch.JSchException;
 public final class JobConfigUtil {
 	
 	/** The Constant CONSOLELOGGER. */
-	public static final Logger CONSOLELOGGER = LogManager
+	private static final Logger CONSOLELOGGER = LogManager
 			.getLogger("EventLogger");
-
-	
-	/** Specify the Job Configuration **/
-	private JobConfig jobConfig;
-	
-	/** Specify the static Job Configuration **/
-	private static JobConfig staticJobConfig;
 	
 	/** The Constant LOGGER. */
-	public static final Logger LOGGER = LogManager.getLogger(JobConfigUtil.class);
-	
-	
-	
-	public JobConfigUtil(Config config) {
-		this.jobConfig = (JobConfig) config;
-	}
+	private static final Logger LOGGER = LogManager.getLogger(JobConfigUtil.class);
 
-
-	public static JobConfig jobConfig(InputStream is) {
-		Gson gson = new Gson();
-		staticJobConfig = (JobConfig) gson.fromJson(new InputStreamReader(is),
-				JobConfig.class);
-		return staticJobConfig;
+	public static JumbuneRequest jumbuneRequest(InputStream is) {
+		return (JumbuneRequest) Constants.gson.fromJson(new InputStreamReader(is), JumbuneRequest.class);
 	}
 	
 	
@@ -63,13 +55,7 @@ public final class JobConfigUtil {
 	 */
 	public static String getServiceJsonPath() {
 	
-		String serviceJobLoc = JobConfig.getJumbuneHome();
-		File currentDir = new File(serviceJobLoc);
-		String currentDirPath = currentDir.getAbsolutePath();
-	
-		currentDirPath = currentDirPath.substring(0, currentDirPath.length());
-	
-		StringBuilder sb = new StringBuilder(currentDirPath).append(System.getProperty("file.separator")).append("resources")
+		StringBuilder sb = new StringBuilder(JumbuneInfo.getHome()).append("resources")
 				.append(System.getProperty("file.separator")).append("services.json");
 		return sb.toString();
 	}
@@ -77,15 +63,12 @@ public final class JobConfigUtil {
 	/**
 	 * Checks if is jumbune supplied jar present.
 	 * 
-	 * @param config
-	 *            the config
+	 * @param jumbuneRequest the jumbune Request
 	 * @return true, if is jumbune supplied jar present
 	 */
-	public static boolean isJumbuneSuppliedJarPresent(Config config) {
-		JobConfig jobConfig = (JobConfig)config;
-		Master master = jobConfig.getMaster();
-		Remoter remoter = new Remoter(master.getHost(), Integer.valueOf(master.getAgentPort()));
-		CommandWritableBuilder builder = new CommandWritableBuilder();
+	public static boolean isJumbuneSuppliedJarPresent(Cluster cluster) {
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
+		CommandWritableBuilder builder = new CommandWritableBuilder(cluster);
 		builder.addCommand("ls lib/", false, null, CommandType.FS);
 		String result = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 		remoter.close();
@@ -95,22 +78,20 @@ public final class JobConfigUtil {
 	/**
 	 * Checks if is mR job jar present.
 	 *
-	 * @param config the config
+	 * @param jumbuneRequest the jumbune Request
 	 * @param jarFilepath the jar filepath
 	 * @return true, if is mR job jar present
 	 */
-	public static boolean isMRJobJarPresent(Config config, String jarFilepath){
-		JobConfig jobConfig = (JobConfig)config;
-		Master master = jobConfig.getMaster();
+	public static boolean isMRJobJarPresent(Cluster cluster, String jarFilepath){
 		File resourceDir = new File(jarFilepath);
 		if(resourceDir.exists()){
-			Remoter remoter = new Remoter(master.getHost(), Integer.valueOf(master.getAgentPort()));
-			CommandWritableBuilder builder = new CommandWritableBuilder();
+			Remoter remoter = RemotingUtil.getRemoter(cluster);
+			CommandWritableBuilder builder = new CommandWritableBuilder(cluster);
 			builder.addCommand("ls "+jarFilepath, false, null, CommandType.FS);
 			String result = (String) remoter.fireCommandAndGetObjectResponse(builder.getCommandWritable());
 			remoter.close();
-			return (result.length() > 0) ? true : false;
-		}else{
+			return result.length() > 0;
+		} else {
 			return false;
 		}
 
@@ -123,10 +104,11 @@ public final class JobConfigUtil {
 	 * @param config the config
 	 * @param command the command
 	 */
-	public static void sendLibJarCommand(Remoter remoter, Config config, String command) {
+	public static void sendLibJarCommand(
+			Remoter remoter, Cluster cluster, String command) {
 		
-		CommandWritableBuilder builder = new CommandWritableBuilder();
-		builder.addCommand(command, false, null, CommandType.FS).populate(config, null);
+		CommandWritableBuilder builder = new CommandWritableBuilder(cluster, null);
+		builder.addCommand(command, false, null, CommandType.FS);
 		remoter.fireAndForgetCommand(builder.getCommandWritable());
 	
 	}
@@ -134,17 +116,19 @@ public final class JobConfigUtil {
 	/**
 	 * Send jumbune supplied jar on agent.
 	 * 
-	 * @param config
-	 *            the config
+	 * @param jumbuneRequest the jumbune Request
 	 * @param cse
 	 *            the cse
 	 * @param agentHome
 	 *            the agent home
 	 */
-	public static void sendJumbuneSuppliedJarOnAgent(Config config, ClasspathElement cse, String agentHome) {
-		String jumbuneHome = JobConfig.getJumbuneHome();
-		Remoter remoter = RemotingUtil.getRemoter(config, jumbuneHome);
-		String hadoopHome = RemotingUtil.getHadoopHome(remoter, config);
+	@SuppressWarnings("deprecation")
+	public static void sendJumbuneSuppliedJarOnAgent(
+			Cluster cluster, ClasspathElement cse, String agentHome) {
+		
+		String jumbuneHome = JumbuneInfo.getHome();
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
+		String hadoopHome = RemotingUtil.getHadoopHome(remoter, cluster);
 		String[] files = cse.getFiles();
 		for (String string : files) {
 			remoter.sendJar("lib/", string.replace(agentHome, jumbuneHome));
@@ -152,7 +136,7 @@ public final class JobConfigUtil {
 			if (string.contains("log4j")) {
 				StringBuilder copyJarToHadoopLib = new StringBuilder().append(Constants.COPY_COMMAND).append(string).append(" ").append(hadoopHome)
 						.append(Constants.LIB_DIRECTORY);
-				sendLibJarCommand(remoter, config, copyJarToHadoopLib.toString());
+				sendLibJarCommand(remoter, cluster, copyJarToHadoopLib.toString());
 			}
 		}
 		remoter.close();
@@ -161,13 +145,14 @@ public final class JobConfigUtil {
 	/**
 	 * Send mr job jar on agent.
 	 *
-	 * @param config the config
+	 * @param jumbuneRequest the jumbune Request
 	 * @param jarFilepath the jar filepath
 	 */
-	public static void sendMRJobJarOnAgent(Config config, String jarFilepath){
-		JobConfig jobConfig = (JobConfig)config;
-		String jumbuneHome =JobConfig.getJumbuneHome() + File.separator;
-		Remoter remoter = RemotingUtil.getRemoter(config, jumbuneHome);
+	public static void sendMRJobJarOnAgent(
+			JumbuneRequest jumbuneRequest, String jarFilepath){
+		JobConfig jobConfig =  jumbuneRequest.getJobConfig();
+		Cluster cluster = jumbuneRequest.getCluster();
+		Remoter remoter = RemotingUtil.getRemoter(cluster);
 		File resourceDir =new File(jarFilepath);
 		File[] files=resourceDir.listFiles();
 			for(File file : files){
@@ -190,31 +175,17 @@ public final class JobConfigUtil {
 	}
 
 	/**
-	 * Check if jumbune home ends with slash.
-	 *
-	 * @param config checks of Jumbune Home ends with slash or not.
-	 */
-	public static  void checkIfJumbuneHomeEndsWithSlash(Config config) {
-		JobConfig jobConfig = (JobConfig)config;
-		if (!(jobConfig.getSlaveWorkingDirectory().endsWith(File.separator))) {
-			String jumbuneHome = jobConfig.getSlaveWorkingDirectory();
-			jobConfig.setSlaveWorkingDirectory(jumbuneHome + File.separator);
-		}
-	}
-
-	/**
 	 * This method replaces path with jumbune home.
 	 *
 	 * @param path the path
 	 * @return the string[]
 	 */
 	public static  String[] replaceJumbuneHome(String[] path) {
-		String jumbuneHome = JobConfig.getJumbuneHome();
 		if (path != null) {
 			for (int i = 0; i < path.length; i++) {
 				String filePath = path[i];
 				if (filePath.contains(Constants.JUMBUNE_ENV_VAR_NAME)) {
-					filePath = filePath.replace(Constants.JUMBUNE_ENV_VAR_NAME, jumbuneHome);
+					filePath = filePath.replace(Constants.JUMBUNE_ENV_VAR_NAME, JumbuneInfo.getHome());
 					path[i] = filePath;
 				}
 			}
@@ -222,70 +193,8 @@ public final class JobConfigUtil {
 		return path;
 	}
 	
-
-	/**
-	 * Creates the jumbune directories.
-	 *
-	 * @throws JSchException
-	 *             the j sch exception
-	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
-	 * @throws InterruptedException
-	 *             the interrupted exception
-	 */
-	public void createJumbuneDirectories() throws JSchException, IOException,
-			InterruptedException {
-		createMasterDirectories();
-		if (jobConfig.getSlaves().size() > 0) {
-			createSlaveDirectories();
-		}
-	}
-	
-	/**
-	 * Creates the master directories.
-	 */
-	public void createMasterDirectories() {
-		File joblocaion = new File(jobConfig.getJobJarLoc()
-				+ jobConfig.getFormattedJumbuneJobName());
-		joblocaion.mkdirs();
-
-		File reportLocation = new File(jobConfig.getShellUserReportLocation());
-		reportLocation.mkdirs();
-
-		File profilejarLocation = new File(getProfiledJarLocation());
-		profilejarLocation.mkdirs();
-
-		File insturmentedjarLocation = new File(getInstrumentedJarLocation());
-		insturmentedjarLocation.mkdirs();
-
-		File consolidationLocation = new File(
-				jobConfig.getMasterConsolidatedLogLocation());
-		consolidationLocation.mkdirs();
-
-		File consolidationDVLocation = new File(
-				jobConfig.getMasterConsolidatedDVLocation());
-		consolidationDVLocation.mkdirs();
-
-	}
-
-	/**
-	 * Creates the slave directories.
-	 *
-	 * @throws JSchException
-	 *             the j sch exception
-	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
-	 * @throws InterruptedException
-	 *             the interrupted exception
-	 */
-	private void createSlaveDirectories() throws JSchException, IOException,
-			InterruptedException {
-		makeRemoteSlaveLogDirectory(jobConfig.getLogDefinition());
-		makeRemoteSlaveLogDirectory(jobConfig.getDVDefinition());
-	}
-	
-	/**
-	 * Make remote slave log directory.
+/**
+	 * Make remote slave temp log directory.
 	 * 
 	 * @param logCollection
 	 *            the log collection
@@ -296,49 +205,37 @@ public final class JobConfigUtil {
 	 * @throws InterruptedException
 	 *             the interrupted exception
 	 */
-	private static void makeRemoteSlaveLogDirectory(
-			LogConsolidationInfo logCollection) throws JSchException,
-			IOException, InterruptedException {
+	public static void makeTempDirectory(JumbuneRequest jumbuneRequest, String tempDirLocation)
+			throws IOException{
 
-		List<Slave> listSlave = logCollection.getSlaves();
-		Master master = logCollection.getMaster();
-		String masterHost = master.getHost();
-		Integer agentPort = Integer.valueOf(master.getAgentPort());
-
-		Remoter remoter = new Remoter(masterHost, agentPort);
-		for (Slave slaveDefinition : listSlave) {
-
-			String[] hostsNode = slaveDefinition.getHosts();
-			String locationNode = slaveDefinition.getLocation();
-
-			for (String hostNode : hostsNode) {
-				String command = Constants.MKDIR_P_CMD + getFolderName(locationNode);
-				LOGGER.debug("Log directory generation command on WorkerNode ["
-						+ command + "]");
-
-				CommandWritableBuilder builder = new CommandWritableBuilder();
-				builder.addCommand(command, false, null, CommandType.FS)
-						.populateFromLogConsolidationInfo(logCollection,
-								hostNode);
-				String parentOfLocationNode = null;
-				if (locationNode.lastIndexOf(File.separator) > -1) {
-					parentOfLocationNode = locationNode.substring(0,
-							locationNode.lastIndexOf(File.separator));
-					LOGGER.info("Location Node " + locationNode);
-					LOGGER.info("Parent of Location Node "
-							+ parentOfLocationNode);
-					builder.addCommand(Constants.CHMOD_CMD + parentOfLocationNode, false,
-							null, CommandType.FS)
-							.populateFromLogConsolidationInfo(logCollection,
-									hostNode);
-				}
-				remoter.fireAndForgetCommand(builder.getCommandWritable());
-			}
-			LOGGER.info("Log directory created on WorkerNodes ");
-			CONSOLELOGGER.info("Log directory generation on WorkerNodes ");
-
+		Workers workers = jumbuneRequest.getCluster().getWorkers();
+		String parentOfLocationNode = null;
+		parentOfLocationNode = tempDirLocation.substring(0, tempDirLocation.lastIndexOf(File.separator));
+		boolean loop = tempDirLocation.lastIndexOf(File.separator) > -1;
+		Cluster cluster = jumbuneRequest.getCluster();
+		if (loop) {
+			parentOfLocationNode = tempDirLocation.substring(0, tempDirLocation.lastIndexOf(File.separator));
+			LOGGER.debug("Location Node " + tempDirLocation);
+			LOGGER.debug("Parent of Location Node " + parentOfLocationNode);
 		}
-		remoter.close();
+		String command = Constants.MKDIR_P_CMD + getFolderName(tempDirLocation);
+		LOGGER.debug("Log directory generation command on WorkerNode [" + command + "]");
+		
+		for (String workerHost : workers.getHosts()) {
+			CommandWritableBuilder builder = new CommandWritableBuilder(cluster, workerHost);
+			builder.addCommand(command, false, null, CommandType.FS, jumbuneRequest.getJobConfig().getOperatingUser());
+
+			if (loop) {
+				builder.addCommand(Constants.CHMOD_CMD + parentOfLocationNode, false, null, CommandType.FS,
+						jumbuneRequest.getJobConfig().getOperatingUser())
+						.populate(cluster, workerHost);
+			}
+			Remoter remoter = RemotingUtil.getRemoter(cluster);
+			remoter.fireAndForgetCommand(builder.getCommandWritable());
+			LOGGER.debug("Log directory created on WorkerNodes ");
+			CONSOLELOGGER.info("Log directory generation on WorkerNodes ");
+		}
+		
 	}
 	/**
 	 * <p>
@@ -372,7 +269,8 @@ public final class JobConfigUtil {
 	 *
 	 * @return the profiled jar location
 	 */
-	public final String getProfiledJarLocation() {
+	public static String getProfiledJarLocation(Config config) {
+		JobConfig jobConfig = (JobConfig) config;
 		return jobConfig.getJobJarLoc() + jobConfig.getFormattedJumbuneJobName()
 				+ Constants.PROFILED_JAR_LOC;
 	}
@@ -382,8 +280,132 @@ public final class JobConfigUtil {
 	 *
 	 * @return the instrumented jar location
 	 */
-	public final String getInstrumentedJarLocation() {
+	public static String getInstrumentedJarLocation(Config config) {
+		JobConfig jobConfig = (JobConfig) config;
 		return jobConfig.getJobJarLoc() + jobConfig.getFormattedJumbuneJobName()
 				+ Constants.INSTRUMENTED_JAR_LOC;
 	}
+	
+	/**
+	 * Gets the formatted jumbune job name.
+	 * 
+	 * @return the formatted jumbune job name
+	 */
+	public static String getFormattedJumbuneJobName(String jobNameTemp) {
+		if (jobNameTemp == null) {
+			return null;
+		}
+
+		if (!jobNameTemp.endsWith(File.separator)) {
+			jobNameTemp += File.separator;
+		}
+		return jobNameTemp;
+	}
+	
+	public static boolean isEnable(Enable enable) {
+		return (enable != null && Enable.TRUE.equals(enable) ? true : false);
+
+	}
+	
+	/**
+	 * @param This method removes the job jar from jumbune home location 
+	 */
+	public static void removeJar(String jobName) {
+		String jobJarsPath = JumbuneInfo.getHome() + Constants.JOB_JARS_LOC + jobName;
+		File dir = new File(jobJarsPath);
+		if (!dir.exists()) {
+			return;
+		}
+		removeJarRecursively(dir);
+	}
+	
+	/**
+	 * @param This method removes the job jar from jumbune home location 
+	 */
+	private static void removeJarRecursively(File dir) {
+		for (File file : dir.listFiles()) {
+			if (file.isDirectory()) {
+				removeJarRecursively(file);
+			} else if (file.getName().endsWith(Constants.JAR)) {
+				file.delete();
+			}
+		}
+	}
+	
+
+	public static void sendJars(JumbuneRequest jumbuneRequest, String[] jarsPath) throws Exception {
+		JobConfig jobConfig = jumbuneRequest.getJobConfig();
+		Cluster cluster = jumbuneRequest.getCluster();
+
+		String privateKeyPath = null;
+		String password;
+		String username;
+		username = cluster.getAgents().getUser();
+		password = cluster.getAgents().getPassword();
+		if ((password != null) && (!password.trim().isEmpty())) {
+			password = StringUtil.getPlain(cluster.getAgents().getPassword());
+		} else {
+			privateKeyPath = cluster.getAgents().getSshAuthKeysFile();
+		}
+		Session session = getSession(cluster.getNameNode(), username, password, privateKeyPath);
+		ChannelSftp sftp = getChannel(session);
+
+		String remoteDir = jumbuneRequest.getJobConfig().getTempDirectory() + jobConfig.getJumbuneJobName() + "/lib/";
+		createPathInRemote(sftp, new File(remoteDir));
+		for (String localJarPath : jarsPath) {
+			String remoteFilePath = remoteDir + "/" + localJarPath.substring(localJarPath.lastIndexOf("/") + 1);
+			sftp.put(new FileInputStream(localJarPath), remoteFilePath, 0);
+		}
+		sftp.disconnect();
+		session.disconnect();
+	}
+	
+	/**
+	 * Create directory in remote machine using sftp
+	 * @param sftp
+	 * @param file file (even though it is a remote path)
+	 * @throws SftpException
+	 */
+	private static void createPathInRemote(ChannelSftp sftp, File file) throws SftpException {
+		if (file.getAbsolutePath().equals("/")) {
+			return;
+		}
+		if (file.getParentFile() != null) {
+			createPathInRemote(sftp, file.getParentFile());
+		}
+		LOGGER.debug("Creating directory [" + file.getAbsolutePath() + "] on server");
+		try {
+			sftp.mkdir(file.getAbsolutePath());
+		} catch (SftpException e) {
+			LOGGER.debug("Unable to create directory [" + file.getAbsolutePath() + "] on server.");
+		}
+	}
+
+	private static Session getSession(String host, String username, String password, String privateKeyPath)
+			throws JSchException {
+		JSch jsch = new JSch();
+		Session session = null;
+		if (StringUtils.isNotBlank(privateKeyPath)) {
+			jsch.addIdentity(privateKeyPath);
+		}
+		session = jsch.getSession(username, host, 22);
+
+		Properties config = new Properties();
+		config.put("StrictHostKeyChecking", "no");
+		if (StringUtils.isNotBlank(password)) {
+			session.setPassword(password);
+			config.put("PreferredAuthentications", "password");
+		}
+		session.setConfig(config);
+		session.connect();
+		return session;
+	}
+
+	private static ChannelSftp getChannel(Session session) throws JSchException {
+		Channel channel = session.openChannel("sftp");
+		channel.connect();
+		ChannelSftp sftp = (ChannelSftp) channel;
+		return sftp;
+	}
+	
 }

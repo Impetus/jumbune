@@ -111,7 +111,6 @@ public class DataProfilingMapper extends Mapper<Object, Text,Text, IntWritable>{
 
 	private void writeCategoryToOutput(Context context, Text categoryName) throws IOException, InterruptedException {
 			context.write(categoryName, ONE);
-			System.out.println("CategoryName: " + categoryName);
 		}
 
 

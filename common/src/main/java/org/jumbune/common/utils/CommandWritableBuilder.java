@@ -1,17 +1,19 @@
 package org.jumbune.common.utils;
 
 
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jumbune.common.beans.LogConsolidationInfo;
-import org.jumbune.common.beans.Master;
-import org.jumbune.common.beans.Slave;
-import org.jumbune.common.job.Config;
-import org.jumbune.common.job.JobConfig;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.beans.cluster.HadoopUsers;
 import org.jumbune.remoting.common.CommandType;
 import org.jumbune.remoting.common.RemoterUtility;
-import org.jumbune.remoting.writable.CommandWritable;
+import org.jumbune.remoting.common.command.CommandWritable;
 
 
 /**
@@ -23,12 +25,60 @@ public class CommandWritableBuilder {
 	private CommandWritable commandWritable;
 	//Stateful instance
 	private List<CommandWritable.Command> commandBatch;
+	
+	private static final Logger LOGGER=LogManager.getLogger(CommandWritableBuilder.class);
+	
+	private Cluster cluster;
+	
+	private static final String MD5 = "MD5";
 
 	/**
 	 * Constructor to set the command writable
+	 *
+	 * This should be called when command requires a public-key authentication.
+	 * It takes care of populating RSA/DSA file path, master/slaves host names
+	 * and username in the CommandWritable instance
+	 * 
+	 * @param config
+	 * @param slaveHost
+	 * @return
 	 */
-	public CommandWritableBuilder() {
+	public CommandWritableBuilder(Cluster cluster, String workerHost) {
+		this.cluster = cluster; 
+		
 		setCommandWritable(new CommandWritable());
+		getCommandWritable().setAuthenticationRequired(true);	
+		boolean isCommandForMaster = false;
+		
+		String sshAuthKeysFile = cluster.getAgents().getSshAuthKeysFile();
+		if (RemoterUtility.isNotEmpty(sshAuthKeysFile)) {
+			getCommandWritable().setHasSshAuthKeysFile(true);
+			getCommandWritable().setSshAuthKeysFile(sshAuthKeysFile);
+		} else {
+			String password = cluster.getAgents().getPassword();
+			if (RemoterUtility.isNotEmpty(password)){
+				getCommandWritable().setPassword(password);
+			}else{
+				throw new IllegalArgumentException("No ssh Authentication Keys file path or Password found in json configuration");
+			}
+		}
+		if(workerHost == null){
+			isCommandForMaster = true;
+		}
+		if (isCommandForMaster) {
+			getCommandWritable().setCommandForMaster(true);
+			getCommandWritable().setNameNodeHost(cluster.getNameNode());
+			getCommandWritable().setUsername(cluster.getHadoopUsers().getFsUser());
+		} else {
+			getCommandWritable().setCommandForMaster(false);
+			getCommandWritable().setWorkerHost(workerHost);
+			getCommandWritable().setUsername(cluster.getWorkers().getUser());
+		}
+	}
+	
+   
+	public CommandWritableBuilder(Cluster cluster) {
+     this(cluster, null);		
 	}
 
 	/**
@@ -40,73 +90,34 @@ public class CommandWritableBuilder {
 	 * @param slaveHost
 	 * @return
 	 */
-	public CommandWritableBuilder populate(Config config, String slaveHost) {
-		JobConfig jobConfig = (JobConfig)config;
-		Master master = jobConfig.getMaster();
+	public CommandWritableBuilder populate(Cluster cluster, String workerHost) {
 		getCommandWritable().setAuthenticationRequired(true);
 		boolean isCommandForMaster = false;
 		
-		if (RemoterUtility.isNotEmpty(master.getDsaFile())) {
-			getCommandWritable().setHasDSA(true);
-			getCommandWritable().setDsaFilePath(master.getDsaFile());
-		} else if (RemoterUtility.isNotEmpty(master.getRsaFile())) {
-			getCommandWritable().setHasRSA(true);
-			getCommandWritable().setRsaFilePath(master.getRsaFile());
+		String sshAuthKeysFile = cluster.getAgents().getSshAuthKeysFile();
+		if (RemoterUtility.isNotEmpty(sshAuthKeysFile)) {
+			getCommandWritable().setHasSshAuthKeysFile(true);
+			getCommandWritable().setSshAuthKeysFile(sshAuthKeysFile);
 		} else {
-			throw new IllegalArgumentException("No DSA/RSA file path found in yaml configuration");
+			String password = cluster.getAgents().getPassword();
+			if (RemoterUtility.isNotEmpty(password)){
+				getCommandWritable().setPassword(password);
+			}else{
+				throw new IllegalArgumentException("No ssh Authentication Keys file path or Password found in json configuration");
+			}
 		}
-		if(slaveHost== null){
+		if(workerHost == null){
 			isCommandForMaster = true;
 		}
 		if (isCommandForMaster) {
 			getCommandWritable().setCommandForMaster(true);
-			getCommandWritable().setMasterHostname(master.getHost());
-			getCommandWritable().setUsername(master.getUser());
+			getCommandWritable().setNameNodeHost(cluster.getNameNode());
+			getCommandWritable().setUsername(cluster.getHadoopUsers().getFsUser());
 		} else {
 			getCommandWritable().setCommandForMaster(false);
-			Slave slave = jobConfig.getFirstUserWorker();
-			getCommandWritable().setSlaveHost(slaveHost);
-			getCommandWritable().setUsername(slave.getUser());		
+			getCommandWritable().setWorkerHost(workerHost);
+			getCommandWritable().setUsername(cluster.getWorkers().getUser());
 		}
-		return this;
-	}
-	
-	/**
-	 * This should be called when command requires a public-key authentication.
-	 * It takes care of populating RSA/DSA file path, master/slaves host names
-	 * and username in the CommandWritable instance using LogConsolidationInfo
-	 * 
-	 * @param info
-	 * @param slaveHost
-	 * @return
-	 */
-	public CommandWritableBuilder populateFromLogConsolidationInfo(LogConsolidationInfo info, String slaveHost){
-		Master master = info.getMaster();
-		getCommandWritable().setAuthenticationRequired(true);
-		boolean isCommandForMaster = false;
-		
-		if (RemoterUtility.isNotEmpty(master.getDsaFile())) {
-			getCommandWritable().setHasDSA(true);
-			getCommandWritable().setDsaFilePath(master.getDsaFile());
-		} else if (RemoterUtility.isNotEmpty(master.getRsaFile())) {
-			getCommandWritable().setHasRSA(true);
-			getCommandWritable().setRsaFilePath(master.getRsaFile());
-		} else {
-			throw new IllegalArgumentException("No DSA/RSA file path found in yaml configuration");
-		}
-		if(slaveHost== null){
-			isCommandForMaster = true;
-		}
-		if (isCommandForMaster) {
-			getCommandWritable().setCommandForMaster(true);
-			getCommandWritable().setMasterHostname(master.getHost());
-			getCommandWritable().setUsername(master.getUser());
-		} else {
-			getCommandWritable().setCommandForMaster(false);
-			Slave slave = info.getSlaves().get(0);
-			getCommandWritable().setSlaveHost(slaveHost);
-			getCommandWritable().setUsername(slave.getUser());
-	}
 		return this;
 	}
 
@@ -119,17 +130,6 @@ public class CommandWritableBuilder {
 	 */
 	public CommandWritableBuilder setUser(String username) {
 		getCommandWritable().setUsername(username);
-		return this;
-	}
-	
-	/**
-	 * This is an explicit setter method created, use this method only in cases where
-	 * overloaded method addCommand(..., setStorageCommand) is not used for creating command
-	 * @param isStorageCommand
-	 * @return
-	 */
-	public CommandWritableBuilder setCommandType(CommandType commandType){
-		getCommandWritable().setCommandType(commandType);
 		return this;
 	}
 	
@@ -152,9 +152,52 @@ public class CommandWritableBuilder {
 		if (hasParams) {
 			cmd.setParams(params);
 		}
+		CommandWritable.Command.SwitchedIdentity switchedIdentity = changeIdentityAsPerCommand(commandType,null);
+		cmd.setSwitchedIdentity(switchedIdentity);
+		cmd.setCommandType(commandType);
+        setCommandId(cmd, commandStr);
 		getCommandBatch().add(cmd);
 		getCommandWritable().setBatchedCommands(getCommandBatch());
-		getCommandWritable().setCommandType(commandType);
+		return this;
+	}	
+	
+	private void setCommandId(CommandWritable.Command cmd, String commandString) {
+		MessageDigest digest = null;
+		try {
+			digest = MessageDigest.getInstance(MD5);
+		} catch (NoSuchAlgorithmException e) {
+			LOGGER.error("can not instantiate MessageDigest", e);
+		}
+		digest.update(commandString.getBytes());
+		cmd.setCommandId(new BigInteger(digest.digest()).toString(16));
+	}	
+	
+	/**
+	 * Adds a new command to be executed over Remoting.
+	 *
+	 * @param commandStr the command string that has to be executed
+	 * @param hasParams, whether the command has parameters
+	 * @param params, command parameters
+	 * @param commandType, whether the command is an hadoop fs command, an execution command or fs command
+	 * @param operatingUser the operating user is the job submission user
+	 * @return the command writable builder
+	 */
+	public CommandWritableBuilder addCommand(String commandStr, boolean hasParams, List<String> params, CommandType commandType, String operatingUser) {
+		if (getCommandBatch() == null) {
+			setCommandBatch(new ArrayList<CommandWritable.Command>());
+		}
+		CommandWritable.Command cmd = new CommandWritable.Command();
+		cmd.setCommandString(commandStr);
+		cmd.setHasParams(hasParams);
+		if (hasParams) {
+			cmd.setParams(params);
+		}
+		CommandWritable.Command.SwitchedIdentity switchedIdentity = changeIdentityAsPerCommand(commandType,operatingUser);
+		cmd.setSwitchedIdentity(switchedIdentity);
+		cmd.setCommandType(commandType);
+		setCommandId(cmd, commandStr);
+		getCommandBatch().add(cmd);
+		getCommandWritable().setBatchedCommands(getCommandBatch());
 		return this;
 	}	
 	
@@ -166,6 +209,7 @@ public class CommandWritableBuilder {
 	 * @param params, command parameters
 	 * @return
 	 */
+	@Deprecated
 	public CommandWritableBuilder addCommand(String commandStr, boolean hasParams, List<String> params) {
 		if (getCommandBatch() == null) {
 			setCommandBatch(new ArrayList<CommandWritable.Command>());
@@ -176,12 +220,54 @@ public class CommandWritableBuilder {
 		if (hasParams) {
 			cmd.setParams(params);
 		}
+		setCommandId(cmd, commandStr);
 		getCommandBatch().add(cmd);
 		getCommandWritable().setBatchedCommands(getCommandBatch());
 		return this;
 	}
 
-	/**
+	private CommandWritable.Command.SwitchedIdentity changeIdentityAsPerCommand(CommandType commandType, String operatingUser){
+		HadoopUsers users = getHadoopUsers();
+		CommandWritable.Command.SwitchedIdentity switchedIdentity = new CommandWritable.Command.SwitchedIdentity();
+		switchedIdentity.setUser(users.getFsUser());
+		String privateKeyFilePath = users.getFsPrivateKeyPath();
+		if(privateKeyFilePath != null && !privateKeyFilePath.isEmpty()){
+		switchedIdentity.setPrivatePath(privateKeyFilePath);
+		}else{
+			setPasswd(switchedIdentity, users.getFsUserPassword());
+		}
+		if (users.isHasSingleUser()) {
+			if (commandType.equals(CommandType.USER)) {
+				switchedIdentity.setWorkingUser(operatingUser);
+			} else {
+				switchedIdentity.setWorkingUser(users.getFsUser());
+			}
+		}else{
+		if(commandType.equals(CommandType.HADOOP_FS)){
+            switchedIdentity.setWorkingUser(users.getHdfsUser());;
+		}else if(commandType.equals(CommandType.HADOOP_JOB)){
+            switchedIdentity.setWorkingUser(users.getYarnUser());
+		}else if(commandType.equals(CommandType.MAPRED)){
+			switchedIdentity.setWorkingUser(users.getMapredUser());
+		}else if(commandType.equals(CommandType.USER)){
+            switchedIdentity.setWorkingUser(operatingUser);
+		}else if(commandType.equals(CommandType.FS)){
+    		switchedIdentity.setWorkingUser(users.getFsUser());
+		}}
+		return switchedIdentity;
+	}
+
+	private HadoopUsers getHadoopUsers() {
+		return cluster.getHadoopUsers();
+	}
+
+	private static void setPasswd(CommandWritable.Command.SwitchedIdentity switchedIdentity, String passwd){
+		if(passwd!= null && !"".equals(passwd)){
+				switchedIdentity.setPasswd(passwd);
+		}		
+	}
+	
+   /**
 	 * sets the password
 	 * @param password
 	 * @return
@@ -243,6 +329,10 @@ public class CommandWritableBuilder {
 		getCommandWritable().setMethodToBeInvoked(methodToBeInvoked);
 		return this;
 	}
-
+	
+	public void clear(){
+		getCommandBatch().clear();
+		commandWritable.setMethodToBeInvoked(null);
+	}
 
 }

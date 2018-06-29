@@ -4,150 +4,33 @@
 	xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
 	<display-name>HTF</display-name>
 
-	<servlet>
-		<servlet-name>ResultServlet</servlet-name>
-		<servlet-class>org.jumbune.web.servlet.ResultServlet</servlet-class>
-	</servlet>
-	<servlet>
-		<servlet-name>JumbuneHistoryJobPickerServlet</servlet-name>
-		<servlet-class>org.jumbune.web.servlet.JumbuneHistoryJobPickerServlet</servlet-class>
-	</servlet>
-	
-	<servlet>
-		<servlet-name>ExportExcelServlet</servlet-name>
-		<servlet-class>org.jumbune.web.servlet.ExportExcelServlet</servlet-class>
-	</servlet>
-	
-	<servlet>
-		<servlet-name>UploadServlet</servlet-name>
-		<servlet-class>org.jumbune.web.servlet.UploadServlet</servlet-class>
-	</servlet>
-	
-	<servlet>
-		<servlet-name>UploadJobJarServlet</servlet-name>
-		<servlet-class>org.jumbune.web.servlet.UploadJobJarServlet</servlet-class>
-	</servlet>
+<!--   servlet for websockets, used to publish results  -->
+    <servlet>
+    <servlet-name>websocket-servlet</servlet-name>
+    <servlet-class>org.jumbune.web.sockets.ModuleBasedWebServlet</servlet-class>
+    </servlet>
 
-	<servlet>
-		<servlet-name>ClearLogsServlet</servlet-name>
-		<servlet-class>org.jumbune.web.servlet.ClearLogsServlet</servlet-class>
-	</servlet>
+    <servlet-mapping>
+    <servlet-name>websocket-servlet</servlet-name>
+    <url-pattern>/results/*</url-pattern>
+    </servlet-mapping>
 
-	<servlet>
-		<servlet-name>ExecutionServlet</servlet-name>
-		<servlet-class>org.jumbune.web.servlet.ExecutionServlet</servlet-class>
-	</servlet>
-
-	<servlet>
-		<servlet-name>ValidateJSONServlet</servlet-name>
-		<servlet-class>org.jumbune.web.servlet.ValidateServlet</servlet-class>
-	</servlet>
-
-
-	<servlet>
-		<servlet-name>SaveJSONServlet</servlet-name>
-		<servlet-class>org.jumbune.web.servlet.SaveJSONServlet</servlet-class>
-	</servlet>
-
-	<servlet>
-		<servlet-name>HomeServlet</servlet-name>
-		<servlet-class>org.jumbune.web.servlet.HomeServlet</servlet-class>
-	</servlet>
-
-	<servlet>
-		<servlet-name>DVReportServlet</servlet-name>
-		<servlet-class>org.jumbune.web.servlet.DVReportServlet</servlet-class>
-	</servlet>
-	<servlet>
-		<servlet-name>ProfilerServlet</servlet-name>
-		<servlet-class>org.jumbune.web.servlet.ProfilerServlet</servlet-class>
-	</servlet>
-	
-	<servlet>
-		<servlet-name>DataQualityServlet</servlet-name>
-		<servlet-class>org.jumbune.web.servlet.DataQualityServlet</servlet-class>
-	</servlet>
-	
-	<servlet-mapping>
-		<servlet-name>JumbuneHistoryJobPickerServlet</servlet-name>
-		<url-pattern>/JumbuneHistoryJobPickerServlet</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>UploadServlet</servlet-name>
-		<url-pattern>/UploadServlet</url-pattern>
-	</servlet-mapping>
-
-	<servlet-mapping>
-		<servlet-name>UploadJobJarServlet</servlet-name>
-		<url-pattern>/UploadJobJarServlet</url-pattern>
-	</servlet-mapping>
-	
-	<servlet-mapping>
-		<servlet-name>ResultServlet</servlet-name>
-		<url-pattern>/ResultServlet</url-pattern>
-	</servlet-mapping>
-	
-	<servlet-mapping>
-		<servlet-name>ExportExcelServlet</servlet-name>
-		<url-pattern>/ExportExcelServlet</url-pattern>
-	</servlet-mapping>
-
-	<servlet-mapping>
-		<servlet-name>ClearLogsServlet</servlet-name>
-		<url-pattern>/ClearLogs</url-pattern>
-	</servlet-mapping>
-
-	<servlet-mapping>
-		<servlet-name>ExecutionServlet</servlet-name>
-		<url-pattern>/ExecutionServlet</url-pattern>
-	</servlet-mapping>
-
-	<servlet-mapping>
-		<servlet-name>ValidateJSONServlet</servlet-name>
-		<url-pattern>/ValidateJSONServlet</url-pattern>
-	</servlet-mapping>
-
-
-	<servlet-mapping>
-		<servlet-name>SaveJSONServlet</servlet-name>
-		<url-pattern>/SaveJSONServlet</url-pattern>
-	</servlet-mapping>
-
-	
-	<servlet-mapping>
-		<servlet-name>HomeServlet</servlet-name>
-		<url-pattern>/Home</url-pattern>
-	</servlet-mapping>
-
-	<servlet-mapping>
-		<servlet-name>DVReportServlet</servlet-name>
-		<url-pattern>/DVReportServlet</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>ProfilerServlet</servlet-name>
-		<url-pattern>/ProfilerServlet</url-pattern>
-	</servlet-mapping>
-	
-	<servlet-mapping>
-		<servlet-name>DataQualityServlet</servlet-name>
-		<url-pattern>/DataQualityServlet</url-pattern>
-	</servlet-mapping>
 
 	<welcome-file-list>
-		<welcome-file>jsp/Home.jsp</welcome-file>
+		<welcome-file>index.html</welcome-file>
 	</welcome-file-list>
 	<error-page>
 		<exception-type>javax.servlet.ServletException</exception-type>
-		<location>/jsp/htf_error.jsp</location>
+		<location>/error.html</location>
 	</error-page>
 
 	<error-page>
 		<error-code>500</error-code>
-		<location>/jsp/htf_error.jsp</location>
+		<location>/error.html</location>
 	</error-page>
 	<error-page>
 		<exception-type>java.lang.Exception</exception-type>
-		<location>/jsp/htf_error.jsp</location>
+		<location>/error.html</location>
 	</error-page>
 	<listener>
 		<listener-class>org.jumbune.web.listener.JumbuneWebContextListener</listener-class>

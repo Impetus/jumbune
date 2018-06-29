@@ -1,8 +1,8 @@
 package org.jumbune.common.beans;
 
 public enum SchedulingEvent {
-	MINUTE("minute"), HOURLY("hourly"), WEEKLY("weekly"), DAILY("daily"), MONTHLY(
-			"monthly");
+	MINUTE("MINUTE"), HOURLY("HOURLY"), WEEKLY("WEEKLY"), DAILY("DAILY"), MONTHLY(
+			"MONTHLY");
 
 	String event;
 

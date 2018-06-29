@@ -14,10 +14,14 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.net.InetAddress;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -30,9 +34,18 @@ import javax.xml.transform.stream.StreamResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.ClasspathElement;
+import org.jumbune.common.beans.Doc;
+import org.jumbune.common.beans.DqtViewBean;
+import org.jumbune.common.beans.JumbuneInfo;
+import org.jumbune.common.beans.Property;
+import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.job.JobConfig;
+import org.jumbune.utils.Versioning;
 import org.jumbune.utils.exception.JumbuneException;
+import org.jumbune.utils.exception.JumbuneRuntimeException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+
 
 /**
  * This class implements utility methods being used in the framework.
@@ -44,7 +57,7 @@ import org.xml.sax.SAXException;
 public class ConfigurationUtil {
 	
 	/** The Constant LOGGER. */
-	public static final Logger LOGGER = LogManager.getLogger(ConfigurationUtil.class);
+	private static final Logger LOGGER = LogManager.getLogger(ConfigurationUtil.class);
 
 	
 	
@@ -55,7 +68,7 @@ public class ConfigurationUtil {
 	private static final char SLASH = '/';
 	
 	private static final short standardMapReduceChildJavaOpts = 200;
-
+	
 	/**
 	 * Instantiates a new configuration util.
 	 */
@@ -63,6 +76,7 @@ public class ConfigurationUtil {
 	{
 		
 	}
+	
 	
 	/**
 	 * This method reads file data and returns a string. If no data found null will be returned
@@ -325,22 +339,6 @@ public class ConfigurationUtil {
 	}
 
 	/**
-	 * Reads email configuration properties.
-	 *
-	 * @return the properties
-	 * @throws FileNotFoundException the file not found exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	public static Properties readConfigurationFromProperties() throws IOException {
-		Properties prop = new Properties();
-		prop.load(ConfigurationUtil.class.getClassLoader().getResourceAsStream(Constants.PROPERTY_FILE));
-		prop.getProperty(Constants.FROM);
-		prop.getProperty(Constants.TO);
-		prop.getProperty(Constants.SUBJECT);
-		return prop;
-	}
-
-	/**
 	 * Gets the xml document from file.
 	 *
 	 * @param filePath the file path
@@ -381,7 +379,7 @@ public class ConfigurationUtil {
 	 */
 	public static ClasspathElement loadJumbuneSuppliedJarList() throws JumbuneException {
 		ClasspathElement classpathElement = new ClasspathElement();
-		String[] files = {"AGENT_HOMElib/jumbune-utils-1.5.2-SNAPSHOT.jar","AGENT_HOMElib/log4j-api-2.1.jar","AGENT_HOMElib/log4j-core-2.1.jar"};
+		String[] files = {"AGENT_HOMElib/jumbune-utils-"+ Versioning.COMMUNITY_BUILD_VERSION + Versioning.COMMUNITY_DISTRIBUTION_NAME + ".jar","AGENT_HOMElib/log4j-api-2.1.jar","AGENT_HOMElib/log4j-core-2.1.jar"};
 		classpathElement.setFiles(files);
 		classpathElement.setSource(-1);
 		return classpathElement;
@@ -424,28 +422,26 @@ public class ConfigurationUtil {
 	}
 	
 	public static int getJavaOptsinMB(String stringMapJavaOpts) {
+		
+		if(stringMapJavaOpts.contains("-D") && stringMapJavaOpts.contains("-Xmx")){
+			String[] splits = stringMapJavaOpts.split("-Xmx");
+			stringMapJavaOpts = "-Xmx" + splits[1];
+		}else if(stringMapJavaOpts.contains("-D")){
+			return 0;
+		}
 		int memoryDenotationIndex = getLastIndexofJVMMemorySettings(stringMapJavaOpts);
 		char ch = getDenotationOfJVMMemorySettings(stringMapJavaOpts);
 		switch (ch) {
-		case 'k': {
+		case 'k': case 'K':{
 			return Integer.parseInt(stringMapJavaOpts.substring(stringMapJavaOpts.lastIndexOf('x') + 1, memoryDenotationIndex)) / 1024;
 		}
-		case 'K': {
-			return Integer.parseInt(stringMapJavaOpts.substring(stringMapJavaOpts.lastIndexOf('x') + 1, memoryDenotationIndex)) / 1024;
-		}
-		case 'm': {
+		case 'm':case 'M':{
 			return Integer.parseInt(stringMapJavaOpts.substring(stringMapJavaOpts.lastIndexOf('x') + 1, memoryDenotationIndex));
 		}
-		case 'M': {
-			return Integer.parseInt(stringMapJavaOpts.substring(stringMapJavaOpts.lastIndexOf('x') + 1, memoryDenotationIndex));
-		}
-		case 'g': {
+		case 'g': case 'G':{
 			return Integer.parseInt(stringMapJavaOpts.substring(stringMapJavaOpts.lastIndexOf('x') + 1, memoryDenotationIndex)) * 1024;
 		}
-		case 'G': {
-			return Integer.parseInt(stringMapJavaOpts.substring(stringMapJavaOpts.lastIndexOf('x') + 1, memoryDenotationIndex)) * 1024;
-		}
-		}
+	}
 		return standardMapReduceChildJavaOpts;
 	}
 
@@ -484,4 +480,106 @@ public class ConfigurationUtil {
 		}
 		return (char) -1;
 	}
-}
+	
+	/**
+	 * Fetches the details of the already run dqt job.
+	 *
+	 * @return the dqt view details
+	 */
+	public static List<DqtViewBean> getDqtViewDetails() {
+		JobConfig jobConfig = null;
+		DqtViewBean dqtViewBean = null ;
+		List<DqtViewBean> dqtViewBeans = new ArrayList<DqtViewBean>();
+		StringBuilder sb = new StringBuilder();
+		String directoryPath = sb.append(JumbuneInfo.getHome()).append("ScheduledJobs")
+				.append(File.separator).append("IncrementalDQJobs").append(File.separator).toString();
+		
+		Properties prop = new Properties();
+		File jobStatusFile = null ;
+		File f = new File(directoryPath);
+		FileInputStream fileInputStream = null;
+		File file = null;
+		sb.setLength(0);
+		sb = new StringBuilder();
+		if(f.isDirectory() && f.exists()){
+				File[] fileArray = f.listFiles();
+				for (int i = 0; i < fileArray.length; i++) {
+					dqtViewBean = new DqtViewBean();
+					file = new File(fileArray[i] + File.separator + "scheduledJson.json");
+					jobStatusFile = new File(fileArray[i] + File.separator + "jobstatus");
+					if(file.exists()){
+						String json = null;
+						try {
+							json = FileUtil.readFileIntoString(file.toString());
+							jobConfig = Constants.gson.fromJson(json, JobConfig.class);
+							dqtViewBean.setHdfsPath(jobConfig.getHdfsInputPath());
+							dqtViewBean.setJobName(jobConfig.getJumbuneJobName());
+							dqtViewBean.setOperatingCluster(jobConfig.getOperatingCluster());
+							dqtViewBean.setRecuringInterval(jobConfig.getDataQualityTimeLineConfig().getSchedulingEvent().toString());
+							
+							if(jobStatusFile.exists()){
+								fileInputStream = new FileInputStream(jobStatusFile);
+								prop.load(fileInputStream);
+								String lastExecutedTime = prop.getProperty("lastExecutedTime");
+								Date date = new Date(Long.valueOf(lastExecutedTime));
+								SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm" );
+								dqtViewBean.setLastExecutedTime(simpleDateFormat.format(date));
+							}
+						} catch (IOException e) {
+							LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));
+						}finally{
+							if(fileInputStream != null){
+								try {
+									fileInputStream.close();
+								} catch (IOException e) {
+									LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));
+								}
+							}
+						}
+						dqtViewBeans.add(dqtViewBean);
+					}
+				}
+		}
+			return dqtViewBeans;
+	}
+	
+	/**
+	 * Gets the local configuration file path.
+	 *
+	 * @param cluster the cluster
+	 * @return the local configuration file path
+	 */
+	public static String getLocalConfigurationFilePath(Cluster cluster){
+		String clusterName = cluster.getClusterName() + File.separator;
+		String destinationReceiveDir = JumbuneInfo.getHome() + Constants.JOB_JARS_LOC  + clusterName;
+		return destinationReceiveDir;
+	}
+
+	/** This method parses the xml file and returns the property value according to the key
+	 * @param filePath : The path of the xml file to be read
+	 * @param key : The property to be retrived from the xml file
+	 * @return : Returns the property value
+	 * 
+	 */
+	public static String readProperty(String filePath, String key) {
+		Doc doc;
+		try {
+			if (new File(filePath).length() == 0) {
+				return null;
+			}
+			doc = (Doc) JAXBContext.newInstance(Doc.class).createUnmarshaller()
+					.unmarshal(new FileInputStream(filePath));
+			for (Property p : doc.configuration) {
+				if (p.name.equals(key)) {
+					return p.value.trim();
+				}
+			}
+		} catch (FileNotFoundException | JAXBException e) {
+			LOGGER.error("Unable to read file [" + filePath + "]" + "property[ " + key + "]" ,e);
+		}
+		return null;
+	}
+
+
+}		
+			

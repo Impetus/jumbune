@@ -10,15 +10,18 @@ import java.util.List;
 import java.util.jar.JarInputStream;
 import java.util.zip.ZipEntry;
 
-import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
+
+import org.jumbune.debugger.instrumentation.utils.InstrumentUtil;
 
 
 
 /**
  * This class is used to traverse the given jar.
+ * 
+ * @author pratap.chauhan
  */
 public class JarTraversal {
 	private static final String CLASS_FILE_EXTN = ".class";
@@ -29,7 +32,7 @@ public class JarTraversal {
 	 * @param String
 	 *            jarPath
 	 * @return JarInputStream
-	 
+	 * @throws JumbuneException
 	 * @throws IOException
 	 */
 	private JarInputStream getJarInputStream(String jarPath) throws IOException {
@@ -61,7 +64,7 @@ public class JarTraversal {
 				return null;
 			}
 
-			ClassWriter wr = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+			ClassWriter wr = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 			HTFClassVisitor cvmr = new HTFClassVisitor(Opcodes.ASM4, wr);
 
 			while ((entry = inputStream.getNextEntry()) != null) {

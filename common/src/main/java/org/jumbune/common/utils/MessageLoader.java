@@ -52,7 +52,7 @@ public class MessageLoader {
 					try {
 						msgStream.close();
 					} catch (IOException e) {
-						LOGGER.error("Unable to close stream"+e.getMessage());
+						LOGGER.error(JumbuneRuntimeException.throwUnresponsiveIOException(e.getStackTrace()));
 					}
 				}
 			}

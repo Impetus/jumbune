@@ -356,8 +356,8 @@
         dashLength: 4,
         gapLength: 4,
         dotGapLength: 2.5,
-        srcLocation: 'jqplot/src/',
-        pluginLocation: 'jqplot/src/plugins/'
+        srcLocation: 'jqplot/',
+        pluginLocation: 'jqplot/plugins/'
     };
     
     

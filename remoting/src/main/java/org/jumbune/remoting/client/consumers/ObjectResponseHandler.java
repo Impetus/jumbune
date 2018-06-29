@@ -1,13 +1,12 @@
 package org.jumbune.remoting.client.consumers;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
-
-import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
 
 /**
  * The Class ObjectResponseHandler.
@@ -23,7 +22,7 @@ public class ObjectResponseHandler extends SimpleChannelInboundHandler<Object> {
 
 	/** The response object. */
 	private Object responseObject;
-
+	
 	/**
 	 * Instantiates a new object response handler.
 	 *
@@ -49,9 +48,8 @@ public class ObjectResponseHandler extends SimpleChannelInboundHandler<Object> {
 			barrier.await();
 		} catch (InterruptedException e1) {
 			logger.error(e1);
-		} catch (BrokenBarrierException e1) {
-			logger.error(e1);
-		}
+		} 
+
 	}
 
 	/**

@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import org.jumbune.common.job.Config;
-import org.jumbune.common.job.JobConfig;
 
 /**
  * This is the Callable class which gets called for every thread spawned. It

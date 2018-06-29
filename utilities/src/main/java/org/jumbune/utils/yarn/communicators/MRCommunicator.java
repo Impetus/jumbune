@@ -1,13 +1,11 @@
 package org.jumbune.utils.yarn.communicators;
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.ipc.RemoteException;
-import org.apache.hadoop.mapreduce.v2.api.HSClientProtocol;
+import org.apache.hadoop.mapreduce.JobID;
+import org.apache.hadoop.mapreduce.TypeConverter;
 import org.apache.hadoop.mapreduce.v2.api.MRClientProtocol;
 import org.apache.hadoop.mapreduce.v2.api.protocolrecords.GetJobReportRequest;
 import org.apache.hadoop.mapreduce.v2.api.protocolrecords.GetJobReportResponse;
@@ -33,37 +31,19 @@ import org.apache.hadoop.mapreduce.v2.proto.MRServiceProtos.GetTaskAttemptReport
 import org.apache.hadoop.mapreduce.v2.proto.MRServiceProtos.GetTaskReportRequestProto;
 import org.apache.hadoop.mapreduce.v2.proto.MRServiceProtos.KillJobRequestProto;
 import org.apache.hadoop.mapreduce.v2.util.MRBuilderUtils;
-import org.apache.hadoop.net.NetUtils;
-import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
-import org.apache.hadoop.yarn.ipc.YarnRPC;
 
 /**
  * The communication client layer for MR Job History Server
+ * Use org.jumbune.common.utils.CommunicatorFactory to create object
  */
 public class MRCommunicator {
 	
 	
-	MRClientProtocol proxy;
+	private MRClientProtocol proxy;
 	
-	/**
-	 * Instantiates the proxy for MR Client which will communicate with MR History Server
-	 * @param user, the remote user for which client communication with happen
-	 * @param mrHistoryServerRPCURI, the rpc (not web) uri for mr history server, typically defined as "mapreduce.jobhistory.address" property in mapred-site.xml
-	 * @throws IOException
-	 * @throws InterruptedException
-	 */
-	public MRCommunicator(String user, final String mrHistoryServerRPCURI) throws IOException, InterruptedException{
-		UserGroupInformation userUGI=UserGroupInformation.createRemoteUser(user);
-		this.proxy = userUGI.doAs(new PrivilegedExceptionAction<MRClientProtocol>(){
-		    @Override public MRClientProtocol run() throws Exception {
-		      Configuration conf = new Configuration();
-		      YarnRPC rpc=YarnRPC.create(conf);
-		      InetSocketAddress rmAddress = NetUtils.createSocketAddr(mrHistoryServerRPCURI);
-		      return (MRClientProtocol)rpc.getProxy(HSClientProtocol.class, rmAddress, conf);
-		    }
-		  }
-		);
+	public MRCommunicator(MRClientProtocol proxy) {
+		this.proxy = proxy;
 	}
 	
 	/**
@@ -80,6 +60,18 @@ public class MRCommunicator {
 		request.setJobId(jobId);
 		GetJobReportResponse jobReportResponse = proxy.getJobReport(request);
 		return jobReportResponse.getJobReport();
+	}
+	
+	public JobReport getJobReport(JobId jobId) throws IOException {
+		GetJobReportRequestProto proto = GetJobReportRequestProto.getDefaultInstance();
+		GetJobReportRequest request = new GetJobReportRequestPBImpl(proto);
+		request.setJobId(jobId);
+		GetJobReportResponse jobReportResponse = proxy.getJobReport(request);
+		return jobReportResponse.getJobReport();
+	}
+	
+	public JobId getJobIdObject(String jobId) {
+		return TypeConverter.toYarn(JobID.forName(jobId));
 	}
 
 	/**
@@ -140,6 +132,40 @@ public class MRCommunicator {
 		return reports;
 	}
 
+	/**
+	 * This method tries to extract all Map OR Reduce attempt Task Reports for a given Job Id
+	 * @param jobId, the Job Id for which all Task Reports requires to be extracted
+	 * @return, Map<TaskId, TaskReport>
+	 * @throws IOException
+	 */
+	/**
+	 * This method tries to extract all Map OR Reduce attempt Task Reports for a given Job Id
+	 * @param taskType, TaskType {MAP|REDUCE}
+	 * @param jobId, the Job Id for which all Task Reports requires to be extracted
+	 * @return, Map<TaskId, TaskReport>
+	 * @throws IOException
+	 */
+	public Map<TaskId, TaskReport> getTaskTypeWiseTaskReports(TaskType taskType, JobId jobId) throws IOException{
+		Map<TaskId, TaskReport> reports = new HashMap<TaskId, TaskReport>();
+		TaskReport report;
+
+		//Attempting to extract Task Type wise Attempt Reports
+		boolean rme = false;
+		int id = 0;
+		do{
+			try{
+				report = getTaskReport(jobId, id, taskType);
+				TaskId taskId = MRBuilderUtils.newTaskId(jobId, id, taskType);
+				reports.put(taskId, report);
+				id++;
+			}catch(RemoteException re){
+				rme = true;
+			}
+		}while(!rme);
+
+		return reports;
+	}
+	
 	/**
 	 * Given the taskAttempt details (task id and attempt id), it gives the TaskAttemptReport
 	 * @param taskId, the taskId instance

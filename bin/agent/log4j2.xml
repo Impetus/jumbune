@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="true"
+	monitoringInterval="5">
+	<appenders>
+		
+		<Console name="Console" target="SYSTEM_OUT">
+			<PatternLayout>
+				<pattern>%m%n</pattern>
+			</PatternLayout>
+		</Console>
+		
+		
+		<RollingFile name="rollingFileAppender" fileName="jumbuneagent.log"
+			filePattern="jumbuneagent.log.%d{yyyy-MM-dd}">
+			<PatternLayout>
+				<pattern>%d{ISO8601} %-5level [%thread][%logger{0}] %m%n</pattern>
+			</PatternLayout>
+			<Policies>
+				<OnStartupTriggeringPolicy />
+			</Policies>
+			<DefaultRolloverStrategy max="20" />
+		</RollingFile>
+	</appenders>
+	
+	<loggers>
+		<root level="info">
+            <appender-ref ref="Console" />
+        </root>
+		<root level="info">
+			<appender-ref ref="rollingFileAppender" />
+		</root>
+		<logger name="EventLogger" level="info" >
+			<appender-ref ref="Console"/>
+		</logger>
+	</loggers>
+
+</log4j:configuration>

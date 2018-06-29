@@ -78,7 +78,7 @@ public class MREntryExitAdapter extends BaseAdapter {
 					AbstractInsnNode[] insnArr = insnList.toArray();
 
 					// adding entry logging
-					LOGGER.info(MessageFormat.format(
+					LOGGER.debug(MessageFormat.format(
 							InstrumentationMessageLoader
 									.getMessage(MessageConstants.LOG_MAPREDUCE_METHOD_ENTRY),
 							getClassName() + "##" + mn.name + "##" + mn.desc));
@@ -113,7 +113,7 @@ public class MREntryExitAdapter extends BaseAdapter {
 						// return statement
 						if (abstractInsnNode.getOpcode() >= Opcodes.IRETURN
 								&& abstractInsnNode.getOpcode() <= Opcodes.RETURN) {
-							LOGGER.info(MessageFormat.format(
+							LOGGER.debug(MessageFormat.format(
 									InstrumentationMessageLoader
 											.getMessage(MessageConstants.LOG_MAPREDUCE_METHOD_EXIT),
 									getClassName() + "##" + mn.name));

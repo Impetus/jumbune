@@ -19,16 +19,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.DebuggerConf;
 import org.jumbune.common.beans.JobDefinition;
-import org.jumbune.common.utils.MessageLoader;
 import org.jumbune.common.job.Config;
-import org.jumbune.common.job.JobConfig;
+import org.jumbune.common.utils.MessageLoader;
 import org.jumbune.utils.beans.LogLevel;
 import org.jumbune.utils.exception.JumbuneException;
 
+import org.jumbune.common.job.JobConfig;
 
 /**
  * This class shows various options to user to change the properties mentioned
- * in his customized json file
+ * in his customized yaml file
  * 
  */
 public class UserInputUtil {
@@ -36,17 +36,12 @@ public class UserInputUtil {
 	private static final Logger LOGGER = LogManager
 			.getLogger(UserInputUtil.class);
 
+	private Config config;
 	private static final MessageLoader MESSAGES = MessageLoader.getInstance();
 	private static String validInput;
 	private Scanner scanner;
-	private Config config;
 
-	/**
-	 * public constructor for UserInputUtil
-	 * @param loader
-	 * @param scanner
-	 */
-	public UserInputUtil(Scanner scanner, Config config) {
+	public UserInputUtil(Config config, Scanner scanner) {
 		this.scanner = scanner;
 		this.config = config;
 		validInput = MESSAGES.get(MESSAGE_VALID_INPUT);
@@ -62,7 +57,7 @@ public class UserInputUtil {
 	 * @throws Exception
 	 */
 	public void getInfo() throws JumbuneException {
-		LOGGER.info("Enquire user to change values provided in yaml file !!!");
+		LOGGER.debug("Enquire user to change values provided in jobJson file !!!");
 
 		String jobInfoChangeQuestion = MessageFormat.format(
 				MESSAGES.get(MESSAGE_INFO_CHANGE_QUESTION), "job(s)");

@@ -1,0 +1,12 @@
+{
+	"indent": 2,
+	"eqeqeq": true,
+	"node": true,
+	"browser": true,
+	"unused": true,
+	"undef": true,
+	"expr": true,
+	"globals": {
+		"jQuery": true
+	}
+}

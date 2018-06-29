@@ -10,12 +10,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.jumbune.common.beans.JobCounterBean;
-import org.jumbune.common.beans.Master;
-import org.jumbune.common.job.Config;
-import org.jumbune.common.job.JobConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jumbune.common.beans.JobCounterBean;
+import org.jumbune.common.beans.JumbuneInfo;
+import org.jumbune.common.beans.cluster.Cluster;
+import org.jumbune.common.job.JobConfig;
+import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.remoting.client.Remoter;
 
 /**
@@ -53,18 +54,18 @@ public class HadoopJobCounters {
 	 *            the loader
 	 * @return the string
 	 */
-	private String fetchClusterConfigurationProperties(Config config) {
-		JobConfig jobConfig = (JobConfig) config;
+	private String fetchClusterConfigurationProperties(JumbuneRequest jumbuneRequest) {
+		
+		JobConfig jobConfig =  jumbuneRequest.getJobConfig();
 		String expectedLocation = new StringBuilder()
-				.append(JobConfig.getJumbuneHome()).append(File.separator)
+				.append(JumbuneInfo.getHome())
 				.append(Constants.JOB_JARS_LOC)
 				.append(jobConfig.getJumbuneJobName()).append(File.separator)
 				.append("cluster-configuration.properties").toString();
 		File file = new File(expectedLocation);
 		if (!file.exists() || file.isDirectory()) {
-			Master master = jobConfig.getMaster();
-			Remoter remoter = new Remoter(master.getHost(),
-					Integer.valueOf(master.getAgentPort()));
+			Cluster cluster = jumbuneRequest.getCluster();
+			Remoter remoter = RemotingUtil.getRemoter(cluster);
 			String relativePath = File.separator + Constants.JOB_JARS_LOC
 					+ jobConfig.getJumbuneJobName();
 			remoter.receiveLogFiles(relativePath,
@@ -95,8 +96,7 @@ public class HadoopJobCounters {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public void setJobCounterBeans(String processName, String response,
-			Config config) throws IOException {
+	public void setJobCounterBeans(String processName, String response, 	JumbuneRequest jumbuneRequest) throws IOException {
 		List<String> jobs = new LinkedList<String>();
 		Map<String, String> map = null;
 		BufferedReader reader = new BufferedReader(new StringReader(response));
@@ -105,7 +105,7 @@ public class HadoopJobCounters {
 		boolean isYarnJob = false;
 		JobCounterBean jobCounterBean = new JobCounterBean();
 		isYarnJob = FileUtil.getPropertyFromFile(
-				fetchClusterConfigurationProperties(config), HADOOP_TYPE)
+				fetchClusterConfigurationProperties( jumbuneRequest), HADOOP_TYPE)
 				.equalsIgnoreCase("yarn");
 		while (true) {
 			line = reader.readLine();

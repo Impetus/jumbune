@@ -11,8 +11,8 @@ public enum Enable {
 	
 	/** The true. */
 	TRUE(true), 
- /** The false. */
- FALSE(false);
+	/** The false. */
+	FALSE(false);
 
 	/** The enum value. */
 	private boolean enumValue;

@@ -1,0 +1,125 @@
+<div class="container" ng-init="dataValidationControllerComp">
+    <div jumbune-header=""></div>
+    <div class="inner-container">
+        <div class="col-md-12 tab-container main-container" style="min-height:550px">
+            <form name="myForm" id="defineJobForm" novalidate enctype="multipart/form-data">
+                <div class="form-group row my-tool-tip">
+                    <h5 style="color: #23b4c0;border-bottom:#e2e2e2 solid 1px">Specify source and destination locations to compare data</h5></div>
+                <div class="form-group row my-tool-tip" style="text-align:left;">
+                    <!-- <label class="col-md-5" style="color:#747474;font-weight:300">Source</label> -->
+                    <div>
+                    	<label class="col-md-2" style="text-align:left;color:#747474;font-weight:300">Source</label>
+                    	<div class="row col-md-3">
+                    		<input class="col-md-12" type="text" class="validate" ng-model="sourcePath" />
+                    		 <div class="error">
+                                <span class="error col-md-12" ng-show="errorMessageShowsourcePath">{{errorMessagesourcePath}}</span>
+                              </div>
+                    	</div>
+                    	
+						<label  class="col-md-1" style="text-align:left;color:#747474;font-weight:300;margin-left:30px;width:150px;">Destination</label>
+
+						<div class="row col-md-3">
+                    		<input class="col-md-12" name="regex" type="text" ng-model="destinationPath" />
+                    		 <div class="error">
+                                <span class="error col-md-12" ng-show="errorMessageShowdestinationPath">{{errorMessagedestinationPath}}</span>
+                              </div>
+                    	</div>
+                        <!-- <label class="option-label">
+                            <label class="col-md-2" style="text-align:left;color:#747474;font-weight:300">Source</label>
+                            <input type="text" class="validate" ng-model="sourcePath" />
+                            <div class="error">
+                                <span class="error" ng-show="errorMessageShowdestinationPath">{{errorMessagesourcePath}}</span>
+                              </div>
+                            <label style="text-align:left;color:#747474;font-weight:300;margin:0px 30px 0px 40px">Destination</label>
+                            <input name="regex" type="text" ng-model="destinationPath" />
+                             <div class="error">
+                                <span class="error" ng-show="errorMessageShowdestinationPath">{{errorMessagedestinationPath}}</span>
+                              </div>
+                        </label> -->
+                    </div>
+                </div>
+                <div class="form-group row my-tool-tip ">
+                    <h5 style="color: #23b4c0;border-bottom:#e2e2e2 solid 1px">Tuple Seperators</h5></div>
+                    <div class="form-group row my-tool-tip" style="text-align:left;">
+                    <div>
+                    	<label class="col-md-2" style="text-align:left;color:#747474;font-weight:300">Record Separator</label>
+                    	<input class="col-md-3" type="text" class="validate" ng-model="recordSeparator" name="tupleRecordSeparator" />
+                    	<label class="col-md-1" style="text-align:left;color:#747474;font-weight:300;margin-left:20px;width:150px;">Field Separator</label>
+                    	<input class="col-md-3" type="text" class="validate" name="tupleFieldSeparator" ng-model="fieldSeparator" ng-class="{'has-error': dataValidationTab.hasError('fieldSeparator')}" />
+                    	
+
+                      <!--   <label class="option-label">
+                            <label class="col-md-2" style="text-align:left;color:#747474;font-weight:300" >Record Separator</label>
+                            <input type="text" class="validate" ng-model="recordSeparator" name="tupleRecordSeparator" />
+                            <label style="text-align:left;color:#747474;font-weight:300;margin:0px 30px 0px 40px">Field Separator</label>
+                            <input type="text" class="validate" name="tupleFieldSeparator" ng-model="fieldSeparator" ng-class="{'has-error': dataValidationTab.hasError('fieldSeparator')}" />
+                        </label> -->
+                    </div>
+                </div>
+                <div class="form-group row my-tool-tip">
+                    <h5 style="color: #23b4c0;border-bottom:#e2e2e2 solid 1px">Specify unique columns<i data-toggle="tooltip" title="Please enter field number,If it has composite key enter fields number seperated by comma (,)" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i></h5>
+                <div style="text-align:left;">
+                	<label class="col-md-2" style="text-align:left;color:#747474;font-weight:300">Source</label>
+                	<input type="text" class="validate col-md-3" ng-model="sourcePrimaryKey" placeholder="eg. 4 or 1,3"/>
+                    <label class="col-md-1" style="text-align:left;color:#747474;font-weight:300;margin-left:20px;width:150px;">Destination</label>
+                    <input class="col-md-3" type="text" ng-model="destinationPrimaryKey" placeholder="eg. 9 or 5,6" />
+
+                  <!--   <label class="option-label">
+                        <label class="col-md-2" style="text-align:left;color:#747474;font-weight:300">Source</label>
+                        <input type="text" class="validate" ng-model="sourcePrimaryKey" placeholder="4 or 1,3"/>
+                        <label style="text-align:left;color:#747474;font-weight:300;margin:0px 30px 0px 40px">Destination</label>
+                        <input name="regex" type="text" ng-model="destinationPrimaryKey" placeholder="9 or 5,6" />
+                    </label> -->
+                </div>
+                </div>
+                <div class="form-group row my-tool-tip ">
+                    <h5 style="color: #23b4c0;border-bottom:#e2e2e2 solid 1px">Please specify jar file having class and method that containing transformations</h5></div>
+                <div class="form-group row my-tool-tip">
+                        <label class="col-md-2" style="text-align:left;color:#747474;font-weight:300">File path
+                        </label>
+                        <div >
+                            <input type="file" file-model="myFile" id="filePathLocal" name="inputFile" />
+                        </div>
+                    </div>
+                <table class="table table-striped dtl-tbl">
+                    <thead>
+                        <tr>
+                            <th>Source Field No.</th>
+                            <th>Has Transformation Method ?</th>
+                            <th>Transformation Method</th>
+                            <th>Destination Field Number</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="key in workerNodeHostArrCount  track by $index">
+                            <td>
+                                <input type="text" class="validate" name="hdfsInputPath" ng-model="workerNodeHostArrCount[$index].sourcefieldNumber" />
+                            </td>
+                            <td>
+                                <input type="checkbox" ng-model="workerNodeHostArrCount[$index].enable" />
+                           
+                            </td>
+                            <td>
+                                <input type="text" class="validate" ng-show="workerNodeHostArrCount[$index].enable" ng-model="workerNodeHostArrCount[$index].transformationMethod" placeholder="package.class.method"/>
+                            </td>
+                            <td>
+                                <input name="regex" type="text" ng-model="workerNodeHostArrCount[$index].destinationFieldNumber" />
+                            </td>
+                            <td><i class="fa fa-minus circle-icon red-icon" ng-click="removeWorkerNodeHost($index)"></i></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="row" style="margin:0 auto;text-align:center"><button type='button' class='btn btn-default' ng-click="addWorkerNodeHost()"><i ng-click="addWorkerNodeHost();" class="fa fa-plus circle-icon green-icon" style="margin-right:5px"></i> Add Element</button></div>
+                
+                <div class="textCenter">
+                    <button type='button' class='btn btn-default btnLink' ng-click='cancel()'>Cancel</button>
+                    <button type='button' class='btn btn-default' ng-click='back()'>Back</button>
+                    <button type='button' class='btn btn-primary' ng-disabled="isDisabled()" ng-click='next()'>Submit</button>
+                </div>
+            </form>
+        </div>
+        <div class="clear"></div>
+    </div>
+    <!-- info-holder -->
+</div>

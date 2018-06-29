@@ -7,20 +7,18 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jumbune.common.beans.Module;
 import org.jumbune.common.beans.ReportsBean;
-import org.jumbune.common.beans.ServiceInfo;
+import org.jumbune.common.job.JumbuneRequest;
 import org.jumbune.common.utils.MessageLoader;
-import org.jumbune.common.job.Config;
-import org.jumbune.execution.beans.Parameters;
-import org.jumbune.execution.utils.ProcessHelper;
 import org.jumbune.utils.exception.JumbuneException;
 
+import org.jumbune.execution.beans.Parameters;
+import org.jumbune.execution.utils.ProcessHelper;
 
 /**
  * Abstract processor class that should be extended to create any new processor.
  * This class maintains the complete life cycle of the jumbune job execution
  * process
- * 
-
+ *
  * 
  */
 public abstract class BaseProcessor implements Processor {
@@ -31,26 +29,13 @@ public abstract class BaseProcessor implements Processor {
 	protected static final MessageLoader MESSAGES = MessageLoader.getInstance();
 
 	private Processor next;
+	private JumbuneRequest jumbuneRequest;
 	private ReportsBean reports;
-	protected ServiceInfo serviceInfo;
 	private boolean isCommandBased;
-	private Config config;
-	
-	
 
 	protected BaseProcessor(boolean isCommandBased) {
 		this.isCommandBased = isCommandBased;
 	}
-
-		
-	protected Config getConfig() {
-		return config;
-	}
-
-	protected void setConfig(Config config) {
-		this.config = config;
-	}
-	
 
 	protected ReportsBean getReports() {
 		return reports;
@@ -60,12 +45,12 @@ public abstract class BaseProcessor implements Processor {
 		this.reports = reports;
 	}
 
-	protected ServiceInfo getServiceInfo() {
-		return serviceInfo;
+	public JumbuneRequest getJumbuneRequest() {
+		return jumbuneRequest;
 	}
 
-	protected void setServiceInfo(ServiceInfo serviceInfo) {
-		this.serviceInfo = serviceInfo;
+	public void setJumbuneRequest(JumbuneRequest jumbuneRequest) {
+		this.jumbuneRequest = jumbuneRequest;
 	}
 
 	protected boolean isCommandBased() {
@@ -77,10 +62,10 @@ public abstract class BaseProcessor implements Processor {
 	}
 
 	@Override
-	public void process(Config config,ReportsBean reports,
+	public void process(JumbuneRequest jumbuneRequest, ReportsBean reports,
 			Map<Parameters, String> params) throws JumbuneException {
+		this.jumbuneRequest = jumbuneRequest;
 		this.reports = reports;
-		this.config = config;
 		Map<Parameters, String> paramsTmp = params;
 		if (paramsTmp == null){
 			paramsTmp = new HashMap<Parameters, String>();
@@ -88,7 +73,7 @@ public abstract class BaseProcessor implements Processor {
 		boolean executed = false;
 		try {
 			// pre-execution
-			preExecute(paramsTmp);
+//			preExecute(paramsTmp);
 			if (!reports.isExectutionStopped()) {
 				log(paramsTmp, "Processor(s) Initiating Execution");
 				// main execution of module
@@ -98,10 +83,6 @@ public abstract class BaseProcessor implements Processor {
 				}
 				else{
 					log(paramsTmp, "Execution Failed");
-				}
-				// update services only when execution is successful
-				if (executed){
-					updateServiceInfo(serviceInfo);
 				}
 			}
 			// post executions
@@ -115,7 +96,7 @@ public abstract class BaseProcessor implements Processor {
 		}
 
 		if (next != null && executed && !reports.isExectutionStopped()) {
-			next.process( config, reports, paramsTmp);
+			next.process(jumbuneRequest, reports, paramsTmp);
 		}
 	}
 
@@ -135,8 +116,6 @@ public abstract class BaseProcessor implements Processor {
 			throws JumbuneException {
 
 		log(params, "Pre-Execution phase of processors");
-		serviceInfo = processHelper.readServiceInfo();
-		log(params, serviceInfo.toString());
 	}
 
 	/**
@@ -148,7 +127,7 @@ public abstract class BaseProcessor implements Processor {
 
 	/**
 	 * This is main execution method of any processor and it should contain
-	 * complete processing logic for the process. Processor can use the params
+	 * complete processing logic for the process. PRocessor can use the params
 	 * for inter process communication. After completing the process the
 	 * processor should populate the respective report in reportsBean and should
 	 * mark the report as complete so as to show them on UI ( if applicable ).
@@ -160,17 +139,6 @@ public abstract class BaseProcessor implements Processor {
 	protected abstract boolean execute(Map<Parameters, String> params)
 			throws JumbuneException;
 
-	/**
-	 * Method for updating service yaml cofiguration. This method should be
-	 * implemented by processors who want to expose their results through jmx
-	 * services.
-	 * 
-	 * @param serviceInfo
-	 * @throws JumbuneException
-	 */
-	protected void updateServiceInfo(ServiceInfo serviceInfo)
-			throws JumbuneException {
-	};
 
 	/**
 	 * This method can be used for performing any post-processing after
@@ -183,17 +151,6 @@ public abstract class BaseProcessor implements Processor {
 			throws JumbuneException {
 
 		log(params, "Post Execution phase of processors");
-
-		if (serviceInfo != null) {
-			boolean status = processHelper.writetoServiceFile(serviceInfo);
-
-			if (status){
-				log(params, "Service Info written successfully");
-			}
-			else{
-				log(params, "Error occured while writing service info");
-			}
-		}
 
 	}
 

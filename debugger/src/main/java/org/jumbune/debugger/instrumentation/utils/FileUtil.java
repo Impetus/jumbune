@@ -30,10 +30,10 @@ public final class FileUtil {
 	 */
 	public static List<String> getClassPathFileList(Config config) {
 		List<String> listFiles = getJumbuneClasspathFileList(config);
-		List<String> userSuppliedClasspathFileList = getUserClasspathFileList(config);
+/*		List<String> userSuppliedClasspathFileList = getUserClasspathFileList(config);
 		if (userSuppliedClasspathFileList != null) {
 			listFiles.addAll(getUserClasspathFileList(config));
-		}
+		}*/
 		return listFiles;
 	}
 
@@ -42,15 +42,15 @@ public final class FileUtil {
 	 * Gets the list of all user supplied classpath files
 	 * </p>
 	 * 
-	 * @param loader
-	 *            Yaml loader
+	 * @param config
+	 *            Config
 	 * @return List<String> List of files
 	 */
 	private static List<String> getUserClasspathFileList(Config config) {
 		int userClassPathSource = getUserClassPathSource(config);
 
 		if (userClassPathSource == ClasspathUtil.SOURCE_TYPE_MASTER) {
-			// get the list as configured in yaml
+			// get the list as configured in config
 			return getClassPathFileList(config, ClasspathUtil.USER_SUPPLIED);
 		} else if (userClassPathSource == ClasspathUtil.SOURCE_TYPE_SLAVES) {
 			// get the list from userLib folder on master
@@ -67,8 +67,8 @@ public final class FileUtil {
 	 * Gets the list of all jumbune supplied classpath files
 	 * </p>
 	 * 
-	 * @param loader
-	 *            Yaml loader
+	 * @param config
+	 *            Config
 	 * @return List<String> List of files
 	 */
 	private static List<String> getJumbuneClasspathFileList(Config config) {
@@ -107,18 +107,18 @@ public final class FileUtil {
 	 * @return List<String> List of jars
 	 */
 	public static List<String> getClassPathFilesForThinJar(Config config) {
-		int classpathTypeUser = getUserClassPathType(config);
+//		int classpathTypeUser = getUserClassPathType(config);
 		int classpathTypeFramework = getJumbuneClassPathType(config);
 		List<String> listFiles = null;
 		if (classpathTypeFramework == ClasspathUtil.CLASSPATH_TYPE_LIBJARS) {
 			listFiles = getJumbuneClasspathFileList(config);
 		}
-		if (classpathTypeUser == ClasspathUtil.CLASSPATH_TYPE_LIBJARS) {
+/*		if (classpathTypeUser == ClasspathUtil.CLASSPATH_TYPE_LIBJARS) {
 			if (listFiles == null) {
 				listFiles = new ArrayList<String>();
 			}
 			listFiles.addAll(getUserClasspathFileList(config));
-		}
+		}*/
 		return listFiles;
 	}
 
@@ -163,8 +163,8 @@ public final class FileUtil {
 	 * <p>
 	 * Gets the user classpath type
 	 * 
-	 * @param loader
-	 *            Yaml loader
+	 * @param config
+	 *            Config
 	 * @return int Classpath type
 	 */
 	public static int getUserClassPathType(Config config) {
@@ -193,8 +193,8 @@ public final class FileUtil {
 	 * Gets the source, how user dependencies are supplied
 	 * </p>
 	 * 
-	 * @param loader
-	 *            Yaml loader
+	 * @param config
+	 *            Config
 	 * @return int source
 	 */
 	public static int getUserClassPathSource(Config config) {

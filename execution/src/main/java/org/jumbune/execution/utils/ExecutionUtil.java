@@ -51,19 +51,16 @@ import org.jumbune.common.beans.JobDefinition;
 import org.jumbune.common.utils.CollectionUtil;
 import org.jumbune.common.utils.ConsoleLogUtil;
 import org.jumbune.common.utils.MessageLoader;
-import org.jumbune.common.job.Config;
-import org.jumbune.common.job.JobConfig;
 import org.jumbune.execution.beans.YesNo;
 import org.jumbune.utils.beans.LogLevel;
-
-
+import org.jumbune.utils.exception.JumbuneException;
 
 /**
  * This class has utility methods which are specifically used by Execution module.
  * 
  */
 public final class ExecutionUtil {
-	public static final Logger LOGGER = LogManager.getLogger("EventLogger");
+	public static final Logger CONSOLE_LOGGER = LogManager.getLogger("EventLogger");
 	private static Map<String, String> counterMaps;
 
 	static {
@@ -102,13 +99,13 @@ public final class ExecutionUtil {
 	 * @param validMessage
 	 * @param question
 	 * @return
-	 
+	 * @throws JumbuneException
 	 */
 	public static String readInputFromConsole(Scanner scanner, String validMessage, String question) {
 		askQuestion(question);
 		String input = readFromReader(scanner);
 		while (CollectionUtil.isNullOrEmpty(input)) {
-			LOGGER.info(validMessage);
+			CONSOLE_LOGGER.info(validMessage);
 			input = readFromReader(scanner);
 		}
 		return input;
@@ -122,7 +119,7 @@ public final class ExecutionUtil {
 	 * @param question
 	 *            TODO
 	 * @return
-	 
+	 * @throws JumbuneException
 	 */
 	public static boolean askYesNoInfo(Scanner scanner, String validMessage, String question) {
 		YesNo yesNo;
@@ -139,7 +136,7 @@ public final class ExecutionUtil {
 				yesNo = YesNo.valueOf(input.toUpperCase());
 				break;
 			} catch (IllegalArgumentException ilEx) {
-				LOGGER.error(validMessage);
+				CONSOLE_LOGGER.error(validMessage);
 			}
 		}
 
@@ -157,7 +154,7 @@ public final class ExecutionUtil {
 	 * @param validMessage
 	 * @param question
 	 * @return
-	 
+	 * @throws JumbuneException
 	 */
 	public static LogLevel askLogLevelInfo(Scanner scanner, String validMessage, String question) {
 		LogLevel logLevel;
@@ -169,7 +166,7 @@ public final class ExecutionUtil {
 				logLevel = LogLevel.valueOf(input.toUpperCase());
 				break;
 			} catch (IllegalArgumentException ilEx) {
-				LOGGER.error(validMessage);
+				CONSOLE_LOGGER.error(validMessage);
 				throw ilEx;
 			}
 		}
@@ -190,7 +187,7 @@ public final class ExecutionUtil {
 	 * 
 	 * @param reader
 	 * @return String
-	 
+	 * @throws JumbuneException
 	 */
 	private static String readFromReader(Scanner scanner) {
 		String input;
@@ -230,27 +227,15 @@ public final class ExecutionUtil {
 		if (jobDefList.size() > 1) {
 			for (JobDefinition jobdef : jobDefList) {
 				srNo++;
-				LOGGER.info("Sr. No. : " + srNo + " Job Name : " + jobdef.getName() + " Job Class : " + jobdef.getJobClass());
+				CONSOLE_LOGGER.info("Sr. No. : " + srNo + " Job Name : " + jobdef.getName() + " Job Class : " + jobdef.getJobClass());
 			}
 			if (askYesNoInfo(scanner, msgLoader.get(MESSAGE_VALID_INPUT), msgLoader.get(MESSAGE_EXCLUDE_JOBS))) {
-				LOGGER.info(msgLoader.get(MESSAGE_ENTER_INDEX));
+				CONSOLE_LOGGER.info(msgLoader.get(MESSAGE_ENTER_INDEX));
 				String input = readFromReader(scanner);
 				String[] index = input.split(COMMA);
 				excludeJobs(jobDefList, index);
 			}
 		}
-	}
-
-	/**
-	 * This method is used to exclude the given jobs from JobDefinition list.
-	 * 
-	 * @param loader
-	 * @param index
-	 */
-	public static void excludeJobs(Config config, String[] index) {
-		JobConfig jobConfig = (JobConfig)config;
-		List<JobDefinition> jobList = jobConfig.getJobs();
-		excludeJobs(jobList, index);
 	}
 
 	/**

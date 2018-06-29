@@ -6,12 +6,13 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
@@ -19,7 +20,9 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.jumbune.common.utils.Constants;
+import org.jumbune.datavalidation.ArrayListWritable;
 import org.jumbune.utils.JobUtil;
+
 
 	
 
@@ -38,18 +41,48 @@ public class DataValidationReducer extends Reducer<Text, DataDiscrepanciesArrayW
 	/** The file handler map. */
 	private Map<String, BufferedWriter> fileHandlerMap;
 	
-	/** The Constant MAX_VIOLATIONS_IN_REPORT. */
-	private static final int MAX_VIOLATIONS_IN_REPORT = 1000;
-
+	
+	/** The max violations in report. */
+	private int maxViolationsInReport;
+		
+	/** The offset lines map. 
+	 * This map is used to keep track total number of lines processed against an offset which is the end offset of split
+	 * A TreeMap implementation is used further so as to keep the records sorted by end offset of split. 
+	 * 
+	 **/
+	private Map<FileOffsetKey, Long> offsetLinesMap;
+	
+	private Set<String> fileNames ;
+	
+	private MultiValueTreeMap<String, ViolationPersistenceBean> nullMap ;
+	
+	private MultiValueTreeMap<String, ViolationPersistenceBean> dataTypeMap ;
+	
+	private MultiValueTreeMap<String, ViolationPersistenceBean> regexMap ;
+	
+	private MultiValueTreeMap<String, ViolationPersistenceBean> numFieldsMap ;
+	
 	/* (non-Javadoc)
 	 * @see org.apache.hadoop.mapreduce.Reducer#setup(org.apache.hadoop.mapreduce.Reducer.Context)
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	protected void setup(Reducer.Context context) throws IOException, InterruptedException {
 		super.setup(context);
+		maxViolationsInReport = context.getConfiguration().getInt(DataValidationConstants.DV_NUM_REPORT_VIOLATION, 1000);
 		String dir = context.getConfiguration().get(SLAVE_FILE_LOC);
 		dirPath = JobUtil.getAndReplaceHolders(dir);
 		fileHandlerMap = new DVLRUCache(DataValidationConstants.TEN);
+		
+		offsetLinesMap = new TreeMap<>();
+		
+		ViolationPersistenceBean bean = new ViolationPersistenceBean();
+		bean.setLineNum(Integer.MAX_VALUE);
+		
+		nullMap = new MultiValueTreeMap<String,ViolationPersistenceBean>(maxViolationsInReport);
+		dataTypeMap = new MultiValueTreeMap<String,ViolationPersistenceBean>(maxViolationsInReport);
+		regexMap = new MultiValueTreeMap<String,ViolationPersistenceBean>(maxViolationsInReport);
+		numFieldsMap = new MultiValueTreeMap<String,ViolationPersistenceBean>(maxViolationsInReport); 
+		fileNames = new HashSet<String>();
 	}
 
 	/**
@@ -57,14 +90,18 @@ public class DataValidationReducer extends Reducer<Text, DataDiscrepanciesArrayW
 	 * different data violation types.
 	 */
 	public void reduce(Text key, Iterable<DataDiscrepanciesArrayWritable> values, Context context) throws IOException, InterruptedException {
+	
+		String[] falseSplits = key.toString().split("DDAW");
+		if (falseSplits.length > 1) {
+			key = new Text(falseSplits[0]);
+		}
 		createDirectory(key);
-		int totalDirtyTuple = 0;
 		IntWritable fieldNumber = new IntWritable();
 		IntWritable fieldViolations = new IntWritable(0);
-		int totalFieldViolations = 0;
-		int totalNullCheckViolations = 0;
-		int totalDataTypeViolations = 0;
-		int totalRegexCheckViolations = 0;
+		long totalFieldViolations = 0;
+		long totalNullCheckViolations = 0;
+		long totalDataTypeViolations = 0;
+		long totalRegexCheckViolations = 0;
 		MapWritable nullCheckMapWritable = null;
 		MapWritable dataTypeCheckMapWritable = null;
 		MapWritable regexCheckMapWritable = null;
@@ -73,156 +110,216 @@ public class DataValidationReducer extends Reducer<Text, DataDiscrepanciesArrayW
 		Map<String, Integer> dataTypeFileViolationsMap = null;
 		Map<String, Integer> regexCheckFileViolationsMap = null;
 		Map<String, Integer> fieldFileViolationsMap = null;
-		StringBuffer wb = new StringBuffer();
 		Set<String> dirtyFieldTupleSet = new HashSet<String>();
 		Set<String> dirtyDataTypeTupleSet = new HashSet<String>();
 		Set<String> dirtyRegexTupleSet = new HashSet<String>();
 		Set<String> dirtyNullCheckSet = new HashSet<String>();
-		String fileName = null;
+		
+
 		for (DataDiscrepanciesArrayWritable dvarrayWritable : values) {
-			totalDirtyTuple++;
-			fileName = dvarrayWritable.getFileName();
 			for (Writable writable : dvarrayWritable.get()) {
-				
-				DataViolationWritableBean fileViolationsWritable =(DataViolationWritableBean)writable;
-				if(fileViolationsWritable!= null) {
-					switch(fileViolationsWritable.getViolationType()){
-					case DataValidationConstants.NUM_OF_FIELDS_CHECK:
-						dirtyFieldTupleSet.add(fileName+fileViolationsWritable.getLineNumber());
-						totalFieldViolations++;
-						if(fieldMapWritable == null || fieldFileViolationsMap == null){
-							fieldMapWritable = new MapWritable();
-							fieldFileViolationsMap = new LinkedHashMap<String, Integer>();
-						}	
-						processTupleViolation(fieldMapWritable,
-								fieldFileViolationsMap, wb,
-								fileViolationsWritable,fileName);
-						break;
-					case DataValidationConstants.USER_DEFINED_NULL_CHECK:
-						dirtyNullCheckSet.add(fileName+fileViolationsWritable.getLineNumber());
-						totalNullCheckViolations++;
-						if(nullCheckMapWritable == null || nullCheckfileViolationsMap == null){
-							nullCheckMapWritable = new MapWritable();
-							nullCheckfileViolationsMap = new LinkedHashMap<String, Integer>();
-						}					
-						processTupleViolation(nullCheckMapWritable,
-								nullCheckfileViolationsMap, wb,
-								fileViolationsWritable, fileName);
-						break;
-					case DataValidationConstants.USER_DEFINED_DATA_TYPE:
-						dirtyDataTypeTupleSet.add(fileName+fileViolationsWritable.getLineNumber());
-						totalDataTypeViolations++;
-						if(dataTypeCheckMapWritable == null || dataTypeFileViolationsMap == null){
-							dataTypeCheckMapWritable = new MapWritable();
-							dataTypeFileViolationsMap = new LinkedHashMap<String, Integer>();
-						}					
-						processTupleViolation(dataTypeCheckMapWritable,
-								dataTypeFileViolationsMap, wb,
-								fileViolationsWritable, fileName);
-						break;
-					case DataValidationConstants.USER_DEFINED_REGEX_CHECK:
-						dirtyRegexTupleSet.add(fileName+fileViolationsWritable.getLineNumber());
-						totalRegexCheckViolations++;
-						if(regexCheckMapWritable == null || regexCheckFileViolationsMap == null){
-							regexCheckMapWritable = new MapWritable();
-							regexCheckFileViolationsMap = new LinkedHashMap<String, Integer>();
-						}					
-						processTupleViolation(regexCheckMapWritable,
-								regexCheckFileViolationsMap, wb,
-								fileViolationsWritable, fileName);
-						break;
-					default:
-						break;
+				DataViolationWB dataViolationWB = (DataViolationWB) writable;
+				if (dataViolationWB != null) {
+					MapWritable fieldMap = dataViolationWB.getFieldMap();
+					if (fieldMap == null || fieldMap.isEmpty())
+						return;
+					// maintaining offsetLinesMap & offsetFilesMap according to
+					// split end offset.
+					Long splitEndOffset = dataViolationWB.getSplitEndOffset().get();
+					long totalRecEmiByMap = dataViolationWB.getTotalRecordsEmittByMap().get();
+					String fileName = dataViolationWB.getFileName().toString();
+					FileOffsetKey fileOffsetKey = new FileOffsetKey(fileName, splitEndOffset);
+
+					offsetLinesMap.put(fileOffsetKey, totalRecEmiByMap);
+
+					for (Entry<Writable, Writable> entries : fieldMap.entrySet()) {
+						FieldLWB fieldLWB = (FieldLWB) entries.getValue();
+						MapWritable typeVioMap = fieldLWB.getTypeViolationMap();
+						for (Entry<Writable, Writable> entry : typeVioMap.entrySet()) {
+							ViolationLWB violationLWB = (ViolationLWB) entry.getValue();
+							ArrayListWritable<LineLWB> lineLWBs = violationLWB.getLineLWBList();
+							for (LineLWB lineLWB : lineLWBs) {
+								ViolationPersistenceBean bean = null;
+								switch (entry.getKey().toString()) {
+								case DataValidationConstants.NUM_OF_FIELDS_CHECK:
+									dirtyFieldTupleSet.add(fileName + lineLWB.getLineNumber());
+									totalFieldViolations++;
+									if (fieldMapWritable == null || fieldFileViolationsMap == null) {
+										fieldMapWritable = new MapWritable();
+										fieldFileViolationsMap = new LinkedHashMap<String, Integer>();
+									}
+									bean = new ViolationPersistenceBean(((IntWritable) entries.getKey()).get(),
+											lineLWB.getLineNumber().get(), violationLWB.getExpectedValue().toString(),
+											lineLWB.getActualValue().toString(), entry.getKey().toString(), fileName,
+											splitEndOffset);
+									numFieldsMap.add(bean.getFileName(), bean);
+									fileNames.add(bean.getFileName());
+									processTupleViolation(fieldMapWritable, fieldFileViolationsMap, entries.getKey(),
+											fileName);
+									break;
+								case DataValidationConstants.USER_DEFINED_NULL_CHECK:
+									dirtyNullCheckSet.add(fileName + lineLWB.getLineNumber());
+									totalNullCheckViolations++;
+									if (nullCheckMapWritable == null || nullCheckfileViolationsMap == null) {
+										nullCheckMapWritable = new MapWritable();
+										nullCheckfileViolationsMap = new LinkedHashMap<String, Integer>();
+									}
+
+									bean = new ViolationPersistenceBean(((IntWritable) entries.getKey()).get(),
+											lineLWB.getLineNumber().get(), violationLWB.getExpectedValue().toString(),
+											lineLWB.getActualValue().toString(), entry.getKey().toString(), fileName,
+											splitEndOffset);
+									nullMap.add(bean.getFileName(), bean);
+									fileNames.add(bean.getFileName());
+									processTupleViolation(nullCheckMapWritable, nullCheckfileViolationsMap,
+											entries.getKey(), fileName);
+									break;
+								case DataValidationConstants.USER_DEFINED_DATA_TYPE:
+									dirtyDataTypeTupleSet.add(fileName + lineLWB.getLineNumber());
+									totalDataTypeViolations++;
+									if (dataTypeCheckMapWritable == null || dataTypeFileViolationsMap == null) {
+										dataTypeCheckMapWritable = new MapWritable();
+										dataTypeFileViolationsMap = new LinkedHashMap<String, Integer>();
+									}
+
+									bean = new ViolationPersistenceBean(((IntWritable) entries.getKey()).get(),
+											lineLWB.getLineNumber().get(), violationLWB.getExpectedValue().toString(),
+											lineLWB.getActualValue().toString(), entry.getKey().toString(), fileName,
+											splitEndOffset);
+									dataTypeMap.add(bean.getFileName(), bean);
+									fileNames.add(bean.getFileName());
+									processTupleViolation(dataTypeCheckMapWritable, dataTypeFileViolationsMap,
+											entries.getKey(), fileName);
+									break;
+								case DataValidationConstants.USER_DEFINED_REGEX_CHECK:
+									dirtyRegexTupleSet.add(fileName + lineLWB.getLineNumber());
+									totalRegexCheckViolations++;
+									if (regexCheckMapWritable == null || regexCheckFileViolationsMap == null) {
+										regexCheckMapWritable = new MapWritable();
+										regexCheckFileViolationsMap = new LinkedHashMap<String, Integer>();
+									}
+									bean = new ViolationPersistenceBean(((IntWritable) entries.getKey()).get(),
+											lineLWB.getLineNumber().get(), violationLWB.getExpectedValue().toString(),
+											lineLWB.getActualValue().toString(), entry.getKey().toString(), fileName,
+											splitEndOffset);
+									regexMap.add(bean.getFileName(), bean);
+									fileNames.add(bean.getFileName());
+									processTupleViolation(regexCheckMapWritable, regexCheckFileViolationsMap,
+											entries.getKey(), fileName);
+									break;
+								default:
+									break;
+								}
+							}
+						}
 					}
 				}
 			}
 		}
-
 		for (BufferedWriter bw : fileHandlerMap.values()) {
 			bw.close();
 		}
 		fileHandlerMap.clear();
-		int dirtyTuple = 0;
+		long dirtyTuple = 0;
 		
-		if(nullCheckfileViolationsMap!=null){
+		if (nullCheckfileViolationsMap != null) {
 			dirtyTuple = dirtyNullCheckSet.size();
-			writeViolations(DataValidationConstants.USER_DEFINED_NULL_CHECK, context, totalNullCheckViolations, fieldNumber,
-					fieldViolations, nullCheckMapWritable, nullCheckfileViolationsMap, dirtyTuple, totalDirtyTuple-dirtyTuple);
+			writeViolations(DataValidationConstants.USER_DEFINED_NULL_CHECK, context, totalNullCheckViolations,
+					fieldNumber, fieldViolations, nullCheckMapWritable, nullCheckfileViolationsMap, dirtyTuple);
 		}
-		if(dataTypeFileViolationsMap!=null){
+		if (dataTypeFileViolationsMap != null) {
 			dirtyTuple = dirtyDataTypeTupleSet.size();
-			writeViolations(DataValidationConstants.USER_DEFINED_DATA_TYPE, context, totalDataTypeViolations, fieldNumber,
-					fieldViolations, dataTypeCheckMapWritable, dataTypeFileViolationsMap,dirtyTuple, totalDirtyTuple-dirtyTuple);
+			writeViolations(DataValidationConstants.USER_DEFINED_DATA_TYPE, context, totalDataTypeViolations,
+					fieldNumber, fieldViolations, dataTypeCheckMapWritable, dataTypeFileViolationsMap, dirtyTuple);
 		}
-		if(regexCheckFileViolationsMap!=null){
+		if (regexCheckFileViolationsMap != null) {
 			dirtyTuple = dirtyRegexTupleSet.size();
-			writeViolations(DataValidationConstants.USER_DEFINED_REGEX_CHECK, context, totalRegexCheckViolations, fieldNumber,
-					fieldViolations, regexCheckMapWritable, regexCheckFileViolationsMap,dirtyTuple, totalDirtyTuple-dirtyTuple);
+			writeViolations(DataValidationConstants.USER_DEFINED_REGEX_CHECK, context, totalRegexCheckViolations,
+					fieldNumber, fieldViolations, regexCheckMapWritable, regexCheckFileViolationsMap, dirtyTuple);
 		}
-		if(fieldFileViolationsMap!=null){
+		if (fieldFileViolationsMap != null) {
 			dirtyTuple = dirtyFieldTupleSet.size();
 			writeViolations(DataValidationConstants.NUM_OF_FIELDS_CHECK, context, totalFieldViolations, fieldNumber,
-					fieldViolations, fieldMapWritable, fieldFileViolationsMap, dirtyTuple,totalDirtyTuple-dirtyTuple);
+					fieldViolations, fieldMapWritable, fieldFileViolationsMap, dirtyTuple);
 		}
 	}
+	
+	/**
+	 * Calculate actual line no based on the total number of lines in each split.
+	 *
+	 * @param bean the bean
+	 * @return the int
+	 */
+	public int calculateActualLineNo(ViolationPersistenceBean bean) {
+		long splitEndOff = bean.getSplitEndOffset();
+		long sum = 0; 	  
+		FileOffsetKey key ;
+	    //this fragment of code calculates the sum of all the values in the map
+	    // till the splitEndOff is encountered in the keys.  
+	    for(Entry<FileOffsetKey, Long> entry: offsetLinesMap.entrySet()) {	    				 
+				//verifying that the split belong to the same file
+				//entry.getValue() == offsetLinesMap.get(bean.getSplitEndOffset())		
+	    	key = entry.getKey();
+				//if(offsetFilesMap.get(entry.getKey()).equals(bean.getFileName())){
+	    	if(key.getFileName().equals(bean.getFileName())){
+					if(key.getOffset() == splitEndOff) {
+						break;
+					} else {
+						sum += entry.getValue();					
+					}
+				}
+			}
+		return (int) (bean.getLineNum() + sum);
+	 
+	}
+	
+	private void writeViolations(String violatoinType, Context context, long totalViolations, IntWritable fieldNumber,
+			IntWritable fieldViolations, MapWritable mapWritable, Map<String, Integer> fileViolationsMap,
+			long dirtyTuple) throws IOException, InterruptedException {
 
-	private void writeViolations(String violatoinType, Context context,int totalViolations,
-			IntWritable fieldNumber, IntWritable fieldViolations,
-			MapWritable mapWritable, Map<String, Integer> fileViolationsMap, int dirtyTuple, int cleanTuple)
-			throws IOException, InterruptedException {
-		List<FileViolationsWritable> list = new ArrayList<FileViolationsWritable>();
+		ArrayListWritable<FileViolationsWritable> fileVioWriList = new ArrayListWritable<FileViolationsWritable>();
 		FileViolationsWritable fvWritable;
 		for (Map.Entry<String, Integer> violationMap : fileViolationsMap.entrySet()) {
 			fvWritable = new FileViolationsWritable();
 			fvWritable.setFileName(violationMap.getKey());
 			fvWritable.setNumOfViolations(violationMap.getValue());
-			list.add(fvWritable);
+			fileVioWriList.add(fvWritable);
 		}
 
-		FileViolationsWritable[] arr = list.toArray(new FileViolationsWritable[list.size()]);
-		DataViolationArrayWritable dataViolationArrayWritable = new DataViolationArrayWritable();
-		dataViolationArrayWritable.set(arr);
-
 		DataViolationWritable dataViolationWritable = new DataViolationWritable();
-		if(mapWritable == null){
+		if (mapWritable == null) {
 			mapWritable = new MapWritable();
 			mapWritable.put(fieldNumber, fieldViolations);
 		}
 		dataViolationWritable.setFieldMap(mapWritable);
 		dataViolationWritable.setTotalViolations(totalViolations);
-		dataViolationWritable.setDataViolationArrayWritable(dataViolationArrayWritable);
+		dataViolationWritable.setFileViolationsWritables(fileVioWriList);
 		dataViolationWritable.setDirtyTuple(dirtyTuple);
-		dataViolationWritable.setCleanTuple(cleanTuple);
 		context.write(new Text(violatoinType), dataViolationWritable);
 	}
 
 	private void processTupleViolation(MapWritable fieldMapWritable,
-			Map<String, Integer> fieldFileViolationsMap, StringBuffer wb,
-			DataViolationWritableBean fileViolationsWritable, String fileName)
+			Map<String, Integer> fieldFileViolationsMap, Writable fieldNo,String fileName)
 			throws IOException {
 		IntWritable fieldNumber = new IntWritable();
 		IntWritable fieldViolations = new IntWritable(0);
 		int violations;
-		fieldNumber = new IntWritable(fileViolationsWritable.getFieldNumber());
+		fieldNumber = (IntWritable) fieldNo;
 		fieldViolations = (IntWritable) fieldMapWritable.get((fieldNumber));
 		fieldViolations = setFieldViolations(fieldViolations);
 		fieldMapWritable.put(fieldNumber, fieldViolations);
 		violations = extractViolationsFromMap(fieldFileViolationsMap, fileName);
 		violations += 1;
 		fieldFileViolationsMap.put(fileName, violations);
-		writeViolationsToBuffer(fileViolationsWritable, fileName, wb, violations);
 	}
 
 	private void createDirectory(Text key) {
-		String [] violationsTypesArray = key.toString().split("\\|");
-		for (String violationType : violationsTypesArray) {
-			File f = new File(dirPath + File.separator + violationType);
+			File f = new File(dirPath + File.separator + key.toString());
 			f.mkdirs();
 			f.setReadable(true, false);
-			f.setWritable(true, false);
-		}
+			f.setWritable(true, false);	
 	}
-
+	
 	/**
 	 * Extract violations from map.
 	 *
@@ -248,7 +345,6 @@ public class DataValidationReducer extends Reducer<Text, DataDiscrepanciesArrayW
 	 * @return the int writable
 	 */
 	private IntWritable setFieldViolations(final IntWritable fieldViolations) {
-		
 		IntWritable fldViolations = fieldViolations;
 		if (fldViolations != null) {
 			fldViolations.set(fldViolations.get() + 1);
@@ -256,43 +352,35 @@ public class DataValidationReducer extends Reducer<Text, DataDiscrepanciesArrayW
 			fldViolations = new IntWritable(1);
 		}
 		return fldViolations;
+		
 	}
+
 
 	/**
-	 * Write violations to buffer.
+	 * Write violations to file. This method writes violations to respective files in corresponding directories(null, data type, regex, no. of field).
 	 *
-	 * @param dvwb stores the parameters required for data violation report
+	 * @param fieldNumber the field number
+	 * @param lineNumber the line number
+	 * @param expectedValue the expected value
+	 * @param actualValue the actual value
+	 * @param violType the viol type
 	 * @param fileName the file name
-	 * @param stringBuffer refers to the violations that are being written to buffer.
-	 * @param violations refers to null,regex,data type violations.
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	private void writeViolationsToBuffer(DataViolationWritableBean dvwb,
-			String fileName, StringBuffer stringBuffer, int violations)
-			throws IOException {
-		BufferedWriter out = null ;
-		int fieldNum =0;
-		if (violations <= MAX_VIOLATIONS_IN_REPORT) {
-			stringBuffer.append(dvwb.getLineNumber());
-			stringBuffer.append(Constants.PIPE_SEPARATOR);
-			fieldNum = dvwb.getFieldNumber();
-			if (fieldNum == -1) {
-				stringBuffer.append("-");
-			} else {
-				stringBuffer.append(fieldNum);
-			}
+	private void appendViolationToBuffer(StringBuffer stringBuffer, int fieldNumber, long lineNumber, String expectedValue, String actualValue) throws IOException {
+		stringBuffer.append(lineNumber);
+		stringBuffer.append(Constants.PIPE_SEPARATOR);
 
-			stringBuffer.append(Constants.PIPE_SEPARATOR);
-			stringBuffer.append(dvwb.getExpectedValue());
-			stringBuffer.append(Constants.PIPE_SEPARATOR);
-			stringBuffer.append(dvwb.getActualValue());
-			stringBuffer.append("\n");
-			out = getFileHandler(fileName, dvwb.getViolationType());
-			out.write(stringBuffer.toString());
-			stringBuffer.delete(0, stringBuffer.length());
+		if (fieldNumber == -1) {
+			stringBuffer.append("-");
+		} else {
+			stringBuffer.append(fieldNumber);
 		}
-	}
 
+		stringBuffer.append(Constants.PIPE_SEPARATOR).append(expectedValue).append(Constants.PIPE_SEPARATOR)
+				.append(actualValue).append(System.lineSeparator());
+	}
+	
 	/**
 	 * Gets the file handler.
 	 *
@@ -302,11 +390,12 @@ public class DataValidationReducer extends Reducer<Text, DataDiscrepanciesArrayW
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	private BufferedWriter getFileHandler(String fileName, String violationType) throws IOException {
-		String absoluteFilePath = dirPath +File.separator+ violationType + File.separator+ fileName;
+		String absoluteFilePath = dirPath +File.separator+ violationType + File.separator+ fileName + "-" + new Random().nextInt() + "-" + System.nanoTime();
 		BufferedWriter out = fileHandlerMap.get(absoluteFilePath);
 		if (out == null) {
 			File f = new File(absoluteFilePath);
 			f.setReadable(true, false);
+	        f.setWritable(true, false);		
 			out = new BufferedWriter(new FileWriter(f));
 			fileHandlerMap.put( absoluteFilePath, out);
 		}
@@ -317,10 +406,201 @@ public class DataValidationReducer extends Reducer<Text, DataDiscrepanciesArrayW
 	 * @see org.apache.hadoop.mapreduce.Reducer#cleanup(org.apache.hadoop.mapreduce.Reducer.Context)
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	protected void cleanup(Reducer.Context context) throws IOException, InterruptedException {
-		super.cleanup(context);
+	protected void cleanup(Reducer.Context context) throws IOException, InterruptedException {		
+		StringBuffer stringBuffer;
+		for (String fileName : fileNames) {
+
+		if(nullMap != null && !nullMap.isEmpty() && nullMap.getAllElements(fileName) != null){
+			stringBuffer = new StringBuffer();
+		for (ViolationPersistenceBean bean : nullMap.getAllElements(fileName)) {
+			if(bean != null && bean.getViolationType() != null) {  
+			appendViolationToBuffer(stringBuffer, bean.getFieldNum(), bean.getLineNum(), bean.getExpectedValue(), bean.getActualValue());
+			}
+		}
+		BufferedWriter out = null;
+		out = getFileHandler(fileName, DataValidationConstants.USER_DEFINED_NULL_CHECK);
+		out.write(stringBuffer.toString());
+		out.flush();
+		}
+		if(dataTypeMap !=null  && !dataTypeMap.isEmpty() && dataTypeMap.getAllElements(fileName)!=null){
+			stringBuffer = new StringBuffer();
+		for (ViolationPersistenceBean bean : dataTypeMap.getAllElements(fileName)) {
+			if(bean != null && bean.getViolationType() != null) {
+			appendViolationToBuffer(stringBuffer, bean.getFieldNum(), bean.getLineNum(), bean.getExpectedValue(), bean.getActualValue());
+			}
+		}
+			BufferedWriter out = null;
+			out = getFileHandler(fileName, DataValidationConstants.USER_DEFINED_DATA_TYPE);
+			out.write(stringBuffer.toString());
+			out.flush();
+		}
+		if(regexMap != null && !regexMap.isEmpty() && regexMap.getAllElements(fileName) != null){
+			stringBuffer = new StringBuffer();
+		for (ViolationPersistenceBean bean : regexMap.getAllElements(fileName)) {
+			if(bean != null && bean.getViolationType() != null) {
+			appendViolationToBuffer(stringBuffer, bean.getFieldNum(), bean.getLineNum(), bean.getExpectedValue(), bean.getActualValue());
+			}
+		}
+			BufferedWriter out = null;
+			out = getFileHandler(fileName, DataValidationConstants.USER_DEFINED_REGEX_CHECK);
+			out.write(stringBuffer.toString());
+			out.flush();
+		}
+		if(numFieldsMap != null && !numFieldsMap.isEmpty() && numFieldsMap.getAllElements(fileName) != null){
+			stringBuffer = new StringBuffer();
+		for (ViolationPersistenceBean bean : numFieldsMap.getAllElements(fileName)) {
+			if(bean != null && bean.getViolationType() != null) {
+			appendViolationToBuffer(stringBuffer, bean.getFieldNum(), bean.getLineNum(), bean.getExpectedValue(), bean.getActualValue());				
+			}
+		}
+			BufferedWriter out = null;
+			out = getFileHandler(fileName, DataValidationConstants.NUM_OF_FIELDS_CHECK);
+			out.write(stringBuffer.toString());
+			out.flush();		
+		}
+		}		
 		for (BufferedWriter bw : fileHandlerMap.values()) {
 			bw.close();
 		}
+		super.cleanup(context);
 	}
+	
+
+	/**
+	 * The Class FileOffsetKey contains filename and the offset.
+	 */
+	private static class FileOffsetKey implements Comparable<FileOffsetKey> {
+		Integer i;
+		private String fileName;
+		private long offset;
+
+		FileOffsetKey(String fileName, long offset) {
+			this.fileName = fileName;
+			this.offset = offset;
+		}
+
+		public String getFileName() {
+			return fileName;
+		}
+
+		public long getOffset() {
+			return offset;
+		}
+
+		@Override
+		public int compareTo(FileOffsetKey o) {
+			int i = this.fileName.compareTo(o.getFileName());
+			if (i == 0) {
+				if (this.offset == o.getOffset()) {
+					i = 0;
+				} else if (this.offset < o.getOffset()) {
+					i = -1;
+				} else if (this.offset > o.getOffset()) {
+					i = 1;
+				}
+			}
+			return i;
+		}
+
+		@Override
+		public String toString() {
+			return "Com [" + fileName + "," + offset + "]";
+		}
+
+	}
+	
+	class ViolationPersistenceBean implements Comparable<ViolationPersistenceBean> {
+		
+		private int fieldNum;
+		private long lineNum;
+		private String expectedValue;
+		private String actualValue;
+		private String violationType;
+		private String fileName;
+		private long splitEndOffset;
+		
+		public ViolationPersistenceBean() {
+		
+		}
+		
+  	public ViolationPersistenceBean(int fieldNum, long lineNum, String expectedValue, String actualValue,
+			String violationType, String fileName, long splitEndOffset) {
+		this.fieldNum = fieldNum;
+		this.lineNum = lineNum;
+		this.expectedValue = expectedValue;
+		this.actualValue = actualValue;
+		this.violationType = violationType;
+		this.fileName = fileName;
+		this.splitEndOffset = splitEndOffset;
+	}
+
+
+
+		
+		
+
+		public int getFieldNum() {
+			return fieldNum;
+		}
+
+
+
+		public String getExpectedValue() {
+			return expectedValue;
+		}
+
+
+
+		public String getActualValue() {
+			return actualValue;
+		}
+
+
+
+		public String getViolationType() {
+			return violationType;
+		}
+
+
+
+		public String getFileName() {
+			return fileName;
+		}
+
+
+
+		public long getSplitEndOffset() {
+			return splitEndOffset;
+		}
+
+		@Override
+		public String toString() {
+			return "ViolationPersistenceBean [fieldNum=" + fieldNum + ", lineNum=" + getLineNum() + ", expectedValue="
+					+ expectedValue + ", actualValue=" + actualValue + ", violationType=" + violationType
+					+ ", fileName=" + fileName + ", splitEndOffset=" + splitEndOffset + "]";
+		}
+
+		public long getLineNum() {
+			return lineNum;
+		}
+
+		public void setLineNum(long lineNum) {
+			this.lineNum = lineNum;
+		}
+
+		@Override
+		public int compareTo(ViolationPersistenceBean otherViolations) {
+			int compareResult = calculateActualLineNo(otherViolations)<(calculateActualLineNo(this))?1:calculateActualLineNo(otherViolations)>(calculateActualLineNo(this))?-1:0;
+			return compareResult;
+		}
+
+	}
+	
+
+		
+		
+		
+		
+	
+	
 }
