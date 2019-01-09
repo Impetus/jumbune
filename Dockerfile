@@ -129,7 +129,7 @@ RUN echo '#Jumbune' >> /etc/profile \
 # UnComment below lines (if you wish to build from the latest snapshot codebase and not the latest Jumbune release)
 ###
 
-RUN git clone https://github.com/impetus/jumbune.git jumbune_code/ -b master \
+RUN git clone https://github.com/Impetus/jumbune.git jumbune_code/ -b master \
  && cd jumbune_code/ \
  && export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=350m" \
  && mvn clean install -P yarn 
