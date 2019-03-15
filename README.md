@@ -1,4 +1,5 @@
 jumbune [![Build Status](https://travis-ci.org/Impetus/jumbune.svg?branch=master)](https://travis-ci.org/Impetus/jumbune)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FImpetus%2Fjumbune.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FImpetus%2Fjumbune?ref=badge_shield)
 =======
 
 ## Synopsis
@@ -84,3 +85,6 @@ Code examples are packages inside the distribution,
 ## License
 
 Jumbune is licensed under LGPLv3 license
+
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FImpetus%2Fjumbune.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FImpetus%2Fjumbune?ref=badge_large)
