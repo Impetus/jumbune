@@ -180,7 +180,7 @@
 			<dependency>
 				<groupId>org.eclipse.jetty</groupId>
 				<artifactId>jetty-runner</artifactId>
-				<version>9.3.24.v20180605</version>
+				<version>9.4.12.v20180830</version>
 				<exclusions>
 					<exclusion>
 						<artifactId>jetty-plus</artifactId>
