@@ -98,7 +98,7 @@
 				<include>org.apache.zookeeper:zookeeper:jar:3.4.6</include>
 				<include>org.codehaus.jackson:jackson-mapper-asl:jar:1.8.8:</include>
 				<include>org.codehaus.jackson:jackson-core-asl:jar:1.8.8:</include>
-				<include>org.eclipse.jetty:jetty-runner:jar:9.2.11.v20150529</include>
+				<include>org.eclipse.jetty:jetty-runner:jar:9.4.12.v20180830</include>
 				<include>org.slf4j:slf4j-api:jar:1.7.5</include>
 				<include>org.slf4j:slf4j-simple:jar:1.6.1</include>
 				<include>xmlbeans:xbean:jar:2.2.0</include>
