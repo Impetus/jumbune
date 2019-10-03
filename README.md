@@ -84,3 +84,6 @@ Code examples are packages inside the distribution,
 ## License
 
 Jumbune is licensed under LGPLv3 license
+
+
+[![HitCount](http://hits.dwyl.io/Impetus/jumbune.svg)](http://hits.dwyl.io/Impetus/jumbune)
