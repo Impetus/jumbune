@@ -1,6 +1,6 @@
 language: java
 jdk:
-  - oraclejdk8
+  - oraclejdk9
 env:
   - JUMBUNE_HOME=/home/travis/
 install: 
@@ -10,5 +10,5 @@ notifications:
   email:
     recipients:
       - dev@collaborate.jumbune.org
-    on_success: change # default: change
-    on_failure: change # default: change
+   # on_success: change # default: change
+  #  on_failure: change # default: change
