@@ -1,8 +1,6 @@
-dist: trusty
 language: java
 jdk:
   - oraclejdk8
-  dist: trusty
 env:
   - JUMBUNE_HOME=/home/travis/
 install: 
