@@ -27,7 +27,7 @@
 			<dependency>
 				<groupId>org.apache.httpcomponents</groupId>
 				<artifactId>httpclient</artifactId>
-				<version>4.5.2</version>
+				<version>4.5.6</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.poi</groupId>
@@ -38,7 +38,7 @@
 			<dependency>
 				<groupId>com.google.code.gson</groupId>
 				<artifactId>gson</artifactId>
-				<version>2.2.4</version>
+				<version>2.8.5</version>
 				<scope>compile</scope>
 			</dependency>
 			<dependency>
@@ -59,33 +59,33 @@
 			<dependency>
 				<groupId>io.netty</groupId>
 				<artifactId>netty-handler</artifactId>
-				<version>4.0.20.Final</version>
+				<version>4.1.8.Final</version>
 			</dependency>
 			<dependency>
 				<groupId>io.netty</groupId>
 				<artifactId>netty-buffer</artifactId>
-				<version>4.0.20.Final</version>
+				<version>4.1.8.Final</version>
 			</dependency>
 			<dependency>
 				<groupId>io.netty</groupId>
 				<artifactId>netty-common</artifactId>
-				<version>4.0.20.Final</version>
+				<version>4.1.8.Final</version>
 			</dependency>
 			<dependency>
 				<groupId>io.netty</groupId>
 				<artifactId>netty-codec</artifactId>
-				<version>4.0.20.Final</version>
+				<version>4.1.8.Final</version>
 			</dependency>
 			<dependency>
 				<groupId>io.netty</groupId>
 				<artifactId>netty-transport</artifactId>
-				<version>4.0.20.Final</version>
+				<version>4.1.8.Final</version>
 			</dependency>
 			<!-- jsch dependencies -->
 			<dependency>
 				<groupId>com.jcraft</groupId>
 				<artifactId>jsch</artifactId>
-				<version>0.1.51</version>
+				<version>0.1.54</version>
 			</dependency>
 
 			<!-- Servlet dependencies -->
@@ -104,7 +104,7 @@
 			<dependency>
 				<groupId>commons-fileupload</groupId>
 				<artifactId>commons-fileupload</artifactId>
-				<version>1.3.3</version>
+				<version>1.4</version>
 			</dependency>
 
 			<dependency>
@@ -114,9 +114,9 @@
 			</dependency>
 
 			<dependency>
-				<groupId>org.apache.commons</groupId>
+				<groupId>commons-io</groupId>
 				<artifactId>commons-io</artifactId>
-				<version>1.3.2</version>
+				<version>2.6</version>
 			</dependency>
 
 			<!-- ASM dependencies -->
@@ -135,7 +135,7 @@
 			<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math3</artifactId>
-			<version>3.0</version>
+			<version>3.6</version>
 			</dependency>
 
 			<dependency>
@@ -165,20 +165,20 @@
 			<dependency>
 				<groupId>commons-lang</groupId>
 				<artifactId>commons-lang</artifactId>
-				<version>2.4</version>
+				<version>2.6</version>
 			</dependency>
 
 			<!-- jackson dependencies -->
 			<dependency>
 				<groupId>org.codehaus.jackson</groupId>
 				<artifactId>jackson-mapper-asl</artifactId>
-				<version>1.8.8</version>
+				<version>1.9.13</version>
 			</dependency>
 
 			<dependency>
 				<groupId>org.codehaus.jackson</groupId>
 				<artifactId>jackson-core-asl</artifactId>
-				<version>1.8.8</version>
+				<version>1.9.13</version>
 			</dependency>
 			<!-- Module dependencies -->
 			<dependency>
@@ -257,27 +257,27 @@
 			<dependency>
 				<groupId>org.apache.curator</groupId>
 				<artifactId>curator-recipes</artifactId>
-				<version>2.9.0</version>
+				<version>2.13.0</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.curator</groupId>
 				<artifactId>curator-client</artifactId>
-				<version>2.9.0</version>
+				<version>2.13.0</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.curator</groupId>
 				<artifactId>curator-framework</artifactId>
-				<version>2.9.0</version>
+				<version>2.13.0</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.zookeeper</groupId>
 				<artifactId>zookeeper</artifactId>
-				<version>3.4.6</version>
+				<version>3.4.13</version>
 			</dependency>
 			<dependency>
 				<groupId>com.google.guava</groupId>
 				<artifactId>guava</artifactId>
-				<version>11.0.2</version>
+				<version>20.0</version>
 			</dependency>
 			<dependency>
 				<groupId>org.slf4j</groupId>
@@ -293,7 +293,7 @@
      			<dependency>
 				<groupId>org.eclipse.jetty</groupId>
 				<artifactId>jetty-runner</artifactId>
-				<version>9.4.12.v20180830</version>
+				<version>9.3.1.v20150714</version>
 				<exclusions>
 					<exclusion>
 						<artifactId>jetty-plus</artifactId>
@@ -307,6 +307,10 @@
 						<artifactId>jetty-jsp</artifactId>
 						<groupId>org.eclipse.jetty</groupId>
 					</exclusion>
+<exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>apache-jsp</artifactId>
+                </exclusion>
 					<exclusion>
 						<artifactId>jetty-jndi</artifactId>
 						<groupId>org.eclipse.jetty</groupId>
@@ -332,7 +336,7 @@
 						</manifest>
 
 						<manifestEntries>
-						<Class-Path>jsch-0.1.51.jar</Class-Path>
+						<Class-Path>jsch-0.1.54.jar</Class-Path>
   						</manifestEntries>
 					</archive>
 				</configuration>
