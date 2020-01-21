@@ -87,11 +87,11 @@
 				<include>${project.groupId}:jumbune-remoting:jar:${project.version}::</include>
 				<include>${project.groupId}:jumbune-remoting-common:jar:${project.version}::</include>
 				<include>${project.groupId}:jumbune-remoting-jsch:jar:${project.version}::</include>
-				<include>io.netty:netty-handler:jar:4.1.8.Final</include>
-				<include>io.netty:netty-buffer:jar:4.1.8.Final</include>
-				<include>io.netty:netty-common:jar:4.1.8.Final</include>
-				<include>io.netty:netty-codec:jar:4.1.8.Final</include>
-				<include>io.netty:netty-transport:jar:4.1.8.Final</include>
+				<include>io.netty:netty-handler:jar:4.1.43.Final</include>
+				<include>io.netty:netty-buffer:jar:4.1.43.Final</include>
+				<include>io.netty:netty-common:jar:4.1.43.Final</include>
+				<include>io.netty:netty-codec:jar:4.1.43.Final</include>
+				<include>io.netty:netty-transport:jar:4.1.43.Final</include>
 				<include>org.apache.logging.log4j:log4j-api:jar:2.8.2</include>
 				<include>org.apache.logging.log4j:log4j-core:jar:2.8.2</include>
 				<include>org.apache.poi:poi:jar:3.8:</include>
