@@ -379,7 +379,7 @@ public class ConfigurationUtil {
 	 */
 	public static ClasspathElement loadJumbuneSuppliedJarList() throws JumbuneException {
 		ClasspathElement classpathElement = new ClasspathElement();
-		String[] files = {"AGENT_HOMElib/jumbune-utils-"+ Versioning.COMMUNITY_BUILD_VERSION + Versioning.COMMUNITY_DISTRIBUTION_NAME + ".jar","AGENT_HOMElib/log4j-api-2.1.jar","AGENT_HOMElib/log4j-core-2.1.jar"};
+		String[] files = {"AGENT_HOMElib/jumbune-utils-"+ Versioning.COMMUNITY_BUILD_VERSION + Versioning.COMMUNITY_DISTRIBUTION_NAME + ".jar","AGENT_HOMElib/log4j-api-2.8.2.jar","AGENT_HOMElib/log4j-core-2.8.2.jar"};
 		classpathElement.setFiles(files);
 		classpathElement.setSource(-1);
 		return classpathElement;

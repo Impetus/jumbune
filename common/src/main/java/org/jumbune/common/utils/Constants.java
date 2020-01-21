@@ -63,8 +63,8 @@ public interface Constants {
 	String JUMBUNE_ENV_VAR_NAME = "JUMBUNE_HOME";
 	String LIB_DIRECTORY = "/lib/";
 	String LIB_JARS = "-libjars";
-	String LOG4J2_API_JAR = "/lib/log4j-api-2.1.jar";
-	String LOG4J2_CORE_JAR = "/lib/log4j-core-2.1.jar";
+	String LOG4J2_API_JAR = "/lib/log4j-api-2.8.2.jar";
+	String LOG4J2_CORE_JAR = "/lib/log4j-core-2.8.2.jar";
 	String LOG_LEVEL_INFO = "INFO";
 	String LOG_LEVEL_TRUE = "TRUE";
 	String LOG_PROCESSOR_ERROR = "{\"ErrorAndException\": {\"Error occured during Debug Analysis\" : \" Error occured during Debug Analysis \"}}";

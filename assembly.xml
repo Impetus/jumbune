@@ -41,10 +41,10 @@
 			<useTransitiveDependencies>false</useTransitiveDependencies>
 			<includes>
 				<include>${project.groupId}:jumbune-deploy</include>
-				<include>com.google.code.gson:gson:jar:2.2.4</include>
-				<include>com.jcraft:jsch:jar:0.1.51</include>
-				<include>org.apache.logging.log4j:log4j-api:jar:2.1</include>
-				<include>org.apache.logging.log4j:log4j-core:jar:2.1</include>
+				<include>com.google.code.gson:gson:jar:2.8.5</include>
+				<include>com.jcraft:jsch:jar:0.1.54</include>
+				<include>org.apache.logging.log4j:log4j-api:jar:2.8.2</include>
+				<include>org.apache.logging.log4j:log4j-core:jar:2.8.2</include>
 				<include>commons-cli:commons-cli:jar:1.4</include>
 			</includes>
 		</dependencySet>
@@ -71,34 +71,34 @@
 				<include>org.ow2.asm:asm:jar:4.0</include>
 				<include>org.ow2.asm:asm-tree:jar:4.0</include>
 				<include>com.google.code.gson:gson:jar:2.2.4</include>
-				<include>com.google.guava:guava:jar:11.0.2</include>
-				<include>com.jcraft:jsch:jar:0.1.51</include>
+				<include>com.google.guava:guava:jar:20.0</include>
+				<include>com.jcraft:jsch:jar:0.1.54</include>
 				<include>com.sun.xml:relaxngDatatype:jar:1.0</include>
 				<include>com.sun.xsom:xsom:jar:20140925</include>
 				<include>commons-cli:commons-cli:jar:1.4</include>
-				<include>commons-configuration:commons-configuration:jar:1.6:</include>
-				<include>commons-io:commons-io:jar:2.4</include>
-				<include>commons-lang:commons-lang:jar:2.4:</include>
+				<include>commons-configuration:commons-configuration:jar:1.10:</include>
+				<include>commons-io:commons-io:jar:2.6</include>
+				<include>commons-lang:commons-lang:jar:2.6:</include>
 				<include>commons-logging:commons-logging:jar:1.2:</include>
-				<include>org.apache.commons:commons-math3:jar:3.0</include>
+				<include>org.apache.commons:commons-math3:jar:3.6</include>
 				<include>org.apache.commons:commons-io:jar:1.3.2</include>
 				<include>${project.groupId}:jumbune-common</include>
 				<include>${project.groupId}:jumbune-utils</include>
 				<include>${project.groupId}:jumbune-remoting:jar:${project.version}::</include>
 				<include>${project.groupId}:jumbune-remoting-common:jar:${project.version}::</include>
 				<include>${project.groupId}:jumbune-remoting-jsch:jar:${project.version}::</include>
-				<include>io.netty:netty-handler:jar:4.0.20.Final</include>
-				<include>io.netty:netty-buffer:jar:4.0.20.Final</include>
-				<include>io.netty:netty-common:jar:4.0.20.Final</include>
-				<include>io.netty:netty-codec:jar:4.0.20.Final</include>
-				<include>io.netty:netty-transport:jar:4.0.20.Final</include>
-				<include>org.apache.logging.log4j:log4j-api:jar:2.1</include>
-				<include>org.apache.logging.log4j:log4j-core:jar:2.1</include>
+				<include>io.netty:netty-handler:jar:4.1.43.Final</include>
+				<include>io.netty:netty-buffer:jar:4.1.43.Final</include>
+				<include>io.netty:netty-common:jar:4.1.43.Final</include>
+				<include>io.netty:netty-codec:jar:4.1.43.Final</include>
+				<include>io.netty:netty-transport:jar:4.1.43.Final</include>
+				<include>org.apache.logging.log4j:log4j-api:jar:2.8.2</include>
+				<include>org.apache.logging.log4j:log4j-core:jar:2.8.2</include>
 				<include>org.apache.poi:poi:jar:3.8:</include>
-				<include>org.apache.zookeeper:zookeeper:jar:3.4.6</include>
+				<include>org.apache.zookeeper:zookeeper:jar:3.4.14</include>
 				<include>org.codehaus.jackson:jackson-mapper-asl:jar:1.8.8:</include>
 				<include>org.codehaus.jackson:jackson-core-asl:jar:1.8.8:</include>
-				<include>org.eclipse.jetty:jetty-runner:jar:9.4.12.v20180830</include>
+				<include>org.eclipse.jetty:jetty-runner:jar:9.3.1.v20150714</include>
 				<include>org.slf4j:slf4j-api:jar:1.7.5</include>
 				<include>org.slf4j:slf4j-simple:jar:1.6.1</include>
 				<include>xmlbeans:xbean:jar:2.2.0</include>

@@ -28,24 +28,24 @@
 			<includes>
 			   <include>org.jumbune:jumbune-remoting-jsch:jar:2.0</include>
 			   <include>org.jumbune:jumbune-remoting-common:jar:2.0</include>
-				<include>org.apache.logging.log4j:log4j-api:jar:2.1</include>
-				<include>org.apache.logging.log4j:log4j-core:jar:2.1</include>
-				<include>io.netty:netty-handler:jar:4.0.32.Final</include>
-				<include>io.netty:netty-buffer:jar:4.0.32.Final</include>
-				<include>io.netty:netty-common:jar:4.0.32.Final</include>
-				<include>io.netty:netty-codec:jar:4.0.32.Final</include>
-				<include>io.netty:netty-transport:jar:4.0.32.Final</include>
-				<include>com.jcraft:jsch:jar:0.1.51</include>
-				<include>org.apache.zookeeper:zookeeper:jar:3.4.6</include>
+				<include>org.apache.logging.log4j:log4j-api:jar:2.8.2</include>
+				<include>org.apache.logging.log4j:log4j-core:jar:2.8.2</include>
+				<include>io.netty:netty-handler:jar:4.1.43.Final</include>
+				<include>io.netty:netty-buffer:jar:4.1.43.Final</include>
+				<include>io.netty:netty-common:jar:4.1.43.Final</include>
+				<include>io.netty:netty-codec:jar:4.1.43.Final</include>
+				<include>io.netty:netty-transport:jar:4.1.43.Final</include>
+				<include>com.jcraft:jsch:jar:0.1.54</include>
+				<include>org.apache.zookeeper:zookeeper:jar:3.4.14</include>
 				<include>org.slf4j:slf4j-api:jar:1.7.5</include>
 				<include>org.slf4j:slf4j-log4j12:jar:1.7.5</include>
 				<include>org.slf4j:slf4j-simple</include>
-				<include>org.apache.curator:curator-recipes:jar:2.9.0</include>
-				<include>org.apache.curator:curator-client:jar:2.9.0</include>
-				<include>org.apache.curator:curator-framework:jar:2.9.0</include>
+				<include>org.apache.curator:curator-recipes:jar:2.13.0</include>
+				<include>org.apache.curator:curator-client:jar:2.13.0</include>
+				<include>org.apache.curator:curator-framework:jar:2.13.0</include>
 				<include>com.google.protobuf:protobuf-java</include>
 				<include>com.google.code.gson:gson</include>
-				<include>com.google.guava:guava:jar:18.0</include>
+				<include>com.google.guava:guava:jar:20.0</include>
 				<include>commons-cli:commons-cli:jar:1.4</include>
 			</includes>
 			<useProjectArtifact>true</useProjectArtifact>
