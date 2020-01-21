@@ -43,8 +43,8 @@
 				<include>${project.groupId}:jumbune-deploy</include>
 				<include>com.google.code.gson:gson:jar:2.8.5</include>
 				<include>com.jcraft:jsch:jar:0.1.54</include>
-				<include>org.apache.logging.log4j:log4j-api:jar:2.1</include>
-				<include>org.apache.logging.log4j:log4j-core:jar:2.1</include>
+				<include>org.apache.logging.log4j:log4j-api:jar:2.8.2</include>
+				<include>org.apache.logging.log4j:log4j-core:jar:2.8.2</include>
 				<include>commons-cli:commons-cli:jar:1.4</include>
 			</includes>
 		</dependencySet>
@@ -92,10 +92,10 @@
 				<include>io.netty:netty-common:jar:4.1.8.Final</include>
 				<include>io.netty:netty-codec:jar:4.1.8.Final</include>
 				<include>io.netty:netty-transport:jar:4.1.8.Final</include>
-				<include>org.apache.logging.log4j:log4j-api:jar:2.1</include>
-				<include>org.apache.logging.log4j:log4j-core:jar:2.1</include>
+				<include>org.apache.logging.log4j:log4j-api:jar:2.8.2</include>
+				<include>org.apache.logging.log4j:log4j-core:jar:2.8.2</include>
 				<include>org.apache.poi:poi:jar:3.8:</include>
-				<include>org.apache.zookeeper:zookeeper:jar:3.4.13</include>
+				<include>org.apache.zookeeper:zookeeper:jar:3.4.14</include>
 				<include>org.codehaus.jackson:jackson-mapper-asl:jar:1.8.8:</include>
 				<include>org.codehaus.jackson:jackson-core-asl:jar:1.8.8:</include>
 				<include>org.eclipse.jetty:jetty-runner:jar:9.3.1.v20150714</include>

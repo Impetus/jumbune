@@ -44,8 +44,8 @@ public final class SessionEstablisher {
 	private static List<String> jars = new ArrayList<String>(2);
 	
 	static {
-		jars.add("/lib/log4j-api-2.1.jar");
-		jars.add("/lib/log4j-core-2.1.jar");
+		jars.add("/lib/log4j-api-2.8.2.jar");
+		jars.add("/lib/log4j-core-2.8.2.jar");
 	}
 
 	/**

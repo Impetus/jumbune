@@ -430,8 +430,8 @@ public class ProcessHelper {
 				.append("org.jumbune.datavalidation.dsc.DataSourceCompJobExecutor").append("-libjars");
 
 		String libJars = prefix + "lib/gson-2.2.4.jar" + "," + prefix + "lib/jumbune-common-2.0.jar" + "," + prefix
-				+ "lib/jumbune-utils-2.0.jar" + "," + prefix + "/lib/log4j-api-2.1.jar" + "," + prefix
-				+ "/lib/log4j-core-2.1.jar";
+				+ "lib/jumbune-utils-2.0.jar" + "," + prefix + "/lib/log4j-api-2.8.2.jar" + "," + prefix
+				+ "/lib/log4j-core-2.8.2.jar";
 		if (jobJarPathInAgent != null) {
 			libJars = libJars + "," + prefix + jobJarPathInAgent;
 		}
@@ -732,8 +732,8 @@ public class ProcessHelper {
 		sb.append("HADOOP_HOMEbin/hadoop").append("jar").append(prefix + "lib/jumbune-datavalidation-2.0.jar")
 				.append("org.jumbune.datavalidation.DataValidationJobExecutor").append("-libjars")
 				.append(prefix + "lib/gson-2.2.4.jar" + "," + prefix + "lib/jumbune-common-2.0.jar" + "," + prefix
-						+ "lib/jumbune-utils-2.0.jar" + "," + prefix + "/lib/log4j-api-2.1.jar" + "," + prefix
-						+ "/lib/log4j-core-2.1.jar")
+						+ "lib/jumbune-utils-2.0.jar" + "," + prefix + "/lib/log4j-api-2.8.2.jar" + "," + prefix
+						+ "/lib/log4j-core-2.8.2.jar")
 
 				.append(additionalParams).append(inputPath).append(dvFileDir).append("1000")
 				.append(String.valueOf(noOfReducers)).append(dvBeanString);
@@ -753,9 +753,9 @@ public class ProcessHelper {
 		sb.append("HADOOP_HOMEbin/hadoop").append("jar").append(prefix + "lib/jumbune-datavalidation-2.0.jar")
 				.append("org.jumbune.datavalidation.xml.XmlDataValidationJobExecutor").append("-libjars")
 				.append(prefix + "lib/gson-2.2.4.jar" + "," + prefix + "lib/jumbune-common-2.0.jar" + "," + prefix
-						+ "lib/jumbune-utils-2.0.jar" + "," + prefix + "/lib/log4j-api-2.1.jar" + "," + prefix
+						+ "lib/jumbune-utils-2.0.jar" + "," + prefix + "/lib/log4j-api-2.8.2.jar" + "," + prefix
 						+ "/lib/xbean-2.2.0.jar" + "," + prefix + "/lib/xsom-20140925.jar" + "," + prefix
-						+ "/lib/relaxngDatatype-1.0.jar" + "," + prefix + "/lib/log4j-core-2.1.jar")
+						+ "/lib/relaxngDatatype-1.0.jar" + "," + prefix + "/lib/log4j-core-2.8.2.jar")
 
 				.append(inputPath).append(dvFileDir).append("1000").append(schemaPath);
 		if (sb.toList().contains(null)) {
@@ -775,8 +775,8 @@ public class ProcessHelper {
 		sb.append("HADOOP_HOMEbin/hadoop").append("jar").append(prefix + "lib/jumbune-datavalidation-2.0.jar")
 				.append("org.jumbune.datavalidation.json.JsonDataValidationExecutor").append("-libjars")
 				.append(prefix + "lib/gson-2.2.4.jar" + "," + prefix + "lib/jumbune-common-2.0.jar" + "," + prefix
-						+ "lib/jumbune-utils-2.0.jar" + "," + prefix + "/lib/log4j-api-2.1.jar" + "," + prefix
-						+ "/lib/log4j-core-2.1.jar")
+						+ "lib/jumbune-utils-2.0.jar" + "," + prefix + "/lib/log4j-api-2.8.2.jar" + "," + prefix
+						+ "/lib/log4j-core-2.8.2.jar")
 
 				.append(additionalParams).append(inputPath).append(dataParameter).append(nullParameter)
 				.append(regexParameter).append(dvFileDir).append("1000");
