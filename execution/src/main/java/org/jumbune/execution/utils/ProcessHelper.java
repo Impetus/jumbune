@@ -794,8 +794,8 @@ public class ProcessHelper {
 		paths[1] = (jumbuneHome + "lib/gson-2.2.4.jar");
 		paths[2] = (jumbuneHome + "lib/jumbune-common-2.0.jar");
 		paths[3] = (jumbuneHome + "lib/jumbune-utils-2.0.jar");
-		paths[4] = (jumbuneHome + "/lib/log4j-api-2.1.jar");
-		paths[5] = (jumbuneHome + "/lib/log4j-core-2.1.jar");
+		paths[4] = (jumbuneHome + "/lib/log4j-api-2.8.2.jar");
+		paths[5] = (jumbuneHome + "/lib/log4j-core-2.8.2.jar");
 		paths[6] = (jumbuneHome + "/lib/xbean-2.2.0.jar");
 		paths[7] = (jumbuneHome + "/lib/xsom-20140925.jar");
 		paths[8] = (jumbuneHome + "/lib/relaxngDatatype-1.0.jar");
@@ -1003,8 +1003,8 @@ public class ProcessHelper {
 		builder.append("HADOOP_HOMEbin/hadoop").append("jar").append(prefix + "lib/jumbune-datavalidation-2.0.jar")
 				.append(mainClass).append("-libjars")
 				.append(prefix + "lib/gson-2.2.4.jar" + "," + prefix + "lib/jumbune-common-2.0.jar" + "," + prefix
-						+ "lib/jumbune-utils-2.0.jar" + "," + prefix + "/lib/log4j-api-2.1.jar" + "," + prefix
-						+ "/lib/log4j-core-2.1.jar")
+						+ "lib/jumbune-utils-2.0.jar" + "," + prefix + "/lib/log4j-api-2.8.2.jar" + "," + prefix
+						+ "/lib/log4j-core-2.8.2.jar")
 				.append(params).append(inputPath).append(dpBeanString);
 		if (builder.toList().contains(null)) {
 			builder.toList().remove(builder.toList().indexOf(null));

@@ -6,8 +6,7 @@
         "/home/impadmin/Desktop/Jumbune/123/lib/gson-2.0.jar",
         "/home/impadmin/Desktop/Jumbune/123/lib/commons-logging-1.1.1.jar",
         "/home/impadmin/Desktop/Jumbune/123/lib/log4j-1.2.16.jar",
-        "/home/impadmin/Desktop/Jumbune/123/lib/snakeyaml-1.9.jar",
-        "/home/impadmin/Desktop/Jumbune/123/lib/jetty-runner-8.1.3.v20120416.jar"
+        "/home/impadmin/Desktop/Jumbune/123/lib/snakeyaml-1.9.jar"
       ],
       "files": null,
       "folders": [

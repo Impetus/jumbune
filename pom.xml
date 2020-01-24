@@ -1,7 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project
-	xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.jumbune</groupId>
 	<artifactId>jumbune</artifactId>
@@ -179,8 +177,8 @@
 			<!-- jetty runner dependencies -->
 			<dependency>
 				<groupId>org.eclipse.jetty</groupId>
-				<artifactId>jetty-runner</artifactId>
-				<version>9.3.1.v20150714</version>
+				<artifactId>jetty-server</artifactId>
+				<version>9.4.17.v20190418</version>
 				<exclusions>
 					<exclusion>
 						<artifactId>jetty-plus</artifactId>
@@ -204,6 +202,19 @@
                 </exclusion>
 				</exclusions>
 			</dependency>
+<!-- https://mvnrepository.com/artifact/org.eclipse.jetty.websocket/websocket-servlet -->
+<dependency>
+    <groupId>org.eclipse.jetty.websocket</groupId>
+    <artifactId>websocket-servlet</artifactId>
+    <version>9.4.17.v20190418</version>
+</dependency>
+
+<dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+            <version>9.4.17.v20190418</version>
+        </dependency>
+
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-remoting-jsch</artifactId>
@@ -461,9 +472,14 @@
 								</instrumentation>
 							</configuration>
 						</plugin>
-					</reportPlugins>
+
+						</reportPlugins>
 				</configuration>
 			</plugin>
+
+
+                  
+
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<version>2.5</version>
@@ -498,5 +514,6 @@
 		<module>deploy</module>
 		<module>distribution</module>
 		<module>cluster-analysis</module>
-	</modules>
+	  <module>jetty-server-test</module>
+  </modules>
 </project>

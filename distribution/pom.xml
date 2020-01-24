@@ -292,8 +292,8 @@
 			<!-- jetty runner dependencies -->
      			<dependency>
 				<groupId>org.eclipse.jetty</groupId>
-				<artifactId>jetty-runner</artifactId>
-				<version>9.3.1.v20150714</version>
+				<artifactId>jetty-server</artifactId>
+				<version>9.4.17.v20190418</version>
 				<exclusions>
 					<exclusion>
 						<artifactId>jetty-plus</artifactId>
@@ -317,6 +317,18 @@
 					</exclusion>
 				</exclusions>
 			</dependency>
+<!-- https://mvnrepository.com/artifact/org.eclipse.jetty.websocket/websocket-servlet -->
+<dependency>
+    <groupId>org.eclipse.jetty.websocket</groupId>
+    <artifactId>websocket-servlet</artifactId>
+    <version>9.4.17.v20190418</version>
+</dependency>
+
+<dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+            <version>9.4.17.v20190418</version>
+        </dependency>
 		<dependency>
 			<groupId>org.jumbune</groupId>
 			<artifactId>jumbune-deploy</artifactId>
