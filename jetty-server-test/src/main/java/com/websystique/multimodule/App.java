@@ -7,7 +7,6 @@ import org.eclipse.jetty.webapp.WebAppContext;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.jumbune.web.services.ClusterAnalysisService;
 
 
 
@@ -45,12 +44,9 @@ public class App {
 
 	public static void main(String[] args) throws Exception {
 		int port = 9009;
-		//Server server = createServer(port); 
-        Server server = new Server(9009);
+		Server server = createServer(port); 
 
-		ServletContextHandler handler = new ServletContextHandler(server, "/");
 		
-		handler.addServlet(ClusterAnalysisService.class , "/clusteranalysis");
 		server.start();
 
 		server.dumpStdErr();
