@@ -514,6 +514,5 @@
 		<module>deploy</module>
 		<module>distribution</module>
 		<module>cluster-analysis</module>
-	  <module>jetty-server-test</module>
   </modules>
 </project>
