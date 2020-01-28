@@ -22,13 +22,25 @@
         "MAP_REDUCE_APP_FAILURE": true, 
         "DN_VOLUME_FAILURE_CHECK": true, 
         "HADOOP_DAEMON_DOWN": true, 
-        "CONTAINER_POOL_UTILIZATION": true, 
         "YARN_PROPERTY_CHECK": true, 
-        "EXCESSIVE_RESOURCE_ALLOCATION": true, 
         "RESOURCE_UTILIZATION_CHECK": true, 
-        "NODE_UNHEALTHY": true, 
-        "QUEUE_CHILD_CAPACITY_OVERFLOW": true
+        "QUEUE_CHILD_CAPACITY_OVERFLOW": true,
+	"DISK_SPACE_UTILIZATION": true,
+	"UNDER_REPLICATED_BLOCKS": true,
+	"HDFS_UTILIZATION": true,
+	"HDFS_MAXFILES_IN_DIR": true,
+	"FRAGMENTED_FILES_CHECK": true,
+	"QUEUE_UTILIZATION": true,
+	"EFFECTIVE_UTILIZATION_CHECK": true,
+	"CLUSTER_IDEAL_CHECK": true,
+	"CLUSTER_UNDER_UTILIZATION": true
     },
-    "individualQueueAlerts" : {},
-    "updateInterval" : 20
+   "individualQueueAlerts" : {},
+    "updateInterval" : 20,
+		"hdfsDirPaths" : [],
+		"clusterUnderUtilizationDuration" : 12,
+		"clusterUnderUtilizationPercent" : 20
 }
+
+
+

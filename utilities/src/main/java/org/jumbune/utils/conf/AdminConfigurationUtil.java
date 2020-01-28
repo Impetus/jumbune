@@ -154,11 +154,8 @@ public final class AdminConfigurationUtil {
 		nonConfigurableAlerts.put(AlertType.MAP_REDUCE_APP_FAILURE, true);
 		nonConfigurableAlerts.put(AlertType.DN_VOLUME_FAILURE_CHECK, true);
 		nonConfigurableAlerts.put(AlertType.HADOOP_DAEMON_DOWN, true);
-		nonConfigurableAlerts.put(AlertType.CONTAINER_POOL_UTILIZATION, true);
 		nonConfigurableAlerts.put(AlertType.YARN_PROPERTY_CHECK, true);
-		nonConfigurableAlerts.put(AlertType.EXCESSIVE_RESOURCE_ALLOCATION, true);
 		nonConfigurableAlerts.put(AlertType.RESOURCE_UTILIZATION_CHECK, true);
-		nonConfigurableAlerts.put(AlertType.NODE_UNHEALTHY, true);
 		nonConfigurableAlerts.put(AlertType.QUEUE_CHILD_CAPACITY_OVERFLOW, true);
 		alertConf.setNonConfigurableAlerts(nonConfigurableAlerts);
 		
