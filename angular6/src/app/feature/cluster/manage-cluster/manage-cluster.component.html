@@ -175,7 +175,7 @@ mode="indeterminate" diameter="50">
 							<mat-card-content>
 								<div class="m-3"></div>
 								<div class="row">
-									<!-- <div class="col-md-6">
+									<div class="col-md-6">
 										<div class="d-flex bd-highlight m-toolbar">
 											<div class="p-2 flex-grow-1 bd-highlight">Check DataNode Volume Failure
 												<small> (requires JMX)</small>
@@ -186,9 +186,9 @@ mode="indeterminate" diameter="50">
 												<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.DN_VOLUME_FAILURE_CHECK" color="primary"></mat-slide-toggle>
 											</div>
 										</div>
-									</div> -->
+									</div>
 		
-									<!-- <div class="col-md-6">
+									<div class="col-md-6">
 										<div class="d-flex bd-highlight m-toolbar">
 											<div class="p-2 flex-grow-1 bd-highlight">Fragmented File Alert
 												<small> (requires SSH)</small>
@@ -199,9 +199,9 @@ mode="indeterminate" diameter="50">
 												<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.FRAGMENTED_FILES_CHECK" color="primary"></mat-slide-toggle>
 											</div>
 										</div>
-									</div> -->
+									</div>
 								</div>
-								<!-- <div class="d-flex bd-highlight m-toolbar">
+								<div class="d-flex bd-highlight m-toolbar">
 									<div class="p-2 flex-grow-1 bd-highlight">HDFS Max Files In DirAlert
 										<small> (requires SSH)</small>
 										<i class="material-icons md-24 info-icon form-info-icon" matTooltip="The list of comma separated hdfs paths which needs to be monitored for the maximum number of items a directory may contain."
@@ -214,18 +214,18 @@ mode="indeterminate" diameter="50">
 									<div class="p-2 bd-highlight">
 										<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.HDFS_MAXFILES_IN_DIR" color="primary"></mat-slide-toggle>
 									</div>
-								</div> -->
+								</div>
 		
-								<!-- <div class="col-12" *ngIf="alertConfiguration.nonConfigurableAlerts.HDFS_MAXFILES_IN_DIR">
+								<div class="col-12" *ngIf="alertConfiguration.nonConfigurableAlerts.HDFS_MAXFILES_IN_DIR">
 									<div class="col-md-6">
 										<mat-form-field appearance="outline" color="primary" class="example-full-width">
 											<mat-label>HDFS Directory Path</mat-label>
 											<textarea matInput [(ngModel)]="alertConfiguration.hdfsDirPaths" name="hdfsDirPaths" #hdfsDirPaths="ngModel"></textarea>
 										</mat-form-field>
 									</div>
-								</div> -->
+								</div>
 								<!--under replicated-->
-								<!-- <div class="d-flex bd-highlight m-toolbar">
+								<div class="d-flex bd-highlight m-toolbar">
 									<div class="p-2 flex-grow-1 bd-highlight">Under Replicated Block
 										<small> (requires JMX)</small>
 										<i class="material-icons md-24 info-icon form-info-icon" matTooltip="This property covers under replicated block across cluster"
@@ -237,8 +237,8 @@ mode="indeterminate" diameter="50">
 									<div class="p-2 bd-highlight">
 										<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.UNDER_REPLICATED_BLOCKS" color="primary"></mat-slide-toggle>
 									</div>
-								</div> -->
-								<!-- <div class="col-12">
+								</div>
+								<div class="col-12">
 									<div class="col-md-9">
 										<div class="row">
 											<div class="col-md-3">
@@ -252,8 +252,8 @@ mode="indeterminate" diameter="50">
 											<div class="col-md-1"> {{alertConfiguration.configurableAlerts.UNDER_REPLICATED_BLOCKS.warningLevel}}</div>
 										</div>
 									</div>
-								</div> -->
-								<!-- <div class="col-12">
+								</div>
+								<div class="col-12">
 									<div class="col-md-9">
 										<div class="row">
 											<div class="col-md-3">
@@ -266,7 +266,7 @@ mode="indeterminate" diameter="50">
 											<div class="col-md-1"> {{alertConfiguration.configurableAlerts.UNDER_REPLICATED_BLOCKS.criticalLevel}}</div>
 										</div>
 									</div>
-								</div> -->
+								</div>
 								<div class="row">
 									<div class="col-md-6 offset-md-3">
 										<span class="errorMSg" *ngIf="uNDER_REPLICATED_BLOCKSFalse">Critical level can't be less than warning level</span>
@@ -275,7 +275,7 @@ mode="indeterminate" diameter="50">
 								<!--end under replicated-->
 		
 								<!--hdfs utilization-->
-								<!-- <div class="d-flex bd-highlight m-toolbar">
+								<div class="d-flex bd-highlight m-toolbar">
 									<div class="p-2 flex-grow-1 bd-highlight">HDFS Utilization
 										<small> (requires JMX)</small>
 										<i class="material-icons md-24 info-icon form-info-icon" matTooltip="This property covers HDFS space utilization across cluster"
@@ -287,8 +287,8 @@ mode="indeterminate" diameter="50">
 									<div class="p-2 bd-highlight">
 										<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.HDFS_UTILIZATION" color="primary"></mat-slide-toggle>
 									</div>
-								</div> -->
-								<!-- <div class="col-12">
+								</div>
+								<div class="col-12">
 									<div class="col-md-9">
 										<div class="row">
 											<div class="col-md-3">
@@ -301,8 +301,8 @@ mode="indeterminate" diameter="50">
 											<div class="col-md-1"> {{alertConfiguration.configurableAlerts.HDFS_UTILIZATION.warningLevel}}</div>
 										</div>
 									</div>
-								</div> -->
-								<!-- <div class="col-12">
+								</div>
+								<div class="col-12">
 									<div class="col-md-9">
 										<div class="row">
 											<div class="col-md-3">
@@ -315,7 +315,7 @@ mode="indeterminate" diameter="50">
 											<div class="col-md-1"> {{alertConfiguration.configurableAlerts.HDFS_UTILIZATION.criticalLevel}}</div>
 										</div>
 									</div>
-								</div> -->
+								</div>
 								<div class="row">
 									<div class="col-md-6 offset-md-3">
 										<span class="errorMSg" *ngIf="hDFS_UTILIZATIONFalse">Critical level can't be less than warning level</span>
@@ -337,7 +337,7 @@ mode="indeterminate" diameter="50">
 							<mat-card-content>
 								<div class="m-3"></div>
 								<div class="row">
-									<!-- <div class="col-md-6">
+									<div class="col-md-6">
 										<div class="d-flex bd-highlight m-toolbar">
 											<div class="p-2 flex-grow-1 bd-highlight">Cluster -Time Synchronized
 											</div>
@@ -347,7 +347,7 @@ mode="indeterminate" diameter="50">
 												<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.CLUSTER_TIME_DESYNC" color="primary"></mat-slide-toggle>
 											</div>
 										</div>
-									</div> -->
+									</div>
 									<!-- <div class="col-md-4">
 																		<div class="d-flex bd-highlight m-toolbar">
 																				<div class="p-2 flex-grow-1 bd-highlight">Node Unhealthy
@@ -359,7 +359,7 @@ mode="indeterminate" diameter="50">
 																				</div>
 																		</div>
 																</div> -->
-									<!-- <div class="col-md-6">
+									<div class="col-md-6">
 										<div class="d-flex bd-highlight m-toolbar">
 											<div class="p-2 flex-grow-1 bd-highlight">Hadoop Daemon Down
 											</div>
@@ -369,12 +369,12 @@ mode="indeterminate" diameter="50">
 												<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.HADOOP_DAEMON_DOWN" color="primary"></mat-slide-toggle>
 											</div>
 										</div>
-									</div> -->
+									</div>
 								</div>
 		
 		
 								<!--Disk space utilization-->
-								<!-- <div class="d-flex bd-highlight m-toolbar">
+								<div class="d-flex bd-highlight m-toolbar">
 									<div class="p-2 flex-grow-1 bd-highlight">Diskspace Utilization
 										<small> (requires JMX)</small>
 										<i class="material-icons md-24 info-icon form-info-icon" matTooltip="This property covers Disk space utilization of every node"
@@ -386,10 +386,10 @@ mode="indeterminate" diameter="50">
 									<div class="p-2 bd-highlight">
 										<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.DISK_SPACE_UTILIZATION" color="primary"></mat-slide-toggle>
 									</div>
-								</div> -->
+								</div>
 		
 								<br>
-								<!-- <div class="col-12">
+								<div class="col-12">
 									<div class="col-md-9">
 										<div class="row">
 											<div class="col-md-3">
@@ -403,8 +403,8 @@ mode="indeterminate" diameter="50">
 											<div class="col-md-1"> {{alertConfiguration.configurableAlerts.DISK_SPACE_UTILIZATION.warningLevel}}</div>
 										</div>
 									</div>
-								</div> -->
-								<!-- <div class="col-12">
+								</div>
+								<div class="col-12">
 									<div class="col-md-9">
 										<div class="row">
 											<div class="col-md-3">
@@ -417,12 +417,12 @@ mode="indeterminate" diameter="50">
 											<div class="col-md-1"> {{alertConfiguration.configurableAlerts.DISK_SPACE_UTILIZATION.criticalLevel}}</div>
 										</div>
 									</div>
-								</div> -->
-								<!-- <div class="row">
+								</div>
+								<div class="row">
 									<div class="col-md-6 offset-md-3">
 										<span class="errorMSg" *ngIf="dISK_SPACE_UTILIZATIONFalse">Critical level can't be less than warning level</span>
 									</div>
-								</div> -->
+								</div>
 								<!--End Disk space utilization-->
 		
 							</mat-card-content>
@@ -450,7 +450,7 @@ mode="indeterminate" diameter="50">
 																				</div>
 																		</div>
 																</div> -->
-									<!-- <div class="col-md-6">
+									<div class="col-md-6">
 										<div class="d-flex bd-highlight m-toolbar">
 											<div class="p-2 flex-grow-1 bd-highlight">Check Yarn Property
 												<small>(requires SSH)</small>
@@ -460,8 +460,8 @@ mode="indeterminate" diameter="50">
 												<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.YARN_PROPERTY_CHECK" color="primary"></mat-slide-toggle>
 											</div>
 										</div>
-									</div> -->
-									<!-- <div class="col-md-6">
+									</div>
+									<div class="col-md-6">
 										<div class="d-flex bd-highlight m-toolbar">
 											<div class="p-2 flex-grow-1 bd-highlight">Check Resource Utilization
 												<small> (requires JMX)</small>
@@ -471,7 +471,7 @@ mode="indeterminate" diameter="50">
 												<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.RESOURCE_UTILIZATION_CHECK" color="primary"></mat-slide-toggle>
 											</div>
 										</div>
-									</div> -->
+									</div>
 								</div>
 		
 		
@@ -487,7 +487,7 @@ mode="indeterminate" diameter="50">
 										</div>
 									</div>
 		
-									<!-- <div class="col-6">
+									<div class="col-6">
 										<div class="d-flex bd-highlight m-toolbar">
 											<div class="p-2 flex-grow-1 bd-highlight">Cluster Ideal Alert
 											</div>
@@ -496,7 +496,7 @@ mode="indeterminate" diameter="50">
 												<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.CLUSTER_IDEAL_CHECK" color="primary"></mat-slide-toggle>
 											</div>
 										</div>
-									</div> -->
+									</div>
 								</div>
 		
 		
@@ -954,7 +954,7 @@ mode="indeterminate" diameter="50">
 							</mat-chip-list>
 		
 							<div class="m-2 p-2"></div>
-							<!-- <mat-card-content>
+							<mat-card-content>
 								<h5 style="font-size: 16px;">Application Exclusion Condition</h5>
 								<div class="m-2  p-2"></div>
 								<div class="row">
@@ -993,7 +993,7 @@ mode="indeterminate" diameter="50">
 										</mat-card-actions>
 									</div>
 									<div class="col-md-6">
-										<div class="mat-elevation-z8 mail-table-container" *ngIf="alertActionConfiguration.exclusionConditions.length > 0">
+										<div class="mat-elevation-z8 mail-table-container" *ngIf="alertActionConfiguration?.exclusionConditions?.length > 0">
 											<mat-toolbar style="font-size:14px;">Details</mat-toolbar>
 											<ul class="list-group">
 												<li class="list-group-item" *ngFor="let exclusionElement of alertActionConfiguration.exclusionConditions; let i = index ">
@@ -1023,7 +1023,7 @@ mode="indeterminate" diameter="50">
 										</div>
 									</div>
 								</div>
-							</mat-card-content> -->
+							</mat-card-content>
 						</mat-card>
 					</mat-card-content>
 		
