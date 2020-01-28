@@ -1,0 +1,56 @@
+{
+    "extends": "../tslint.json",
+    "rules": {
+        "directive-selector": [
+            true,
+            "attribute",
+            "app",
+            "camelCase"
+        ],
+        "component-selector": [
+            true,
+            "element",
+            "app",
+            "kebab-case"
+        ],
+        "class-name": true,
+        "max-line-length": false,
+        "curly": false,
+        "forin": false,
+        "quotemark": false,
+        "no-inferrable-types" : false,
+        "variable-name": [
+            true,
+            "check-format",
+            "allow-leading-underscore",
+            "require-const-for-all-caps",
+            "ban-keywords"
+        ],
+        "one-line": [
+            true,
+            "check-open-brace",
+            "check-catch",
+            "check-else"
+        ],
+        "whitespace": [
+            true,
+            "check-decl",
+            "check-operator",
+            "check-separator",
+            "check-type"
+        ],
+        "interface-name": true,
+        "indent": [
+            true,
+            "tabs",
+            4
+        ],
+        "only-arrow-functions": true,
+        "arrow-parens": [
+            true,
+            "ban-single-arg-parens"
+        ],
+        "no-unnecessary-callback-wrapper": true,
+        "no-unsafe-finally": true
+    }
+}

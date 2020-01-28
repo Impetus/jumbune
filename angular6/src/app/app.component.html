@@ -1,0 +1,25 @@
+<!--The content below is only a placeholder and can be replaced.-->
+<!-- <div class="loading-overlay" *ngIf="loading">
+
+	<mat-progress-bar mode="indeterminate"></mat-progress-bar>
+</div>
+<router-outlet></router-outlet> -->
+<div class="jb-overlay" [hidden]="!loading">
+	<div class="jb-overlay-body">
+			<div class="jb-overlay-spinner-area"><span class="jb-spinner"></span></div>
+	</div>
+</div>
+
+<!-- <div [hidden]="!loading" class="loader">
+	<h2>Loading...</h2>
+	<mat-progress-bar mode="indeterminate"></mat-progress-bar>
+</div> -->
+<router-outlet></router-outlet>
+<!-- <div [hidden]="loading" class="router-output">
+
+</div> -->
+
+
+
+  
+

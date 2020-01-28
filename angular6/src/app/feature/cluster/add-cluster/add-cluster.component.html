@@ -1,0 +1,550 @@
+<app-header></app-header>
+<ng2-toasty [position]="'top-center'"></ng2-toasty>
+<div class="container-fluid">
+	<div class="col-lg-12 page-heading">
+		<mat-toolbar>
+			<mat-toolbar-row role="heading">
+					<span>Define Cluster Configuration</span>
+					<span class="app-spacer"></span>
+					<!-- <button mat-stroked-button color="primary" (click)="goToClusterList()">Back</button>					 -->
+			</mat-toolbar-row>
+		</mat-toolbar>				
+</div>
+<br>
+<div class="col-md-12 col-sm-12">
+		<mat-card>
+				<mat-card-header>
+					<mat-card-title><strong>Note: </strong> This page helps Jumbune to learn about your exisiting Hadoop Cluster.It collects the core configuration related to cluster and Jumbune Agent Deployment. Once saved successfully with Jumbune, the cluster can be quickly refered by the property 'Cluster Name' defined on this page.</mat-card-title>
+				</mat-card-header>		
+			<mat-card-content>
+				<div class="container">
+						<form (ngSubmit)="addClusterForm.form.valid && save()" #addClusterForm="ngForm">
+							<div class="col-md-12" *ngIf="clusterObj">
+								<div class="row">
+										<div class="col-md-5">
+												<p><strong>Hadoop service user account</strong></p>
+												<mat-radio-group [(ngModel)]="clusterObj.hadoopUsers.hasSingleUser" name="optionsRadios">
+													<mat-radio-button [value]="true" color="primary">Single User&nbsp;&nbsp;</mat-radio-button><br>
+													<mat-radio-button [value]="false" color="primary">Multiple User</mat-radio-button>            
+												</mat-radio-group>   
+											</div>
+										<div class="col-md-5">
+												<mat-form-field appearance="outline" color="primary">
+														<mat-label>Cluster Name</mat-label>
+														<input matInput [(ngModel)]="clusterObj.clusterName" name="clusterName"  #clusterNameTemp="ngModel" pattern="^[a-zA-Z0-9_]*$"   [disabled]="editMode"required>	
+														<mat-error [hidden]="clusterNameTemp.valid || (clusterNameTemp.touched && !addClusterForm.submitted)">
+															<div [hidden]="!(clusterNameTemp.errors && clusterNameTemp.errors.required)">
+																Cluster	Name is required.												
+															</div>	
+															<div [hidden]="!(clusterNameTemp.errors && clusterNameTemp.errors.pattern)">
+																		Enter valid cluster name											
+															</div>						
+														</mat-error>													
+												</mat-form-field>
+										</div>										
+									</div>
+								<br>
+								<div class="col-md-12">
+										<mat-divider></mat-divider>
+								</div>
+								<br>
+								<div class="row">
+										<div class="col-md-5">	
+												<p *ngIf="!isMapr"><strong>Active Namenode Information</strong></p>
+												<p *ngIf="isMapr"><strong>CLDB Information</strong></p>
+										
+										</div>
+										<div class="col-md-5" *ngIf="!clusterObj.nameNodes.haEnabled">
+												<mat-form-field appearance="outline" color="primary">
+														<mat-label *ngIf="!isMapr">NameNode Host</mat-label>
+														<mat-label *ngIf="isMapr">CLDB Host</mat-label>
+														<input matInput [(ngModel)]="clusterObj.nameNodes.hosts[0]" name="hostMNArr" required #nameNode ="ngModel">
+														<mat-error [hidden]="nameNode.valid || (nameNode.touched && !addClusterForm.submitted)">
+																<div [hidden]="!(nameNode.errors && nameNode.errors.required)">
+																		Name node host is required.												
+																</div>	
+																<!-- <div [hidden]="!(nameNode.errors && nameNode.errors.pattern)">
+																		Please enter valid name node host.										
+																</div>						 -->
+															</mat-error>
+														<!-- <mat-error [hidden]="nameNode.errors || (nameNode.touched || !addClusterForm.submitted)">
+																<div [hidden]="!nameNode.errors.required">
+																		Name node host is required.											
+																</div>	
+																<div [hidden]="!nameNode.errors.pattern">
+																		Please enter valid name node host.											
+																</div>												
+															</mat-error>														 -->
+												</mat-form-field>	  
+										</div>
+										
+								</div>
+								
+								<div class="row">	
+										<div class="col-md-5"><mat-checkbox name="enableHA" color="primary" [(ngModel)]="clusterObj.nameNodes.haEnabled" labelPosition="after" color="primary" (ngModelChange)="refreshZookeeperArray($event)">HA</mat-checkbox>
+								</div>	
+								<div class="col-md-6" *ngIf="clusterObj.nameNodes.haEnabled">								
+									<div class="row">
+										<div class="col-md-10" >										
+											<div class="row" *ngFor="let zkHost of clusterObj.zks; let i = index;">
+													<div class="col-md-5">
+															<mat-form-field appearance="outline" color="primary">
+																	<mat-label>ZooKeeper Host</mat-label>
+																	<input matInput [(ngModel)]="zkHost.host" [ngModelOptions]="{standalone: true}" #zkHostTemp="ngModel" pattern="^[a-zA-Z0-9_.-]*$" name="zkhost" required>	
+																	<mat-error *ngIf="zkHostTemp.invalid && (zkHostTemp.dirty || zkHostTemp.touched)">
+																			<div *ngIf="!(zkHostTemp.errors || zkHostTemp.errors.required)">
+																					Please enter valid name node host.
+																			</div>																		
+																		</mat-error>
+																	<!-- <mat-error [hidden]="zkHostTemp.valid || (zkHostTemp.touched && addClusterForm.submitted)">	
+																			<div [hidden]="!(zkHostTemp.errors && zkHostTemp.errors.required)">
+																					Name node host is required.												
+																			</div>
+																			<div [hidden]="!(zkHostTemp.errors && nameNode.errors.pattern)">
+																					Please enter valid name node host.										
+																			</div>						
+																		</mat-error>															 -->
+																	<!-- <mat-error [hidden]="zkHostTemp.errors && (zkHostTemp.dirty || zkHostTemp.touched)">
+																			<div [hidden]="!zkHostTemp.errors.required">
+																					Zookeeper Host is required.											
+																			</div>
+																			<div [hidden]="!zkHostTemp.errors.pattern">
+																					Please enter valid name node host.											
+																			</div>												
+																		</mat-error> -->
+																	<!-- <mat-error *ngIf="zkHostTemp.invalid && (zkHostTemp.dirty || zkHostTemp.touched)">
+																			<div *ngIf="zkHostTemp.errors.required">
+																					Zookeeper Host is required.
+																			</div>
+																			<mat-error *ngIf="!isClusterNameRight">Please enter valid Zookeeper Host.</mat-error>
+																		</mat-error> -->
+																	<!-- <mat-error [hidden]="zkhost.valid && (zkhost.dirty || zkhost.touched)">ZooKeeper host is required</mat-error> -->
+															</mat-form-field>	
+													</div>
+													<div class="col-md-6">
+															<mat-form-field appearance="outline" color="primary">
+																	<mat-label>ZooKeeper port</mat-label>
+																	<input matInput [(ngModel)]="zkHost.port" required [ngModelOptions]="{standalone: true}" (keypress)="isNumber($event)" #zkPortTemp="ngModel" maxlength="65535">
+																	<mat-error *ngIf="zkPortTemp.invalid && (zkPortTemp.dirty || zkPortTemp.touched)">
+																			<div *ngIf="zkPortTemp.errors.required">
+																						Please enter valid Zookeeper Port (1-65535).
+																			</div>																		
+																		</mat-error>
+																	<!-- <mat-error [hidden]="zkport.valid && (zkport.dirty || zkport.touched)">ZooKeeper port is required</mat-error> -->
+															</mat-form-field>	
+													</div>
+													<div class="col-md-1">
+															<!-- <button mat-mini-fab color="warn" type="button" (click)="removeZkHostPort(i)"><i class="material-icons">
+																	remove_circle_outline
+															</i></button> -->
+															<button mat-icon-button type="button" (click)="removeZkHostPort(i)" color="warn" *ngIf="i > 0">
+																	<mat-icon aria-label="Remove name node host">	remove_circle_outline</mat-icon>
+															</button>
+													</div>
+											</div>											
+										</div>
+										<div class="col-md-2">
+												<button mat-icon-button color="primary" type="button" (click)="addZkHostPort()">
+																	<mat-icon aria-label="Add zookeeper host">add_box</mat-icon>
+												</button>
+										</div>
+									</div>
+									
+										<!-- <div class="row">
+												<div class="col-md-6">														
+												</div>												
+												<div class="col-md-5">													
+												</div>
+												<div class="col-md-1">												
+												</div>
+												<div class="col-md-10">
+													<div class="row" *ngFor="let nameNode of clusterObj.nameNodes.hosts; let i = index;trackBy: trackByFn">
+															<div class="col-md-11">
+																	<mat-form-field appearance="outline" color="primary">
+																			<mat-label> Host</mat-label>
+																			<input matInput [(ngModel)]="clusterObj.nameNodes.hosts[i]" name="hiu" [ngModelOptions]="{standalone: true}" required #nameNodeTemp = "ngModel" pattern="^[a-zA-Z0-9_]*$">
+
+																			<mat-error [hidden]="nameNodeTemp.valid || (nameNodeTemp.touched && !addClusterForm.submitted)">
+																					<div [hidden]="!(nameNodeTemp.errors && nameNodeTemp.errors.required)">
+																							Name node host is required.												
+																					</div>	
+																					<div [hidden]="!(nameNodeTemp.errors && nameNodeTemp.errors.pattern)">
+																							Please enter valid name node host.										
+																					</div>						
+																				</mat-error>
+																			
+																	</mat-form-field>	 
+															</div>
+															<div class="col-md-1">																	
+																	<button mat-icon-button type="button" (click)="removeNameNodeHost(i)" color="warn" *ngIf="i > 0">
+																			<mat-icon aria-label="Remove name node host">	remove_circle_outline</mat-icon>
+																	</button>
+															</div>
+
+													</div>
+														 
+												</div>
+												<div class="col-md-1">													
+														<button type="button" mat-icon-button color="primary"  (click)="addNameNodeHost()">
+																<mat-icon aria-label="Add name node host">add_box</mat-icon>
+														</button>
+												</div>
+										</div>
+										<div class="col-md-5"></div> -->
+										
+								</div>										
+										
+								</div>
+								<!---->
+								<br>
+								<div class="col-md-12">
+										<mat-divider></mat-divider>
+								</div>
+								<br>
+								<div class="row">
+										<div class="col-md-5">	
+												<p><strong>Task Manager(Resource Manager / Job Tracker)</strong></p>											
+												<mat-checkbox name="enableRMHA" [(ngModel)]="clusterObj.taskManagers.rmHaEnabled" labelPosition="after" color="primary" (ngModelChange)="refreshTaskManagerArray($event)">HA</mat-checkbox>												
+										</div>
+										<div class="col-md-5"  *ngIf="clusterObj.taskManagers.rmHaEnabled">											
+											<div class="row" *ngFor="let rsk of clusterObj.taskManagers.hosts; let i =index;trackBy: trackByFn">
+												<div class="col-md-10">
+														<mat-form-field appearance="outline" color="primary">
+																<mat-label> Host</mat-label>
+																<input matInput [(ngModel)]="clusterObj.taskManagers.hosts[i]" name="taskHostArr" required [ngModelOptions]="{standalone: true}" #taskhostTemp = "ngModel">
+																<mat-error [hidden]="taskhostTemp.valid || (taskhostTemp.touched && !addClusterForm.submitted)">
+																		<div [hidden]="!(taskhostTemp.errors && taskhostTemp.errors.required)">
+																			Host is required.												
+																		</div>	
+																		<!-- <div [hidden]="!(taskhostTemp.errors && taskhostTemp.errors.pattern)">
+																				Please enter valid host.										 
+																		</div>				-->		
+																	</mat-error>
+																<!-- <mat-error [hidden]="taskHostArr.valid && (taskHostArr.dirty || taskHostArr.touched)">Host is required</mat-error> -->
+														</mat-form-field>	
+												</div>	
+												<div class="col-md-2">													
+														<button mat-icon-button type="button" (click)="removeRMHost(i)" color="warn" *ngIf="i > 0">
+																<mat-icon aria-label="Remove RM host">	remove_circle_outline</mat-icon>
+														</button>
+												</div>									
+												
+											</div>
+										</div>										
+										<div class="col-md-1" *ngIf="clusterObj.taskManagers.rmHaEnabled">											
+												<button mat-icon-button  type="button" color="primary"  (click)="addRMHost()">
+														<mat-icon aria-label="Add RM host">add_box</mat-icon>
+												</button>
+										</div>
+
+										<div class="col-md-5 offset-md-5" *ngIf="!clusterObj.taskManagers.rmHaEnabled">
+												<mat-form-field appearance="outline" color="primary">
+														<mat-label> Host</mat-label>
+														<input matInput [(ngModel)]="clusterObj.taskManagers.hosts[0]"  required [ngModelOptions]="{standalone: true}" #taskManagerHost="ngModel" >
+														<mat-error [hidden]="taskManagerHost.valid || (taskManagerHost.touched && !addClusterForm.submitted)">
+																<div [hidden]="!(taskManagerHost.errors && taskManagerHost.errors.required)">
+																	Host is required.												
+																</div>	
+																<!-- <div [hidden]="!(taskManagerHost.errors && taskManagerHost.errors.pattern)">
+																		Please enter valid host.										
+																</div>						 -->
+															</mat-error>
+														<!-- <mat-error [hidden]="taskHostArr.valid && (taskHostArr.dirty || taskHostArr.touched)">Host is required</mat-error> -->
+												</mat-form-field>	
+										</div>
+
+								</div>
+								
+							
+								<br>
+								<div class="col-md-12">
+										<mat-divider></mat-divider>
+								</div>
+								<br>
+								<div class="row">
+										<div class="col-md-5">	
+												<p><strong>Worker Node Information</strong></p>													
+										</div>										
+										<div class="col-md-5">
+											<div class="row" *ngFor="let workNode of clusterObj.workers.hosts; let i = index;trackBy: trackByFn">
+												<div class="col-md-10">
+														<mat-form-field appearance="outline" color="primary">
+																<mat-label> Host</mat-label>
+																<input matInput [(ngModel)]="clusterObj.workers.hosts[i]"  required [ngModelOptions]="{standalone: true}" #workerHostTemp="ngModel" >	
+																<mat-error [hidden]="workerHostTemp.valid || (workerHostTemp.touched && !addClusterForm.submitted)">
+																		<div [hidden]="!(workerHostTemp.errors && workerHostTemp.errors.required)">
+																			Host is required.												
+																		</div>	
+																		<!-- <div [hidden]="!(workerHostTemp.errors && workerHostTemp.errors.pattern)">
+																				Please enter valid host.										
+																		</div>						 -->
+																	</mat-error>
+														</mat-form-field>														
+												</div>
+												<div class="col-md-2">
+													<button mat-icon-button type="button" (click)="removeWorkerNodeHost(i)" color="warn" *ngIf="i > 0">
+															<mat-icon aria-label="Remove worker node">	remove_circle_outline</mat-icon>
+													</button>
+												</div>
+											</div>												  
+										</div>
+										<div class="col-md-2">											
+														<button mat-icon-button color="primary" type="button" (click)="addWorkerNodeHost()">
+																<mat-icon aria-label="Add worker node">add_box</mat-icon>
+														</button>
+										</div>
+									
+								</div>
+								<div class="row">
+										<div class="col-md-12">	
+								<mat-checkbox name="selectDN" [(ngModel)]="clusterObj.enableHostRange" labelPosition="after" color="primary" >Specify Range</mat-checkbox> 
+										</div>							
+								</div>
+								<div class="row" *ngIf='clusterObj.enableHostRange'>
+										<div class="col-md-5"></div>
+										<div class="col-md-2">
+												<mat-form-field appearance="outline" color="primary">
+														<mat-label> From</mat-label>
+														<input matInput [(ngModel)]="clusterObj.hostRangeFromValue" name="hostRangeFromValue" >
+												</mat-form-field>	  
+										</div>
+										<div class="col-md-2">
+												<mat-form-field appearance="outline" color="primary">
+														<mat-label> To</mat-label>
+														<input matInput [(ngModel)]="clusterObj.hostRangeToValue" name="hostRangeToValue">
+												</mat-form-field>	  
+										</div>
+								</div>
+								<!---->
+								<br>
+								<div class="col-md-12">
+										<mat-divider></mat-divider>
+								</div>
+								<br>
+								<div class="row">
+										<div class="col-md-5">	
+												<p><strong>JMX Configuration For Hadoop Daemons</strong></p>													
+										</div>
+										<div class="col-md-5">										
+												<mat-radio-group [(ngModel)]="clusterObj.jmxPluginEnabled"  name="radio">
+													<mat-radio-button [value]='true' color="primary">Not explicitly &nbsp;&nbsp;</mat-radio-button><br>
+													<mat-radio-button [value]='false' color="primary">Defined in daemon start script</mat-radio-button>
+												</mat-radio-group> 										
+										</div>
+								</div>
+								<div class="row" *ngIf="!clusterObj.jmxPluginEnabled">
+									<div class="col-md-5"></div>
+									<div class="col-md-3">
+											<mat-form-field appearance="outline" color="primary">
+													<mat-label *ngIf="!isMapr"> Jmx Port on NameNode</mat-label>
+													<mat-label *ngIf="isMapr"> Jmx Port on CLDB</mat-label>													
+													<input matInput [(ngModel)]="clusterObj.nameNodes.nameNodeJmxPort" name="nameNodeJmxPort">
+											</mat-form-field>	 
+									</div>
+									<div class="col-md-3">
+											<mat-form-field appearance="outline" color="primary">
+													<mat-label> Jmx Port on ResourceManager</mat-label>
+													<input matInput [(ngModel)]="clusterObj.taskManagers.taskManagerJmxPort" name="taskManagerJmxPort">
+											</mat-form-field>	 
+									</div>
+									<div class="col-md-5"></div>
+									<div class="col-md-3" *ngIf="clusterObj.jmxPluginEnabled === false && !isMapr">
+											<mat-form-field appearance="outline" color="primary">
+													<mat-label> Jmx Port on DataNode</mat-label>
+													<input matInput [(ngModel)]="clusterObj.workers.dataNodeJmxPort" name="dataNodeJmxPort">
+											</mat-form-field>	 
+									</div>
+									<div class="col-md-3">
+											<mat-form-field appearance="outline" color="primary">
+													<mat-label> Jmx Port on Node Manager</mat-label>
+													<input matInput [(ngModel)]="clusterObj.workers.taskExecutorJmxPort" name="taskExecutorJmxPort">
+											</mat-form-field>	 
+									</div>
+								</div>
+								<br>
+								
+								<div class="row" *ngIf="isSecurityEnabled">
+									<div class="col-md-5">
+										<p><strong>Cluster Security related Information </strong></p>
+									</div>
+									<div class="col-md-5">
+											<mat-form-field appearance="outline" color="primary">
+													<mat-label> Kerberos Realm</mat-label>
+													<input matInput [(ngModel)]="clusterObj.realm" name="realm">
+											</mat-form-field>	
+									</div>
+								</div>
+								<br>
+								
+								<br>
+								<!-- MAPR Security-->
+								<!-- <div class="" *ngIf="isMapr">
+										<mat-divider></mat-divider>
+										<br>
+										<div class="row">
+												<div class="col-md-5">
+														<p><strong>Cluster Security related Information </strong></p>
+												</div>
+												<div class="col-md-5">
+														<mat-radio-group
+														aria-labelledby="mapr options"
+														class="example-radio-group-mapr"
+														[(ngModel)]="clusterObj.authenticationMechanism.authType" [ngModelOptions]="{ standalone: true }" >
+														<mat-radio-button value="KERBEROS" color="primary">Kerberos</mat-radio-button>&nbsp;
+														<mat-radio-button value="PAM" color="primary">Pam</mat-radio-button>&nbsp;
+														<mat-radio-button value="NONE" color="primary">None</mat-radio-button>&nbsp;
+													</mat-radio-group>
+	
+												<div class="col-md-12" *ngIf="clusterObj.authenticationMechanism.authType == 'PAM'">
+																<mat-form-field appearance="outline" color="primary">
+																		<mat-label> User Name</mat-label>
+																		<input matInput [(ngModel)]="clusterObj.authenticationMechanism.username" name="authmaprUser">	
+																</mat-form-field>	
+														</div>
+												<div class="col-md-12" *ngIf="clusterObj.authenticationMechanism.authType == 'PAM'">
+														<mat-form-field appearance="outline" color="primary">
+																<mat-label> Password</mat-label>
+																<input matInput type="password" [(ngModel)]="clusterObj.authenticationMechanism.password" name="authmaprpassword">	
+														</mat-form-field>	
+												</div>
+	
+												<div class="row" *ngIf="clusterObj.authenticationMechanism.authType == 'KERBEROS'">													
+														<div class="col-md-12">
+																<mat-form-field appearance="outline" color="primary">
+																		<mat-label> Kerberos Realm</mat-label>
+																		<input matInput [(ngModel)]="clusterObj.realm" name="realm">
+																</mat-form-field>	
+														</div>
+													</div>
+												</div>
+
+										</div>
+											
+									</div>
+									<br>	
+									<mat-divider></mat-divider> -->
+								
+								<!-- MAPR Security-->
+
+								<div class="col-md-12">
+										<mat-divider></mat-divider>
+								</div>
+								<br>
+								<div class="row">
+										<div class="col-md-5">
+											<p><strong>Jumbune Agent Information </strong></p>											
+										</div>
+									</div>
+									<div class="row">
+										<div class="col-md-5">
+												<mat-checkbox name="enableAgentHA" [(ngModel)]="clusterObj.agents.haEnabled" labelPosition="after" (ngModelChange)="refreshAgentArray($event)">HA</mat-checkbox>
+										</div>
+										<div class="col-md-5" *ngIf="clusterObj.agents.haEnabled">
+												<div class="row" *ngFor="let agentHostPort of clusterObj.agents.agents; let i = index">
+														<div class="col-md-5">
+																<mat-form-field appearance="outline" color="primary">
+																		<mat-label> Host</mat-label>
+																		<input matInput [(ngModel)]="agentHostPort.host" [ngModelOptions]="{standalone: true}" required #agentTemp ="ngModel">
+																		<mat-error [hidden]="agentTemp.valid || (agentTemp.touched && !addClusterForm.submitted)">
+																				<div [hidden]="!(agentTemp.errors && agentTemp.errors.required)">
+																					Host is required.												
+																				</div>	
+																				<!-- <div [hidden]="!(agentTemp.errors && agentTemp.errors.pattern)">
+																						Please enter valid host.										
+																				</div>						 -->
+																			</mat-error>
+																</mat-form-field>	
+														</div>
+														<div class="col-md-5">
+																<mat-form-field appearance="outline" color="primary">
+																		<mat-label> Port</mat-label>
+																		<input matInput [(ngModel)]="agentHostPort.port" name="agentPortArr" [ngModelOptions]="{standalone: true}">
+																</mat-form-field>	
+														</div>
+														<div class="col-md-1">																
+																<button mat-icon-button type="button" (click)="removeAgentHostPort(i)" color="warn" *ngIf="i > 0">
+																		<mat-icon aria-label="Remove enable agent ha">	remove_circle_outline</mat-icon>
+																</button>
+														</div>
+												</div>	
+										</div>								
+											
+										<div class="col-md-5 offset-md-5" *ngIf="!clusterObj.agents.haEnabled">
+											<div class="row">
+												<div class="col-md-6">
+														<mat-form-field appearance="outline" color="primary">
+																<mat-label> Host</mat-label>
+																<input matInput [(ngModel)]="clusterObj.agents.agents[0].host"  required [ngModelOptions]="{standalone: true}" #agentHostTemp= "ngModel" >
+																<mat-error [hidden]="agentHostTemp.valid || (agentHostTemp.touched && !addClusterForm.submitted)">
+																		<div [hidden]="!(agentHostTemp.errors && agentHostTemp.errors.required)">
+																			Host is required.												
+																		</div>	
+																</mat-error>
+														</mat-form-field>	
+												</div>
+												<div class="col-md-6">
+														<mat-form-field appearance="outline" color="primary">
+																<mat-label> Port</mat-label>
+																<input matInput [(ngModel)]="clusterObj.agents.agents[0].port"  [ngModelOptions]="{standalone: true}">																
+														</mat-form-field>	
+													</div>
+											</div>											
+										</div>
+										<div class="col-md-1">
+												<button mat-icon-button color="primary" type="button" [disabled]="!clusterObj.agents.haEnabled" (click)="addAgentHostPort()">
+														<mat-icon aria-label="Add enable agent ha">add_box</mat-icon>
+													</button>												
+										</div>			
+									</div>
+
+									<div class="row">
+											<div class="col-md-5"></div>
+											<div class="col-md-5">
+													<mat-form-field appearance="outline" color="primary">
+															<mat-label> User</mat-label>
+															<input matInput [(ngModel)]="clusterObj.agents.user" name="agentUserMN" #userTemp= "ngModel" required>
+															<mat-error [hidden]="userTemp.valid || (userTemp.touched && !addClusterForm.submitted)">
+																	<div [hidden]="!(userTemp.errors && userTemp.errors.required)">
+																		User name is required.												
+																	</div>	
+																							
+																</mat-error>
+													</mat-form-field>	
+											</div>
+									</div>
+									<div class="row">
+											<div class="col-md-5">
+													<p>Authentication Mode</p>
+											</div>
+											<div class="col-md-5">
+													<mat-radio-group [(ngModel)]="clusterObj.agents.hasPasswordlessAccess"  name="radio2">
+															<mat-radio-button  [value]="true" color="primary" required>RSA/DSA file</mat-radio-button><br>
+															<mat-radio-button  [value]="false" color="primary" required>Password</mat-radio-button>
+														</mat-radio-group> 
+														<mat-form-field appearance="outline" color="primary" *ngIf="clusterObj.agents.hasPasswordlessAccess">
+																<mat-label> RSA/DSA file</mat-label>
+																<input matInput [(ngModel)]="clusterObj.agents.sshAuthKeysFile" name="fileAgentTypeMN">
+														</mat-form-field>
+														<mat-form-field appearance="outline" color="primary" *ngIf="!clusterObj.agents.hasPasswordlessAccess">
+																<mat-label> Password</mat-label>
+																<input type="password" matInput [(ngModel)]="clusterObj.agents.password" name="agentPassword">
+														</mat-form-field>															
+											</div>
+									</div> 
+									<div class="col-md-12">
+										<div class="row">
+												<div class="col align-self-center cluster-btn-row"> 														       
+														<button mat-raised-button  class="save-btn">Save </button>
+														<button mat-raised-button type="button" class="save-btn" (click)="saveAndGoConfiguration()">Save & Go Cluster Configuration</button>
+														<button mat-stroked-button color="warn" (click)="goToClusterList()">Cancel </button>  
+												</div>
+										</div>										
+									</div>								
+							</div>								
+						</form>
+				</div>
+					
+		</mat-card-content>
+	</mat-card>
+</div>
+</div>

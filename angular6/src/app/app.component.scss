@@ -1,0 +1,45 @@
+@import '../styles/_global';
+@import '../styles/_variables';
+
+.jb-overlay {
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	position: fixed;
+	background-color: rgba(0, 0, 0, 0.52);
+	z-index:9;
+}
+
+.jb-overlay-body {
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	position: absolute;
+}
+
+.jb-overlay-spinner-area {
+	left: 50%;
+	position: absolute;
+	top: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.jb-spinner {
+	width: 70px;
+	height: 70px;
+	display: inline-block;
+	border-width: 3px;
+	border-color: #1d78cd;
+	border-top-color: #fff;
+	animation: appspinner 1s infinite linear;
+	border-radius: 100%;
+	border-style: solid;
+}
+
+@keyframes appspinner {
+100% {
+	transform: rotate(360deg);
+}
+}

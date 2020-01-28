@@ -1,0 +1,30 @@
+@import '../../../../styles/_variables.scss';
+@import '../../../../styles/_global.scss';
+
+.mat-form-field{
+	width: -webkit-fill-available;
+	width: -moz-available;
+}
+.add-btn{
+	background-color: $primary-color;
+	color: $white;
+}
+.mat-divider{
+	border-top-color: $primary-color;
+}
+p strong{
+	color:$primary-color;
+}
+.cluster-btn-row{
+	text-align: center;
+	button{
+		margin-right: 8px;
+	}
+}
+.invalid-feedback{	
+	display: none;
+    width: 100%;
+    margin-top: .25rem;
+    font-size: 80%;
+    color: #dc3545;
+}
