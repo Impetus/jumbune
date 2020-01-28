@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
+		<meta charset="utf-8" />
+		<title>Jumbune</title>
+		<base href="" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<!-- <link rel="icon" type="image/x-icon" href="favicon.ico"> -->
+		<link
+			rel="shortcut icon"
+			href="assets/images/favicon.ico"
+			type="image/x-icon"
+		/>
+		<link rel="icon" href="assets/images/favicon.ico" type="image/x-icon" />
+		<link rel="stylesheet" href="assets/calendar-heatmap.min.css" />
+		<!-- <script src="assets/d3.min.js"></script> -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.10.2/d3.min.js" charset="utf-8"></script>
+		<script src="assets/moment.min.js"></script>
+		<script src="assets/calendar-heatmap-total-application.min.js"></script>
+		<script src="assets/calendar-heatmap-workload-recommedation.min.js"></script>
+   
+		
+		<!-- <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"> -->
+
+		<style>			
+			.app-loading {				
+				margin:auto;
+				left:0;
+				right:0;
+				top:0;
+				bottom:0;
+				position:fixed;
+				border: 10px solid #C1C1C1;
+				border-radius: 50%;
+				border-top: 10px solid #4AC2CC;
+				width: 250px;
+				height: 250px;
+				-webkit-animation: spin 2s linear infinite;
+				-moz-animation: spin 2s linear infinite;
+				animation: spin 2s linear infinite;
+				margin:auto;			
+			}
+
+			@-webkit-keyframes spin {
+				0% { 
+					-webkit-transform: rotate(0deg);
+					-moz-transition: rotate(0deg);
+				 }
+				100% { 
+					-webkit-transform: rotate(360deg);
+					-moz-transition:rotate(360deg);
+				 }
+			}
+
+			@keyframes spin {
+				0% { 
+					transform: rotate(0deg);
+					-moz-transition: rotate(0deg);
+				}
+				100% { 
+					transform: rotate(360deg); 
+					-moz-transition:rotate(360deg);
+				}
+			}			
+
+			.logo {
+				left:0;
+				right:0;
+				top:0;
+				bottom:0;
+				width:100%;
+				height:100%;
+				background: url(assets/images/logo-footer.png) center center no-repeat;
+				vertical-align: middle;
+				margin:0 auto;
+				position: absolute;
+			}
+			
+		</style>
+	<link rel="stylesheet" href="styles.2e87e5acdad3c99fcbdd.css"></head>
+
+	<body>
+		<app-root>
+		<div class="app-loading" id="loader">			
+		</div>
+		<div class="logo"></div>
+		</app-root>
+	<script type="text/javascript" src="runtime.a66f828dca56eeb90e02.js"></script><script type="text/javascript" src="polyfills.69b2066ee58d7436c940.js"></script><script type="text/javascript" src="scripts.b54ad4e46cffd430432e.js"></script><script type="text/javascript" src="main.b93e91e75a2a35aca9b7.js"></script></body>
+</html>
