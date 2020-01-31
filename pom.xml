@@ -198,10 +198,10 @@
 						<artifactId>jetty-jndi</artifactId>
 						<groupId>org.eclipse.jetty</groupId>
 					</exclusion>
-<exclusion>
-                    <groupId>org.eclipse.jetty</groupId>
-                    <artifactId>apache-jsp</artifactId>
-                </exclusion>
+					<exclusion>
+						 <groupId>org.eclipse.jetty</groupId>
+						 <artifactId>apache-jsp</artifactId>
+					</exclusion>
 				</exclusions>
 			</dependency>
 			<dependency>

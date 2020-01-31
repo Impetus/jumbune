@@ -1,4 +1,9 @@
 {
 	"alertActions": [
-	]
+	],
+	"exclusionConditions" : [{ "user" : "" , "queue" : "" , "appName":""}],
+	"inefficiencyEmailTo" : [],
+	"recurringInterval" : 1
+	
+	
 }

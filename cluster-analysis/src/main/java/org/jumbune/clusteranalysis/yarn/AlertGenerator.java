@@ -185,11 +185,7 @@ public class AlertGenerator implements Alerts {
 					alertsList.addAll(getApplicationFailedAlert(
 							rmCommunicator, oldTime, newTime));
 				}
-				if(nonConfigurableAlerts.get(AlertType.CONTAINER_POOL_UTILIZATION)) {
-					//non-configurable CONTAINER_POOL_UTILIZATION
-					alertsList.addAll(getContainerUtilizationAlert(cluster, 
-							rmCommunicator));
-				}
+				
 				//non-configurable 
 				alertsList.addAll(getEffectiveUtlilzationAlert(
 						cluster.getClusterName()));
@@ -198,11 +194,7 @@ public class AlertGenerator implements Alerts {
 					//non-configurable YARN_PROPERTY_CHECK
 					alertsList.addAll(checkYarnPropertySetCorrectly(cluster));
 				}
-				if(nonConfigurableAlerts.get(AlertType.NODE_UNHEALTHY)) {
-					//non-configurable NODE_UNHEALTHY
-					alertsList.addAll(getNodeUnhealthyAlert(
-							cluster, rmCommunicator));
-				}
+				
 			}
 			List<AlertInfo> nmDownAlerts = null;
 			if (nonConfigurableAlerts.get(AlertType.HADOOP_DAEMON_DOWN)) {

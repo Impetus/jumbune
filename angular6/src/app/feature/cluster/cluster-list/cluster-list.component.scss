@@ -1,0 +1,100 @@
+@import '../../../../styles/_variables.scss';
+@import '../../../../styles/_global.scss';
+
+.page-heading {
+	background-color: #fff;
+	padding: 15px 15px 20px 15px;
+	border-bottom: 1px solid rgba(0, 0, 0, 0.38);
+}
+
+.cluster-listing-container{
+	width:100%;
+	float:left;
+	//background-color: #e9ecef;
+	//height: -webkit-fill-available;
+	.cluster-selection-label{
+		text-align: center;
+		margin:0 auto;	
+	}
+	.cluser-section {
+		max-width:1000px;
+		margin:0 auto;
+		border:1px solid #ddd;
+		min-height:200px;
+		padding:30px;
+		margin-top:20px;
+		box-shadow:$global-box-shadow;
+		border-radius:$round-border-radius;
+		background: $white;
+		h5{
+			line-height:50px;
+			color:$primary-color;
+		}
+		.add-new-cluster-btn{
+			a{
+				background-color:$primary-color;
+				color:$white;
+				float: right;
+				margin-bottom: 10px;
+				text-decoration: none;
+			}
+		}
+		.cluster-card {
+			border-left:5px solid $primary-color;
+			box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.3);
+			transition: box-shadow 0.3s ease-in-out;
+			margin:10px;
+			.cluster-img-area:focus {
+				outline: none;
+				cursor: pointer;
+			}
+			.cluster-title-area:focus{
+				outline: none;
+				cursor: pointer;
+			}
+			.cluster-title{
+				text-align: center;
+				vertical-align: middle;
+				margin-top:10px;
+				color:$primary-color;
+				font-size: 16px;
+			}
+			.action-btn{
+				float:right;
+				a{
+					background-color: #fff;
+					color: $primary-color;					
+				}
+				a:hover{
+					background-color: $primary-color;
+					color:$white;
+				}				
+			}
+			.cluster-btn {
+				float:right;
+				margin-top:-10px;
+				background-color:$primary-color;
+				color:$white;
+			}
+			.cluster-btn:active, .cluster-btn:focus, .cluster-btn:hover {
+				-webkit-box-shadow: 0 5px 11px 0 rgba(0,0,0,.18), 0 4px 15px 0 rgba(0,0,0,.15);
+				box-shadow: 0 5px 11px 0 rgba(0,0,0,.18), 0 4px 15px 0 rgba(0,0,0,.15);
+				outline: 0;
+			}
+			.cluster-btn:hover {
+				-webkit-transition: all .2s ease-in-out;
+				-o-transition: all .2s ease-in-out;
+				transition: all .2s ease-in-out;
+				text-decoration: none;				
+			}
+			
+		}
+		.cluster-card:hover{				
+			box-shadow: 0 10px 50px 0 rgba(0, 0, 0, 0.5);
+			cursor: pointer;
+		}
+		.cluster-card:focus{
+			outline:none;
+		}
+	}
+}

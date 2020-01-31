@@ -1,0 +1,1423 @@
+<app-header></app-header>
+
+<ng2-toasty [position]="'top-center'"></ng2-toasty>
+<mat-toolbar>
+		<mat-toolbar-row role="heading">
+				<span>Administrative Configuration for Cluster</span>
+				<span class="app-spacer"></span>
+				<button mat-button  mat-raised-button  (click)="goToClusterList()">Back</button>
+		</mat-toolbar-row>
+</mat-toolbar>
+<!-- <div class="alert alert-info" *ngIf="displayPendingMsg">cluster save successfully</div> -->
+<div class="d-flex justify-content-center" *ngIf="isShowLoader">
+	<mat-progress-spinner 
+color="primary" 
+mode="indeterminate" diameter="50">
+</mat-progress-spinner>
+</div>
+<mat-tab-group *ngIf="!isShowLoader" [selectedIndex]="selectedIndex">
+
+	
+
+
+		<!--Start agent hight availability tab-->
+		<mat-tab label="Agent High Availability">
+			<br>
+			<div class="container">
+				<mat-card class="example-card">
+					<div class="note-title">
+						<strong>Note : </strong>Provide Configurations for Influx DB to enable persistence of Cluster Analysis Stats.
+					</div>
+					<br>
+					<br>
+					<mat-card-content>
+						<!--start agent hight availability form-->
+		
+						<div class="row">
+							<div class="col-md-6 offset-md-3">
+								<mat-form-field appearance="outline" color="primary">
+									<mat-label>Heartbeat Interval</mat-label>
+									<input matInput [(ngModel)]="haConfiguration.heartBeatMillis" name="heartBeatMillis" #heartBeatMillis="ngModel" (keypress)=" isNumber(event)">
+								</mat-form-field>
+							</div>
+							<div class="col-md-1">
+								<i class="material-icons md-18 info-icon" matTooltip="Heartbeat time interval" matTooltipPosition="above">
+									info
+								</i>
+							</div>
+		
+						</div>
+						<div class="row">
+							<div class="col-md-6 offset-md-3">
+								<mat-form-field appearance="outline" color="primary">
+									<mat-label>Max Missed Heartbeats</mat-label>
+									<input matInput [(ngModel)]="haConfiguration.thresholdBeatsToMiss" name="thresholdBeatsToMiss" #thresholdBeatsToMiss="ngModel"
+									 (keypress)=" isNumber(event)">
+								</mat-form-field>
+							</div>
+							<div class="col-md-1">
+								<i class="material-icons md-18 info-icon" matTooltip="Maximum number of missed heartbeats after which declare jumbune-agent dead"
+								 matTooltipPosition="above">
+									info
+								</i>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-6 offset-md-3">
+								<mat-form-field appearance="outline" color="primary">
+									<mat-label>Max Agent Retries</mat-label>
+									<input matInput [(ngModel)]="haConfiguration.numRetriesAgentConn" name="numRetriesAgentConn" #numRetriesAgentConn="ngModel"
+									 (keypress)=" isNumber(event)">
+								</mat-form-field>
+							</div>
+							<div class="col-md-1">
+								<i class="material-icons md-18 info-icon" matTooltip="Maximum number of attempts to zookeeper for picking active agent" matTooltipPosition="above">
+									info
+								</i>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-6 offset-md-3">
+								<mat-form-field appearance="outline" color="primary">
+									<mat-label>Agent Polling Interval</mat-label>
+									<input matInput [(ngModel)]="haConfiguration.agentConnMillis" name="agentConnMillis" #agentConnMillis="ngModel" (keypress)=" isNumber(event)">
+								</mat-form-field>
+							</div>
+							<div class="col-md-1">
+								<i class="material-icons md-18 info-icon" matTooltip="Polling interval in milliseconds to verify a live agent connection"
+								 matTooltipPosition="above">
+									info
+								</i>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-6 offset-md-3">
+								<mat-form-field appearance="outline" color="primary">
+									<mat-label>Max Jumbune Client Retries</mat-label>
+									<input matInput [(ngModel)]="haConfiguration.numRetriesRemoterApis" name="numRetriesRemoterApis" #numRetriesRemoterApis="ngModel"
+									 (keypress)=" isNumber(event)">
+								</mat-form-field>
+							</div>
+							<div class="col-md-1">
+								<i class="material-icons md-18 info-icon" matTooltip="Number of client retries to Jumbunr agent." matTooltipPosition="above">
+									info
+								</i>
+							</div>
+						</div>
+						<div class="row">
+		
+							<div class="col-md-6 offset-md-3">
+								<mat-form-field appearance="outline" color="primary">
+									<mat-label>Command Logging Directory</mat-label>
+									<input matInput [(ngModel)]="haConfiguration.commandLogDir" name="commandLogDir" #commandLogDir="ngModel">
+								</mat-form-field>
+							</div>
+							<div class="col-md-1">
+								<i class="material-icons md-18 info-icon" matTooltip="Logging directory for output and error" matTooltipPosition="above">
+									info
+								</i>
+							</div>
+						</div>
+						<!-- <div class="">
+									<div class="col-md-6 offset-md-3">
+										<mat-card-actions class="text-right" *ngIf="hideManageClusterButtons">
+											<button type="submit" mat-button mat-raised-button class="save-btn" (click)="saveConfigData()">Save configuration</button>
+											<button mat-button  mat-raised-button   (click)="goToClusterList()">Cancel</button>
+										</mat-card-actions>
+									</div>
+								</div> -->
+		
+						<!--end agent hight availability form-->
+					</mat-card-content>
+					<mat-card-footer>
+		
+						<div class="text-right action-div" *ngIf="hideManageClusterButtons">
+							<button mat-button mat-raised-button (click)="goToClusterList()">Cancel</button>&nbsp;&nbsp;
+							<button type="submit" mat-button mat-raised-button class="save-btn" (click)="saveConfigData()">Save configuration</button>
+						</div>
+		
+					</mat-card-footer>
+				</mat-card>
+				<br>
+			</div>
+		</mat-tab>
+		<!--End agent hight availability tab-->
+
+		<!--Start alert configuartion tab-->
+		<mat-tab label="Alert">
+			<br>
+			<div class="container">
+				<mat-card class="example-card">
+					<div class="note-title">
+						<strong>Note : </strong>Turn On/Off or Configure various alerts here.
+					</div>
+					<br>
+					<mat-toolbar class="form-subheading">
+						<h2 mat-dialog-title>Alerts update interval</h2>
+					</mat-toolbar>
+					<br>
+					<div class="row">
+						<div class="col-md-6 offset-md-3">
+							<mat-form-field appearance="outline" color="primary">
+								<mat-label>Alert delay interval in seconds</mat-label>
+								<input matInput [(ngModel)]="alertConfiguration.updateInterval" name="updateInterval" #updateInterval="ngModel" (keypress)=" isNumber(event)">
+							</mat-form-field>
+						</div>
+					</div>
+					<mat-card-content>
+						<!--start alert configuartion form-->
+						<!--start hdfs card section-->
+						<mat-card class="example-card">
+							<mat-card-header>
+								<mat-card-title>HDFS</mat-card-title>
+							</mat-card-header>
+							<mat-divider></mat-divider>
+							<mat-card-content>
+								<div class="m-3"></div>
+								<div class="row">
+									<div class="col-md-6">
+										<div class="d-flex bd-highlight m-toolbar">
+											<div class="p-2 flex-grow-1 bd-highlight">Check DataNode Volume Failure
+												<small> (requires JMX)</small>
+											</div>
+											<div class="p-2 bd-highlight">
+											</div>
+											<div class="p-2 bd-highlight">
+												<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.DN_VOLUME_FAILURE_CHECK" color="primary"></mat-slide-toggle>
+											</div>
+										</div>
+									</div>
+		
+									<div class="col-md-6">
+										<div class="d-flex bd-highlight m-toolbar">
+											<div class="p-2 flex-grow-1 bd-highlight">Fragmented File Alert
+												<small> (requires SSH)</small>
+											</div>
+											<div class="p-2 bd-highlight">
+											</div>
+											<div class="p-2 bd-highlight">
+												<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.FRAGMENTED_FILES_CHECK" color="primary"></mat-slide-toggle>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="d-flex bd-highlight m-toolbar">
+									<div class="p-2 flex-grow-1 bd-highlight">HDFS Max Files In DirAlert
+										<small> (requires SSH)</small>
+										<i class="material-icons md-24 info-icon form-info-icon" matTooltip="The list of comma separated hdfs paths which needs to be monitored for the maximum number of items a directory may contain."
+											matTooltipPosition="above">
+											info
+										</i>
+									</div>
+									<div class="p-2 bd-highlight">
+									</div>
+									<div class="p-2 bd-highlight">
+										<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.HDFS_MAXFILES_IN_DIR" color="primary"></mat-slide-toggle>
+									</div>
+								</div>
+		
+								<div class="col-12" *ngIf="alertConfiguration.nonConfigurableAlerts.HDFS_MAXFILES_IN_DIR">
+									<div class="col-md-6">
+										<mat-form-field appearance="outline" color="primary" class="example-full-width">
+											<mat-label>HDFS Directory Path</mat-label>
+											<textarea matInput [(ngModel)]="alertConfiguration.hdfsDirPaths" name="hdfsDirPaths" #hdfsDirPaths="ngModel"></textarea>
+										</mat-form-field>
+									</div>
+								</div>
+								<!--under replicated-->
+								<div class="d-flex bd-highlight m-toolbar">
+									<div class="p-2 flex-grow-1 bd-highlight">Under Replicated Block
+										<small> (requires JMX)</small>
+										<i class="material-icons md-24 info-icon form-info-icon" matTooltip="This property covers under replicated block across cluster"
+											matTooltipPosition="above">
+											info
+										</i>
+									</div>
+									<div class="p-2 bd-highlight"></div>
+									<div class="p-2 bd-highlight">
+										<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.UNDER_REPLICATED_BLOCKS" color="primary"></mat-slide-toggle>
+									</div>
+								</div>
+								<div class="col-12">
+									<div class="col-md-9">
+										<div class="row">
+											<div class="col-md-3">
+												Warning Level
+											</div>
+											<div class="col-md-6">
+												<mat-slider thumbLabel [(ngModel)]="alertConfiguration.configurableAlerts.UNDER_REPLICATED_BLOCKS.warningLevel" name="warningLevel"
+													min="0" max="100" color="primary" [disabled]="!alertConfiguration.nonConfigurableAlerts.UNDER_REPLICATED_BLOCKS"
+													(change)="showUnderReplicatedBlockError()"></mat-slider>
+											</div>
+											<div class="col-md-1"> {{alertConfiguration.configurableAlerts.UNDER_REPLICATED_BLOCKS.warningLevel}}</div>
+										</div>
+									</div>
+								</div>
+								<div class="col-12">
+									<div class="col-md-9">
+										<div class="row">
+											<div class="col-md-3">
+												Critical Level
+											</div>
+											<div class="col-md-6">
+												<mat-slider thumbLabel [(ngModel)]="alertConfiguration.configurableAlerts.UNDER_REPLICATED_BLOCKS.criticalLevel" name="cricticalLevel"
+													color="primary" [disabled]="!alertConfiguration.nonConfigurableAlerts.UNDER_REPLICATED_BLOCKS" (change)="showUnderReplicatedBlockError()"></mat-slider>
+											</div>
+											<div class="col-md-1"> {{alertConfiguration.configurableAlerts.UNDER_REPLICATED_BLOCKS.criticalLevel}}</div>
+										</div>
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-md-6 offset-md-3">
+										<span class="errorMSg" *ngIf="uNDER_REPLICATED_BLOCKSFalse">Critical level can't be less than warning level</span>
+									</div>
+								</div>
+								<!--end under replicated-->
+		
+								<!--hdfs utilization-->
+								<div class="d-flex bd-highlight m-toolbar">
+									<div class="p-2 flex-grow-1 bd-highlight">HDFS Utilization
+										<small> (requires JMX)</small>
+										<i class="material-icons md-24 info-icon form-info-icon" matTooltip="This property covers HDFS space utilization across cluster"
+											matTooltipPosition="above">
+											info
+										</i>
+									</div>
+									<div class="p-2 bd-highlight"></div>
+									<div class="p-2 bd-highlight">
+										<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.HDFS_UTILIZATION" color="primary"></mat-slide-toggle>
+									</div>
+								</div>
+								<div class="col-12">
+									<div class="col-md-9">
+										<div class="row">
+											<div class="col-md-3">
+												Warning Level
+											</div>
+											<div class="col-md-6">
+												<mat-slider thumbLabel [(ngModel)]="alertConfiguration.configurableAlerts.HDFS_UTILIZATION.warningLevel" name="warningLevel"
+													min="0" max="100" [disabled]="!alertConfiguration.nonConfigurableAlerts.HDFS_UTILIZATION" color="primary" (change)="showHDFSUtilizationError()"></mat-slider>
+											</div>
+											<div class="col-md-1"> {{alertConfiguration.configurableAlerts.HDFS_UTILIZATION.warningLevel}}</div>
+										</div>
+									</div>
+								</div>
+								<div class="col-12">
+									<div class="col-md-9">
+										<div class="row">
+											<div class="col-md-3">
+												Critical Level
+											</div>
+											<div class="col-md-6">
+												<mat-slider thumbLabel [(ngModel)]="alertConfiguration.configurableAlerts.HDFS_UTILIZATION.criticalLevel" name="cricticalLevel"
+													color="primary" [disabled]="!alertConfiguration.nonConfigurableAlerts.HDFS_UTILIZATION" (change)="showHDFSUtilizationError()"></mat-slider>
+											</div>
+											<div class="col-md-1"> {{alertConfiguration.configurableAlerts.HDFS_UTILIZATION.criticalLevel}}</div>
+										</div>
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-md-6 offset-md-3">
+										<span class="errorMSg" *ngIf="hDFS_UTILIZATIONFalse">Critical level can't be less than warning level</span>
+									</div>
+								</div>
+								<!--End hdfs utilization-->
+		
+		
+							</mat-card-content>
+						</mat-card>
+						<!--end hdfs card section-->
+						<br>
+						<!--start hdfs card section-->
+						<mat-card class="example-card">
+							<mat-card-header>
+								<mat-card-title>Infrastructure</mat-card-title>
+							</mat-card-header>
+							<mat-divider></mat-divider>
+							<mat-card-content>
+								<div class="m-3"></div>
+								<div class="row">
+									<div class="col-md-6">
+										<div class="d-flex bd-highlight m-toolbar">
+											<div class="p-2 flex-grow-1 bd-highlight">Cluster -Time Synchronized
+											</div>
+											<div class="p-2 bd-highlight">
+											</div>
+											<div class="p-2 bd-highlight">
+												<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.CLUSTER_TIME_DESYNC" color="primary"></mat-slide-toggle>
+											</div>
+										</div>
+									</div>
+									<!-- <div class="col-md-4">
+																		<div class="d-flex bd-highlight m-toolbar">
+																				<div class="p-2 flex-grow-1 bd-highlight">Node Unhealthy
+																				</div>
+																				<div class="p-2 bd-highlight">
+																				</div>
+																				<div class="p-2 bd-highlight">
+																						<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.NODE_UNHEALTHY" color="primary"></mat-slide-toggle>
+																				</div>
+																		</div>
+																</div> -->
+									<div class="col-md-6">
+										<div class="d-flex bd-highlight m-toolbar">
+											<div class="p-2 flex-grow-1 bd-highlight">Hadoop Daemon Down
+											</div>
+											<div class="p-2 bd-highlight">
+											</div>
+											<div class="p-2 bd-highlight">
+												<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.HADOOP_DAEMON_DOWN" color="primary"></mat-slide-toggle>
+											</div>
+										</div>
+									</div>
+								</div>
+		
+		
+								<!--Disk space utilization-->
+								<div class="d-flex bd-highlight m-toolbar">
+									<div class="p-2 flex-grow-1 bd-highlight">Diskspace Utilization
+										<small> (requires JMX)</small>
+										<i class="material-icons md-24 info-icon form-info-icon" matTooltip="This property covers Disk space utilization of every node"
+											matTooltipPosition="above">
+											info
+										</i>
+									</div>
+									<div class="p-2 bd-highlight"></div>
+									<div class="p-2 bd-highlight">
+										<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.DISK_SPACE_UTILIZATION" color="primary"></mat-slide-toggle>
+									</div>
+								</div>
+		
+								<br>
+								<div class="col-12">
+									<div class="col-md-9">
+										<div class="row">
+											<div class="col-md-3">
+												Warning Level
+											</div>
+											<div class="col-md-6">
+												<mat-slider thumbLabel [(ngModel)]="alertConfiguration.configurableAlerts.DISK_SPACE_UTILIZATION.warningLevel" name="warningLevel"
+													min="0" max="100" color="primary" [disabled]="!alertConfiguration.nonConfigurableAlerts.DISK_SPACE_UTILIZATION"
+													(change)="showDiskSpaceUtlizationError()"></mat-slider>
+											</div>
+											<div class="col-md-1"> {{alertConfiguration.configurableAlerts.DISK_SPACE_UTILIZATION.warningLevel}}</div>
+										</div>
+									</div>
+								</div>
+								<div class="col-12">
+									<div class="col-md-9">
+										<div class="row">
+											<div class="col-md-3">
+												Critical Level
+											</div>
+											<div class="col-md-6">
+												<mat-slider thumbLabel [(ngModel)]="alertConfiguration.configurableAlerts.DISK_SPACE_UTILIZATION.criticalLevel" name="cricticalLevel"
+													color="primary" [disabled]="!alertConfiguration.nonConfigurableAlerts.DISK_SPACE_UTILIZATION" (change)="showDiskSpaceUtlizationError()"></mat-slider>
+											</div>
+											<div class="col-md-1"> {{alertConfiguration.configurableAlerts.DISK_SPACE_UTILIZATION.criticalLevel}}</div>
+										</div>
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-md-6 offset-md-3">
+										<span class="errorMSg" *ngIf="dISK_SPACE_UTILIZATIONFalse">Critical level can't be less than warning level</span>
+									</div>
+								</div>
+								<!--End Disk space utilization-->
+		
+							</mat-card-content>
+						</mat-card>
+						<br>
+						<!--end hdfs card section-->
+		
+		
+						<!--start hdfs card section-->
+						<mat-card class="example-card">
+							<mat-card-header>
+								<mat-card-title>Yarn</mat-card-title>
+							</mat-card-header>
+							<mat-divider></mat-divider>
+							<mat-card-content>
+								<div class="m-3"></div>
+								<div class="row">
+									<!-- <div class="col-md-4">
+																		<div class="d-flex bd-highlight m-toolbar">
+																				<div class="p-2 flex-grow-1 bd-highlight">Container Pool Utilization
+																				</div>
+																				<div class="p-2 bd-highlight"></div>
+																				<div class="p-2 bd-highlight">
+																						<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.CONTAINER_POOL_UTILIZATION" color="primary"></mat-slide-toggle>
+																				</div>
+																		</div>
+																</div> -->
+									<div class="col-md-6">
+										<div class="d-flex bd-highlight m-toolbar">
+											<div class="p-2 flex-grow-1 bd-highlight">Check Yarn Property
+												<small>(requires SSH)</small>
+											</div>
+											<div class="p-2 bd-highlight"></div>
+											<div class="p-2 bd-highlight">
+												<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.YARN_PROPERTY_CHECK" color="primary"></mat-slide-toggle>
+											</div>
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="d-flex bd-highlight m-toolbar">
+											<div class="p-2 flex-grow-1 bd-highlight">Check Resource Utilization
+												<small> (requires JMX)</small>
+											</div>
+											<div class="p-2 bd-highlight"></div>
+											<div class="p-2 bd-highlight">
+												<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.RESOURCE_UTILIZATION_CHECK" color="primary"></mat-slide-toggle>
+											</div>
+										</div>
+									</div>
+								</div>
+		
+		
+								<div class="row">
+									<div class="col-6">
+										<div class="d-flex bd-highlight m-toolbar">
+											<div class="p-2 flex-grow-1 bd-highlight">Queue Child Capacity
+											</div>
+											<div class="p-2 bd-highlight"></div>
+											<div class="p-2 bd-highlight">
+												<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.QUEUE_CHILD_CAPACITY_OVERFLOW" color="primary"></mat-slide-toggle>
+											</div>
+										</div>
+									</div>
+		
+									<div class="col-6">
+										<div class="d-flex bd-highlight m-toolbar">
+											<div class="p-2 flex-grow-1 bd-highlight">Cluster Ideal Alert
+											</div>
+											<div class="p-2 bd-highlight"></div>
+											<div class="p-2 bd-highlight">
+												<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.CLUSTER_IDEAL_CHECK" color="primary"></mat-slide-toggle>
+											</div>
+										</div>
+									</div>
+								</div>
+		
+		
+								<div class="d-flex bd-highlight m-toolbar">
+									<div class="p-2 flex-grow-1 bd-highlight">Queue Utilization Alert
+									</div>
+									<div class="p-2 bd-highlight"></div>
+									<div class="p-2 bd-highlight">
+										<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.QUEUE_UTILIZATION" color="primary"></mat-slide-toggle>
+									</div>
+								</div>
+								<br>
+								<div class="col-md-12" *ngIf="alertConfiguration.nonConfigurableAlerts.QUEUE_UTILIZATION">
+									<button mat-raised-button color="primary" (click)="addQueue()">
+										<mat-icon aria-label="Example icon-button with a heart icon">add_circle_outline</mat-icon> Individual Queue Alert</button>
+								</div>
+								<br>
+								<div class="row" *ngIf="alertConfiguration.nonConfigurableAlerts.QUEUE_UTILIZATION">
+									<div class="col-md-6" *ngIf="showQueue">
+										<mat-card>
+											<mat-card-content>
+												<div class="col-md-12">
+													<mat-form-field appearance="outline" color="primary">
+														<mat-select placeholder="Select Queue" [(ngModel)]="ObjectQueue.selectedQueueName" name="selectedQueueName" #selectedQueueName="ngModel">
+															<mat-option *ngFor="let queueName of clusterQueuesList" [value]="queueName">
+																{{ queueFilter(queueName) }}
+															</mat-option>
+														</mat-select>
+													</mat-form-field>
+												</div>
+												<div class="col-md-12">
+													<div class="row">
+														<label class="col-md-10">Warning Level</label>
+														<label class="col-md-2">{{ObjectQueue.warningLevel}}</label>
+													</div>
+													<mat-slider thumbLabel [(ngModel)]="ObjectQueue.warningLevel" name="warningLevel" color="primary" min="0" max="100" (change)="showWarningCriticalError()"></mat-slider>
+												</div>
+												<div class="col-md-12">
+													<div class="row">
+														<label class="col-md-10">Critical Level</label>
+														<label class="col-md-2">{{ObjectQueue.criticalLevel}}</label>
+													</div>
+													<mat-slider thumbLabel [(ngModel)]="ObjectQueue.criticalLevel" color="primary" name="criticalLevel" min="0" max="100" (change)="showWarningCriticalError()"></mat-slider>
+												</div>
+												<div class="col-md-12">
+													<label *ngIf="showWarningCriticalErrorMessage" class="errorMSg">Critical level can't be less than warning level</label>
+												</div>
+		
+												<div class="col-md-12" *ngIf="showQueue">
+													<mat-card-actions class="float-right">
+														<button mat-button mat-raised-button class="save-btn" *ngIf="!toEditQueueUtilizationData" (click)="addQueueUtilization()">Add</button>
+														<button mat-button mat-raised-button (click)="CancelQueue()">Cancel</button>
+													</mat-card-actions>
+												</div>
+												<br>
+												<br>
+											</mat-card-content>
+										</mat-card>
+		
+									</div>
+		
+		
+									<div class="col-md-6" *ngIf="toEditQueueUtilizationData">
+										<mat-card>
+											<mat-card-content>
+												<div class="col-md-12">
+													<div class="row">
+														<div class="col-md-6">
+															<label>Queue Name</label>
+														</div>
+														<div class="col-md-6">
+															<label *ngIf="!toEditGenericQueueUtilizationData">{{ObjectQueue.selectedQueueName}}</label>
+															<label *ngIf="toEditGenericQueueUtilizationData">Generic Queue Configuration</label>
+														</div>
+													</div>
+												</div>
+												<div class="col-md-12">
+													<div class="row">
+														<label class="col-md-10">Warning Level</label>
+														<label class="col-md-2">{{ObjectQueue.warningLevel}}</label>
+													</div>
+													<mat-slider thumbLabel [(ngModel)]="ObjectQueue.warningLevel" name="warningLevel" min="0" max="100" (change)="showWarningCriticalError()"></mat-slider>
+												</div>
+												<div class="col-md-12">
+													<div class="row">
+														<label class="col-md-10">Critical Level</label>
+														<label class="col-md-2">{{ObjectQueue.criticalLevel}}</label>
+													</div>
+													<mat-slider thumbLabel [(ngModel)]="ObjectQueue.criticalLevel" name="criticalLevel" min="0" max="100" (change)="showWarningCriticalError()"></mat-slider>
+												</div>
+												<div class="col-md-12">
+													<label *ngIf="showWarningCriticalErrorMessage" class="errorMSg">Critical level can't be less than warning level</label>
+												</div>
+												<div class="col-md-12" *ngIf="!showQueue">
+													<mat-card-actions class="float-right">
+														<button mat-button mat-raised-button class="edit-btn" *ngIf="toEditQueueUtilizationData" (click)="updateQueueUtilizationData()">Update</button>
+														<button mat-button mat-raised-button (click)="CancelQueue()" *ngIf="toEditQueueUtilizationData">Cancel</button>
+													</mat-card-actions>
+												</div>
+												<br>
+												<br>
+											</mat-card-content>
+										</mat-card>
+									</div>
+		
+									<div class="col-md-6">
+										<ul class="list-group">
+											<li class="list-group-item">
+												<span>Generic Queue Configuration</span>
+												<div class="row">
+													<div class="col-md-8">
+														<mat-chip-list>
+															<mat-chip>Warning:{{alertConfiguration.configurableAlerts.QUEUE_UTILIZATION.warningLevel}}</mat-chip>
+															<mat-chip>Critical:{{alertConfiguration.configurableAlerts.QUEUE_UTILIZATION.criticalLevel}}</mat-chip>
+														</mat-chip-list>
+													</div>
+													<div class="col-md-4">
+														<button mat-icon-button (click)="editGenericQueueUtilizationData('QUEUE_UTILIZATION'); $event.stopPropagation()">
+															<mat-icon class="material-icons md-18" aria-label="Edit Queue Action"> edit</mat-icon>
+														</button>
+													</div>
+												</div>
+											</li>
+										</ul>
+		
+										<br>
+		
+										<ul class="list-group">
+											<li class="list-group-item" *ngFor="let alertKey of alertConfiguration.individualQueueAlerts | impureKeys; let i =index">
+												{{alertKey.key}}
+												<div *ngFor="let alertItem of alertKey.value | impureKeys">
+													{{alertItem.key}} - {{alertItem.value}}
+												</div>
+												<div style="float:right;">
+													<i class="material-icons md-18" (click)="editQueueUtilizationData(alertKey.key); $event.stopPropagation();" style="cursor:pointer">
+														edit
+													</i>&nbsp;&nbsp;
+													<i class="material-icons md-18" (click)="deleteQueueUtilizationData(alertKey.key); $event.stopPropagation();" style="cursor:pointer">
+														delete
+													</i>
+													<!-- <button type="button" (click)="editQueueUtilizationData(alertKey.key); $event.stopPropagation();">edit</button>&nbsp;
+																			<button (click)="deleteQueueUtilizationData(alertKey.key);">Delete</button>													 -->
+												</div>
+											</li>
+											<br>
+										</ul>
+		
+		
+									</div>
+								</div>
+								<br>
+								<div class="d-flex bd-highlight m-toolbar">
+									<div class="p-2 flex-grow-1 bd-highlight">Cluster Under Utilization Alert
+									</div>
+									<div class="p-2 bd-highlight"></div>
+									<div class="p-2 bd-highlight">
+										<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.CLUSTER_UNDER_UTILIZATION" color="primary"></mat-slide-toggle>
+									</div>
+								</div>
+		
+		
+								<div class="col-md-12" *ngIf="alertConfiguration.nonConfigurableAlerts.CLUSTER_UNDER_UTILIZATION">
+									<div class="row">
+										<div class="col-md-6">
+											<mat-form-field appearance="outline" color="primary">
+												<mat-label>Cluster under utilization duration</mat-label>
+												<input matInput [(ngModel)]="alertConfiguration.clusterUnderUtilizationDuration" name="clusterUnderUtilizationDuration" #clusterUnderUtilizationDuration="ngModel"
+													(keypress)=" isNumber(event)">
+												<mat-hint>Duration should be in hour</mat-hint>
+											</mat-form-field>
+										</div>
+									</div>
+									<div class="m-3"></div>
+									<div class="row">
+										<div class="col-md-12">
+											<div class="row">
+												<div class="col-md-3">
+													Cluster under utilization percent
+												</div>
+												<div class="col-md-4">
+													<mat-slider thumbLabel [(ngModel)]="alertConfiguration.clusterUnderUtilizationPercent" name="cricticalLevel" color="primary"
+														(change)="showUnderReplicatedBlockError()"></mat-slider>
+												</div>
+												<div class="col-md-1"> {{alertConfiguration.clusterUnderUtilizationPercent}}</div>
+											</div>
+										</div>
+									</div>
+								</div>
+		
+		
+		
+							</mat-card-content>
+						</mat-card>
+						<!--end hdfs card section-->
+						<br>
+						<!--start hdfs card section-->
+						<mat-card class="example-card">
+							<mat-card-header>
+								<mat-card-title>Application</mat-card-title>
+							</mat-card-header>
+							<mat-divider></mat-divider>
+							<mat-card-content>
+								<div class="m-3"></div>
+								<div class="row">
+									<div class="col-md-6">
+										<div class="d-flex bd-highlight m-toolbar">
+											<div class="p-2 flex-grow-1 bd-highlight">Map-Reduce Application Failure
+											</div>
+											<div class="p-2 bd-highlight"></div>
+											<div class="p-2 bd-highlight">
+												<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.MAP_REDUCE_APP_FAILURE" color="primary"></mat-slide-toggle>
+											</div>
+										</div>
+									</div>
+		
+									<div class="col-md-6">
+										<div class="d-flex bd-highlight m-toolbar">
+											<div class="p-2 flex-grow-1 bd-highlight">Effective Utlilzation Alert
+											</div>
+											<div class="p-2 bd-highlight"></div>
+											<div class="p-2 bd-highlight">
+												<mat-slide-toggle [(ngModel)]="alertConfiguration.nonConfigurableAlerts.EFFECTIVE_UTILIZATION_CHECK" color="primary"></mat-slide-toggle>
+											</div>
+										</div>
+									</div>
+								</div>
+		
+							</mat-card-content>
+						</mat-card>
+						<!--end hdfs card section-->
+		
+					</mat-card-content>
+					<mat-card-footer>
+						<div class="text-right action-div" *ngIf="hideManageClusterButtons">
+							<button mat-button mat-raised-button (click)="goToClusterList()">Cancel</button>&nbsp;&nbsp;
+							<button type="submit" mat-button mat-raised-button class="save-btn" (click)="saveConfigData()">Save configuration</button>
+						</div>
+					</mat-card-footer>
+				</mat-card>
+				<br>
+			</div>
+		
+		</mat-tab>
+		<!--End alert configuartion tab-->
+
+	
+
+		<!--start background process tab-->
+		<mat-tab label="Background Processes">
+		
+			<br>
+			<div class="container">
+				<mat-card class="example-card">
+					<div class="note-title">
+						<strong>Note : </strong>Background processes are those processes which runs at regular interval even when you have not opened
+						dashboard.
+					</div>
+					<br>
+					<br>
+					<mat-card-content>
+		
+						<div class="row">
+							<div class="col-md-12">
+								<div class="row">
+									<div class="col-md-4 slider-toggle-label">
+										<label>Queue Utilization</label>&nbsp;
+										<i class="material-icons md-18 info-icon" style="margin-top:0px;" matTooltip="Fetch and persist queue utilization information into database at regular interval which will be display when Analyze Cluster Dashboard opened"
+											matTooltipPosition="above">
+											info
+										</i>
+									</div>
+									<div class="col-md-4">
+										<mat-slide-toggle [(ngModel)]="backgroundProcessConfiguration.processMap.QUEUE_UTILIZATION" color="primary"></mat-slide-toggle>
+									</div>
+									<div class="col-md-4">
+										{{(backgroundProcessConfiguration.processMap.QUEUE_UTILIZATION ? 'Enabled' : 'Disabled')}}
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-12">
+								<div class="row">
+									<div class="col-md-4 slider-toggle-label">
+										<label>Worker Nodes Updater</label>
+										<i class="material-icons md-18 info-icon" style="margin-top:0px;" matTooltip=" Updates live worker nodes list in Jumbune cluster after every 30 mintues. Useful in scenarios where Spot Instances are used as workers."
+											matTooltipPosition="above">
+											info
+										</i>
+									</div>
+									<div class="col-md-4">
+										<mat-slide-toggle [(ngModel)]="backgroundProcessConfiguration.processMap.WORKER_NODES_UPDATER" color="primary"></mat-slide-toggle>
+									</div>
+									<div class="col-md-4">
+										{{(backgroundProcessConfiguration.processMap.WORKER_NODES_UPDATER ? 'Enabled' : 'Disabled')}}
+									</div>
+								</div>
+							</div>
+						</div>
+					
+						
+					
+				
+					
+		
+					</mat-card-content>
+					<mat-card-footer>
+						<div class="text-right action-div" *ngIf="hideManageClusterButtons">
+							<button mat-button mat-raised-button (click)="goToClusterList()">Cancel</button>&nbsp;&nbsp;
+							<button type="submit" mat-button mat-raised-button class="save-btn" (click)="saveConfigData()">Save configuration</button>
+						</div>
+					</mat-card-footer>
+				</mat-card>
+				<br>
+			</div>
+		</mat-tab>
+		<!--end background process tab-->
+
+	
+
+		<!--start Escalation tab-->
+		<mat-tab label="Escalation Module">
+			<br>
+			<div class="container">
+				<mat-card class="example-card">
+					<div class="note-title">
+						<strong>Note : </strong>Configure actions to be taken by Jumbune when an alert occurs in cluster.
+					</div>
+		
+					<div class="m-2"></div>
+					<mat-card>
+						<div class="col-md-12">
+							<mat-form-field appearance="outline" color="primary">
+								<mat-label>Recuring Interval</mat-label>
+								<input matInput [(ngModel)]="alertActionConfiguration.recurringInterval" placeholder="in hour" name="recuringInterval" #recuringInterval="ngModel"
+								 (keypress)="isNumber(event)">
+							</mat-form-field>
+						</div>
+					</mat-card>
+		
+					<div class="m-2"></div>
+					<mat-card-content>
+						<mat-card>
+							<mat-toolbar>Alerts</mat-toolbar>
+							<div class="m-2  p-2"></div>
+							<mat-card-content>
+								<div class="row">
+									<div class="col-md-6">
+										<div class="col-md-12">
+											<mat-form-field appearance="outline" color="primary">
+												<mat-select placeholder="Select Severity" [(ngModel)]="alertAction.alertLevel" name="alertLevel" #alertLevel="ngModel">
+													<mat-option value="Warning">Warning</mat-option>
+													<mat-option value="Critical">Critical</mat-option>
+												</mat-select>
+											</mat-form-field>
+										</div>
+										<div class="col-md-12">
+											<mat-form-field appearance="outline" color="primary">
+												<mat-label>Occurring Since</mat-label>
+												<input matInput [(ngModel)]="alertAction.occuringSinceHours" placeholder="in hour" name="occuringSinceHours" #occuringSinceHours="ngModel"
+												 (keypress)="isNumber(event)">
+											</mat-form-field>
+										</div>
+		
+										<div class="col-md-12">
+											<h5 style="font-size:16px;">Actions</h5>
+											<mat-form-field appearance="outline" color="primary">
+												<mat-label>Email To</mat-label>
+												<input matInput [(ngModel)]="alertAction.emailTo" name="emailTo" #emailTo="ngModel">
+											</mat-form-field>
+										</div>
+										<div class="col-md-12">
+											<h5 style="font-size:16px;">SNMP Traps</h5>
+											<mat-form-field appearance="outline" color="primary">
+												<mat-label>Trap OID</mat-label>
+												<input matInput [(ngModel)]="alertAction.snmpTraps.trapOID" name="trapOID">
+											</mat-form-field>
+										</div>
+										<div class="col-md-12">
+											<mat-form-field appearance="outline" color="primary">
+												<mat-label>SNMP Host</mat-label>
+												<input matInput [(ngModel)]="alertAction.snmpTraps.ipAddress" name="ipAddress">
+											</mat-form-field>
+										</div>
+										<div class="col-md-12">
+											<mat-form-field appearance="outline" color="primary">
+												<mat-label>SNMP Port</mat-label>
+												<input matInput [(ngModel)]="alertAction.snmpTraps.port" name="port" (keypress)="isNumber(event)">
+											</mat-form-field>
+										</div>
+										<p class="col-md-12" *ngIf="displaySnmpErrorMessage" style="color:red;padding-top:5px;">SNMP Traps can't be filled partially</p>
+										<div class="col-md-12">
+											<h5 style="font-size:16px;">Ticket</h5>
+											<mat-checkbox class="example-margin" [(ngModel)]="alertAction.enableTicket">Ticket Configuration is necessary to avail this option</mat-checkbox>
+										</div>
+										<div class="col-md-12">
+											<div class="col-md-12">
+												<mat-card-actions class="float-right">
+													<button type="submit" mat-button mat-raised-button class="save-btn" (click)="addAlertAction()" *ngIf="!toEditAlertActionData || toAddAlertActionData"
+													 [disabled]="isDisabled()">Add</button>
+													<button type="submit" *ngIf="toEditAlertActionData" mat-button mat-raised-button class="edit-btn" (click)="updateAlertAction()">Update</button>
+													<button type="reset" mat-button mat-raised-button (click)="cancelAlertAction()">Cancel</button>
+												</mat-card-actions>
+											</div>
+										</div>
+									</div>
+									<div class="col-md-6">
+										<ul class="list-group">
+											<li class="list-group-item" *ngFor="let row of alertActionConfiguration.alertActions; let i = index ">
+												<mat-chip-list>
+													<mat-chip color="warn" selected *ngIf="row.alertLevel=='Warning'">{{row.alertLevel}}</mat-chip>
+													<mat-chip color="warn" selected *ngIf="row.alertLevel=='Critical'">{{row.alertLevel}}</mat-chip>
+												</mat-chip-list>
+												<span style="font-size:12px;" class="label label-default">Occuring Since : {{row.occuringSinceHours}} Hours</span>
+												<div style="float:right;">
+													<button mat-icon-button (click)="showAlertActionData(i); $event.stopPropagation()">
+														<mat-icon class="material-icons md-18" aria-label="Edit Alert Action"> edit</mat-icon>
+													</button>
+													&nbsp;&nbsp;
+													<button mat-icon-button (click)="deleteAlertAction(i)">
+														<mat-icon class="material-icons md-18" aria-label="Delete Alert Action"> delete</mat-icon>
+													</button>
+												</div>
+											</li>
+										</ul>
+									</div>
+								</div>
+							</mat-card-content>
+						</mat-card>
+		
+						<div class="m-2"></div>
+						<mat-card>
+							<mat-toolbar>Inefficiencies</mat-toolbar>
+							<div class="m-2 p-2"></div>
+							<div class="row">
+								<div class="col-md-6">
+									<mat-form-field appearance="outline" color="primary">
+										<mat-label>Email To</mat-label>
+										<input type="text" aria-label="exclusion App Name" matInput [(ngModel)]="inefficienciesEmailAddress">
+									</mat-form-field>
+								</div>
+								<div class="col-md-1">
+									<button mat-mini-fab color="primary">
+										<mat-icon class="material-icons md-18 mg-t-4" aria-label="Edit Alert Action" (click)="AddEmailForInefficiencies()"> add_circle_outline</mat-icon>
+									</button>
+								</div>
+							</div>
+		
+							<mat-chip-list #chipList aria-label="email address">
+								<mat-chip *ngFor="let emails of alertActionConfiguration.inefficiencyEmailTo" [selectable]="selectableEmail" [removable]="removableEmail"
+								 (removed)="removeEmail(emails)">
+									{{emails}}
+									<mat-icon matChipRemove *ngIf="removableEmail">cancel</mat-icon>
+								</mat-chip>
+							</mat-chip-list>
+		
+							<div class="m-2 p-2"></div>
+							<mat-card-content>
+								<h5 style="font-size: 16px;">Application Exclusion Condition</h5>
+								<div class="m-2  p-2"></div>
+								<div class="row">
+									<div class="col-md-6">
+										<mat-form-field appearance="outline" color="primary">
+											<mat-label>Please select User</mat-label>
+											<input type="text" aria-label="exclusion User Name" matInput [formControl]="exclusionUserName" [matAutocomplete]="autoUser">
+											<mat-autocomplete #autoUser="matAutocomplete">
+												<mat-option value="All" style="font-size:14px;">All</mat-option>
+												<mat-option *ngFor="let user of exclusionUserNameList | async" [value]="user" style="font-size:14px;">
+													{{user}}
+												</mat-option>
+											</mat-autocomplete>
+										</mat-form-field>&nbsp;
+		
+										<mat-form-field appearance="outline" color="primary">
+											<mat-label>Please select queue</mat-label>
+											<input type="text" aria-label="queue" matInput [formControl]="exclusionQueueName" [matAutocomplete]="auto">
+											<mat-autocomplete #auto="matAutocomplete">
+												<mat-option value="All" style="font-size:14px;">All</mat-option>
+												<mat-option *ngFor="let queueName of exclusionQueueNameList | async" [value]="queueName" style="font-size:14px;">
+													{{queueName}}
+												</mat-option>
+											</mat-autocomplete>
+										</mat-form-field>&nbsp;
+		
+										<mat-form-field appearance="outline" color="primary">
+											<mat-label>Application Name</mat-label>
+											<input type="text" aria-label="exclusion App Name" matInput [formControl]="exclusionAppName">
+										</mat-form-field>
+										<mat-card-actions class="float-right">
+		
+											<button mat-raised-button *ngIf="isEditExclusionData" class="edit-btn" (click)="updateExclusionData()">Update</button>
+											<button mat-raised-button *ngIf="!isEditExclusionData" color="primary" (click)="onExclusionSubmit()" type="submit">Add</button>&nbsp;&nbsp;
+											<button mat-raised-button>Cancel</button>
+										</mat-card-actions>
+									</div>
+									<div class="col-md-6">
+										<div class="mat-elevation-z8 mail-table-container" *ngIf="alertActionConfiguration?.exclusionConditions?.length > 0">
+											<mat-toolbar style="font-size:14px;">Details</mat-toolbar>
+											<ul class="list-group">
+												<li class="list-group-item" *ngFor="let exclusionElement of alertActionConfiguration.exclusionConditions; let i = index ">
+													<div class="row">
+														<div class="col">
+															<div>{{exclusionElement.user}}</div>
+															<div>{{exclusionElement.queue}}</div>
+															<div>{{exclusionElement.appName}}</div>
+														</div>
+														<div class="col">
+															<div style="float:right;">
+																<button mat-icon-button>
+																	<mat-icon class="material-icons md-18" aria-label="Edit Alert Action" (click)="showExclusion(i)"> edit</mat-icon>
+																</button>
+																&nbsp;&nbsp;
+																<button mat-icon-button (click)="deleteExclusion(i)">
+																	<mat-icon class="material-icons md-18" aria-label="Delete Alert Action"> delete</mat-icon>
+																</button>
+															</div>
+														</div>
+													</div>
+		
+												</li>
+											</ul>
+										
+		
+										</div>
+									</div>
+								</div>
+							</mat-card-content>
+						</mat-card>
+					</mat-card-content>
+		
+					<mat-card-footer>
+						<div class="text-right action-div" *ngIf="hideManageClusterButtons">
+							<button mat-button mat-raised-button (click)="goToClusterList()">Cancel</button>&nbsp;&nbsp;
+							<button type="submit" mat-button mat-raised-button class="save-btn" (click)="saveConfigData()">Save configuration</button>
+						</div>
+					</mat-card-footer>
+				</mat-card>
+				<br>
+			</div>
+		</mat-tab>
+		<!--end Escalation tab-->
+
+	
+
+		<!--start influxdb tab-->
+		<mat-tab label="InfluxDB">
+			<br>
+			<div class="container">
+				<mat-card class="example-card">
+					<div class="note-title">
+						<strong>Note : </strong>Provide SMTP configurations to receive alert emails.
+					</div>
+					<br>
+					<br>
+					<mat-card-content>
+						<!--start smtp form-->
+						<div class="row">
+							<div class="col-md-6 offset-md-3">
+								<mat-form-field appearance="outline" color="primary">
+									<mat-label>Host</mat-label>
+									<input matInput [(ngModel)]="influxDBConfiguration.host" name="host" #host="ngModel">
+								</mat-form-field>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-6 offset-md-3">
+								<mat-form-field appearance="outline" color="primary">
+									<mat-label>Port</mat-label>
+									<input matInput [(ngModel)]="influxDBConfiguration.port" name="port" #port="ngModel" (keypress)=" isNumber(event)">
+								</mat-form-field>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-6 offset-md-3">
+								<mat-form-field appearance="outline" color="primary">
+									<mat-label>User</mat-label>
+									<input matInput [(ngModel)]="influxDBConfiguration.username" name="username" #username="ngModel">
+								</mat-form-field>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-6 offset-md-3">
+								<mat-form-field appearance="outline" color="primary">
+									<mat-label>Password</mat-label>
+									<input type="password" matInput [(ngModel)]="influxDBConfiguration.password" name="password" #password="ngModel">
+								</mat-form-field>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-6 offset-md-3">
+								<mat-form-field appearance="outline" color="primary">
+									<mat-label>Database</mat-label>
+									<input matInput [(ngModel)]="influxDBConfiguration.database" name="database" #database="ngModel">
+								</mat-form-field>
+							</div>
+		
+						</div>
+						<div class="row">
+							<div class="col-md-6 offset-md-3">
+								<mat-form-field appearance="outline" color="primary">
+									<mat-label>Purge Monitoring Data after</mat-label>
+									<input matInput [(ngModel)]="influxDBConfiguration.retentionPeriod" name="retentionPeriod" #retentionPeriod="ngModel" (keypress)=" isNumber(event)">
+								</mat-form-field>
+							</div>
+							<div class="col-md-1">
+								<i class="material-icons md-18 info-icon" matTooltip="in days. If 0 then collected monitoring data will never be deleted."
+								 matTooltipPosition="above">
+									info
+								</i>
+							</div>
+						</div>
+						<!-- <div class="">
+									<div class="col-md-6 offset-md-3">
+										<mat-card-actions class="text-right" *ngIf="hideManageClusterButtons">
+											<button type="submit" mat-button mat-raised-button class="save-btn" (click)="saveConfigData()">Save configuration</button>
+											<button mat-button  mat-raised-button   (click)="goToClusterList()">Cancel</button>
+										</mat-card-actions>
+									</div>
+								</div> -->
+		
+						<!--end smtp form-->
+					</mat-card-content>
+					<mat-card-footer>
+						<div class="text-right action-div" *ngIf="hideManageClusterButtons">
+							<button mat-button mat-raised-button (click)="goToClusterList()">Cancel</button>&nbsp;&nbsp;
+							<button type="submit" mat-button mat-raised-button class="save-btn" (click)="saveConfigData()">Save configuration</button>
+						</div>
+					</mat-card-footer>
+				</mat-card>
+				<br>
+			</div>
+		</mat-tab>
+		<!--End influxdb tab-->
+
+		<!--start Resource Utilization Metering tab-->
+		<!-- <mat-tab label="Resource Utilization Metering">
+			<br>
+			<div class="container">
+				<mat-card class="example-card">
+					<div class="note-title">
+						<strong>Note : </strong>Provide configuration to calculate the cost of using vCores and Memory for a particular Queue.
+					</div>
+					<br>
+					<br>
+					<mat-card-content>
+						<mat-card>
+							<mat-card-content>
+								<div class="row">
+									<div class="col-md-6">
+										<div class="col-md-12" *ngIf="!toEditQueueConfData">
+											<mat-form-field appearance="outline" color="primary">
+												<mat-select placeholder="Select Queue" [(ngModel)]="RUMQueue.queueName" name="queueName" #queueName="ngModel" (selectionChange)="checkQueueName(RUMQueue.queueName)">
+													<mat-option *ngFor="let queueName of tempChargebackQueueList; let i = index;" [value]="queueName">
+														{{queueName}}
+													</mat-option>
+												</mat-select>
+											</mat-form-field>
+										</div>
+										<div class="col-md-12" *ngIf="!toEditQueueConfData">
+											<mat-form-field appearance="outline" color="primary">
+												<mat-select placeholder="Execution Engine" [(ngModel)]="RUMQueue.executionEngine" name="executionEngine" #executionEngine="ngModel">
+													<mat-option *ngFor="let queueVal of tempExecutionEngineList" [value]="queueVal.value">
+														{{queueVal.label}}
+													</mat-option>
+												</mat-select>
+											</mat-form-field>
+										</div>
+										<div class="col-md-12" *ngIf="toEditQueueConfData">
+											<div class="row">
+												<label class="col-md-5" style="text-align:left;color:#747474;font-weight:300">Queue Name</label>
+												<div class="col-md-4">
+													<label>{{RUMQueue.queueName}}</label>
+												</div>
+											</div>
+										</div>
+										<div class="col-md-12" *ngIf="toEditQueueConfData">
+											<div class="row">
+												<label class="col-md-5" style="text-align:left;color:#747474;font-weight:300">Execution Engine</label>
+												<div class="col-md-4">
+													<label>{{RUMQueue.executionEngine}}</label>
+												</div>
+											</div>
+										</div>
+										<div class="col-md-12">
+											<mat-form-field appearance="outline" color="primary">
+												<mat-label>V Core</mat-label>
+												<input matInput [(ngModel)]="RUMQueue.vCore" name="vCore" #vCore="ngModel" placeholder="dollars per hour" (keypress)="isNumberKey(event)">
+											</mat-form-field>
+										</div>
+										<div class="col-md-12">
+											<mat-form-field appearance="outline" color="primary">
+												<mat-label>Memory</mat-label>
+												<input matInput [(ngModel)]="RUMQueue.memory" name="memory" #memory="ngModel" placeholder="dollars per hour in gb" (keypress)="isNumberKey(event)">
+											</mat-form-field>
+										</div>
+										<div class="col-md-12">
+											<div class="col-md-12">
+												<mat-card-actions class="float-right">
+													<button type="button" *ngIf="!toEditQueueConfData || toAddQueueConfData" mat-button mat-raised-button class="save-btn" [disabled]="isDisabledQueue()"
+														(click)="addQueueAction()">Add</button>
+													<button type="button" class="edit-btn" *ngIf="toEditQueueConfData" mat-button mat-raised-button (click)="updateQueueAction()">Update</button>
+													<button type="button" mat-button mat-raised-button (click)="cancelRumAction()">Cancel</button>
+												</mat-card-actions>
+											</div>
+		
+										</div>
+									</div>
+									<div class="col-md-6">
+										<ul class="list-group">
+											<li class="list-group-item" *ngFor="let row1 of chargeBackConfigurations.chargeBackConfList;let i = index">
+		
+												<span style="font-size:12px;" class="label label-default">QueueName :&nbsp;&nbsp;{{row1.queueName}}&nbsp;&nbsp;</span>
+												<span style="font-size:12px;" class="label label-default">ExecutionEngine :&nbsp;&nbsp;{{row1.executionEngine}}&nbsp;&nbsp;</span>
+												<div style="float:right;">
+													<button mat-icon-button (click)="showQueueActionData(i); $event.stopPropagation()">
+														<mat-icon class="material-icons md-18" aria-label="icon-button with a edit icon"> edit</mat-icon>
+													</button>
+													&nbsp;&nbsp;
+													<button mat-icon-button (click)="deleteQueueAction(i)">
+														<mat-icon class="material-icons md-18" aria-label="icon-button with a delete icon"> delete</mat-icon>
+													</button>
+												</div>											
+											</li>
+										</ul>
+									</div>
+								</div>
+							</mat-card-content>
+						</mat-card>		
+					</mat-card-content>
+					<mat-card-footer>
+						<div class="text-right action-div" *ngIf="hideManageClusterButtons">
+							<button mat-button mat-raised-button (click)="goToClusterList()">Cancel</button>&nbsp;&nbsp;
+							<button type="submit" mat-button mat-raised-button class="save-btn" (click)="saveConfigData()">Save configuration</button>
+						</div>
+					</mat-card-footer>
+				</mat-card>
+				<br>
+			</div>
+		
+		</mat-tab> -->
+		<!--end Resource Utilization Meterin tab-->
+
+		<!--start smtp tab--> 
+		<mat-tab label="SMTP">
+			<br>
+			<div class="container">
+				<mat-card class="example-card">
+					<div class="note-title">
+						<strong>Note : </strong>Provide SMTP configurations to receive alert emails.
+					</div>
+					<br>
+					<br>
+					<mat-card-content>
+						<!--start smtp form-->
+						<div class="row">
+							<div class="col-md-6 offset-md-3">
+								<mat-form-field appearance="outline" color="primary">
+									<mat-label>Sender Name</mat-label>
+									<input matInput [(ngModel)]="emailConfiguration.senderName" name="senderName" #senderName="ngModel">
+								</mat-form-field>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-6 offset-md-3">
+								<mat-form-field appearance="outline" color="primary">
+									<mat-label>Sender Email</mat-label>
+									<input matInput [(ngModel)]="emailConfiguration.senderEmailID" name="senderEmailID" #senderEmailID="ngModel">
+								</mat-form-field>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-6 offset-md-3">
+								<mat-form-field appearance="outline" color="primary">
+									<mat-label>Sender Pssword</mat-label>
+									<input type="password" matInput [(ngModel)]="emailConfiguration.senderPassword" name="senderPassword" #senderPassword="ngModel">
+								</mat-form-field>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-6 offset-md-3">
+								<mat-form-field appearance="outline" color="primary">
+									<mat-label>SMTP Host</mat-label>
+									<input matInput [(ngModel)]="emailConfiguration.hostName" name="hostName" #hostName="ngModel">
+								</mat-form-field>
+							</div>
+							<div class="col-md-1">
+								<i class="material-icons md-18 info-icon" matTooltip="Mail Server Hostname" matTooltipPosition="above">
+									info
+								</i>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-6 offset-md-3">
+								<mat-form-field appearance="outline" color="primary">
+									<mat-label>SMTP Port</mat-label>
+									<input matInput [(ngModel)]="emailConfiguration.portNumber" name="portNumber" #senderName="ngModel" (keypress)=" isNumber(event)">
+								</mat-form-field>
+							</div>
+							<div class="col-md-1">
+								<i class="material-icons md-18 info-icon" matTooltip="Port Number for the Mail Server" matTooltipPosition="above">
+									info
+								</i>
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-md-6 offset-md-3">
+								<mat-form-field appearance="outline" color="primary">
+									<mat-select placeholder="Select Authentication" [(ngModel)]="emailConfiguration.authentication" name="authentication" #authentication="ngModel">
+										<mat-option [value]="true">True</mat-option>
+										<mat-option [value]="false">False</mat-option>
+									</mat-select>
+								</mat-form-field>
+							</div>
+							<div class="col-md-1">
+								<i class="material-icons md-18 info-icon" matTooltip="Mail Server Authentication" matTooltipPosition="above">
+									info
+								</i>
+							</div>
+						</div>
+					<!-- <div class="col-md-12">
+									<div class="">
+									<div class="col-md-6 offset-md-3">
+											<mat-card-actions class="text-right" *ngIf="hideManageClusterButtons">
+												<button type="submit" mat-button mat-raised-button class="save-btn" (click)="saveConfigData()">Save configuration</button>
+												<button mat-button  mat-raised-button   (click)="goToClusterList()">Cancel</button>
+											</mat-card-actions>
+										</div>
+							</div>
+						</div> -->
+						<!--end smtp form-->
+					</mat-card-content>
+					<mat-card-footer>
+
+								<div class="text-right action-div" *ngIf="hideManageClusterButtons">
+										<button mat-button  mat-raised-button   (click)="goToClusterList()">Cancel</button>&nbsp;&nbsp;
+										<button type="submit" mat-button mat-raised-button class="save-btn" (click)="saveConfigData()">Save configuration</button>
+									</div>
+
+					</mat-card-footer>
+				</mat-card>
+				<br>
+			</div>
+		</mat-tab>
+		<!--SMTP tab end-->
+
+	
+	 
+	<!--start ticket congiguration tab-->
+	<br>
+	<mat-tab label="Ticket">
+		<br>
+		<div class="container">
+			<mat-card class="example-card">
+				<div class="note-title">
+					<strong>Note : </strong>Provide Ticketing tool configurations.
+				</div>
+				<br>
+				<br>
+				<mat-card-content>
+					<div class="row">
+						<div class="col-md-6 offset-md-3">
+							<mat-form-field appearance="outline" color="primary">
+								<mat-label>Host</mat-label>
+								<input matInput [(ngModel)]="ticketConfiguration.host" name="host" #host="ngModel">
+							</mat-form-field>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-6 offset-md-3">
+							<mat-form-field appearance="outline" color="primary">
+								<mat-label>Port</mat-label>
+								<input matInput [(ngModel)]="ticketConfiguration.port" name="port" #port="ngModel" (keypress)="isNumber(event)">
+							</mat-form-field>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-6 offset-md-3">
+							<mat-form-field appearance="outline" color="primary">
+								<mat-label>User</mat-label>
+								<input matInput [(ngModel)]="ticketConfiguration.username" name="username" #username="ngModel">
+							</mat-form-field>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-6 offset-md-3">
+							<mat-form-field appearance="outline" color="primary">
+								<mat-label>Password</mat-label>
+								<input type="password" matInput [(ngModel)]="ticketConfiguration.password" name="password" #password="ngModel">
+							</mat-form-field>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-md-6 offset-md-3">
+							<mat-form-field appearance="outline" color="primary">
+								<mat-label>Form Name</mat-label>
+								<input matInput [(ngModel)]="ticketConfiguration.formName" name="formName" #formName="ngModel">
+							</mat-form-field>
+						</div>
+					</div>
+	
+					<!-- <div class="row">
+									<div class="col-md-6 offset-md-3">
+										<mat-card-actions class="text-right" *ngIf="hideManageClusterButtons">
+											<button type="submit" mat-button mat-raised-button class="save-btn" (click)="saveConfigData()">Save configuration</button>
+											<button mat-button  mat-raised-button   (click)="goToClusterList()">Cancel</button>
+										</mat-card-actions>
+									</div>
+								</div> -->
+	
+					<!--end ticket configuartion form-->
+				</mat-card-content>
+				<mat-card-footer>
+					<div class="text-right action-div" *ngIf="hideManageClusterButtons">
+						<button mat-button mat-raised-button (click)="goToClusterList()">Cancel</button>&nbsp;&nbsp;
+						<button type="submit" mat-button mat-raised-button class="save-btn" (click)="saveConfigData()">Save configuration</button>
+					</div>
+				</mat-card-footer>
+			</mat-card>
+			<br>
+		</div>
+	</mat-tab>
+	<!--end ticket congiguration tab-->
+
+</mat-tab-group>

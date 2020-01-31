@@ -1,0 +1,67 @@
+<app-header></app-header>
+<div class="align-self-center p-2">
+		<div class="d-flex p-1 justify-content-center">
+				<h5> Provisioned Hadoop Clusters</h5>
+		</div>	
+</div>
+
+<div class="container-fluid cluster-listing-container">	
+	<div class="cluser-section">
+		<div class="row">
+			<div class="col-md-6">
+				<h5>Select a cluster to boost performance</h5>
+			</div>
+			<div class="col-md-6">
+				<div class="add-new-cluster-btn">
+					<a mat-raised-button  routerLink="/add-cluster/new">
+						<i class="material-icons">
+							playlist_add
+						</i> Provision a new cluster</a>
+				</div>
+			</div>
+		</div>		
+	<div *ngFor="let clusterKey of clusterList | keys">
+			<mat-card class="cluster-card" style="padding:12px;">
+					<div class="row">
+						<div class="col-md-4 cluster-img-area" *ngIf="clusterKey.value === 'a'">
+							<img src="assets/images/Hadoop_logo_new.svg.png" alt="Apache" width="150px; height:150px;">	
+						</div>
+						<div class="col-md-4  cluster-img-area" *ngIf="clusterKey.value === 'h'" >
+								<img src="assets/images/HWX-RGB-full-w-tagline.png" alt="HORTONWORKS" width="150px; height:150px;">
+							</div>
+							<div class="col-md-4  cluster-img-area" *ngIf="clusterKey.value === 'c'" >
+									<img src="assets/images/Cloudera_logo.svg.png" alt="Cloudera" width="150px; height:150px;">
+								</div>
+								<div class="col-md-4  cluster-img-area" *ngIf="clusterKey.value === 'm'" >
+										<img src="assets/images/MapR_Company_Logo.png" alt="MapR" width="150px; height:150px;">
+									</div>
+									<div class="col-md-4  cluster-img-area" *ngIf="clusterKey.value === 'ea'" >
+											<img src="assets/images/amazon_emr.png" alt="Amazon EMR">
+										</div>
+										<div class="col-md-4  cluster-img-area" *ngIf="clusterKey.value === 'hd'">
+											<img src="assets/images/hdinsight-1.png" alt="HDInsight" style="width:25%">
+										</div>
+
+						<div class="col-md-5 cluster-title-area">
+							<label class="cluster-title"> {{ clusterKey.key }}</label>
+						</div>
+						<!-- {{hideManageClusterButtons}} -->
+						<div class="col-md-3">
+							<div class="action-btn">
+								<a mat-button mat-mini-fab  matTooltip="Edit configurations" matTooltipPosition="above" aria-label="Button that displays a tooltip in various positions" (click)="editCluster(clusterKey.key)">
+									<i class="material-icons">edit</i>
+								</a>&nbsp;
+								<a mat-button mat-mini-fab matTooltip="Administrative configuration" matTooltipPosition="above" aria-label="Button that displays a tooltip in various positions" routerLink="/manage-cluster/{{clusterKey.key}}">
+									<i class="material-icons">settings</i>
+								</a>&nbsp;							
+								<a mat-button mat-mini-fab matTooltip="Remove cluster profile. Removes the cluster from Jumbune only, doesn't affect underlying setup" matTooltipPosition="above" aria-label="Button that displays a tooltip in various positions" (click)="deleteClusterName(clusterKey.key)">
+									<i class="material-icons">delete</i>
+								</a>												
+							</div>
+						</div>
+					</div>
+				</mat-card>
+	</div>
+		<br>		
+	</div>
+</div>

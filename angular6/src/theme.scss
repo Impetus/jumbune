@@ -1,0 +1,39 @@
+@import '~@angular/material/theming';
+
+// Include non-theme styles for core.
+@include mat-core();
+
+// Define your application's custom theme.
+$primary: mat-palette($mat-blue,700);
+$accent:  mat-palette($mat-pink, 500, 700, A100);
+$theme: mat-light-theme($primary, $accent);
+
+// Include theme styles for Angular Material components.
+@include angular-material-theme($theme);
+@include mat-card-theme($theme);
+
+.mat-button-toggle-checked {
+	background-color: #fafafa;
+	color: rgb(30, 120, 205);
+	border: 1px solid #1e78cd;
+}
+.mat-tab-link:focus {
+	border-bottom:4px solid #1e78cd;
+	text-decoration: none;
+}
+.mat-tab-link:active {
+	border-bottom:4px solid #1e78cd;
+	text-decoration: none;
+}
+
+// .mat-step-header .mat-step-icon-selected, .mat-step-header .mat-step-icon-state-done, .mat-step-header .mat-step-icon-state-edit {
+// 	background-color: red!important;
+// }
+
+.mat-step-header .mat-step-icon {
+	background-color: #6cb73a !important;
+	color: #fff;
+}
+.mat-horizontal-stepper-header-container {
+	border-bottom:2px solid #1e78cd;
+}

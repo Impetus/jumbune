@@ -1,0 +1,100 @@
+@import "_variables";
+
+button:focus {
+	outline: none !important;
+}
+.mat-mini-fab:focus {
+	outline: none;
+}
+.mat-icon-button {
+	outline: none;
+}
+/* Rules for sizing the icon. */
+.material-icons.md-12 {
+	font-size: 12px;
+}
+.material-icons.md-14 {
+	font-size: 14px;
+}
+.material-icons.md-18 {
+	font-size: 18px;
+}
+.material-icons.md-16 {
+	font-size: 16px;
+}
+.material-icons.md-24 {
+	font-size: 24px;
+}
+.material-icons.md-30 {
+	font-size: 30px;
+}
+.material-icons.md-32 {
+	font-size: 32px;
+}
+.material-icons.md-36 {
+	font-size: 36px;
+}
+.material-icons.md-48 {
+	font-size: 48px;
+}
+
+.error-icon {
+	color: $error-color;
+}
+.warning-icon {
+	color: $warning-color;
+}
+.info-icon {
+	color: $primary-color;
+	margin-top: 18px;
+}
+.page-heading {
+	.app-spacer {
+		flex: 1 1 auto;
+	}
+}
+.app-spacer {
+	flex: 1 1 auto;
+}
+.save-btn {
+	background-color: $primary-btn-color !important;
+	border-color: $primary-btn-color !important;
+	color: $white !important;
+}
+.edit-btn {
+	background-color: $warning-color;
+	border-color: $warning-color;
+	color: $white;
+}
+
+.back-btn {
+	background-color: $secondary-color;
+	border-color: $primary-color;
+	color: $white;
+}
+.mat-card-title {
+	font-weight: 400 !important;
+	font-size: 16px !important;
+	font-family: "Roboto", sans-serif;
+	color: hsl(0, 0%, 13%);
+}
+.mat-button-wrapper {
+	font-weight: 400 !important;
+}
+.mat-card-subtitle {
+	font-family: "Roboto", sans-serif;
+}
+.cluster-edit-btn:hover {
+	box-shadow: $global-box-shadow;
+	background-color: $success-btn-color;
+	border-color: $success-color;
+	color: $white;
+}
+.mat-progress-spinner circle,
+.mat-spinner circle {
+	stroke: $primary-color !important;
+}
+.mat-toolbar-row,
+.mat-toolbar-single-row {
+	font-weight: 400 !important;
+}

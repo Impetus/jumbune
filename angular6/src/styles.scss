@@ -1,0 +1,166 @@
+/* You can add global styles to this file, and also import other style files */
+
+@import url('./roboto-font.css');
+@import '~@angular/material/prebuilt-themes/deeppurple-amber.css';
+@import "~ng-pick-datetime/assets/style/picker.min.css";
+@import 'styles/_global';
+@import 'styles/_variables';
+//@import '~ngx-toastr/toastr.css';
+@import '~ngx-toasty/style-bootstrap.css';
+@import 'icon.css';
+@import "theme.scss";
+@include mat-core();
+@include angular-material-theme($theme);
+
+@font-face {
+  font-family: 'Roboto', sans-serif;
+  src: url('./roboto-font.css');
+}
+body { 
+  font-family: 'Roboto', sans-serif !important; 
+  margin: 0;
+  background-color: #e9ecef !important; 
+}
+.page-heading{ 
+  .mat-toolbar{
+    background-color: transparent;   
+  } 
+}
+.mat-drawer-content {
+  overflow:hidden;
+}
+.d-flex{
+  display: flex;
+	align-items: stretch;
+  .jb-section{
+    margin:0 10px;
+	  flex: 1 300%;
+  }
+  .jb-section1{
+    margin:0 10px;
+    flex: 1 100%;
+  }
+}
+.mat-card-title{
+	margin-top:10px;
+}
+// Scroll bar scss
+/* width */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar:horizontal {
+  width: 5px;
+}
+/* Track */
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 5px grey; 
+  border-radius: 10px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: darkgray; 
+  border-radius: 10px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: darkgrey; 
+}
+
+$sides: (top, bottom, left, right);
+
+@for $i from -50 through 50 {
+	@each $side in $sides {
+		.mg-#{str-slice($side, 0, 1)}-#{$i} {
+			margin-#{$side}: #{$i}px !important;
+		}
+
+		.pd-#{str-slice($side, 0, 1)}-#{$i} {
+			padding-#{$side}: #{$i}px !important;
+		}
+	}
+}
+
+.ellipsis-cls {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+@for $i from 100 through 200 {
+	.max-width-#{$i} {
+		max-width: #{$i}px !important;
+	}
+}
+
+.inline-block-cls {
+	display: inline-block;
+}
+
+.blue-txt {
+	color: $primary-color;
+}
+
+$positions: (absolute, relative, static, fixed);
+@each $pos in $positions {            
+.pos-#{$pos} { 
+	position: #{$pos} !important;            
+}}
+
+$widths: (25, 33, 48, 50, 75, 100);
+
+@each $width in $widths {
+    .width-#{$width} {
+        width: #{$width}% !important;
+    }
+}
+
+ 
+$zindexes: (1, 2, 3, 4, 5,6 ,7,8,9,10,100,200,300,400,500,600,700,800,900,1000);
+@each $index in $zindexes {
+	.z-index-#{$index} {
+		z-index: #{$index}px !important;
+ }
+}
+.line-height-160 {
+	line-height: 160px !important;
+}
+@for $i from 100 through 1000 {
+
+    .line-height-#{$i} {
+
+        line-height: #{$i}px !important;
+
+    }
+
+}
+
+.green-txt {
+  color: $widet-primary-color;
+}
+
+.inline-block-cls {
+  display: inline-block;
+}
+
+.blue-txt {
+  color: $primary-color;
+}
+
+ins{
+  color: black;
+  background: #bbffbb;
+}
+
+del{
+  color: black;
+  background: #ffbbbb;
+}
+
+.copyright {
+  color: $white !important;
+  background-color: $primary-btn-color !important;
+}

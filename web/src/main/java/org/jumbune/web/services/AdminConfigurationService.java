@@ -3,7 +3,9 @@ package org.jumbune.web.services;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -312,7 +314,9 @@ public class AdminConfigurationService {
 				}*/
 				BackgroundProcessManager.getInstance().updateProcesses(clusterName);
 
-			return Response.ok("success").build();
+    		    Map<String, String> response = new HashMap<>(1);
+                response.put("Response", "Success");
+                return Response.ok(Constants.gson.toJson(response)).build();
 
 		} catch (Exception e) {
 			return Response.status(Status.INTERNAL_SERVER_ERROR).entity(e).build();
