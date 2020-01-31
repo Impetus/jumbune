@@ -22,9 +22,10 @@ import org.apache.logging.log4j.core.config.AppenderRef;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
-import org.apache.logging.log4j.core.util.Charsets;
+//import org.apache.logging.log4j.core.util.Charsets;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+import java.nio.charset.Charset;
 
 /**
  * This class loads log4j properties (appenders etc.) into the existing log4j.properties at run time
@@ -175,7 +176,7 @@ public final class LoggerUtil {
 		      }
 		      logFileName.append(IPRetriever.getCurrentIP()).append(SEPARATOR_UNDERSCORE).append(taskAttemptID).append(LOG_FILE_EXT);
 		       // pattern layout
-		      PatternLayout pl = PatternLayout.createLayout(LOG_PATTERN, config, null,Charsets.UTF_8 ,false, false, null, null);
+		      PatternLayout pl = PatternLayout.createLayout(LOG_PATTERN, null, config, null,Charset.forName("UTF-8") ,false, false, null, null);
 		      return MemoryMappedFileAppender.createAppender(logFileName.toString(), "append", appenderName, "false", "33554432", null, pl, null, null, null, config);
 	}
 

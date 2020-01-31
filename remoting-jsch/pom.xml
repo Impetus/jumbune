@@ -47,27 +47,27 @@
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-handler</artifactId>
-			<version>4.0.32.Final</version>
+		        <version>4.1.43.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-buffer</artifactId>
-			<version>4.0.32.Final</version>
+		        <version>4.1.43.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-common</artifactId>
-			<version>4.0.32.Final</version>
+		        <version>4.1.43.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-codec</artifactId>
-			<version>4.0.32.Final</version>
+		        <version>4.1.43.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-transport</artifactId>
-			<version>4.0.32.Final</version>
+		        <version>4.1.43.Final</version>
 		</dependency>
 		<dependency>
 			<groupId>org.easymock</groupId>
@@ -78,12 +78,12 @@
 		<dependency>
 			<groupId>com.jcraft</groupId>
 			<artifactId>jsch</artifactId>
-			<version>0.1.51</version>
+			<version>0.1.54</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.curator</groupId>
 			<artifactId>curator-recipes</artifactId>
-			<version>2.9.0</version>
+			<version>2.13.0</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-cli</groupId>
@@ -93,23 +93,23 @@
 	<dependency>
 		<groupId>org.apache.curator</groupId>
 		<artifactId>curator-client</artifactId>
-		<version>2.9.0</version>
+		<version>2.13.0</version>
 	</dependency>
 	<dependency>
 		<groupId>org.apache.curator</groupId>
 		<artifactId>curator-framework</artifactId>
-		<version>2.9.0</version>
+		<version>2.13.0</version>
 	</dependency>
 	<dependency>
 		<groupId>com.google.guava</groupId>
 		<artifactId>guava</artifactId>
-		<version>18.0</version>
+		<version>20.0</version>
 	</dependency>
 
 		<dependency>
 			<groupId>org.apache.zookeeper</groupId>
 			<artifactId>zookeeper</artifactId>
-			<version>3.4.6</version>
+			<version>3.4.14</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
