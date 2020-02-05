@@ -1,0 +1,29 @@
+	#visualisation {
+		text-align: center;
+		padding-top: 2px;
+		margin: 0 auto;
+	}
+	
+	.dataloadtooltip {
+		background: #333;
+		box-shadow: 0 0 5px #999999;
+		color: #fff;
+		display: none;
+		font-size: 14px;
+		padding: 10px;
+		position: fixed;
+		width: 200px;
+		z-index: 10;
+		font-family: sans-serif;
+		text-align: left;
+		border-radius: 4px;
+		opacity: 0.98;
+	}
+	
+	.legend {
+		font-size: 12px;
+	}
+	
+	rect {
+		stroke-width: 2;
+	}

@@ -1,0 +1,9 @@
+<ul class="nav sideways" id="JobWidgetTab">
+	<li ng-show="methodDebugger"  class="method-debugger" ng-class="{'active': isActiveTab == 'Debugger' }">
+		<a data-toggle="tab" ng-click="showMethod(true, false, false, 'Debugger')" style="border:0px;"></a>
+	</li>
+	
+	<li ng-show="methodJobProfiling" class="method-job-profiling" ng-class="{'active': isActiveTab == 'JobProfiling' }">
+		<a data-toggle="tab" ng-click="showMethod(false, true, false, 'JobProfiling')">Job Profiling</a>
+	</li>
+</ul>

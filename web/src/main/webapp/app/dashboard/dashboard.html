@@ -1,0 +1,192 @@
+<!-- header -->
+<header id="header" class="clearfix">
+   <div class="clearfix">
+      <strong class="logo"><a><img src="../../assets/images/logo.png" alt="image"></a></strong>
+      <div class="navbar-header">
+         <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+         <span class="sr-only">Toggle navigation</span>
+         </button>
+      </div>
+      <div></div>
+      <nav class="main-nav" id="bs-example-navbar-collapse-1">
+
+      </nav>
+      <!-- main-nav -->
+   </div>
+</header>
+<div ng-init="DashboardController.init()" style="position:relative;">
+<!-- Left nav -->
+<section class="sideBar">
+   <ul style="height:100%">
+      <li ng-click="manageClusterClicked=true" ng-mouseover="DashboardController.showClusterDropdown()" ng-mouseleave="manageClusterValue=true" class="hvr-rectangle-out">
+         <i class="fa fa-sitemap"></i>
+         <br>Manage Clusters
+      </li>
+      <li ng-mouseover="DashboardController.showRecentJobsDropdown()" class="hvr-rectangle-out" ng-mouseleave="recentJobsValue=true">
+         <i class="fa fa-undo"></i>
+         <br>Recent Jobs
+      </li>
+      <li ng-mouseover="DashboardController.showSheduledJobsDropdown()" class="hvr-rectangle-out" ng-mouseleave="scheduledJobsValue=true">
+           <i class="fa fa-calendar"></i>
+           <br>Scheduled Jobs
+      </li>
+      <li ng-mouseover="DashboardController.showExampleDropdown()" class="hvr-rectangle-out" ng-mouseleave="exampleValue=true">
+         <i class="fa fa-list"></i>
+         <br>Examples
+      </li>
+      <li ng-mouseover="DashboardController.showAboutUs()" class="hvr-rectangle-out" ng-mouseleave="aboutUsValue=true">
+         <i class="fa fa-users"></i>
+         <br>About Us
+      </li>
+   </ul>
+</section>
+<!------- Dropdown section ------->
+<!-- Manage cluster dropdown -->
+<div ng-mouseover="manageClusterValue=false" ng-mouseleave="manageClusterValue=true" id="manageClustersDropdown" class="dropdown animate-hide" ng-hide="manageClusterValue && !manageClusterClicked">
+   <span class="closeDropdown" title="Close" ng-click="manageClusterValue=true;manageClusterClicked=false">
+      <!-- <i class="fa fa-times"></i> -->
+   </span>
+   <span class="linkHighlightBg"></span>
+   <div align="right"><a href="#/add-cluster" class="link"><i class="fa fa-plus"></i> New</a></div>
+   <ul>
+      <li class="clearfix" ng-repeat="(key, value) in getClusterList">
+         <span class="pull-left">{{value}}</span>
+         <span class="pull-right">
+         <i class="fa fa-pencil" alt="Edit Cluster" title="Edit Cluster" ng-click="DashboardController.editCluster(value)"></i>
+         <i title="Cluster Configuration" alt="Cluster Configuration" class="fa fa-cog" ng-click="DashboardController.manageCluster(value)"></i>
+         <i ng-click="DashboardController.deleteClusterName(key)" title="Delete Cluster" alt="Delete Cluster" class="fa fa-trash"></i>
+         </span>
+      </li>
+   </ul>
+</div>
+<!-- Recent jobs dropdown -->
+<div ng-mouseover="recentJobsValue=false" ng-mouseleave="recentJobsValue=true" id="recentJobsDropdown" class="dropdown animate-hide" ng-hide="recentJobsValue">
+   <span class="closeDropdown" title="Close" ng-click="recentJobsValue=true">
+      <!-- <i class="fa fa-times"></i> -->
+   </span>
+   <span class="linkHighlightBg"></span>
+   <ul>
+      <li class="clearfix" ng-repeat="job in getJobList">
+         <span ng-click="DashboardController.getJobRequest(job.jobType, job.jobName)" class="pull-left" title="{{job.jobType}}" style="font-size: 13px;cursor: pointer;">
+         <img src="../../assets/images/AJ1.png" style="margin-right: 5px;width:18px;-webkit-filter:invert(100%);" ng-if="job.jobType == 'Analyze Job'">
+         <img src="../../assets/images/adLogo.png" style="margin-right: 5px;width:18px;-webkit-filter:invert(100%);" ng-if="job.jobType == 'Analyze Data'">{{job.jobName}}
+         </span>
+         <span class="pull-right">
+         <i ng-if="job.status == 'SCHEDULED'" ng-click="DashboardController.displayJobResult(job.jobName, job.jobType)" title="Job is Scheduled" alt="Job is Scheduled" class="fa fa-clock-o" style="cursor:pointer;"></i>
+         <i ng-if="job.status == 'IN_PROGRESS'" ng-click="DashboardController.displayJobResult(job.jobName, job.jobType)" title="Job is running" alt="Job is running" class="fa fa-spinner fa-pulse fa-fw" style="cursor:pointer;"></i>
+         <i ng-if="job.status == 'COMPLETED'" ng-click="DashboardController.displayJobResult(job.jobName, job.jobType)" title="Display Result" alt="Display Result" class="fa fa-external-link" style="cursor:pointer;"></i>
+         <i class="fa fa-trash" alt="Delete Job" title="Delete Job" ng-click="DashboardController.saveJobNameToDelete(job.jobName)"></i>
+         </span>
+      </li>
+   </ul>
+   <span style="font-weight:bold;margin-left:56px;margin-bottom:10px" ng-show="getJobList.length === 0">No recent job avaliable</span>
+</div>
+<!-- Scheduled jobs dropdown -->
+<div ng-mouseover="scheduledJobsValue=false" style="overflow:auto" ng-mouseleave="scheduledJobsValue=true" id="scheduledJobsDropdown" class="dropdown animate-hide" ng-hide="scheduledJobsValue">
+    <span class="closeDropdown" title="Close" ng-click="scheduledJobsValue=true">
+        <!-- <i class="fa fa-times"></i> -->
+    </span>
+    <span class="linkHighlightBg"></span>
+    <span ng-show="scheduledDQTJobList.length != 0" style="font-weight:bold;margin-left:10px;margin-bottom:10px">Data Quality Timeline Jobs</span>
+    <ul ng-show="scheduledDQTJobList.length != 0">
+        <li class="clearfix" ng-repeat="job in scheduledDQTJobList">
+            <span ng-click="DashboardController.getJobRequest(job.jobName)" class="pull-left" title="{{job.jobType}}" style="font-size: 13px;cursor: pointer;">
+            {{job.jobName}}
+            </span>
+            <span class="pull-right">
+            <i ng-click="DashboardController.displayJobResult(job.jobName, 'Analyze Data')" title="Display Result" alt="Display Result" class="fa fa-external-link" style="cursor:pointer;"></i>
+            <i class="fa fa-trash" alt="Delete Job" title="Delete Job" ng-click="DashboardController.saveJobNameToDelete(job.jobName)"></i>
+            </span>
+        </li>
+    </ul>
+    <span style="font-weight:bold;margin-left:56px;margin-bottom:10px" ng-show="scheduledDQTJobList.length == 0">No scheduled job avaliable</span>
+</div>
+<!-- Example Section -->
+<div ng-mouseover="exampleValue=false" ng-mouseleave="exampleValue=true" id="exampleDropdown" class="dropdown animate-hide" ng-hide="exampleValue">
+   <span class="closeDropdown" title="Close" ng-click="exampleValue=true">
+   </span>
+   <span class="linkHighlightBg"></span>
+   <ul>
+      <li class="clearfix" ng-repeat="(jobType, jobsList) in getExampleList">
+         <p style="color:white;">{{jobType}}</p>
+         <p ng-click="DashboardController.getExampleRequest(jobType, job)" ng-repeat="job in jobsList" style="cursor:pointer;">{{job}}</p>
+      </li>
+   </ul>
+</div>
+<!-- AboutUs Section -->
+<div ng-mouseover="aboutUsValue=false" ng-mouseleave="aboutUsValue=true" id="aboutUsDropdown" class="dropdown animate-hide" ng-hide="aboutUsValue">
+   <span class="closeDropdown" title="Close" ng-click="aboutUsValue=true">
+   </span>
+   <ul>
+      <li class="clearfix">
+         <span class="pull-left">Build Version</span>
+         <span class="pull-right">{{jenkinsBuilNo}}</span>
+      </li>
+      <li class="clearfix">
+         <span class="pull-left">Jumbune</span>
+         <span class="pull-right"><a href="http://jumbune.com/" style="color:#fff">http://jumbune.org/</a></span>
+      </li>
+      <li class="clearfix">
+         <span class="pull-left">Impetus</span>
+         <span class="pull-right"><a href="http://www.impetus.com/" style="color:#fff">http://www.impetus.com/</a></span>
+      </li>
+      <li class="clearfix">
+         <span>© 2018 Impetus Technologies, Inc. All Rights Reserved.</span>
+      </li>
+   </ul>
+</div>
+<!-- Content section -->
+<section id="homeContainer">
+   <div class="alert alert-info arrow_box" ng-hide="infoMessageVal">Please add a cluster for proceeding further</div>
+   <table id="output">
+      <tbody>
+      </tbody>
+   </table>
+   <ul class="clearfix" style="position: absolute;top: 20%;">
+        <li id="showClusterAnalysisJob" style="border:5px solid white;background:#23b4c0;" class="bgColor" ng-click="DashboardController.analyzeCluster()">
+            <span class="col-md-3"><img src="../../assets/images/ACMain_b.png" alt="image"></span>
+            <span class="col-md-9 textHome">
+                <h1><a href="">Analyze Cluster</a></h1>
+                <h3>Visualize ​cluster statistics with container and load details.</h3>
+            </span>
+        </li>
+        <li id="showDataQualityJob" style="border:5px solid white;background:#23b4c0;" class="bgColor" ng-click="DashboardController.analyzeData()">
+            <span class="col-md-3"><img src="../../assets/images/AnalyzeData.png" alt="image"></span>
+            <span class="col-md-9 textHome">
+                    <h1><a href="">Analyze Data</a></h1>
+                    <h3>Quantify the data quality and examine the data on Data lake.</h3>
+            </span>
+        </li>
+    </ul>
+    <ul style="position: absolute;top: calc(20% + 180px);margin:0 auto;text-align:center;left:35%">
+					<li id="showJobQualityJob" style="border:5px solid white" class="bgColor" ng-click="DashboardController.openNewJob($event)">
+							<span class="col-md-3"><img src="../../assets/images/AJ1.png" alt="image"></span>
+							<span class="col-md-9 textHome">
+								 <h1><a href="">Analyze Job</a></h1>
+								 <h3>Debug and pinpoint application issues with distributed debugging.</h3>
+							</span>
+					 </li>
+   	</ul>
+</section>
+<div class="modal fade" id="jobDeleteConfirmationDialog" role="dialog">
+   <div class="modal-dialog">
+      <div class="modal-content">
+         <div class="modal-body">
+            <button type="button" class="bootbox-close-button close" data-dismiss="modal" aria-hidden="true" style="margin-top: -10px;">×</button>
+            <div class="bootbox-body">Are you sure want to delete the job?</div>
+         </div>
+         <div class="modal-footer">
+            <button data-bb-handler="cancel" type="button" class="btn btn-default" onclick="$('#jobDeleteConfirmationDialog').modal('hide')">No</button>
+            <button style="margin-left:20px" ng-click="DashboardController.deleteJob()" data-bb-handler="confirm" type="button" class="btn btn-primary">Yes</button>
+         </div>
+      </div>
+   </div>
+</div>
+
+</div>
+<script>
+	history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+        history.go(1);
+    };
+</script>

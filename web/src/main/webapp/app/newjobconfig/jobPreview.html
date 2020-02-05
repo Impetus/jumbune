@@ -1,0 +1,55 @@
+<div class="container" ng-init="JobPreviewController.init()">
+	<div jumbune-header=""></div>
+	<div class="inner-container">
+	    <h2>Preview</h2>
+        <div class="col-md-12 main-container inner-container">
+            <div class="error-container">
+                <div ng-repeat="(infoType, infoTypeObj) in JobPreviewController.errorJson" ng-class="{'error-section': infoType=='Failures'}">
+                    <h5 ng-bind="infoType" ng-class="{'error': infoType=='Failures'}"></h5>
+                    <div ng-repeat="(module, fieldInfoObj) in infoTypeObj">
+                        <h6 ng-bind="module"></h6>
+                        <div ng-repeat="(field, fieldMsg) in fieldInfoObj">
+                            <a href="javascript: void(0);" ng-bind="fieldMsg" ng-click="JobPreviewController.gotoTabField(field)"></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+			<div class="row">
+				<div class="col-md-12">
+                <table class="frm-tbl preview-tbl">
+                    <tr class="heading-bg">
+                        <td><label>Jumbune Job Name</label></td>
+                        <td>{{JobPreviewController.getJobDtl.jobName}}</td>
+                    </tr>
+                    <tr class="heading-bg">
+                        <td><label>Cluster Name</label></td>
+                        <td>{{JobPreviewController.cluster}}</td>
+                    </tr>
+                    <tr ng-repeat="enableField in JobPreviewController.displayJSON">
+                        <td>{{enableField}}</td>
+                        <td><i class="fa fa-check-circle-o green-icon"></i></td>
+                    </tr>
+                </table>
+
+				</div>
+			</div>
+            <form action="SaveJSONServlet" name="saveJSONForm" id="saveJSONForm" method="POST">
+                <input type="hidden" name="saveJsonData" id="saveJsonData" ng-value="JobPreviewController.json"/>
+            </form>
+
+            <form method="POST" name="yamlForm" id="yamlForm" enctype="multipart/form-data" action="ExecutionServlet">
+                <input type="hidden" name="jsonData" id="jsonData" ng-value="JobPreviewController.json"/>
+                <div class="txt-rgt fixed-btn">
+                    <!-- <input type="submit" class="btn btn-primary" value="Run"/> -->
+                    <!--<button type="button" class="btn btn-primary" ng-click="JobPreviewController.JsonToServer()" ng-hide="JobPreviewController.validJson">Validate</button>
+                    <button type="button" class="btn btn-primary" ng-click="JobPreviewController.saveJob()" ng-show="JobPreviewController.validJson">SaveJSON</button>
+                    <button type="submit" class="btn btn-primary" ng-click="JobPreviewController.runJob()" ng-show="JobPreviewController.validJson">Run</button>-->
+                    <!-- <button type="button" class="btn btn-primary" ng-click="JobPreviewController.runJob()">Run</button> -->
+                    <button type='button' class='btn btn-default' ng-click='JobPreviewController.cancel()'>Cancel</button>
+                    <button type="button" class="btn btn-primary" ng-click="JobPreviewController.saveJob()">SaveJSON</button>
+                    <button type="submit" class="btn btn-primary" ng-click="JobPreviewController.runJob()">Run</button>
+                </div>
+            </form>
+        </div>
+	</div><!-- info-holder -->
+</div>
