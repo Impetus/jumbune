@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jumbune</groupId>
     <artifactId>jumbune</artifactId>
-    <version>2.0</version>
+    <version>1.6</version>
   </parent>
 
 

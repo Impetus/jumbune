@@ -6,7 +6,7 @@
 	<parent>
 		<artifactId>jumbune</artifactId>
 		<groupId>org.jumbune</groupId>
-		<version>2.0</version>
+		<version>1.6</version>
 	</parent>
 	<groupId>org.jumbune</groupId>
 	<artifactId>jumbune-cluster-analysis</artifactId>
@@ -14,7 +14,7 @@
 	<name>cluster-analysis</name>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<build.number>2.0</build.number>
+		<build.number>1.6</build.number>
 	</properties>
 	<dependencies>
 
