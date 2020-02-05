@@ -1,0 +1,45 @@
+<div class="container" ng-init="DAChartController.init()">
+	<div jumbune-header=""></div>
+	<div class="inner-container">
+        
+	    <h2>Preview</h2>
+        <div class="col-md-12 main-container inner-container">
+
+            <table class="frm-tbl" style="width:100%">
+                <colgroup>
+                    <col width="30%">
+                    <col width="70%">
+                </colgroup>
+                <tbody>
+                    
+                    <tr ng-repeat="dsDetails in DAChartController.dataAnalysisDetails">
+                        <td ng-hide="DAChartController.isNoCriteria">
+                            <div bistel-chart="dsDetails.chartModel.chartData" chart-options="dsDetails.chartModel.chartOptions"></div>
+                        </td>
+
+                        
+
+                        <td ng-show="DAChartController.isNoCriteria">
+                            <!-- <div style="float:left;" circular-chart d-text="{{DAChartController.dtext}}" fill-color="{{DAChartController.fillColor}}" d-percent="{{DAChartController.dPercent}}"></div>
+
+                            <div style="float:left;" circular-chart d-text="{{DAChartController.dext}}" fill-color="{{DAChartController.fillColor}}" d-percent="{{DAChartController.dPercent}}"></div> -->
+
+                            <div style="float:left; margin-right:150px; text-align:center; width: 350px;" circular-chart-f1 dtext="{{DAChartController.dtextF1}}" fill-color="{{DAChartController.fillColorF1}}"></div>
+                            <div style="float:left;text-align:center; width: 350px;" circular-chart-f2 dtext="{{DAChartController.dtextF2}}" fill-color="{{DAChartController.fillColorF2}}"></div>
+                        </td>
+                    </tr>
+                    <tr ng-hide="DAChartController.isNoCriteria && DAChartController.showDV">
+                    <td>
+                        <div style="width:600px;height:400px" bistel-chart="DAChartController.pieChartValidationModel.chartData" chart-options="DAChartController.pieChartValidationModel.chartOptions"></div>
+
+                        <div style="width:600px;height:400px" bistel-chart="DAChartController.donutChartModel.chartData" chart-options="DAChartController.donutChartModel.chartOptions"></divdsDetails.chartModel>
+                    </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="txt-rgt fixed-btn">
+                <button type="button" class="btn btn-primary" ng-click="DAChartController.back()">Back</button>
+            </div>
+        </div>
+	</div><!-- info-holder -->
+</div>

@@ -1,0 +1,362 @@
+<div class="container" ng-init="NewJobConfigController.init()">
+    <div jumbune-header=""></div>
+    <form name="myForm" ng-if="!NewJobConfigController.showTableAnalyzeData">
+        <div class="inner-container">
+            <!-- <h2>{{NewJobConfigController.jobFlag}} New Job</h2> <h2 class='my-tool-tip'>Metadata Information<i data-toggle="tooltip" title="Displays various Namenode statistics." class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i></h2>-->
+            <h2>Analyze Data</h2>
+                <div class="col-md-12 main-container tab-container">
+                    <section style="border:0px solid">
+                        <div>
+                            <ul class="countersList customCountersList" style="margin-top:80px;text-align: center">
+                                <li ng-click="NewJobConfigController.dataValidationShow()" style="border:5px solid white;border-radius: 4px;margin: .5em;padding: .3em 0;position: relative;left: 0;cursor: pointer;height:100px;background:#23b4c0" class="bgColorAD">
+                                      <div class="my-tool-tip" style="right: 5px;position: absolute;right: 10px;top: 10px;"><i data-toggle="tooltip" title="Data Validation" style="color: white;font-size: 20px;position: relative;top: 0px;" class="fa fa-info-circle"></i></div>
+                                    <div style="height:60px;width:80px;"><svg height="50" width="50" viewBox="0 0 140 140">
+                                        <g stroke="white">
+                                        <circle cx="70" cy="70" r="60" stroke-width="7" fill="#fff"/>
+                                        <line x1="70" y1="0" x2="70" y2="75" stroke-width="10" style="stroke:#23b4c0  ;"/>
+                                        <line x1="70" y1="70" x2="140" y2="70" stroke-width="10" style="stroke:#23b4c0  ;"/>
+                                        </g>
+                                        </svg>
+                                        <span style="font-size: 15px;position: absolute;top: 75px;right: 5px;font-weight: bold;color: white;">Validation</span>
+                                    </div>
+                                </li>
+                                <li id="dataQuality" ng-click="NewJobConfigController.dataQualityShow()" style="border:5px solid white;border-radius: 4px;margin: .5em;padding: .3em 0;position: relative;left: 0;cursor: pointer;height:100px;background:#999" class="bgColorAD">
+                                      <!-- <div style="height: 20px;width: 20px;border-radius: 10px;right: 5px;position: absolute;border: 2px solid white;right: 10px;top: 10px;"><i style="color: white;font-size: 14px;position: relative;top: 0px;" class="fa fa-info" aria-hidden="true"></i></div> -->
+                                      <div class="my-tool-tip" style="right: 5px;position: absolute;right: 10px;top: 10px;"><i data-toggle="tooltip" title="Data Quality" style="color: white;font-size: 20px;position: relative;top: 0px;" class="fa fa-info-circle"></i></div>
+                                    <div style="height:45px;width:90px;"><svg style="margin-top:5px;" width="100" height="50" viewBox="-10 -10 1200 600"
+                                         xmlns="http://www.w3.org/2000/svg" version="1.1">
+
+                                      <path d="M200,200 Q400,-150 600,200 T1000,0"
+                                            fill="none" stroke="#fff" stroke-width="70"  />
+
+                                      <line x1="200" y1="300" x2="200" y2="1200" stroke="white" stroke-width="150"/>
+                                       <line x1="400" y1="120" x2="400" y2="1200" stroke="white" stroke-width="150"/>
+                                       <line x1="600" y1="380" x2="600" y2="1200" stroke="white" stroke-width="150"/>
+                                       <line x1="800" y1="420" x2="800" y2="1200" stroke="white" stroke-width="150"/>
+                                       <line x1="1050" y1="220" x2="1050" y2="1200" stroke="white" stroke-width="150"/>
+                                        </svg><span style="font-size: 15px;position: absolute;top: 75px;right: 5px;font-weight: bold;color: white;">Quality timeline</span>
+                                    </div>
+                                </li>
+                                 <li ng-model="NewJobConfigController.active" value="dataProfilingShow" id="dataProfilingRadio" ng-click="NewJobConfigController.dataProfilingShow()" style="border:5px solid white;border-radius: 4px;margin: .5em;padding: .3em 0;position: relative;left: 0;cursor: pointer;height:100px;background:#23b4c0" class="bgColorAD">
+                                      <!-- <div style="height: 20px;width: 20px;border-radius: 10px;right: 5px;position: absolute;border: 2px solid white;right: 10px;top: 10px;"><i style="color: white;font-size: 14px;position: relative;top: 0px;" class="fa fa-info" aria-hidden="true"></i></div> -->
+                                      <div class="my-tool-tip" style="right: 5px;position: absolute;right: 10px;top: 10px;"><i data-toggle="tooltip" title="Data Profiling" style="color: white;font-size: 20px;position: relative;top: 0px;" class="fa fa-info-circle"></i></div>
+                                    <div style="height:60;width:80px;"><svg height="70" width="90" style="background:#23b4c0" viewBox="0 0 140 140">
+                                        <g stroke="white">
+                                        <circle cx="70" cy="70" r="60" stroke-width="7" fill="#fff"/>
+                                        <circle cx="70" cy="70" r="30" stroke-width="10" fill="#23b4c0"/>
+                                        <line x1="70" y1="70" x2="105" y2="10" stroke-width="10" style="stroke:#23b4c0;"/>
+                                        <line x1="70" y1="0" x2="70" y2="70" stroke-width="10" style="stroke:#23b4c0;"/>
+                                        <line x1="70" y1="70" x2="35" y2="131" stroke-width="10" style="stroke:#23b4c0;"/>
+                                        <line x1="0" y1="70" x2="70" y2="70" stroke-width="10" style="stroke:#23b4c0;"/>
+                                        </g>
+                                        </svg><span style="font-size: 15px;position: absolute;top: 75px;right: 5px;font-weight: bold;color: white;">Profiling</span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </section>
+                    <div class="textCenter" style="position: relative;top:150px;">
+                        <button type="button" class="btn btn-default" ng-click="NewJobConfigController.backAnalyzeDataModule()">Back</button>
+                    </div>
+                </div>
+            <div class="clear"></div>
+        </div>
+
+    </form>
+    <form name="myForm" ng-if="NewJobConfigController.showTableAnalyzeData && !NewJobConfigController.showdqt">
+        <div class="inner-container">
+            <h2>{{NewJobConfigController.activeTab}}</h2>
+                <div class="col-md-12 main-container tab-container">
+                    <div class="tab-content">
+                            <table class="frm-tbl">
+                                <tbody>
+                                    <tr>
+                                        <td class="my-tool-tip" style="left: 300px; position: relative;">
+                                            <h5 class="formSubHeading" style="color:#23b4c0">Submission Details</h5>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="left: 300px; position: relative;">
+                                            <label class="fieldLabel">Job Name
+                                                <s>*</s>
+                                            </label>
+                                        </td>
+                                        <td class='my-tool-tip' style="left: 300px; position: relative;">
+                                            <input type="text" name="jobName" ng-model="NewJobConfigController.jobName" ng-pattern="/^[a-zA-Z0-9_]+$/" ng-maxlength=50 required ng-blur="CheckhdfsInputPath()" class="validate" ng-class="{'has-error': hasError('jobName')}">
+                                            <i data-toggle="tooltip" title="Unique name given to every Jumbune job" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i>
+                                            <p class="error" ng-show="myForm.jobName.$error.pattern">Only alphanumeric values and underscore is allowed</p>
+                                            <p class="error" ng-show="myForm.jobName.$error.maxlength">Maximum allowed length is 50 characters</p>
+                                            <div class="error">
+                                                <span class="error" ng-show="errorMessageShow">{{errorMessage}}</span>
+                                            </div>
+                                    </tr>
+                                    </td>
+                                    <tr>
+                                        <td style="left: 300px; position: relative;">
+                                            <label class="fieldLabel">Job Submission User
+                                                <s>*</s>
+                                            </label>
+                                        </td>
+                                        <td class='my-tool-tip' style="left: 300px; position: relative;">
+                                            <input type="text" name="jobSubUser" ng-model="NewJobConfigController.jobSubUser" ng-class="{'error':NewJobConfigController.hasError('jobSubUser')}"><i data-toggle="tooltip" title="User which would submit the jobs on the cluster " class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="left: 300px; position: relative;">
+                                            <label class="fieldLabel">Select Cluster
+                                                <s>*</s>
+                                            </label>
+                                        </td>
+                                        <td class='my-tool-tip' style="left: 300px; position: relative;">
+                                            <select ng-change="getDefaultRootFun()" ng-disabled="NewJobConfigController.disableSelectCluster()" name="clusters" ng-model="NewJobConfigController.selectedCluster" id="selectedCluster" ng-options="clus as clus for clus in NewJobConfigController.clusterList">
+                                            <option value="">Please Select</option>
+                                            </select>
+                                            <i data-toggle="tooltip" title="The name of the cluster defined under " Managed Cluster ", on which the data suite operation has to be performed" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i>
+                                            <span>
+                                                <div class="error">
+                                                    <span class="error" ng-show="errorSelctedClus">Please Select Cluster Name</span>
+                                                 </div>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr ng-show="NewJobConfigController.showhdfsPath">
+                                        <td style="left: 300px; position: relative;">
+                                            <label class="fieldLabel">HDFS Input Path
+                                                <s>*</s>
+                                            </label>
+                                        </td>
+                                        <td style="left: 300px; position: relative;">
+                                            <input type="text" class="validate" name="hdfsInputPath" ng-model="NewJobConfigController.hdfsInputPath" id="hdfspath" required/>
+                                            <div class="error">
+                                                <span class="error" ng-show="errorMessageShowHdfs">{{errorMessageHdfs}}</span>
+                                            </div>
+                                             <span>
+                                                <div class="error">
+                                                    <span class="error" ng-show="errorHdfspath">Please provide valid HDFS input path</span>
+                                                 </div>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="left: 300px; position: relative;">
+                                            <label class="fieldLabel">Hadoop Configuration Parameters
+                                            </label>
+                                        </td>
+                                        <td style="left: 300px; position: relative;">
+                                            <input type="text" class="validate" name="parameters" ng-model="NewJobConfigController.parameters" id="parameter" required/>
+                                            <i data-toggle="tooltip" title="Please specify hadoop configuration parameters if any (eg. -D mapreduce.job.queuename=root.default)" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="left: 300px; position: relative;"><label class="fieldLabel">Temp Directory<s>*</s></label></td>
+                                        <td style="left: 300px; position: relative;">
+                                            <input type="text" name="tempDirectory" onClick="this.select();"  ng-model="NewJobConfigController.tempDirectory">
+                                        </td>
+                                    </tr>
+                                    <tr ng-show="NewJobConfigController.showDataFormat">
+                                        <td style="left: 300px; position: relative;top: 7px;">
+                                            <label class="fieldLabel">Data Format</label>
+                                        </td>
+                                        <td style="left: 293px; position: relative;">
+                                            <label class="deactiveLabel" for="calculateInternallyRadio" style="margin-left: 0px; margin: 7px;">
+                                                <input type="radio" name="capabilityRadios" id="calculateInternallyRadio" ng-model="NewJobConfigController.manualRadio" value="TEXT" />
+                                                <span>Text</span>
+                                            </label>
+                                           <label class="deactiveLabel" for="manualRadio" style="margin: 7px;">
+                                                <input type="radio" name="capabilityRadios" id="manualRadio" class="deactiveLabel" ng-model="NewJobConfigController.manualRadio" value="JSON" />
+                                                <span>JSON</span>
+                                            </label>
+                                            <div ng-show="NewJobConfigController.manualRadio=='XML'">
+                                                <input type="file" file-model="myFile" id="filePathLocalXML" name="inputFile" />
+                                                <span ng-show="NewJobConfigController.manualRadio=='XML'">
+                                                    <div class="error">
+                                                        <span class="error" ng-show="errorFileXML">Please Select XML a File</span>
+                                                    </div>
+                                                </span>
+                                            </div>
+                                            <div ng-show="NewJobConfigController.manualRadio=='JSON'">
+                                                <input type="file" file-model="myFile" id="filePathLocal" name="inputFile" />
+                                                <span ng-show="NewJobConfigController.manualRadio=='JSON'">
+                                                    <div class="error">
+                                                        <span class="error" ng-show="errorFile">Please Select a Json File</span>
+                                                    </div>
+                                                </span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                    </div>
+                    <div class="textCenter fixed-btn" ng-show="NewJobConfigController.showTableAnalyzeData">
+                            <button type="button" class="btn btn-default" ng-click="NewJobConfigController.backAnalyzeData()">Back</button>&nbsp;&nbsp;
+                            <button type="button" ng-disabled="NewJobConfigController.disableNextAnalyzeData()" class="btn btn-primary" ng-click="NewJobConfigController.nextAnalyzeData()">Next</button>
+                    </div>
+                </div>
+            <div class="clear"></div>
+        </div>
+
+    </form>
+    <form name="myForm" ng-if="NewJobConfigController.showdqt && NewJobConfigController.showTableAnalyzeData && NewJobConfigController.activeTab == 'Data Quality' ">
+        <div class="inner-container debugger-tab">
+            <h2>{{NewJobConfigController.activeTab}}</h2>
+            <ul class="nav nav-tabs">
+                <li style="border-left: 0px solid #E2E2E9;border-radius: 3px;" class="selected nav" ng-class="{'active': hideRecurring==false}"><a ng-click="NewJobConfigController.viewJob()">New</a></li>
+                <li clas="nav" ng-class="{'active': hideRecurring==true}"><a ng-click="NewJobConfigController.viewRecurring()">Manage Data Quality TimeLine</a></li>
+            </ul>
+            <div ng-if="hideRecurring == false" ng-class="{'active': hideRecurring==false}" class="col-md-12 tab-container main-container">
+                <div class="tab-content">
+                    <table class="frm-tbl">
+                        <tbody>
+                            <tr>
+                                <td class="my-tool-tip" style="left: 300px; position: relative;">
+                                    <h5 class="formSubHeading" style="color:#23b4c0">Submission Details</h5>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="left: 300px; position: relative;">
+                                    <label class="fieldLabel">Job Name
+                                        <s>*</s>
+                                    </label>
+                                </td>
+                                <td class='my-tool-tip' style="left: 300px; position: relative;">
+                                    <input type="text" name="jobName" ng-model="NewJobConfigController.jobName" ng-pattern="/^[a-zA-Z0-9_]+$/" ng-maxlength=50 required ng-blur="CheckhdfsInputPath()" class="validate" ng-class="{'has-error': hasError('jobName')}">
+                                    <i data-toggle="tooltip" title="Unique name given to every Jumbune job" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i>
+                                    <p class="error" ng-show="myForm.jobName.$error.pattern">Only alphanumeric values and underscore is allowed</p>
+                                    <p class="error" ng-show="myForm.jobName.$error.maxlength">Maximum allowed length is 50 characters</p>
+                                    <div class="error">
+                                        <span class="error" ng-show="errorMessageShow">{{errorMessage}}</span>
+                                    </div>
+                            </tr>
+                            </td>
+                            <tr>
+                                <!-- <td>Job Submission User</td> -->
+                                <td style="left: 300px; position: relative;">
+                                    <label class="fieldLabel">Job Submission User
+                                        <s>*</s>
+                                    </label>
+                                </td>
+                                <td class='my-tool-tip' style="left: 300px; position: relative;">
+                                    <input type="text" name="jobSubUser" ng-model="NewJobConfigController.jobSubUser" ng-class="{'error':NewJobConfigController.hasError('jobSubUser')}"><i data-toggle="tooltip" title="User which would submit the jobs on the cluster " class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 9px;position: relative;top: 2px;"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <!-- <td>Select Clusters</td> -->
+                                <td style="left: 300px; position: relative;">
+                                    <label class="fieldLabel">Select Cluster
+                                        <s>*</s>
+                                    </label>
+                                </td>
+                                <td class='my-tool-tip' style="left: 300px; position: relative;">
+                                    <select ng-disabled="NewJobConfigController.disableSelectCluster()" name="clusters" ng-model="NewJobConfigController.selectedCluster" id="selectedCluster" ng-options="clus as clus for clus in NewJobConfigController.clusterList">
+                                        <option value="">Please Select</option>
+                                    </select>
+                                    <i data-toggle="tooltip" title="The name of the cluster defined under " Managed Cluster ", on which the data suite operation has to be performed" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i>
+                                    <span>
+                                        <div class="error">
+                                            <span class="error" ng-show="errorSelctedClus">Please Select Cluster Name</span>
+                                         </div>
+                                    </span>
+                                </td>
+                            </tr>
+                           <!--  <tr ng-if="NewJobConfigController.enableProfiling != 'dataComparison'"> -->
+                            <tr ng-if="NewJobConfigController.enableProfiling != 'dataComparison'">
+                                <td style="left: 300px; position: relative;">
+                                    <label class="fieldLabel">HDFS Input Path
+                                        <s>*</s>
+                                    </label>
+                                </td>
+                                <td style="left: 300px; position: relative;">
+                                    <input type="text" class="validate" name="hdfsInputPath" ng-model="NewJobConfigController.hdfsInputPath" id="hdfspath" required/>
+                                    <div class="error">
+                                        <span class="error" ng-show="errorMessageShowHdfs">{{errorMessageHdfs}}</span>
+                                    </div>
+                                     <span>
+                                        <div class="error">
+                                            <span class="error" ng-show="errorHdfspath">Please provide valid hDFS input path</span>
+                                        </div>
+                                     </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                        <td style="left: 300px; position: relative;">
+                                            <label class="fieldLabel">Hadoop Configuration Parameters
+                                            </label>
+                                        </td>
+                                        <td style="left: 300px; position: relative;">
+                                            <input type="text" class="validate" name="parameters" ng-model="NewJobConfigController.parameters" id="parameter" required/>
+                                            <i data-toggle="tooltip" title="Please specify hadoop configuration parameters if any (eg. -D mapreduce.job.queuename=root.default)" class='fa fa-info-circle' style="font-size: 18px;color: #23b4c0;left: 5px;position: relative;top: 2px;"></i>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="left: 300px; position: relative;"><label class="fieldLabel">Temp Directory<s>*</s></label></td>
+                                        <td style="left: 300px; position: relative;">
+                                            <input type="text" name="tempDirectory" onClick="this.select();"  ng-model="NewJobConfigController.tempDirectory">
+                                        </td>
+                                    </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="textCenter fixed-btn">
+                    <!-- <div class="textCenter fixed-btn"> -->
+                    <button type="button" class="btn btn-default" ng-click="NewJobConfigController.backAnalyzeData()">Back</button>&nbsp;&nbsp;
+                    <button type="button" ng-disabled="NewJobConfigController.disableNextAnalyzeData()" class="btn btn-primary" ng-click="NewJobConfigController.nextAnalyzeData()">Next</button>
+                </div>
+            </div>
+            <div ng-if="hideRecurring == true" ng-class="{'active': hideRecurring==true}" class="table-responsive ddv-table col-md-12 tab-container main-container">
+                <table class="table table-striped dtl-tbl" ng-show="!NewJobConfigController.hideManageTable">
+                    <thead>
+                        <tr>
+                            <th>Job Name</th>
+                            <th>HDFS Path</th>
+                            <th>Last Executed Time</th>
+                            <th>Recurring Interval</th>
+                            <th>Actions</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat='tab in NewJobConfigController.getClusterList.data track by $index'>
+                            <td>
+                                {{tab.jobName}}
+                            </td>
+                            <td>
+                                {{tab.hdfsPath}}
+                            </td>
+                            <td>
+                                {{tab.lastExecutedTime}}
+                            </td>
+                            <td>
+                                {{tab.recuringInterval}}
+                            </td>
+                            <td>
+                                <i style="cursor:pointer;" class="fa fa-line-chart tableIcon" ng-click="NewJobConfigController.submitRecurring(tab.jobName, tab.operatingCluster)" title="view" alt="view"></i>
+                            </td>
+                            <td>
+                                <i style="cursor:pointer;" title="Delete" alt="Delete " class="fa fa-trash" ng-click="NewJobConfigController.deleteRecurring(tab.jobName,$index)"></i>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="textCenter" ng-show="!NewJobConfigController.hideManageTable">
+                    <button type="button" class="btn btn-default" ng-click="NewJobConfigController.cancelRecurring()">Back</button>
+                    <!-- <button type="submit" href="#/cluster" ng-click="NewJobConfigController.selectedTab = 'DataQuality'" id="lnk_dataSuite" class="btn btn-primary">Add New</button> -->
+                </div>
+                <div class="yellow" style="padding:5px; text-align:center;margin:65px;font-size:18px;font-weight:bold;" ng-show="NewJobConfigController.hideManageTable">Nothing to show</div>
+            </div>
+            <div class="clear"></div>
+        </div>
+    </form>
+
+</div>
+<style type="text/css">
+ul.countersList.customCountersList {
+    width:1080px;
+		text-align: center;
+}
+ul.countersList.customCountersList li {
+    width:195px;
+    text-align: center !important;
+		margin-left: 40px !important;
+		margin-right: 40px !important;
+}
+</style>

@@ -1,0 +1,37 @@
+<h2 style="margin-top:0">What If</h2>
+<table class="frm-tbl" style="width:100%" ng-init="whatIfTab.init()">
+	<colgroup>
+		<col width="22%">
+		<col width="28%">
+		<col width="22%">
+		<col width="28%">
+	</colgroup>
+	<tbody>
+		<tr ng-show="false" ng-init="whatIfTab.selectWhatIf=methodWhatIf">
+			<td>What if</td>
+			<td colspan="3">
+				<input type="checkbox" ng-model="whatIfTab.selectWhatIf"/>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="4">What will be the job performance if we change</td>
+		</tr>
+		<tr>
+			
+			<td colspan="2">
+				<select style="width:100%;" ng-disabled="!whatIfTab.selectWhatIf" ng-change="whatIfTab.handleErrorMessages()" ng-model="whatIfTab.selectBoxWhatIf" ng-required="whatIfTab.selectWhatIf" ng-options="opt as opt for opt in whatIfTab.changeOpt">
+                    <option value="">Please select</option>
+				</select>
+                <div class="error" ng-show="whatIfTab.selectWhatIfValidate">
+                    <span class="error" >Please select option.</span>
+                </div>
+			</td>
+			<td style="text-align:center">To</td>
+			<td><input type="text" ng-model="whatIfTab.toField" ng-disabled="!whatIfTab.selectWhatIf" ng-change="whatIfTab.handleErrorMessages()" required jumbune-only-digits="" ng-required="whatIfTab.selectWhatIf"/>
+                <div class="error" ng-show="whatIfTab.toFieldValidate">
+                    <span class="error" >Please input numeric values.</span>
+                </div>
+            </td>
+		</tr>
+	</tbody>
+</table>
