@@ -2,7 +2,7 @@
 
 # Dockerfile - Jumbune
 #
-FROM     ubuntu:12.04
+FROM     ubuntu:18.04
 MAINTAINER Jumbune-Dev <dev@collaborate.jumbune.org>
 
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
@@ -29,7 +29,7 @@ RUN cd $SRC_DIR && curl -LO "$JDK_URL/$JDK_VER/$JDK_VER2-linux-x64.tar.gz" -H 'C
 #Fetch Apache Hadoop and untar
 ENV SRC_DIR /opt
 ENV HADOOP_URL https://archive.apache.org/dist/hadoop/core/
-ENV HADOOP_VERSION hadoop-2.4.1
+ENV HADOOP_VERSION hadoop-2.7.1
 RUN cd $SRC_DIR &&  wget --no-check-certificate "$HADOOP_URL/$HADOOP_VERSION/$HADOOP_VERSION.tar.gz" \
  && tar xzf $HADOOP_VERSION.tar.gz ; rm -f $HADOOP_VERSION.tar.gz
 
@@ -111,7 +111,7 @@ RUN echo '#Jumbune' >> /etc/profile \
 # UnComment below lines (if you wish to fetch latest Jumbune release rather than building from latest snapshot codebase)
 ###
 
-#ENV JUMBUNE_VERSION 1.5.1
+#ENV JUMBUNE_VERSION 1.6
 #RUN mkdir -p /jumbune_code/distribution/target/ \
 # && wget -O /jumbune_code/distribution/target/jumbune-dist-$JUMBUNE_VERSION-bin.jar  http://www.jumbune.org/jar/current/yarn/jumbune-dist-$JUMBUNE_VERSION-bin.jar
 
