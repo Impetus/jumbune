@@ -132,7 +132,7 @@ RUN echo '#Jumbune' >> /etc/profile \
 RUN git clone https://github.com/Impetus/jumbune.git jumbune_code/ -b master \
  && cd jumbune_code/ \
  && export MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=350m" \
- && mvn install -P yarn 
+ && mvn -Dhttps.protocols=TLSv1.2 clean install -P yarn 
 
 ###
 # Uncomment Above lines (if you wish to build from the latest snapshot codebase and not the latest Jumbune release)
