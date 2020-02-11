@@ -10,7 +10,7 @@ java -jar /jumbune_code/distribution/target/jumbune-dist-$JUMBUNE_VERSION-bin.ja
 sleep 2
 cd $JUMBUNE_HOME/agent-distribution/
 #Starting the agent
-nohup java -jar jumbune-remoting-$JUMBUNE_VERSION-agent.jar --agent-dir .. --agent-port 2161 --distribution a --hadoop-dir /opt/hadoop-2.7.1 --verbose >/dev/null 2>&1 &
+nohup java -jar jumbune-remoting-$JUMBUNE_VERSION-agent.jar --agent-dir . --agent-port 2161 --distribution a --hadoop-dir /opt/hadoop-2.7.1 --verbose >/dev/null 2>&1 &
 sleep 2
 #Uploading Data onto the HDFS
 $HADOOP_HOME/bin/hadoop fs -put $JUMBUNE_HOME/examples/resources/data/PREPROCESSED/data1  /data
