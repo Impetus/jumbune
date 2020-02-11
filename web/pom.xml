@@ -15,7 +15,7 @@
 	<packaging>war</packaging>
 	<name>web</name>
 	<properties>
-		<jetty.version>9.3.1.v20150714</jetty.version>
+		<jetty.version>9.4.17.v20190418</jetty.version>
 	</properties>
 	<profiles>
 		<profile>
@@ -53,10 +53,18 @@
 		</profile>
 	</profiles>
 	<dependencies>
-		<dependency>
+		<!--<dependency>
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-runner</artifactId>
 		</dependency>
+-->
+
+<!-- https://mvnrepository.com/artifact/org.eclipse.jetty.websocket/websocket-servlet -->
+<dependency>
+    <groupId>org.eclipse.jetty.websocket</groupId>
+    <artifactId>websocket-servlet</artifactId>
+    <version>${jetty.version}</version>
+</dependency>
 		<!--Jetty dependencies start here -->
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
@@ -231,7 +239,7 @@
 				<version>2.2</version>
 				<configuration>
 					<packagingExcludes>
-						WEB-INF/lib/jetty-runner*.jar,
+						WEB-INF/lib/jetty-server*.jar,
 						WEB-INF/lib/jetty-security*.jar,
 						WEB-INF/lib/jetty-jaas*.jar,
 						WEB-INF/lib/jetty-io*.jar,
