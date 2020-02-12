@@ -52,16 +52,16 @@ or
 ## Docker Image (Jumbune + Apache YARN )
 
 - Building from root of the checked out repository
-`$ sudo docker build –t = "jumbune/pseudo-distributed:1.5.1" .`
+`$ sudo docker build –t jumbune/pseudo-distributed_1.6:tag .`                                                                       .  `
 
 - Building from the github.com repository
-`$ sudo docker build –t = "jumbune/pseudo-distributed:1.5.1" github.com/Impetus/jumbune/`
+`$ sudo docker build -t jumbune/pseudo-distributed_1.6:tag github.com/Impetus/jumbune/`
 
 - Getting the automated build from docker registry
 `https://registry.hub.docker.com/u/jumbune/jumbune/`
 
 - Running the built image
-`$ docker run -d --name="jumbune" -h "jumbune-docker" -p 8080:8080 -p 5555 jumbune/pseudo-distributed:1.5.1`
+`$ docker run -d --name="jumbune" -h "jumbune-docker" -p 9080:9080 jumbune/pseudo-distributed_1.6`
 
 ## Code Examples
 
