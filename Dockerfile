@@ -1,4 +1,3 @@
-
 #
 # Dockerfile - Jumbune
 #
@@ -6,9 +5,9 @@ FROM     ubuntu:16.04
 MAINTAINER Jumbune-Dev <dev@collaborate.jumbune.org>
 RUN echo "nameserver 8.8.8.8" | tee /etc/resolv.conf > /dev/null
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
-
 # Upgradation and installation of required packages.
 RUN apt-get update && apt-get install -y curl supervisor openssh-server net-tools iputils-ping nano zip maven git
+# Installing JDK and adding JAVA HOME
 #ENV JDK_URL http://download.oracle.com/otn-pub/java/jdk
 #ENV JDK_VER 7u79-b15
 #ENV JDK_VER2 jdk-7u79
@@ -33,17 +32,22 @@ RUN apt-get update && apt-get install -y curl supervisor openssh-server net-tool
 # Define commonly used JAVA_HOME variable
 #ENV JAVA_HOME /usr/lib/jvm/java-7-oracle
 
-# Installing JDK and adding JAVA HOME
 
 RUN apt-get update
 RUN apt-get install -y software-properties-common
 RUN add-apt-repository ppa:openjdk-r/ppa
 RUN apt-get update
 RUN apt-get install --fix-missing -y -f openjdk-8-jdk
+#RUN update-java-alternatives -s java-1.7.0-openjdk-amd64
+#ENV JAVA_HOME /usr/lib/jvm/java-7-openjdk-amd64
+
+
+
 
 # Setup JAVA_HOME, this is useful for docker commandline
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64/
 RUN export JAVA_HOME
+
 
 
 RUN echo "export JAVA_HOME=$JAVA_HOME" >> /etc/profile
@@ -152,6 +156,5 @@ ADD docker-conf/cluster-configuration.properties /root/agent/cluster-configurati
 RUN echo 'root:hadoop' |chpasswd
 EXPOSE 22 9080 50070 8088
 RUN /usr/sbin/sshd
-
 # Daemon
 CMD ["/usr/bin/supervisord"]
