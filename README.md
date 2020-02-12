@@ -3,7 +3,7 @@ jumbune [![Build Status](https://travis-ci.org/Impetus/jumbune.svg?branch=master
 
 ## Synopsis
 
-Jumbune is an open-source product built for analyzing Hadoop cluster and MapReduce jobs. It provides development & administrative insights of Hadoop based analytical solutions. It enables user to Debug, Profile, Monitor & Validate analytical solutions hosted on decoupled clusters.
+Jumbune is an open-source Big Data APM which helps to improve performance of Data operations on clouds: AWS, Azure, Google Cloud Platform and In-premise data centers.
 
 ## Website
 http://jumbune.org
@@ -52,7 +52,7 @@ or
 ## Docker Image (Jumbune + Apache YARN )
 
 - Building from root of the checked out repository
-`$ sudo docker build –t jumbune/pseudo-distributed_1.6:tag .`                                                                       .  `
+`$ sudo docker build –t jumbune/pseudo-distributed_1.6:tag .`
 
 - Building from the github.com repository
 `$ sudo docker build -t jumbune/pseudo-distributed_1.6:tag github.com/Impetus/jumbune/`
