@@ -6,12 +6,14 @@ JUMBUNE_T=$(ls /jumbune_code/distribution/target/ | grep jumbune)
 JUMBUNE_VERSION=${JUMBUNE_T:13:-8}
 
 #Deploying Jumbune
-java -jar /jumbune_code/distribution/target/jumbune-dist-$JUMBUNE_VERSION-bin.jar -Ddistribution=a -DnamenodeIP=127.0.0.1 -Dusername=root -Dpassword=8InTHtRmX0dFyfI26mKX3Q==
+
+java -jar /jumbune_code/distribution/target/jumbune-dist-$JUMBUNE_VERSION-bin.jar --distribution a --namenodeIP 127.0.0.1 --username root --password 8InTHtRmX0dFyfI26mKX3Q== --influxdbhost 127.0.0.1 --influxdbport 9086 --influxdbusername admin --influxdbpassword u5zgd5kyqjtL8cVw6aq5wQ==
+
 nohup $JUMBUNE_HOME/bin/startWeb >/dev/null 2>&1 &
 sleep 2
 cd $JUMBUNE_HOME/agent-distribution/
 #Starting the agent
-nohup java -jar jumbune-remoting-$JUMBUNE_VERSION-agent.jar 5555 -verbose >/dev/null 2>&1 &
+nohup java -jar jumbune-remoting-$JUMBUNE_VERSION-agent.jar --agent-dir . --agent-port 2161 --distribution a --hadoop-dir /opt/hadoop-2.7.1 --verbose >/dev/null 2>&1 &
 sleep 2
 #Uploading Data onto the HDFS
 $HADOOP_HOME/bin/hadoop fs -put $JUMBUNE_HOME/examples/resources/data/PREPROCESSED/data1  /data
@@ -21,4 +23,4 @@ $HADOOP_HOME/sbin/mr-jobhistory-daemon.sh start historyserver
 sleep 2
 #Adding Sample JSON to JSONRepo and changing to version of Jumbune in it
 mkdir $JUMBUNE_HOME/jsonrepo
-sed "s:1.5.1:$JUMBUNE_VERSION:" </root/sampleJson.json  >$JUMBUNE_HOME/jsonrepo/sampleJson.json
+sed "s:1.6:$JUMBUNE_VERSION:" </root/sampleJson.json  >$JUMBUNE_HOME/jsonrepo/sampleJson.json
