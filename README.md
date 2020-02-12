@@ -49,7 +49,7 @@ or
 
 `./runCli`
 
-## Docker Image (Jumbune + Apache YARN )
+## Docker Image (Jumbune 1.6 + Apache Hadoop on Ubuntu OS)
 
 - Building from root of the checked out repository
 `$ sudo docker build –t jumbune/pseudo-distributed_1.6:tag .`
