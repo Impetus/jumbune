@@ -61,7 +61,7 @@ or
 `https://registry.hub.docker.com/u/jumbune/jumbune/`
 
 - Running the built image
-`$ docker run -d --name="jumbune" -h "jumbune-docker" -p 9080:9080 jumbune/pseudo-distributed_1.6`
+`$ sudo docker run -d --name="jumbune" -h "jumbune-docker" -p 9080:9080 jumbune/pseudo-distributed_1.6:tag`
 
 ## Code Examples
 
