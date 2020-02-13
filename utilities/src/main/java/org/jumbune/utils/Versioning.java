@@ -13,8 +13,8 @@ public final class Versioning {
 		
 	}
 	
-	public static final String COMMUNITY_BUILD_VERSION="1.6";
+	public static final String COMMUNITY_BUILD_VERSION="2.0";
 	
-	public static final String COMMUNITY_DISTRIBUTION_NAME="";
+	public static final String COMMUNITY_DISTRIBUTION_NAME="-SNAPSHOT";
 
 }

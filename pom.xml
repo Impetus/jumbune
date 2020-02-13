@@ -5,13 +5,13 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.jumbune</groupId>
 	<artifactId>jumbune</artifactId>
-	<version>1.6</version>
+	<version>2.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>Jumbune</name>
 	<url>http://maven.apache.org</url>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<build.number>1.6</build.number>
+		<build.number>2.0-SNAPSHOT</build.number>
 	</properties>
 	<repositories>
 		<repository>
@@ -124,52 +124,52 @@
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-common</artifactId>
-				<version>1.6</version>
+				<version>2.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-exec</artifactId>
-				<version>1.6</version>
+				<version>2.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-datavalidation</artifactId>
-				<version>1.6</version>
+				<version>2.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-utils</artifactId>
-				<version>1.6</version>
+				<version>2.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-debugger</artifactId>
-				<version>1.6</version>
+				<version>2.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-cluster-monitoring</artifactId>
-				<version>1.6</version>
+				<version>2.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-deploy</artifactId>
-				<version>1.6</version>
+				<version>2.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-remoting</artifactId>
-				<version>1.6</version>
+				<version>2.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-web</artifactId>
-				<version>1.6</version>
+				<version>2.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jumbune</groupId>
 				<artifactId>jumbune-cluster-analysis</artifactId>
-				<version>1.6</version>
+				<version>2.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.poi</groupId>
