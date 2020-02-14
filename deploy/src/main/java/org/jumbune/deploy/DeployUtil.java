@@ -86,8 +86,6 @@ public final class DeployUtil {
 	private final String RESOURCES = "resources";
 	private final String UPDATE_AGENT_JAR;
 	private final String UPDATE_JAR = "jar -uvf ";
-	private final String UPDATE_WAR_CLASSES_FILE;
-	private final String UPDATE_WAR_FILE;
 	private final String USER_DIR = "user.dir";
 	private final String USER_NAME = "username";
 	private final String WEB_FOLDER_STRUCTURE = "/WEB-INF/lib/";
@@ -126,16 +124,10 @@ public final class DeployUtil {
 		
 		executableFiles = new String[] {"/bin/startWeb", "/bin/stopWeb", "/bin/runCli" };
 		
-		UPDATE_WAR_CLASSES_FILE = "/modules/jumbune-web-"
-				+ Versioning.COMMUNITY_BUILD_VERSION + Versioning.COMMUNITY_DISTRIBUTION_NAME
-				+ ".war WEB-INF/classes";
 		
 		CLEAN_UNUSED_FILES_AND_DIRS = "rm -rf WEB-INF/ skins META-INF/ jsp/ lib/";
 		
-		UPDATE_WAR_FILE = "/modules/jumbune-web-"
-				
-				+ Versioning.COMMUNITY_BUILD_VERSION + Versioning.COMMUNITY_DISTRIBUTION_NAME
-				+ ".war WEB-INF/lib";
+		
 		
 		UPDATE_AGENT_JAR = "/agent-distribution/jumbune-remoting-"
 				+ Versioning.COMMUNITY_BUILD_VERSION + Versioning.COMMUNITY_DISTRIBUTION_NAME
@@ -244,7 +236,7 @@ public final class DeployUtil {
 			moveFromResourceToConf(RemotingConstants.HA_CONF_PROPERTIES);
 			moveConfigurationDirectory();
 			
-			//copyFilesForSchedulerJarsIntoLib(distributionType, hadoopDistributionType);
+		
 			changeFilePermissionOfAgentScript();
 			changeFilePermissionOfInfluxDBScript();
 			createDefaultInfluxDBJsonFile();
@@ -1217,41 +1209,7 @@ public final class DeployUtil {
 		}
 	}
 
-//	private void copyFilesForSchedulerJarsIntoLib(String distributionType,
-//			String hadoopDistributionType) throws IOException {
-//		Deployer deployer = DeployerFactory.getDeployer(distributionType, hadoopDistributionType);
-//		String[] SchedularJars = deployer.getSchedularJars();
-//		String jumbuneHome = FoundPaths.get(JUMBUNE_HOME);
-//		String warPath = jumbuneHome + "/modules/jumbune-web-" + Versioning.COMMUNITY_BUILD_VERSION
-//				+ Versioning.COMMUNITY_DISTRIBUTION_NAME + ".war";
-//		String libLocation = jumbuneHome + "/lib/";
-//		URL url = new URL("jar:file:" + warPath + "!/");
-//		JarURLConnection jarConnection = (JarURLConnection) url.openConnection();
-//		final JarFile jarFile = ((JarURLConnection) jarConnection).getJarFile();
-//		InputStream inputStream = null;
-//		try {
-//			for (final Enumeration<JarEntry> e = jarFile.entries(); e.hasMoreElements();) {
-//				final JarEntry entry = e.nextElement();
-//				String jarToExtract = entry.getName();
-//				if (jarToExtract.endsWith(".jar")) {
-//					for (String jarToAdd : SchedularJars) {
-//						if (jarToExtract.startsWith(jarToAdd)) {
-//							inputStream = jarFile.getInputStream(entry);
-//							String locationToCopy = libLocation + jarToExtract.substring(
-//									jarToExtract.lastIndexOf(File.separator),
-//									jarToExtract.length());
-//							Files.copy(inputStream, Paths.get(locationToCopy),
-//									StandardCopyOption.REPLACE_EXISTING);
-//						}
-//					}
-//				}
-//			}
-//		} finally {
-//			if (inputStream != null) {
-//				inputStream.close();
-//			}
-//		}
-//	}
+
 
 	private void serializeDistributionType(String distributionType,
 			String HadoopDistribution) throws IOException {
@@ -1476,20 +1434,15 @@ public final class DeployUtil {
 					+ "] passed during deploy doesn't match with the deployed distribution of Hadoop");
 			exitVM(1);
 		}
-//		String updateJumbuneWar = append(javaHomeStr, "/bin/", UPDATE_JAR, jumbuneHomeStr,
-//				UPDATE_WAR_FILE, "/");
-//		String updateJumbuneWarClasses = append(javaHomeStr, "/bin/", UPDATE_JAR, jumbuneHomeStr,
-//				UPDATE_WAR_CLASSES_FILE, "/");
+
 		String updateAgentJar = append(javaHomeStr, "/bin/", UPDATE_JAR, jumbuneHomeStr,
 				UPDATE_AGENT_JAR);
 		String copyHadoopJarsToLib = append("cp -r ", currentDir, WEB_FOLDER_STRUCTURE, " ",
 				FoundPaths.get(JUMBUNE_HOME), Path.SEPARATOR, " ");
 		executeCommand(copyHadoopJarsToLib);
-		//executeCommand(updateJumbuneWar);
-		//executeCommand(updateJumbuneWarClasses);
 		executeCommand(updateAgentJar);
 
-		DEBUG_FILE_LOGGER.debug("Updated agent jar and war");
+		DEBUG_FILE_LOGGER.debug("Updated agent jar and lib folder");
 	}
 
 	private String getHadoopLocation(Session session, String hadoopDistributionType)

@@ -1,12 +1,5 @@
 #!/bin/bash
 
-#exec java -classpath  $CLASS 
-# CLASSPATH initially contains java tools jar
-#CLASSPATH=$JAVA_HOME/lib/tools.jar
-#warpath="${JUMBUNE_HOME}/modules/jumbune-2.0.war" 
-#jetty="${JUMBUNE_HOME}/lib/jetty-runner*.jar"
-#exec "$JAVA" -cp $CLASSPATH -Dlog4j.configurationFile=file://${JUMBUNE_HOME}/resources/log4j2.xml -jar $jetty --config ${JUMBUNE_HOME}/bin/jetty-config.xml --stop-port 9009 --stop-key stop $warpath
-
 bin=`dirname "$0"`
 bin=`cd "$bin"; pwd`
 #echo $bin
