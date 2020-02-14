@@ -153,6 +153,10 @@
 				<outputDirectory>lib</outputDirectory>
 				<directory>${project.basedir}/../web/target/jumbune-2.0-SNAPSHOT/WEB-INF/lib</directory>
 			</fileSet>
+	<fileSet>
+				<outputDirectory>modules/webapp</outputDirectory>
+				<directory>${project.basedir}/../web/src/main/webapp</directory>
+			</fileSet>
 	</fileSets>
 	<files>
 		<file>

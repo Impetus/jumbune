@@ -27,7 +27,7 @@ public class Starter {
 		servletContextHandler.setContextPath("/");
 		servletContextHandler.setResourceBase("src/main/webapp");
 
-		final String webAppDirectory = JumbuneInfo.getHome() + "resources/webapp";
+		final String webAppDirectory = JumbuneInfo.getHome() + "modules/webapp";
 		final ResourceHandler resHandler = new ResourceHandler();
 		resHandler.setResourceBase(webAppDirectory);
 		final ContextHandler ctx = new ContextHandler("/");
