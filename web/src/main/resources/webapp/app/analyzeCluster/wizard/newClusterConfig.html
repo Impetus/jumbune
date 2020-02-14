@@ -1,0 +1,45 @@
+<div ng-init="NewJobConfigController.init()"  class="container" >
+	<div jumbune-header=""></div>
+	<form name="myForm">
+	<div class="inner-container">
+		<h2>Analyze Cluster</h2>
+		<div data-equal-height=".eq-height">
+			<div class="col-md-12 tab-container main-container" style="box-shadow: 1px 1px 9px -1px #ccc;">
+			  <!-- Tab panes -->
+			  	<div class="tab-content">
+				<form>
+                    <section style="border:0px solid">
+                        <div>
+							<div style="max-height: 350px;overflow-y: auto;">
+							<div class="clusList textCenter" style="margin: 0 auto;width: 350px;" >
+								
+									<div ng-repeat="(key, value) in NewJobConfigController.getclusterListDistribution" ng-if="$index < limitVariable" ng-model="NewJobConfigController.selectedCluster" style="cursor:pointer;font-size: 16px;color:#333;margin: 10px;height: 55px;padding: 12px;" ng-click="NewJobConfigController.submit(key)" ng-model="NewJobConfigController.selectedCluster" >
+										<span ng-if="value=='a' || value=='ea'" ><img align="left" src="../../assets/images/Hadoop_logo.png"></span>
+										<span ng-if="value=='m' || value=='em'"><img align="left"  src="../../assets/images/mapr.png"></span>
+										<span ng-if="value=='c'"><img align="left"  src="../../assets/images/cloudera.png"></span>
+										<span ng-if="value=='h'"><img align="left"  src="../../assets/images/hortonworks.png"></span>
+										<span align="right"  style="vertical-align: middle;">{{key}}</span>
+									</div>
+								</div>
+							</div>                         
+                        </div>
+                    </section>
+						<div class="textCenter fixed-btn">
+						<button type="button" class="btn btn-default"  ng-show="!showSelectAllLabel" ng-click="showAllClus()" class="removeBack">See All Clusters</button>
+						</div>
+				</form>	
+				</div>
+			</div>
+		</div>
+		<div class="clear"></div>
+	</div>
+	</form>
+</div><!-- info-holder -->
+<style>
+	.clusList div:hover{
+		background:#eee !important;
+	}
+	.clusList .removeBack:hover{
+		background:none !important;
+	}
+	</style>

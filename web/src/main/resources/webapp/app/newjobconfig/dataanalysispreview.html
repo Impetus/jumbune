@@ -1,0 +1,41 @@
+<div class="container" ng-init="DataAnalysisPreviewController.init()">
+	<div jumbune-header=""></div>
+	<div class="inner-container">
+        
+	    <h2>Preview</h2>
+        <div class="col-md-12 main-container inner-container">
+            
+
+            <div class="row">
+                <div class="col-md-12">
+                <table class="frm-tbl preview-tbl">
+                    <tr class="heading-bg">
+                        <td><label>Jumbune Job Name</label></td>
+                        <td>{{DataAnalysisPreviewController.getJobDtl.jobName}}</td>
+                    </tr>
+                    <tr class="heading-bg">
+                        <td><label>Cluster Name</label></td>
+                        <td>{{DataAnalysisPreviewController.cluster}}</td>
+                    </tr>
+                    <tr ng-repeat="daDetails in DataAnalysisPreviewController.dataAnalysisDetails">
+                        <td>{{daDetails.enableFieldLabel}}</td>
+                        <td><i class="fa fa-check-circle-o green-icon"></i></td>
+                    </tr>
+                </table>
+                    <!-- <div class="col-md-12">Jumbune Job Name: {{DataAnalysisPreviewController.getJobDtl.jobName}}</div>
+                    
+                    <div class="col-md-12">Cluster Name: {{DataAnalysisPreviewController.cluster}}</div> -->
+                </div>
+                <!-- <div class="col-md-12" ng-repeat="daDetails in DataAnalysisPreviewController.dataAnalysisDetails">
+                    <div class="col-md-12">{{daDetails.enableFieldLabel}} is enabled</div>
+                    <div class="col-md-12" ng-if="daDetails.name != ''">Name: {{daDetails.name}}</div>
+                </div> -->
+            </div>
+            
+            <div class="txt-rgt fixed-btn">
+                <button type="button"  class="btn btn-primary" ng-click="DataAnalysisPreviewController.saveJob()">Save JSON</button>
+                <button type="button"  class="btn btn-primary" ng-click="DataAnalysisPreviewController.runJob()">Run</button>
+            </div>
+        </div>
+	</div><!-- info-holder -->
+</div>

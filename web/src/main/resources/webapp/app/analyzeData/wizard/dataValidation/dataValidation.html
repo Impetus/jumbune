@@ -1,0 +1,10 @@
+<div class="container" ng-controller="dataValidationController">
+	<div jumbune-header=""></div>
+	<div class="inner-container">
+	<div ng-init="dataValidationTab.init()">
+		<div class="alert" ng-class="root.common.messageObj.success == true ?  'alert-success' : 'alert-danger'" ng-show="root.common.messageObj.displayBlock" ng-bind-html="root.common.messageObj.blockMessage"></div>
+		<div ng-include="'app/analyzeData/wizard/dataValidation/data-validation-tab-form.html'"></div>
+	</div>
+	 <div class="clear"></div>
+	</div>
+</div>

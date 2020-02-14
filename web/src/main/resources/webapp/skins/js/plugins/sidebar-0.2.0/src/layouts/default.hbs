@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>SidebarJS</title>
+		<link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:200,300,400" rel="stylesheet" />
+		<link rel="stylesheet" href="css/lib/fontello.css" />
+		<link rel="stylesheet" href="css/lib/normalize.css" />
+		{{#styles}}
+		<link rel="stylesheet" href="css/{{.}}" />
+		{{/styles}}
+		<!--[if lt IE 9]>
+			<script src="js/lib/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+	<body>
+		{{>body}}
+		{{>sidebar}}
+
+		<script src="js/lib/jquery.min.js"></script>
+		{{#scripts}}
+		<script src="js/{{.}}"></script>
+		{{/scripts}}
+		<script>
+			$('#jsi-nav').sidebar({
+				trigger: '.jsc-sidebar-trigger',
+				scrollbarDisplay: true,
+				pullCb: function () { console.log('pull'); },
+				pushCb: function () { console.log('push'); }
+			});
+
+			$('#api-pull').on('click', function (e) {
+				e.preventDefault();
+				$('#jsi-nav').data('sidebar').push();
+			});
+			$('#api-push').on('click', function (e) {
+				e.preventDefault();
+				$('#jsi-nav').data('sidebar').pull();
+			});
+		</script>
+	</body>
+</html>

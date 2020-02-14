@@ -1,0 +1,119 @@
+@charset "UTF-8";
+
+@import "modules/base";
+@import "modules/colors";
+
+.wrapper	{
+	width: 100%;
+	box-sizing: border-box;
+	border-top: 2px solid $border;
+	background-color: $bg;
+}
+
+.link-menu	{
+	font-size: 2.2rem;
+	&:hover	{
+		color: $link-menu-hover;
+	}
+}
+
+.main-content	{
+	padding: 80px 40px 20px;
+	text-align: center;
+	> .main-content-header	{
+		padding-bottom: 80px;
+	}
+	> .main-content-body	{
+		padding-top: 30px;
+		padding-bottom: 30px;
+		border-top: 1px solid $content-border;
+		text-align: left;
+		a	{
+			text-decoration: underline;
+		}
+		> .main-content-body-inner	{
+			padding-top: 10px;
+			padding-bottom: 20px;
+			> h2	{
+				padding-left: 10px;
+				padding-right: 10px;
+				border-left: 12px solid $content-headline-border;
+				background-color: $content-headline-bg;
+				color: $content-headline-color;
+				font-size: 1.6rem;
+			}
+			> h2 + ul	{
+				padding-left: 14px;
+				padding-right: 14px;
+				> li + li	{
+					padding-top: 20px;
+				}
+			}
+			h3	{
+				border-bottom: 1px solid $content-headline-border;
+			}
+		}
+	}
+}
+
+.headline	{
+	font-size: 4.0rem;
+	font-weight: 400;
+	color: $headline-sub;
+}
+
+.headline-main	{
+	color: $headline-main;
+}
+
+.version	{
+	padding-top: 0;
+	font-size: 1.4rem;
+}
+
+.btn-list	{
+	@extend .cfix;
+	display: inline-block;
+	text-align: center;
+	> li	{
+		float: left;
+	}
+	> li + li	{
+		padding-left: 10px;
+	}
+}
+
+.btn	{
+	display: inline-block;
+	text-align: center;
+	padding: 6px 10px;
+	background-color: $btn-bg;
+	color: $btn-color;
+	border-bottom: 4px solid $btn-border;
+	font-size: 1.2rem;
+	&:hover	{
+		background-color: $btn-bg-hover;
+		color: $btn-hover;
+		border-bottom: 4px solid $btn-border-hover;
+	}
+}
+
+.sidebar	{
+	background-color: $sidebar-bg;
+	li + li	{
+		margin-top: 12px;
+	}
+	li	{
+		a	{
+			padding: 4px 10px;
+			display: block;
+			color: $sidebar-link;
+			&:hover	{
+				background-color: $sidebar-link-hover;
+			}
+		}
+		.current	{
+			background-color: $sidebar-link-current;
+		}
+	}
+}

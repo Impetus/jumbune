@@ -1,0 +1,206 @@
+body {
+	font-family:Arial, sans-serif;
+	font-size:0.75em;
+	/*line-height:1em;*/
+	padding:0em;
+	margin:0em;
+	overflow-y: scroll;
+	background:#777873 url('../images/bg.jpg') repeat-x;
+}
+html, div, span, applet, object, iframe, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, font, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, li, i, center, dl, dt, dd, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td {
+	margin:0em;
+	padding:0em;
+}
+ ul{ margin:0em; }
+q:before, q:after { content:''; }
+abbr, acronym {
+	border:0;
+	font-variant:normal;
+}
+sup { vertical-align:text-top; }
+sub { vertical-align:text-bottom; }
+input, select, textarea, button {
+	font-family:Arial, Helvetica, sans-serif;;
+	font-size:0.75em;
+	border:0em;
+}
+input, select, textarea, button {
+	font-size:0.75em;
+	margin:0em;
+	margin:0em;
+}
+input { padding:0.16em; }
+button { font-size: 12px; padding:0; height:30px; background: #369044; color:#fff; overflow: visible; border:1px solid #369044; }
+button:hover { background: #669933;}
+button span { padding:8px; }
+button.graybtn { background: url("../images/button-s.jpg") repeat-x 0 -60px transparent; border:1px solid #555; }
+button.graybtn:hover { background-position: 0 -90px;}
+button.graybtn span { }
+button.graybtn:hover span { }
+select, textarea { padding:0em; resize: none; }
+select option { padding-left:0.250em; }
+p {
+	margin:0em;
+	padding-bottom:0.625em;
+}
+textarea, a, a:active, a:visited, button, button:active, button:focus, button:visited, img, img:active, img:visited, input, input:active, input:visited {
+	outline:none;
+	}
+input[type=text], input[type=password], input[type=pass] {  }
+input[type=checkbox] {	
+	margin-right:0.250em;
+}
+input[type=submit], input[type=button], a , button{ cursor:pointer; }
+input[type=submit], input[type=button] { overflow:visible; }
+input[type=radio] {
+	margin-right:0.250em;
+	position:relative;
+	top:0.32em;
+}
+a, a img, a:hover img, img, a:hover { text-decoration:none; }
+a img, a:hover img, img, input[type=checkbox], input[type=radio], iframe { border:none; }
+h1, h2, h3, h4, h5, h6 { margin:0em 0em 0.625em 0em; font-weight:normal; font-family:Arial, Helvetica, sans-serif; }
+
+h1{
+	font-size:2.2em;
+	color:#FFF;
+	margin-bottom:1.6em;
+	padding:0em;
+	font-weight:normal;
+	}
+h2{
+	font-size:1.4em;
+	margin-bottom:0.625em;
+	/*color:#FFF;*/
+	}
+h3{
+	font-size:0.8em;
+	color:#5b5a5a;
+	font-weight:bold;
+	}
+h4{
+	font-size:1.5em;
+	color:#FFF;
+	line-height:1.6em;
+	}		
+input.invalid, textarea.invalid, select.invalid {
+    border: 0.09em solid #FF0000 !important;
+	color:#000;
+}
+
+input.error, textarea.error, select.error {
+    border: 0.09em solid #FF0000 !important;
+	 resize: none;
+}
+
+input[type="text"], input[type="password"], input[type="pass"], textarea, select {
+    	border: 0.09em solid #CCCCCC;
+	resize: none;
+}
+.invalid{
+	color:#FF0000;
+}
+.file{
+	display:none;
+}
+fieldset { border-top:1px solid #ccc;border-bottom:none;border-left:none;border-right:none;padding: 5px 0px;width: 95%;  }
+legend {
+  padding: 0.2em 0.5em;    
+  font-size:90%;
+  font-weight:bold;
+  text-align:right;
+  margin-left: 0.7em;  
+  }
+.inputbox {
+   
+}
+.inputbox, .inputboxes select, select {
+    border: 1px solid #CCCCCC;      
+    float: left;
+    min-width: 170px;
+    
+}
+.inputbox:focus{
+	border: 0.09em solid #aaa;
+}
+.smallInput{
+	width:50px;
+	min-width:50px;
+}
+.mediumInput{
+	width:140px;
+	min-width:140px;
+}
+
+/*for help window*/
+div.help-wrap .pg-title{
+	margin-left:105px;
+}
+.chk {
+	margin:0 7px 0 0;
+}
+.disableNextStep {
+	color: #808080 !important;
+	background: #ccc !important;
+	border: #ccc 1px solid !important;
+	cursor: default !important;
+}
+.downloadAText {
+	float:right;
+	margin: 0 0 0 10px;
+	width: 185px;
+	padding: 20px 0 20px 0;
+}
+ input.yaml-parsley-success
+{
+  color: #468847 !important;
+  background-color: #DFF0D8 !important;
+  border: 1px solid #D6E9C6 !important;
+}
+input.yaml-parsley-error
+{
+  color: #B94A48 !important;
+  background-color: #F2DEDE !important;
+  border: 1px solid #EED3D7 !important;
+}
+
+ ul.parsley-error-list
+{
+	font-size: 11px;
+	margin: 2px;
+	list-style-type:none;
+	padding:0px;		
+}
+
+ul.parsley-error-list li
+{
+	line-height: 11px;
+	display:inline-block;
+}
+ 
+#previewMainBox {
+	float:left;
+	width:98%;
+	padding:2px;
+}
+.fixWidthValidationCheck {
+	float: left;
+	width: 120px;
+	padding: 0 5px;
+	text-align:center;
+}
+.disabledRow {
+	opacity:0.4;
+}
+#debugAnalysisBox .fixWidthBox {
+	padding:5px;
+}
+#instrumentRegexField , #instrumentUserDefValidateField {
+	padding:5px;
+}
+
+#validateMsgBox dl { margin-top: 7px; }
+#validateMsgBox dt { font-weight: bold; }
+#validateMsgBox dd { padding-left: 15px; }
+.err-field { border: 1px solid #ff0000 !important; }
+.sugg-field { border: 1px solid #2FADD7 !important; }

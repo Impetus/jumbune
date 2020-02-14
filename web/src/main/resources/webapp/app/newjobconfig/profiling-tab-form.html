@@ -1,0 +1,23 @@
+<h2 style="margin-top:0">Job Profiling</h2>
+<p><strong>Note: </strong>Creates cluster wide MapReduce Job execution and cluster Profiling report.</p>
+<table class="frm-tbl" ng-init="jobProfilingTab.init()">
+	<tbody>
+		<tr ng-show="false" ng-init="jobProfilingTab.profilingCheck=methodJobProfiling">
+			<td><label class="option-label"><input type="checkbox" ng-model="jobProfilingTab.profilingCheck" ng-change="jobProfilingTab.onJobProfilingClick()" /><span>Job Profiling</span></label></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td colspan="2"><label class="option-label"><input ng-change = "jobProfilingTab.handleErrorMessages()"  type="checkbox" ng-disabled="!jobProfilingTab.profilingCheck" ng-model="jobProfilingTab.runFromJumbune" ng-required="jobProfilingTab.profilingCheck && !jobProfilingTab.existingJobName"/><span>Run From Jumbune</span></label></td>
+			
+		</tr>
+		<tr>
+			<td>Existing Job Name</td>
+			<td><input type="text" id='extJobName' ng-trim ng-model="jobProfilingTab.existingJobName" ng-blur = "jobProfilingTab.handleErrorMessages()" ng-disabled="!jobProfilingTab.profilingCheck || jobProfilingTab.runFromJumbune" ng-required="jobProfilingTab.profilingCheck && !jobProfilingTab.runFromJumbune" />
+                <div class="error" ng-show="jobProfilingTab.extJobNameValidation">
+                    <span class="error" >Please input value.</span>
+                </div>
+            </td>
+
+		</tr>
+	</tbody>
+</table>

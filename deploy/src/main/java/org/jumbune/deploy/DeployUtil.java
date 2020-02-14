@@ -244,7 +244,7 @@ public final class DeployUtil {
 			moveFromResourceToConf(RemotingConstants.HA_CONF_PROPERTIES);
 			moveConfigurationDirectory();
 			
-			copyFilesForSchedulerJarsIntoLib(distributionType, hadoopDistributionType);
+			//copyFilesForSchedulerJarsIntoLib(distributionType, hadoopDistributionType);
 			changeFilePermissionOfAgentScript();
 			changeFilePermissionOfInfluxDBScript();
 			createDefaultInfluxDBJsonFile();
@@ -1217,41 +1217,41 @@ public final class DeployUtil {
 		}
 	}
 
-	private void copyFilesForSchedulerJarsIntoLib(String distributionType,
-			String hadoopDistributionType) throws IOException {
-		Deployer deployer = DeployerFactory.getDeployer(distributionType, hadoopDistributionType);
-		String[] SchedularJars = deployer.getSchedularJars();
-		String jumbuneHome = FoundPaths.get(JUMBUNE_HOME);
-		String warPath = jumbuneHome + "/modules/jumbune-web-" + Versioning.COMMUNITY_BUILD_VERSION
-				+ Versioning.COMMUNITY_DISTRIBUTION_NAME + ".war";
-		String libLocation = jumbuneHome + "/lib/";
-		URL url = new URL("jar:file:" + warPath + "!/");
-		JarURLConnection jarConnection = (JarURLConnection) url.openConnection();
-		final JarFile jarFile = ((JarURLConnection) jarConnection).getJarFile();
-		InputStream inputStream = null;
-		try {
-			for (final Enumeration<JarEntry> e = jarFile.entries(); e.hasMoreElements();) {
-				final JarEntry entry = e.nextElement();
-				String jarToExtract = entry.getName();
-				if (jarToExtract.endsWith(".jar")) {
-					for (String jarToAdd : SchedularJars) {
-						if (jarToExtract.startsWith(jarToAdd)) {
-							inputStream = jarFile.getInputStream(entry);
-							String locationToCopy = libLocation + jarToExtract.substring(
-									jarToExtract.lastIndexOf(File.separator),
-									jarToExtract.length());
-							Files.copy(inputStream, Paths.get(locationToCopy),
-									StandardCopyOption.REPLACE_EXISTING);
-						}
-					}
-				}
-			}
-		} finally {
-			if (inputStream != null) {
-				inputStream.close();
-			}
-		}
-	}
+//	private void copyFilesForSchedulerJarsIntoLib(String distributionType,
+//			String hadoopDistributionType) throws IOException {
+//		Deployer deployer = DeployerFactory.getDeployer(distributionType, hadoopDistributionType);
+//		String[] SchedularJars = deployer.getSchedularJars();
+//		String jumbuneHome = FoundPaths.get(JUMBUNE_HOME);
+//		String warPath = jumbuneHome + "/modules/jumbune-web-" + Versioning.COMMUNITY_BUILD_VERSION
+//				+ Versioning.COMMUNITY_DISTRIBUTION_NAME + ".war";
+//		String libLocation = jumbuneHome + "/lib/";
+//		URL url = new URL("jar:file:" + warPath + "!/");
+//		JarURLConnection jarConnection = (JarURLConnection) url.openConnection();
+//		final JarFile jarFile = ((JarURLConnection) jarConnection).getJarFile();
+//		InputStream inputStream = null;
+//		try {
+//			for (final Enumeration<JarEntry> e = jarFile.entries(); e.hasMoreElements();) {
+//				final JarEntry entry = e.nextElement();
+//				String jarToExtract = entry.getName();
+//				if (jarToExtract.endsWith(".jar")) {
+//					for (String jarToAdd : SchedularJars) {
+//						if (jarToExtract.startsWith(jarToAdd)) {
+//							inputStream = jarFile.getInputStream(entry);
+//							String locationToCopy = libLocation + jarToExtract.substring(
+//									jarToExtract.lastIndexOf(File.separator),
+//									jarToExtract.length());
+//							Files.copy(inputStream, Paths.get(locationToCopy),
+//									StandardCopyOption.REPLACE_EXISTING);
+//						}
+//					}
+//				}
+//			}
+//		} finally {
+//			if (inputStream != null) {
+//				inputStream.close();
+//			}
+//		}
+//	}
 
 	private void serializeDistributionType(String distributionType,
 			String HadoopDistribution) throws IOException {
@@ -1476,17 +1476,17 @@ public final class DeployUtil {
 					+ "] passed during deploy doesn't match with the deployed distribution of Hadoop");
 			exitVM(1);
 		}
-		String updateJumbuneWar = append(javaHomeStr, "/bin/", UPDATE_JAR, jumbuneHomeStr,
-				UPDATE_WAR_FILE, "/");
-		String updateJumbuneWarClasses = append(javaHomeStr, "/bin/", UPDATE_JAR, jumbuneHomeStr,
-				UPDATE_WAR_CLASSES_FILE, "/");
+//		String updateJumbuneWar = append(javaHomeStr, "/bin/", UPDATE_JAR, jumbuneHomeStr,
+//				UPDATE_WAR_FILE, "/");
+//		String updateJumbuneWarClasses = append(javaHomeStr, "/bin/", UPDATE_JAR, jumbuneHomeStr,
+//				UPDATE_WAR_CLASSES_FILE, "/");
 		String updateAgentJar = append(javaHomeStr, "/bin/", UPDATE_JAR, jumbuneHomeStr,
 				UPDATE_AGENT_JAR);
 		String copyHadoopJarsToLib = append("cp -r ", currentDir, WEB_FOLDER_STRUCTURE, " ",
 				FoundPaths.get(JUMBUNE_HOME), Path.SEPARATOR, " ");
 		executeCommand(copyHadoopJarsToLib);
-		executeCommand(updateJumbuneWar);
-		executeCommand(updateJumbuneWarClasses);
+		//executeCommand(updateJumbuneWar);
+		//executeCommand(updateJumbuneWarClasses);
 		executeCommand(updateAgentJar);
 
 		DEBUG_FILE_LOGGER.debug("Updated agent jar and war");
@@ -2081,4 +2081,5 @@ public final class DeployUtil {
 	}
 
 }
+
 

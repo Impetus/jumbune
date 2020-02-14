@@ -54,7 +54,7 @@
 			<unpack>false</unpack>
 			<useTransitiveDependencies>false</useTransitiveDependencies>
 			<includes>
-				<include>${project.groupId}:jumbune-web</include>
+				<!-- <include>${project.groupId}:jumbune-web</include -->
 				<include>${project.groupId}:jumbune-exec</include>
 				<include>${project.groupId}:jumbune-datavalidation</include>
 				<include>${project.groupId}:jumbune-debugger</include>
@@ -98,7 +98,9 @@
 				<include>org.apache.zookeeper:zookeeper:jar:3.4.14</include>
 				<include>org.codehaus.jackson:jackson-mapper-asl:jar:1.8.8:</include>
 				<include>org.codehaus.jackson:jackson-core-asl:jar:1.8.8:</include>
-				<include>org.eclipse.jetty:jetty-runner:jar:9.3.1.v20150714</include>
+				<include>org.eclipse.jetty:jetty-server:jar:9.4.17.v20190418</include>
+                                <include>org.eclipse.jetty.websocket:websocket-servlet:jar:9.4.17.v20190418</include>
+                                <include>org.eclipse.jetty:jetty-servlet:jar:9.4.17.v20190418</include>
 				<include>org.slf4j:slf4j-api:jar:1.7.5</include>
 				<include>org.slf4j:slf4j-simple:jar:1.6.1</include>
 				<include>xmlbeans:xbean:jar:2.2.0</include>
@@ -147,6 +149,10 @@
 			<directoryMode>0777</directoryMode>
 			<directory>${project.basedir}/../bin/agent</directory>
 	</fileSet>
+	<fileSet>
+				<outputDirectory>lib</outputDirectory>
+				<directory>${project.basedir}/../web/target/jumbune-2.0-SNAPSHOT/WEB-INF/lib</directory>
+			</fileSet>
 	</fileSets>
 	<files>
 		<file>
