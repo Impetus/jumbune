@@ -1,38 +1,96 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app id="WebApp_ID" version="2.4"
+<web-app id="WebApp_ID" version="2.5"
 	xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
+	xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_5.xsd">
 	<display-name>HTF</display-name>
 
-<!--   servlet for websockets, used to publish results  -->
-    <servlet>
-    <servlet-name>websocket-servlet</servlet-name>
-    <servlet-class>org.jumbune.web.sockets.ModuleBasedWebServlet</servlet-class>
-    </servlet>
+	<!-- servlet for websockets, used to publish results -->
+	<servlet>
+		<servlet-name>websocket-servlet</servlet-name>
+		<servlet-class>org.jumbune.web.sockets.ModuleBasedWebServlet</servlet-class>
+	</servlet>
 
-    <servlet-mapping>
-    <servlet-name>websocket-servlet</servlet-name>
-    <url-pattern>/results/*</url-pattern>
-    </servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>websocket-servlet</servlet-name>
+		<url-pattern>/results/*</url-pattern>
+	</servlet-mapping>
 
 
 	<welcome-file-list>
 		<welcome-file>index.html</welcome-file>
 	</welcome-file-list>
-	<error-page>
-		<exception-type>javax.servlet.ServletException</exception-type>
-		<location>/error.html</location>
-	</error-page>
 
-	<error-page>
-		<error-code>500</error-code>
-		<location>/error.html</location>
-	</error-page>
-	<error-page>
-		<exception-type>java.lang.Exception</exception-type>
-		<location>/error.html</location>
-	</error-page>
 	<listener>
 		<listener-class>org.jumbune.web.listener.JumbuneWebContextListener</listener-class>
 	</listener>
+	
+	<filter>
+		<filter-name>SecurityFilter</filter-name>
+		<filter-class>org.jumbune.web.listener.SecurityFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>SecurityFilter</filter-name>
+		<url-pattern>/apis/clusteranalysis/*</url-pattern>
+		<url-pattern>/apis/adminconfig/*</url-pattern>
+		<url-pattern>/apis/clearLogs/*</url-pattern>
+		<url-pattern>/apis/cluster/*</url-pattern>
+		<url-pattern>/apis/clusteranalysis/*</url-pattern>
+		<url-pattern>/apis/dvreport/*</url-pattern>
+		<url-pattern>/apis/exportexcel/*</url-pattern>
+		<url-pattern>/apis/gatherscheduledjobresult/*</url-pattern>
+		<url-pattern>/apis/jobanalysis/*</url-pattern>
+		<url-pattern>/apis/optimizejobservice/*</url-pattern>
+		<url-pattern>/apis/profilerservice/*</url-pattern>
+		<url-pattern>/apis/resultservice/*</url-pattern>
+		<url-pattern>/apis/savejsonservice/*</url-pattern>
+		<url-pattern>/apis/scheduledtuningjobs/*</url-pattern>
+		<url-pattern>/apis/uploadjobjarservice/*</url-pattern>
+		<url-pattern>/apis/uploadservice/*</url-pattern>
+		<url-pattern>/apis/validateservice/*</url-pattern>
+		<url-pattern>/apis/xmldvreport/*</url-pattern>
+		<servlet-name>jersey</servlet-name>
+		<!-- Only service that should not be filtered -->
+		<!-- <url-pattern>/apis/login-service/*</url-pattern> -->
+	</filter-mapping>
+	
+	<filter>
+		<filter-name>AdminSecurityFilter</filter-name>
+		<filter-class>org.jumbune.web.listener.SecurityFilter</filter-class>
+	</filter>
+	<filter-mapping>
+		<filter-name>AdminSecurityFilter</filter-name>
+		<url-pattern>/apis/admin/*</url-pattern>
+		<url-pattern>/apis/adminconfig/*</url-pattern>
+		<url-pattern>/apis/cluster/*</url-pattern>
+	</filter-mapping>
+	
+	<session-config>
+    	<session-timeout>60</session-timeout>
+	</session-config>
+
+
+<servlet>
+    <servlet-name>jersey</servlet-name>
+    <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+
+    <!-- Adds JSON processing to map java classes to JSON text in both directions -->
+    <init-param>
+        <param-name>com.sun.jersey.api.json.POJOMappingFeature</param-name>
+        <param-value>true</param-value>
+    </init-param>
+
+    <!-- Tell the Jersey framework where to search for services.  Also, JAX-RS is needed for the JSON serialization -->
+    <init-param>
+        <param-name>jersey.config.server.provider.packages</param-name>
+        <param-value>org.jumbune.web.services</param-value>
+    </init-param>
+
+    <load-on-startup>1</load-on-startup>
+</servlet>
+
+<servlet-mapping>
+    <servlet-name>jersey</servlet-name>
+    <url-pattern>/*</url-pattern>
+</servlet-mapping>
+
 </web-app>

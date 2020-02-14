@@ -15,7 +15,7 @@
 	<packaging>war</packaging>
 	<name>web</name>
 	<properties>
-		<jetty.version>9.3.1.v20150714</jetty.version>
+		<jetty.version>9.4.17.v20190418</jetty.version>
 	</properties>
 	<profiles>
 		<profile>
@@ -24,7 +24,7 @@
 				<dependency>
 					<groupId>org.apache.hadoop</groupId>
 					<artifactId>hadoop-mapreduce-client-jobclient</artifactId>
-					<version>2.4.1</version>
+					 <version>2.6.0</version>
 					<exclusions>
 						<exclusion>
 							<groupId>org.apache.hadoop</groupId>
@@ -53,10 +53,7 @@
 		</profile>
 	</profiles>
 	<dependencies>
-		<dependency>
-			<groupId>org.eclipse.jetty</groupId>
-			<artifactId>jetty-runner</artifactId>
-		</dependency>
+		
 		<!--Jetty dependencies start here -->
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
@@ -69,6 +66,22 @@
 			<artifactId>jetty-servlet</artifactId>
 			<version>${jetty.version}</version>
 		</dependency>
+
+		<dependency>
+		    <groupId>org.eclipse.jetty.websocket</groupId>
+		    <artifactId>websocket-servlet</artifactId>
+		    <version>${jetty.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-webapp</artifactId>
+			<version>9.4.17.v20190418</version>
+			</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-annotations</artifactId>
+			<version>9.4.17.v20190418</version>
+		</dependency>    
 		<!--Jetty dependencies end here -->
 
 		<dependency>
@@ -147,7 +160,8 @@
 		</dependency>
 		<dependency>
 			<groupId>javax.servlet</groupId>
-			<artifactId>servlet-api</artifactId>
+			<artifactId>javax.servlet-api</artifactId>
+			
 		</dependency>
 
 		<dependency>
@@ -188,8 +202,12 @@
 			<version>2.25</version>
 			<scope>runtime</scope>
 		</dependency>
-
-
+                           
+<dependency>
+				    <groupId>org.apache.hadoop</groupId>
+				    <artifactId>hadoop-common</artifactId>
+				    <version>2.6.0</version>
+				</dependency>
 	</dependencies>
 
 	<build>
@@ -231,7 +249,7 @@
 				<version>2.2</version>
 				<configuration>
 					<packagingExcludes>
-						WEB-INF/lib/jetty-runner*.jar,
+						WEB-INF/lib/jetty-server*.jar,
 						WEB-INF/lib/jetty-security*.jar,
 						WEB-INF/lib/jetty-jaas*.jar,
 						WEB-INF/lib/jetty-io*.jar,
@@ -239,6 +257,13 @@
 						WEB-INF/lib/jetty-util-6*.jar,
 						WEB-INF/lib/websocket-client*.jar
 					</packagingExcludes>
+				      <archive>
+					<manifest>
+					  <addClasspath>true</addClasspath>
+					  <mainClass>org.jumbune.web.bootstrap.Starter</mainClass>
+					</manifest>
+				      </archive>
+					        <archiveClasses>true</archiveClasses>
 				</configuration>
 			</plugin>
 		</plugins>
